@@ -1,0 +1,9 @@
+theme: jekyll-theme-cayman
+title: SnapDB
+description: High-performance key/value pair archiving technology
+github:
+  repository_name: snapdb/SnapDB
+  owner_url: https://www.gridprotectionalliance.org
+  owner_name: Grid Protection Alliance
+plugins:
+  - jemoji
