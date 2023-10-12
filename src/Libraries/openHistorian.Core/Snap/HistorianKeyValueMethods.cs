@@ -28,9 +28,19 @@ using SnapDB.Snap.Tree;
 
 namespace openHistorian.Snap
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class HistorianKeyValueMethods
         : KeyValueMethods<HistorianKey, HistorianValue>
     {
+        /// <summary>
+        /// Copies HistorianKey and HistorianValue from a specified source to a specified destination.
+        /// </summary>
+        /// <param name="srcKey">The source of the key.</param>
+        /// <param name="srcValue">The source of the value.</param>
+        /// <param name="destKey">The destination for the key.</param>
+        /// <param name="dstValue">The destination for the value.</param>
         public override void Copy(HistorianKey srcKey, HistorianValue srcValue, HistorianKey destKey, HistorianValue dstValue)
         {
             destKey.Timestamp = srcKey.Timestamp;

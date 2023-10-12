@@ -79,6 +79,11 @@ namespace openHistorian.Data.Query
             value = m_values[index];
         }
 
+        /// <summary>
+        /// Gets the date from the signal with the provided index in its raw 64-bit format.
+        /// </summary>
+        /// <param name="index">The zero-based index of the position.</param>
+        /// <returns>The date at that specified index.</returns>
         public override ulong GetDate(int index)
         {
             return m_dateTime[index];

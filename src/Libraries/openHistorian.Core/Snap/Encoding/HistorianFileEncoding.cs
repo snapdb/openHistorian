@@ -42,12 +42,24 @@ namespace openHistorian.Snap.Encoding
 
         public override bool UsesPreviousValue => false;
 
+        /// <summary>
+        /// Sets the maximum size for compression.
+        /// </summary>
         public override int MaxCompressionSize => 54;
 
         public override bool ContainsEndOfStreamSymbol => false;
 
         public override byte EndOfStreamSymbol => throw new NotSupportedException();
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="prevKey"></param>
+        /// <param name="prevValue"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public override unsafe int Encode(byte* stream, HistorianKey prevKey, HistorianValue prevValue, HistorianKey key, HistorianValue value)
         {
             //ToDo: Make stage 1 still work on big endian processors.

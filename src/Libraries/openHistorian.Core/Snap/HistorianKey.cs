@@ -49,6 +49,9 @@ namespace openHistorian.Snap
             // {6527D41B-9D04-4BFA-8133-05273D521D46}
             new Guid(0x6527d41b, 0x9d04, 0x4bfa, 0x81, 0x33, 0x05, 0x27, 0x3d, 0x52, 0x1d, 0x46);
 
+        /// <summary>
+        /// Sets the available size.
+        /// </summary>
         public override int Size => 24;
 
         /// <summary>
@@ -81,6 +84,10 @@ namespace openHistorian.Snap
             EntryNumber = 0;
         }
 
+        /// <summary>
+        /// Creates a read-only <see cref="BinaryStreamBase"/> that reflects the time, point ID, and entry number of the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream to read.</param>
         public override void Read(BinaryStreamBase stream)
         {
             Timestamp = stream.ReadUInt64();
@@ -88,6 +95,10 @@ namespace openHistorian.Snap
             EntryNumber = stream.ReadUInt64();
         }
 
+        /// <summary>
+        /// Writes the indicated time, point ID, and entry number to the specified stream.
+        /// </summary>
+        /// <param name="stream">The stream to write to.</param>
         public override void Write(BinaryStreamBase stream)
         {
             stream.Write(Timestamp);
@@ -95,6 +106,10 @@ namespace openHistorian.Snap
             stream.Write(EntryNumber);
         }
 
+        /// <summary>
+        /// Copies the time, point ID, and entry number to the destination.
+        /// </summary>
+        /// <param name="destination">The destination to copy to.</param>
         public override void CopyTo(HistorianKey destination)
         {
             destination.Timestamp = Timestamp;
@@ -103,10 +118,10 @@ namespace openHistorian.Snap
         }
 
         /// <summary>
-        /// Compares the current instance to <see cref="other"/>.
+        /// Compares the current instance to <paramref name="other"/>.
         /// </summary>
-        /// <param name="other">the key to compare to</param>
-        /// <returns></returns>
+        /// <param name="other">The key to compare to</param>
+        /// <returns>A value that indicates the relationship between the timestamps.</returns>
         public override int CompareTo(HistorianKey other)
         {
             if (Timestamp < other.Timestamp)
@@ -124,6 +139,11 @@ namespace openHistorian.Snap
             return 0;
         }
 
+        /// <summary>
+        /// Compares the current instance to <paramref name="stream"/>
+        /// </summary>
+        /// <param name="stream">The stream to compare to.</param>
+        /// <returns>A value that indicates the relationship between the timestamp and the stream.</returns>
         public override unsafe int CompareTo(byte* stream)
         {
             if (Timestamp < *(ulong*)stream)
@@ -144,7 +164,7 @@ namespace openHistorian.Snap
         /// <summary>
         /// Creates a clone of the HistorianKey.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The clone of the HistorianKey.</returns>
         public HistorianKey Clone()
         {
             HistorianKey key = new HistorianKey();
@@ -175,10 +195,15 @@ namespace openHistorian.Snap
             set => Timestamp = value / Ticks.PerMillisecond * Ticks.PerMillisecond;
         }
 
+        /// <summary>
+        /// Casts the DateTime as a string.
+        /// </summary>
+        /// <returns>The <see cref="DateTime"/> as a string.</returns>
         public override string ToString()
         {
             if (Timestamp <= (ulong)DateTime.MaxValue.Ticks)
                 return TimestampAsDate.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "/" + PointID;
+
             return Timestamp.ToString() + "/" + PointID;
 
         }
@@ -205,6 +230,12 @@ namespace openHistorian.Snap
             *(ulong*)(stream + 8) = PointID;
             *(ulong*)(stream + 16) = EntryNumber;
         }
+
+        /// <summary>
+        /// Compares the timestamp to <paramref name="right"/> to check if it is less than <paramref name="right"/>.
+        /// </summary>
+        /// <param name="right">The HistorianKey Timestamp to compare to.</param>
+        /// <returns><c>true</c> if the timestamp is less than the timestamp on the right; otherwise, <c>false</c>.</returns>
         public override bool IsLessThan(HistorianKey right)
         {
             if (Timestamp != right.Timestamp)
@@ -217,10 +248,22 @@ namespace openHistorian.Snap
             //Implied left.EntryNumber == right.EntryNumber
             return EntryNumber < right.EntryNumber;
         }
+
+        /// <summary>
+        /// Compares the timestamp to the <paramref name="right"/> to check if they are equal.
+        /// </summary>
+        /// <param name="right">The HistorianKey Timestamp to compare to.</param>
+        /// <returns><c>true</c> if the timestamp is equal to the timestamp on the right; otherwise, <c>false</c>.</returns>
         public override bool IsEqualTo(HistorianKey right)
         {
             return Timestamp == right.Timestamp && PointID == right.PointID && EntryNumber == right.EntryNumber;
         }
+
+        /// <summary>
+        /// Compares the timestamp to the <paramref name="right"/> to check if it is greater than <paramref name="right"/>.
+        /// </summary>
+        /// <param name="right">The HistorianKey Timestamp to compare to.</param>
+        /// <returns><c>true</c> if the timestamp is greater than <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public override bool IsGreaterThan(HistorianKey right)
         {
             if (Timestamp != right.Timestamp)
@@ -233,6 +276,12 @@ namespace openHistorian.Snap
             //Implied left.EntryNumber == right.EntryNumber
             return EntryNumber > right.EntryNumber;
         }
+
+        /// <summary>
+        /// Compares the timestamp to the <paramref name="right"/> to check if it is greater than or equal to<paramref name="right"/>
+        /// </summary>
+        /// <param name="right">The HistorianKey Timestamp to compare to.</param>
+        /// <returns><c>true</c> if the timestamp is greater than or equal to <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public override bool IsGreaterThanOrEqualTo(HistorianKey right)
         {
             if (Timestamp != right.Timestamp)

@@ -35,6 +35,12 @@ namespace openHistorian.Net
     public class HistorianClient :
         SnapNetworkClient
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverNameOrIp"></param>
+        /// <param name="port"></param>
+        /// <param name="integratedSecurity"></param>
         public HistorianClient(string serverNameOrIp, int port, bool integratedSecurity = false)
             : base(new SnapNetworkClientSettings()
             {

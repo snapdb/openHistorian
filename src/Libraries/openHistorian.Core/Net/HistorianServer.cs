@@ -105,15 +105,6 @@ namespace openHistorian.Net
         /// <param name="database">The database to remove from the server.</param>
         public void RemoveDatabase(string database) => Host.RemoveDatabase(database);
 
-#if !SQLCLR
-        /// <summary>
-        /// Accesses <see cref="SnapServerDatabaseBase"/> for given <paramref name="databaseName"/>.
-        /// </summary>
-        /// <param name="databaseName">Name of database instance to access.</param>
-        /// <returns><see cref="SnapServerDatabaseBase"/> for given <paramref name="databaseName"/>.</returns>
-        public HistorianIArchive this[string databaseName] => new HistorianIArchive(this, databaseName);
-#endif
-
         #endregion
 
         #region [ Methods ]

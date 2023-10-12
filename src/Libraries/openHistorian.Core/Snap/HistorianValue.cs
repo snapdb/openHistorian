@@ -63,6 +63,11 @@ namespace openHistorian.Snap
             destination.Value3 = Value3;
         }
 
+        /// <summary>
+        /// Compares values.
+        /// </summary>
+        /// <param name="other">The HistorianValue to compare to.</param>
+        /// <returns>A number that indicates the relationship between the two values being compared.</returns>
         public override int CompareTo(HistorianValue other)
         {
             if (Value1 < other.Value1)
@@ -81,6 +86,9 @@ namespace openHistorian.Snap
             return 0;
         }
 
+        /// <summary>
+        /// Sets the minimum for Value1, Value2, and Value3.
+        /// </summary>
         public override void SetMin()
         {
             Value1 = 0;
@@ -88,6 +96,9 @@ namespace openHistorian.Snap
             Value3 = 0;
         }
 
+        /// <summary>
+        /// Sets the maximum for Value1, Value2, and Value3.
+        /// </summary>
         public override void SetMax()
         {
             Value1 = ulong.MaxValue;
@@ -105,6 +116,10 @@ namespace openHistorian.Snap
             Value3 = 0;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stream"></param>
         public override void Read(BinaryStreamBase stream)
         {
             Value1 = stream.ReadUInt64();
@@ -112,6 +127,10 @@ namespace openHistorian.Snap
             Value3 = stream.ReadUInt64();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stream"></param>
         public override void Write(BinaryStreamBase stream)
         {
             stream.Write(Value1);
@@ -122,7 +141,7 @@ namespace openHistorian.Snap
         /// <summary>
         /// Clones this instance of the class.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A clone of the <see cref="HistorianValue"/> class.</returns>
         public HistorianValue Clone()
         {
             HistorianValue value = new HistorianValue();
@@ -180,14 +199,6 @@ namespace openHistorian.Snap
 
 
         #region [ Optional Overrides ]
-
-        // Read(byte*)
-        // Write(byte*)
-        // IsLessThan(T)
-        // IsEqualTo(T)
-        // IsGreaterThan(T)
-        // IsLessThanOrEqualTo(T)
-        // IsBetween(T,T)
 
         public override unsafe void Read(byte* stream)
         {

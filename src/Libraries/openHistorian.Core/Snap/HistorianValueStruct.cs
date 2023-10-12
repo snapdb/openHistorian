@@ -65,12 +65,15 @@ namespace openHistorian.Snap
                 byte[] data = new byte[16];
                 BitConverter.GetBytes(Value1).CopyTo(data, 0);
                 BitConverter.GetBytes(Value2).CopyTo(data, 8);
+
                 return System.Text.Encoding.ASCII.GetString(data);
             }
+
             set
             {
                 if (value.Length > 16)
                     throw new OverflowException("String cannot be larger than 16 characters");
+
                 byte[] data = new byte[16];
                 System.Text.Encoding.ASCII.GetBytes(value).CopyTo(data, 0);
                 Value1 = BitConverter.ToUInt64(data, 0);
@@ -81,7 +84,7 @@ namespace openHistorian.Snap
         /// <summary>
         /// Creates a class instance from this value.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The class instance based on the value.</returns>
         public HistorianValue ToClass()
         {
             return new HistorianValue
