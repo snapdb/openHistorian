@@ -69,9 +69,24 @@ public class OldHistorianReader : IDisposable
     /// </summary>
     public struct DataPoint
     {
+        /// <summary>
+        /// The PointID for the data point.
+        /// </summary>
         public int PointID;
+
+        /// <summary>
+        /// The official timestamp of the data point.
+        /// </summary>
         public DateTime Timestamp;
+
+        /// <summary>
+        /// The enumerated value of the data point.
+        /// </summary>
         public float Value;
+
+        /// <summary>
+        /// Any flags associated with the data point.
+        /// </summary>
         public int Flags;
     }
 
@@ -149,7 +164,9 @@ public class OldHistorianReader : IDisposable
     /// <summary>
     /// Releases the unmanaged resources used by the <see cref="OldHistorianReader"/> object and optionally releases the managed resources.
     /// </summary>
-    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+    /// <param name="disposing">
+    /// <c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.
+    /// </param>
     protected virtual void Dispose(bool disposing)
     {
         if (!m_disposed)
@@ -217,7 +234,7 @@ public class OldHistorianReader : IDisposable
     /// <summary>
     /// Reads points from openHistorian 1.0 archive file in native order.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>An IEnumerable of DataPoint representing the read data points.</returns>
     public IEnumerable<DataPoint> Read()
     {
         DataPoint point = default;
@@ -250,158 +267,5 @@ public class OldHistorianReader : IDisposable
             }
         }
     }
-
-    #endregion
-
-    #region [ Old Code ]
-
-    //public static unsafe UInt32 ToUInt(float value)
-    //{
-    //    return *(UInt32*)&value;
-    //}
-    //public static unsafe float ToSingle(UInt32 value)
-    //{
-    //    return *(float*)&value;
-    //}
-
-    //public delegate void NewPointEventHandler(Points pt);
-
-    //public event NewPointEventHandler NewPoint;
-
-    //public unsafe void Read()
-    //{
-    //    //using (MemoryStream FS = new MemoryStream(System.IO.File.ReadAllBytes(File)))
-    //    using (FileStream fs = new FileStream(File, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.SequentialScan))
-    //    {
-    //        int footerPos = (int)fs.Length - 32;
-    //        fs.Position = footerPos;
-    //        BinaryReader RD = new BinaryReader(fs);
-
-    //        DateTime startTime = TimeTag.Convert(RD.ReadDouble());
-    //        DateTime endTime = TimeTag.Convert(RD.ReadDouble());
-    //        int pointsReceived = RD.ReadInt32();
-    //        int pointsArchived = RD.ReadInt32();
-    //        int dataBlockSize = RD.ReadInt32();
-    //        int dataBlockCount = RD.ReadInt32();
-
-    //        int fatPos = footerPos - 10 - 12 * dataBlockCount;
-    //        fs.Position = fatPos;
-
-    //        List<Blocks> blocks = new List<Blocks>(dataBlockCount);
-    //        byte[] header = RD.ReadBytes(10);
-
-    //        Blocks b = default(Blocks);
-    //        for (int x = 1; x <= dataBlockCount; x++)
-    //        {
-    //            b.BlockID = RD.ReadInt32();
-    //            b.Time = TimeTag.Convert(RD.ReadDouble());
-    //            blocks.Add(b);
-    //        }
-
-    //        fs.Position = 0;
-    //        Points p = default(Points);
-
-    //        byte[] buffer = new byte[dataBlockSize * 1024];
-
-    //        fixed (byte* lp = buffer)
-    //        {
-    //            foreach (Blocks bk in blocks)
-    //            {
-    //                fs.Read(buffer, 0, dataBlockSize * 1024);
-    //                int pos = 0;
-    //                while (pos < dataBlockSize * 1024 - 9)
-    //                {
-
-    //                    int i = *(int*)(lp + pos);
-    //                    short s = *(short*)(lp + pos + 4);
-    //                    float v = *(float*)(lp + pos + 6);
-    //                    pos += 10;
-
-    //                    long timeDiff = i * 1000L + (s >> 5);
-    //                    if (timeDiff != 0)
-    //                    {
-    //                        p.Time = TimeTag.Convert(timeDiff);
-    //                        p.Value = v;
-    //                        p.PointID = bk.BlockID;
-
-    //                        //if (NewPoint != null)
-    //                        //    NewPoint(p);
-    //                    }
-    //                }
-    //                //FS.Position = NextPos;
-    //            }
-    //            //return;
-    //        }
-    //    }
-    //}
-
-    //public unsafe void Read(Action<Points> callback)
-    //{
-    //    //using (MemoryStream FS = new MemoryStream(System.IO.File.ReadAllBytes(File)))
-    //    using (FileStream fs = new FileStream(File, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.SequentialScan))
-    //    {
-    //        int footerPos = (int)fs.Length - 32;
-    //        fs.Position = footerPos;
-    //        BinaryReader RD = new BinaryReader(fs);
-
-    //        DateTime startTime = TimeTag.Convert(RD.ReadDouble());
-    //        DateTime endTime = TimeTag.Convert(RD.ReadDouble());
-    //        int pointsReceived = RD.ReadInt32();
-    //        int pointsArchived = RD.ReadInt32();
-    //        int dataBlockSize = RD.ReadInt32();
-    //        int dataBlockCount = RD.ReadInt32();
-
-    //        int FATPos = footerPos - 10 - 12 * dataBlockCount;
-    //        fs.Position = FATPos;
-
-    //        List<Blocks> Blocks = new List<Blocks>(dataBlockCount);
-    //        byte[] Header = RD.ReadBytes(10);
-
-    //        Blocks B = default(Blocks);
-    //        for (int x = 1; x <= dataBlockCount; x++)
-    //        {
-    //            B.BlockID = RD.ReadInt32();
-    //            B.Time = TimeTag.Convert(RD.ReadDouble());
-    //            Blocks.Add(B);
-    //        }
-
-    //        fs.Position = 0;
-    //        Points P = default(Points);
-    //        int NextPos = dataBlockSize * 1024;
-
-    //        byte[] Buffer = new byte[dataBlockSize * 1024];
-
-    //        fixed (byte* lp = Buffer)
-    //        {
-    //            foreach (Blocks BK in Blocks)
-    //            {
-    //                fs.Read(Buffer, 0, dataBlockSize * 1024);
-    //                int pos = 0;
-    //                while (pos < dataBlockSize * 1024 - 9)
-    //                {
-
-    //                    int I = *(int*)(lp + pos);
-    //                    short S = *(short*)(lp + pos + 4);
-    //                    float V = *(float*)(lp + pos + 6);
-    //                    pos += 10;
-
-    //                    long TimeDiff = I * 1000L + (S >> 5);
-    //                    if (TimeDiff != 0)
-    //                    {
-    //                        P.Time = TimeTag.Convert(TimeDiff);
-    //                        P.Value = V;
-    //                        P.PointID = BK.BlockID;
-    //                        P.Flags = S & 0x1F;
-    //                        callback(P);
-    //                    }
-    //                }
-    //                //FS.Position = NextPos;
-    //                NextPos += dataBlockSize * 1024;
-    //            }
-    //            return;
-    //        }
-    //    }
-    //}
-
-    #endregion
 }
+    #endregion

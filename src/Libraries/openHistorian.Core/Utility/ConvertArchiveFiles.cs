@@ -90,6 +90,14 @@ namespace openHistorian.Core.Utility
             return count;
         }
 
+        /// <summary>
+        /// Converts a version 1 historian file to a new format, ignoring duplicate entries.
+        /// </summary>
+        /// <param name="oldFileName">The path to the old version 1 historian file to be converted.</param>
+        /// <param name="newFileName">The path for the new historian file to be created.</param>
+        /// <param name="compressionMethod">The encoding definition for data compression.</param>
+        /// <returns>The number of data points in the converted historian file.</returns>
+        /// <exception cref="ArgumentException">Thrown when the old file does not exist or the new file already exists.</exception>
         public static long ConvertVersion1FileIgnoreDuplicates(string oldFileName, string newFileName, EncodingDefinition compressionMethod)
         {
             if (!File.Exists(oldFileName))
