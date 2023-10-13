@@ -45,13 +45,9 @@ namespace openHistorian.Data.Query
             foreach (ISignalCalculation signal in signals)
             {
                 if (signal.HistorianId.HasValue)
-                {
                     calculatedResults.Add(signal.SignalId, queryResults[signal.HistorianId.Value]);
-                }
                 else
-                {
                     calculatedResults.Add(signal.SignalId, new SignalData(signal.Functions));
-                }
             }
 
             foreach (ISignalCalculation signal in signals)
