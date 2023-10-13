@@ -74,7 +74,7 @@ namespace openHistorian.Data.Query
                 if (!m_stream.Read())
                 {
                     Dispose();
-                    return true; //End of stream
+                    return true; // End of stream
                 }
 
                 if (m_stream.CurrentKey.Timestamp == timeStamp)
