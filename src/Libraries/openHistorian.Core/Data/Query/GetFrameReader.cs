@@ -110,10 +110,10 @@ namespace openHistorian.Data.Query
     {
 
         /// <summary>
-        /// Gets concentrated frames from the provided stream
+        /// Gets concentrated frames from the provided stream.
         /// </summary>
-        /// <param name="stream">the database to use</param>
-        /// <returns></returns>
+        /// <param name="stream">The database to use.</param>
+        /// <returns>The concentrated frames.</returns>
         public static FrameReader GetFrameReader(this PointStream stream)
         {
             return new FrameReader(stream);
