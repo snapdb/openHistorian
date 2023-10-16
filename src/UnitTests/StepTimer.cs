@@ -59,7 +59,7 @@ public static class StepTimer
 
     public static string GetResults()
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new();
         foreach (KeyValuePair<string, Stopwatch> kvp in AllStopwatches)
         {
             sb.Append(kvp.Key + '\t' + kvp.Value.Elapsed.TotalMilliseconds.ToString());

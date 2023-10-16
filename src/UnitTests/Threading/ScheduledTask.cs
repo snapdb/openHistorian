@@ -46,9 +46,9 @@ namespace openHistorian.PerformanceTests.Threading
         void Test(ThreadingMode mode)
         {
             const int Count = 1000000000;
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             m_doWorkCount = 0;
-            using (ScheduledTask work = new ScheduledTask(mode))
+            using (ScheduledTask work = new(mode))
             {
                 work.Running += work_DoWork;
 
@@ -61,7 +61,7 @@ namespace openHistorian.PerformanceTests.Threading
             m_doWorkCount = 0;
             sw.Reset();
 
-            using (ScheduledTask work = new ScheduledTask(mode))
+            using (ScheduledTask work = new(mode))
             {
                 work.Running += work_DoWork;
 
@@ -93,9 +93,9 @@ namespace openHistorian.PerformanceTests.Threading
         {
 
             const int Count = 1000000000;
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             m_doWorkCount = 0;
-            using (ScheduledTask work = new ScheduledTask(mode))
+            using (ScheduledTask work = new(mode))
             {
                 work.Running += work_DoWork;
 
@@ -111,7 +111,7 @@ namespace openHistorian.PerformanceTests.Threading
             m_doWorkCount = 0;
             sw.Reset();
 
-            using (ScheduledTask work = new ScheduledTask(mode))
+            using (ScheduledTask work = new(mode))
             {
                 work.Running += work_DoWork;
 
@@ -147,9 +147,9 @@ namespace openHistorian.PerformanceTests.Threading
             int workCount;
 
             const int Count = 100000000;
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             m_doWorkCount = 0;
-            using (ScheduledTask work = new ScheduledTask(mode))
+            using (ScheduledTask work = new(mode))
             {
                 work.Running += work_DoWork;
 
@@ -162,7 +162,7 @@ namespace openHistorian.PerformanceTests.Threading
             m_doWorkCount = 0;
             sw.Reset();
 
-            using (ScheduledTask work = new ScheduledTask(mode))
+            using (ScheduledTask work = new(mode))
             {
                 work.Running += work_DoWork;
 

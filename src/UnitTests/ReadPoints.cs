@@ -82,34 +82,32 @@ public class ReadPoints
     [Test]
     public static void ReadAllPoints()
     {
-        Stopwatch sw = new Stopwatch();
+        Stopwatch sw = new();
         int pointCount = 0;
 
-        HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("PPA", @"C:\Program Files\openHistorian\Archive\", true);
-        using (HistorianServer server = new HistorianServer(settings))
+        HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
+        using (HistorianServer server = new(settings))
         {
             DateTime start = DateTime.FromBinary(Convert.ToDateTime("2/1/2014").Date.Ticks + Convert.ToDateTime("6:00:00PM").TimeOfDay.Ticks).ToUniversalTime();
 
-            using (HistorianClient client = new HistorianClient("127.0.0.1", 12345))
-            using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty))
-            {
-                HistorianKey key = new HistorianKey();
-                HistorianValue value = new HistorianValue();
+            using HistorianClient client = new("127.0.0.1", 12345);
+            using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
+            HistorianKey key = new();
+            HistorianValue value = new();
 
-                sw.Start();
-                TreeStream<HistorianKey, HistorianValue> scan = database.Read((ulong)start.Ticks, ulong.MaxValue);
-                while (scan.Read(key, value) && pointCount < 10000000)
-                    pointCount++;
-                sw.Stop();
+            sw.Start();
+            TreeStream<HistorianKey, HistorianValue> scan = database.Read((ulong)start.Ticks, ulong.MaxValue);
+            while (scan.Read(key, value) && pointCount < 10000000)
+                pointCount++;
+            sw.Stop();
 
-                //sw.Start();
-                //using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue))
-                //{
-                //    while (frameReader.Read())
-                //        ;
-                //}
-                //sw.Stop();
-            }
+            //sw.Start();
+            //using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue))
+            //{
+            //    while (frameReader.Read())
+            //        ;
+            //}
+            //sw.Stop();
         }
         Console.WriteLine(pointCount);
         Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
@@ -175,31 +173,29 @@ public class ReadPoints
     [Test]
     public void TestReadPoints()
     {
-        Stopwatch sw = new Stopwatch();
+        Stopwatch sw = new();
         int pointCount = 0;
 
-        HistorianKey key = new HistorianKey();
-        HistorianValue value = new HistorianValue();
+        HistorianKey key = new();
+        HistorianValue value = new();
 
-        HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("PPA", @"C:\Program Files\openHistorian\Archive\", true);
+        HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
 
-        using (HistorianServer server = new HistorianServer(settings))
+        using (HistorianServer server = new(settings))
         {
-            using (HistorianClient client = new HistorianClient("127.0.0.1", 12345))
-            using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty))
-            {
+            using HistorianClient client = new("127.0.0.1", 12345);
+            using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
 
-                TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
-                while (stream.Read(key, value))
-                    ;
+            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
+            while (stream.Read(key, value))
+                ;
 
-                sw.Start();
-                stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
-                while (stream.Read(key, value))
-                    pointCount++;
+            sw.Start();
+            stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
+            while (stream.Read(key, value))
+                pointCount++;
 
-                sw.Stop();
-            }
+            sw.Stop();
         }
         Console.WriteLine(pointCount);
         Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
@@ -295,24 +291,22 @@ public class ReadPoints
     public static void TestReadPoints2()
     {
         int pointCount = 0;
-        HistorianKey key = new HistorianKey();
-        HistorianValue value = new HistorianValue();
-        HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("PPA", @"C:\Program Files\openHistorian\Archive\", true);
-        using (HistorianServer server = new HistorianServer(settings))
+        HistorianKey key = new();
+        HistorianValue value = new();
+        HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
+        using HistorianServer server = new(settings);
+        Stopwatch sw = new();
+        sw.Start();
+        using (HistorianClient client = new("127.0.0.1", 12345))
+        using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty))
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            using (HistorianClient client = new HistorianClient("127.0.0.1", 12345))
-            using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty))
-            {
 
-                TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
-                while (stream.Read(key, value))
-                    pointCount++;
+            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
+            while (stream.Read(key, value))
+                pointCount++;
 
-            }
-            sw.Stop();
-            //MessageBox.Show(sw.Elapsed.TotalSeconds.ToString());
         }
+        sw.Stop();
+        //MessageBox.Show(sw.Elapsed.TotalSeconds.ToString());
     }
 }

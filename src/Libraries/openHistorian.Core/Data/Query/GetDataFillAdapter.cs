@@ -36,7 +36,9 @@ namespace openHistorian.Data.Query
         /// <summary>
         /// The underlying point stream used for data retrieval.
         /// </summary>
-        readonly PointStream m_stream;
+#pragma warning disable CS0618 // Type or member is obsolete
+        private readonly PointStream m_stream;
+#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         /// Initializes a new instance of the DataFillAdapter class with the specified point stream.

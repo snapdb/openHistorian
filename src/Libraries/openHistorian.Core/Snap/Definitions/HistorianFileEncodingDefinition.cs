@@ -28,9 +28,14 @@ using openHistorian.Snap.Encoding;
 using SnapDB.Snap;
 using SnapDB.Snap.Definitions;
 using SnapDB.Snap.Encoding;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System;
 
 namespace openHistorian.Snap.Definitions
 {
+    /// <summary>
+    /// Defines the encoding method for storing and retrieving pairs of HistorianKey and HistorianValue.
+    /// </summary>
     public class HistorianFileEncodingDefinition
         : PairEncodingDefinitionBase
     {
@@ -38,14 +43,29 @@ namespace openHistorian.Snap.Definitions
         /// <summary>
         /// A unique identifier for this compression method.
         /// </summary>
-        public static readonly EncodingDefinition TypeGuid = new EncodingDefinition(new Guid(0xaaca05b5, 0x6b72, 0x4512, 0x85, 0x9a, 0xf4, 0xb2, 0xdf, 0x39, 0x4b, 0xf7));
+        public static readonly EncodingDefinition TypeGuid = new(new Guid(0xaaca05b5, 0x6b72, 0x4512, 0x85, 0x9a, 0xf4, 0xb2, 0xdf, 0x39, 0x4b, 0xf7));
 
+        /// <summary>
+        /// Gets the type of keys used in the encoding method when not used in a generic context.
+        /// </summary>
         public override Type KeyTypeIfNotGeneric => typeof(HistorianKey);
 
+        /// <summary>
+        /// gets the type of values used in the encoding method when not used in a generic context.
+        /// </summary>
         public override Type ValueTypeIfNotGeneric => typeof(HistorianValue);
 
+        /// <summary>
+        /// Gets the unique encoding method defined by the TypeGuid.
+        /// </summary>
         public override EncodingDefinition Method => TypeGuid;
 
+        /// <summary>
+        /// Creates a new instance of the encoding method for the specified key and value types.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the keys.</typeparam>
+        /// <typeparam name="TValue">The type of the values.</typeparam>
+        /// <returns>An instance of the encoding method.</returns>
         public override PairEncodingBase<TKey, TValue> Create<TKey, TValue>()
         {
             return (PairEncodingBase<TKey, TValue>)(object)new HistorianFileEncoding();

@@ -30,15 +30,18 @@ namespace openHistorian.Data.Query
 {
     /// <summary>
     /// This type of signal only supports reading and writing data via 
-    /// its raw type. Type conversions are not supported since its origional
+    /// its raw type. Type conversions are not supported since its original
     /// type is unknown.
     /// </summary>
     public class SignalDataUnknown
         : SignalDataBase
     {
-        private readonly List<ulong> m_dateTime = new List<ulong>();
-        private readonly List<ulong> m_values = new List<ulong>();
+        private readonly List<ulong> m_dateTime = new();
+        private readonly List<ulong> m_values = new();
 
+        /// <summary>
+        /// Data whose original type is unknown and therefore cannot be converted.
+        /// </summary>
         public SignalDataUnknown()
         {
         }
@@ -56,8 +59,8 @@ namespace openHistorian.Data.Query
         /// <summary>
         /// Adds a value to the signal in its raw 64-bit format.
         /// </summary>
-        /// <param name="time">the time value to consider</param>
-        /// <param name="value">the 64-bit value</param>
+        /// <param name="time">The time value to consider.</param>
+        /// <param name="value">The 64-bit value.</param>
         public override void AddDataRaw(ulong time, ulong value)
         {
             if (IsComplete)
@@ -71,8 +74,8 @@ namespace openHistorian.Data.Query
         /// raw 64-bit format.
         /// </summary>
         /// <param name="index">The zero based index of the position</param>
-        /// <param name="time">an output field for the time</param>
-        /// <param name="value">an output field for the raw 64-bit value</param>
+        /// <param name="time">An output field for the time</param>
+        /// <param name="value">An output field for the raw 64-bit value</param>
         public override void GetDataRaw(int index, out ulong time, out ulong value)
         {
             time = m_dateTime[index];

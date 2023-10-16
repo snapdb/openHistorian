@@ -29,14 +29,16 @@ using openHistorian.Snap;
 
 namespace openHistorian.Data;
 
-
+/// <summary>
+/// 
+/// </summary>
 public class PeriodicScanner
 {
-    private TimeSpan m_windowTolerance;
+    private readonly TimeSpan m_windowTolerance;
 
     private readonly List<long> m_downSampleRates;
     private readonly List<long> m_downSampleTicks;
-    const decimal DecimalTicksPerDay = TimeSpan.TicksPerDay;
+    private const decimal DecimalTicksPerDay = TimeSpan.TicksPerDay;
 
     /// <summary>
     /// Initializes a new instance of the PeriodicScanner class with the specified number of samples per second.
@@ -61,6 +63,13 @@ public class PeriodicScanner
         CalculateDownSampleRates(samplesPerSecond);
     }
 
+    /// <summary>
+    /// Suggests the number of samples per day based on the specified time range and sample count.
+    /// </summary>
+    /// <param name="startTime">The start time of the time range.</param>
+    /// <param name="endTime">The end time of the time range.</param>
+    /// <param name="sampleCount">The desired sample count.</param>
+    /// <returns>The suggested number of samples per day.</returns>
     public long SuggestSamplesPerDay(DateTime startTime, DateTime endTime, uint sampleCount)
     {
         double days = (endTime - startTime).TotalDays;
@@ -72,11 +81,25 @@ public class PeriodicScanner
         return sampleRate;
     }
 
+    /// <summary>
+    /// Gets a seek filter parser based on the specified time range and sample count.
+    /// </summary>
+    /// <param name="startTime">The start time of the time range.</param>
+    /// <param name="endTime">The end time of the time range.</param>
+    /// <param name="sampleCount">The desired sample count.</param>
+    /// <returns>A seek filter parser for the specified time range and sample count.</returns>
     public SeekFilterBase<HistorianKey> GetParser(DateTime startTime, DateTime endTime, uint sampleCount)
     {
         return GetParser(startTime, endTime, (ulong)SuggestSamplesPerDay(startTime, endTime, sampleCount));
     }
 
+    /// <summary>
+    /// Gets a seek filter parser based on the specified time range and samples per day.
+    /// </summary>
+    /// <param name="startTime">The start time of the time range.</param>
+    /// <param name="endTime">The end time of the time range.</param>
+    /// <param name="samplesPerDay">The number of samples per day.</param>
+    /// <returns>A seek filter parser for the specified time range and samples per day.</returns>
     public SeekFilterBase<HistorianKey> GetParser(DateTime startTime, DateTime endTime, ulong samplesPerDay)
     {
         long interval = (long)(TimeSpan.TicksPerDay / samplesPerDay);
@@ -101,7 +124,7 @@ public class PeriodicScanner
         }
         return TimestampSeekFilter.CreateFromIntervalData<HistorianKey>((ulong)startTime2, (ulong)endTime2, bigInterval, (ulong)interval, (ulong)m_windowTolerance.Ticks);
     }
-    private long RoundDownToNearestSample(long startTime, long samplesPerDay, long interval)
+    private static long RoundDownToNearestSample(long startTime, long samplesPerDay, long interval)
     {
         if (interval * samplesPerDay == TimeSpan.TicksPerDay)
         {
@@ -121,7 +144,7 @@ public class PeriodicScanner
         }
     }
 
-    private long RoundUpToNearestSample(long startTime, long samplesPerDay, long interval)
+    private static long RoundUpToNearestSample(long startTime, long samplesPerDay, long interval)
     {
         if (interval * samplesPerDay == TimeSpan.TicksPerDay)
         {
@@ -147,11 +170,11 @@ public class PeriodicScanner
                 return dateTicks + timeTicks - (long)overBy + interval;
         }
     }
-    private List<int> FactorNumber(int number)
+    private static List<int> FactorNumber(int number)
     {
         if (number < 1)
-            throw new ArgumentOutOfRangeException("number", "Must be greather than or equal to 1");
-        List<int> factors = new List<int>();
+            throw new ArgumentOutOfRangeException(nameof(number), "Must be greather than or equal to 1");
+        List<int> factors = new();
         for (int x = 1; x * x <= number; x++)
         {
             if (number % x == 0)

@@ -200,35 +200,33 @@ public class OldHistorianReader : IDisposable
         int footerPosition = (int)m_fileStream.Length - 32;
         m_fileStream.Position = footerPosition;
 
-        using (BinaryReader reader = new BinaryReader(m_fileStream, Encoding.Default, true))
+        using BinaryReader reader = new(m_fileStream, Encoding.Default, true);
+        m_startTime = TimeTag.Convert(reader.ReadDouble());
+        m_endTime = TimeTag.Convert(reader.ReadDouble());
+        m_pointsReceived = reader.ReadInt32();
+        m_pointsArchived = reader.ReadInt32();
+        m_dataBlockSize = reader.ReadInt32();
+        m_dataBlockCount = reader.ReadInt32();
+
+        int fatPosition = footerPosition - 10 - 12 * m_dataBlockCount;
+        m_fileStream.Position = fatPosition;
+
+        m_dataBlocks = new List<DataBlock>(m_dataBlockCount);
+
+        // Scan through header bytes
+        reader.ReadBytes(10);
+
+        DataBlock block = default;
+
+        for (int x = 1; x <= m_dataBlockCount; x++)
         {
-            m_startTime = TimeTag.Convert(reader.ReadDouble());
-            m_endTime = TimeTag.Convert(reader.ReadDouble());
-            m_pointsReceived = reader.ReadInt32();
-            m_pointsArchived = reader.ReadInt32();
-            m_dataBlockSize = reader.ReadInt32();
-            m_dataBlockCount = reader.ReadInt32();
-
-            int fatPosition = footerPosition - 10 - 12 * m_dataBlockCount;
-            m_fileStream.Position = fatPosition;
-
-            m_dataBlocks = new List<DataBlock>(m_dataBlockCount);
-
-            // Scan through header bytes
-            reader.ReadBytes(10);
-
-            DataBlock block = default;
-
-            for (int x = 1; x <= m_dataBlockCount; x++)
-            {
-                block.BlockID = reader.ReadInt32();
-                block.Timestamp = TimeTag.Convert(reader.ReadDouble());
-                m_dataBlocks.Add(block);
-            }
-
-            m_fileStream.Position = 0;
-            m_buffer = new byte[m_dataBlockSize * 1024];
+            block.BlockID = reader.ReadInt32();
+            block.Timestamp = TimeTag.Convert(reader.ReadDouble());
+            m_dataBlocks.Add(block);
         }
+
+        m_fileStream.Position = 0;
+        m_buffer = new byte[m_dataBlockSize * 1024];
     }
 
     /// <summary>

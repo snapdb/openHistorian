@@ -37,9 +37,8 @@ namespace openHistorian.Net
     /// </summary>
     public class HistorianServer : IDisposable
     {
-        #region [ Members ]
 
-        private bool m_disposed;
+        #region [ Members ]
 
         #endregion
 
@@ -58,11 +57,11 @@ namespace openHistorian.Net
         /// </summary>
         public HistorianServer(int? port, string networkInterfaceIP = null)
         {
-            ServerSettings server = new ServerSettings();
+            ServerSettings server = new();
 
             if (port.HasValue || !string.IsNullOrWhiteSpace(networkInterfaceIP))
             {
-                SnapSocketListenerSettings settings = new SnapSocketListenerSettings
+                SnapSocketListenerSettings settings = new()
                 {
                     LocalTcpPort = port ?? SnapSocketListenerSettings.DefaultNetworkPort,
                     LocalIpAddress = networkInterfaceIP,
@@ -78,6 +77,12 @@ namespace openHistorian.Net
             Host = new SnapServer(server);
         }
 
+        /// <summary>
+        /// Adds a specified database to the historian..
+        /// </summary>
+        /// <param name="database">The database to add to the historian server.</param>
+        /// <param name="port"><c>null</c>. The port number to be associated with the added database.</param>
+        /// <param name="networkInterfaceIP"><c>null</c>. IP to be associated with the added database.</param>
         public HistorianServer(HistorianServerDatabaseConfig database, int? port = null, string networkInterfaceIP = null)
             : this(port, networkInterfaceIP)
         {

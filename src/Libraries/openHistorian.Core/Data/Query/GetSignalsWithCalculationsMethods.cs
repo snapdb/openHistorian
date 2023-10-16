@@ -28,33 +28,53 @@ using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Reader;
 
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// Provides extension methods for querying historian signals with calculations.
+/// </summary>
+public static class GetSignalsWithCalculationsMethods
 {
-    public static class GetSignalsWithCalculationsMethods
+    /// <summary>
+    /// Gets historian signals with calculations within a specified time range.
+    /// </summary>
+    /// <param name="database">The database reader instance used for signal retrieval.</param>
+    /// <param name="startTime">The start time of the query range.</param>
+    /// <param name="endTime">The end time of the query range.</param>
+    /// <param name="signals">An enumerable collection of signal calculations to apply to the query.</param>
+    /// <returns>A dictionary of signals and their corresponding signal data.</returns>
+    public static IDictionary<Guid, SignalDataBase> GetSignalsWithCalculations(this ClientDatabaseBase<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ISignalCalculation> signals)
     {
-        public static IDictionary<Guid, SignalDataBase> GetSignalsWithCalculations(this ClientDatabaseBase<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ISignalCalculation> signals)
+        return database.GetSignalsWithCalculations(TimestampSeekFilter.CreateFromRange<HistorianKey>(startTime, endTime), signals, SortedTreeEngineReaderOptions.Default);
+    }
+
+    /// <summary>
+    /// Gets historian signals with calculations using specified timestamps, signals, and reader options.
+    /// </summary>
+    /// <param name="database">The database reader instance used for signal retrieval.</param>
+    /// <param name="timestamps">The seek filter for specifying the timestamp range.</param>
+    /// <param name="signals">An enumerable collection of signal calculations to apply to the query.</param>
+    /// <param name="readerOptions">The reader options for accessing the database.</param>
+    /// <returns>A dictionary of signals and their corresponding signal data after applying calculations.</returns>
+    public static IDictionary<Guid, SignalDataBase> GetSignalsWithCalculations(this ClientDatabaseBase<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, IEnumerable<ISignalCalculation> signals, SortedTreeEngineReaderOptions readerOptions)
+    {
+        Dictionary<ulong, SignalDataBase> queryResults = database.GetSignals(timestamps, signals, readerOptions);
+
+        Dictionary<Guid, SignalDataBase> calculatedResults = new();
+        foreach (ISignalCalculation signal in signals)
         {
-            return database.GetSignalsWithCalculations(TimestampSeekFilter.CreateFromRange<HistorianKey>(startTime, endTime), signals, SortedTreeEngineReaderOptions.Default);
+            if (signal.HistorianId.HasValue)
+                calculatedResults.Add(signal.SignalId, queryResults[signal.HistorianId.Value]);
+
+            else
+                calculatedResults.Add(signal.SignalId, new SignalData(signal.Functions));
         }
 
-        public static IDictionary<Guid, SignalDataBase> GetSignalsWithCalculations(this ClientDatabaseBase<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, IEnumerable<ISignalCalculation> signals, SortedTreeEngineReaderOptions readerOptions)
+        foreach (ISignalCalculation signal in signals)
         {
-            Dictionary<ulong, SignalDataBase> queryResults = database.GetSignals(timestamps, signals, readerOptions);
-
-            Dictionary<Guid, SignalDataBase> calculatedResults = new Dictionary<Guid, SignalDataBase>();
-            foreach (ISignalCalculation signal in signals)
-            {
-                if (signal.HistorianId.HasValue)
-                    calculatedResults.Add(signal.SignalId, queryResults[signal.HistorianId.Value]);
-                else
-                    calculatedResults.Add(signal.SignalId, new SignalData(signal.Functions));
-            }
-
-            foreach (ISignalCalculation signal in signals)
-            {
-                signal.Calculate(calculatedResults);
-            }
-            return calculatedResults;
+            signal.Calculate(calculatedResults);
         }
+
+        return calculatedResults;
     }
 }

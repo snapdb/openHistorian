@@ -86,11 +86,11 @@ public class DebugStopwatch
 
     public double TimeEventMedian(Action function)
     {
-        List<double> values = new List<double>();
+        List<double> values = new();
         GC.Collect();
         function();
         int count = 0;
-        Stopwatch swTotal = new Stopwatch();
+        Stopwatch swTotal = new();
         swTotal.Start();
         while (swTotal.Elapsed.TotalSeconds < 1 && values.Count < 100)
         {

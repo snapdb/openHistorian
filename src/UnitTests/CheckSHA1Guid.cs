@@ -24,7 +24,7 @@
 using System;
 using System.Diagnostics;
 using System.Security.Cryptography;
-using GSF.Security.Cryptography;
+using SnapDB.Security.Cryptography;
 using NUnit.Framework;
 using Random = System.Random;
 

@@ -97,6 +97,9 @@ namespace openHistorian.Data.Query
             }
         }
 
+        /// <summary>
+        /// Disposes of the stream.
+        /// </summary>
         public void Dispose()
         {
             m_stream.Dispose();

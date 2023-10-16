@@ -31,18 +31,39 @@ using SnapDB.Snap.Encoding;
 
 namespace openHistorian.Snap.Definitions
 {
+    /// <summary>
+    /// Defines an encoding definition for historian stream data.
+    /// </summary>
     public class HistorianStreamEncodingDefinition
         : PairEncodingDefinitionBase
     {
+        /// <summary>
+        /// Sets the encoding definition.
+        /// </summary>
         // {0418B3A7-F631-47AF-BBFA-8B9BC0378328}
-        public static readonly EncodingDefinition TypeGuid = new EncodingDefinition(new Guid(0x0418b3a7, 0xf631, 0x47af, 0xbb, 0xfa, 0x8b, 0x9b, 0xc0, 0x37, 0x83, 0x28));
+        public static readonly EncodingDefinition TypeGuid = new(new Guid(0x0418b3a7, 0xf631, 0x47af, 0xbb, 0xfa, 0x8b, 0x9b, 0xc0, 0x37, 0x83, 0x28));
 
+        /// <summary>
+        /// Gets the type of the key if not specified as a generic parameter.
+        /// </summary>
         public override Type KeyTypeIfNotGeneric => typeof(HistorianKey);
 
+        /// <summary>
+        /// Gets the type of the value if not specified as a generic parameter.
+        /// </summary>
         public override Type ValueTypeIfNotGeneric => typeof(HistorianValue);
 
+        /// <summary>
+        /// Gets the encoding method.
+        /// </summary>
         public override EncodingDefinition Method => TypeGuid;
 
+        /// <summary>
+        /// Creates an instance of the historian stream encoding for the specified key and value types.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TValue">The type of the value.</typeparam>
+        /// <returns>An encoding instance for historian stream data.</returns>
         public override PairEncodingBase<TKey, TValue> Create<TKey, TValue>()
         {
             return (PairEncodingBase<TKey, TValue>)(object)new HistorianStreamEncoding();

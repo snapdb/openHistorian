@@ -34,36 +34,11 @@ namespace openHistorian.PerformanceTests
         [STAThread]
         private static void Main()
         {
-            //var m = new MeasureCompression();
-            //m.Test();
 
-            GCTime GCT = new GCTime();
-            //GCT.Test();
+            GCTime GCT = new();
             GCT.Test2();
 
-
-
-            //var tl = new TinyLock_Test();
-            //tl.TestTinyLock_Lock();
-            //tl.TestMonitor();
-
-            //var hl = new HalfLock_Test();
-            //hl.TestTinyLock_Lock();
             Console.ReadLine();
-
-
-            //var st = new ThreadContainerBase_Test();
-            ////st.TestTimed();
-            //st.Test();
-
-
-            //var tree = new SortedTree256Test();
-            //tree.SortedTree256Archive();
-            //ReadPoints.TestReadPoints2();
-            //ReadPoints.ReadAllPoints();
-            //ReadPoints.TestReadFilteredPoints();
-
-            //Console.ReadLine();
         }
     }
 }

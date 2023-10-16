@@ -49,8 +49,8 @@ public class ConcurrentReading
 
         StopReading = false;
 
-        HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("PPA", @"C:\Program Files\openHistorian\Archive\", true);
-        using (HistorianServer server = new HistorianServer(settings))
+        HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
+        using (HistorianServer server = new(settings))
         {
             Thread.Sleep(1000);
 
@@ -82,8 +82,8 @@ public class ConcurrentReading
 
         StopReading = false;
 
-        HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("PPA", @"C:\Program Files\openHistorian\Archive\", true);
-        using (HistorianServer server = new HistorianServer(settings))
+        HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
+        using (HistorianServer server = new(settings))
         {
             Thread.Sleep(1000);
 
@@ -108,7 +108,7 @@ public class ConcurrentReading
 
     void StartScanner()
     {
-        Thread th = new Thread(ScannerThread);
+        Thread th = new(ScannerThread);
         th.IsBackground = true;
         th.Start();
     }
@@ -124,19 +124,17 @@ public class ConcurrentReading
             while (!StopReading)
             {
 
-                Stopwatch sw = new Stopwatch();
-                using (HistorianClient client = new HistorianClient("127.0.0.1", 12345))
-                using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty))
-                {
-                    HistorianKey key = new HistorianKey();
-                    HistorianValue value = new HistorianValue();
+                Stopwatch sw = new();
+                using HistorianClient client = new("127.0.0.1", 12345);
+                using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty);
+                HistorianKey key = new();
+                HistorianValue value = new();
 
-                    sw.Start();
-                    TreeStream<HistorianKey, HistorianValue> scan = database.Read(0, ulong.MaxValue, new ulong[] { 65, 953, 5562 });
-                    while (scan.Read(key, value))
-                        ;
-                    sw.Stop();
-                }
+                sw.Start();
+                TreeStream<HistorianKey, HistorianValue> scan = database.Read(0, ulong.MaxValue, new ulong[] { 65, 953, 5562 });
+                while (scan.Read(key, value))
+                    ;
+                sw.Stop();
 
                 //Console.WriteLine("Thread: " + threadId.ToString() + " " + "Run Number: " + myId.ToString() + " " + (pointCount / sw.Elapsed.TotalSeconds / 1000000).ToString());
             }
@@ -150,7 +148,7 @@ public class ConcurrentReading
 
     void StartReader()
     {
-        Thread th = new Thread(ReaderThread);
+        Thread th = new(ReaderThread);
         th.IsBackground = true;
         th.Start();
     }
@@ -167,20 +165,18 @@ public class ConcurrentReading
             {
 
                 int myId = Interlocked.Increment(ref ReaderNumber);
-                Stopwatch sw = new Stopwatch();
+                Stopwatch sw = new();
                 int pointCount = 0;
-                using (HistorianClient client = new HistorianClient("127.0.0.1", 12345))
-                using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty))
-                {
-                    HistorianKey key = new HistorianKey();
-                    HistorianValue value = new HistorianValue();
+                using HistorianClient client = new("127.0.0.1", 12345);
+                using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty);
+                HistorianKey key = new();
+                HistorianValue value = new();
 
-                    sw.Start();
-                    TreeStream<HistorianKey, HistorianValue> scan = database.Read((ulong)start.Ticks, ulong.MaxValue);//, new ulong[] { 65, 953, 5562 });
-                    while (scan.Read(key, value) && pointCount < PointsToRead)
-                        pointCount++;
-                    sw.Stop();
-                }
+                sw.Start();
+                TreeStream<HistorianKey, HistorianValue> scan = database.Read((ulong)start.Ticks, ulong.MaxValue);//, new ulong[] { 65, 953, 5562 });
+                while (scan.Read(key, value) && pointCount < PointsToRead)
+                    pointCount++;
+                sw.Stop();
 
                 //Console.WriteLine("Thread: " + threadId.ToString() + " " + "Run Number: " + myId.ToString() + " " + (pointCount / sw.Elapsed.TotalSeconds / 1000000).ToString());
             }

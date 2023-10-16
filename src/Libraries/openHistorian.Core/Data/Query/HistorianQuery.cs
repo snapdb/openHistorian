@@ -29,35 +29,50 @@ using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Reader;
 
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// Represents a historian data query module.
+/// </summary>
+public class HistorianQuery
 {
-    public class HistorianQuery
+    private readonly SnapClient m_historian;
+    private readonly int m_samplesPerSecond = 30;
+
+    /// <summary>
+    /// Initializes a new instance of the HistorianQuery class using server and port information.
+    /// </summary>
+    /// <param name="server">The server address for the historian.</param>
+    /// <param name="port">The port number for the historian.</param>
+    public HistorianQuery(string server, int port)
     {
-        private readonly SnapClient m_historian;
-        private readonly int m_samplesPerSecond = 30;
+    }
 
-        public HistorianQuery(string server, int port)
-        {
-            //IPAddress ip = Dns.GetHostAddresses(server)[0];
-            //m_historian = new RemoteHistorian<HistorianKey, HistorianValue>(new IPEndPoint(ip, port));
-        }
+    /// <summary>
+    /// Initializes a new instance of the HistorianQuery class using an existing SnapClient instance.
+    /// </summary>
+    /// <param name="historian">An existing SnapClient instance for historian connectivity.</param>
+    public HistorianQuery(SnapClient historian)
+    {
+        m_historian = historian;
+    }
 
-        public HistorianQuery(SnapClient historian)
-        {
-            m_historian = historian;
-        }
+    /// <summary>
+    /// Retrieves a query result from the historian for the specified time range and signals.
+    /// </summary>
+    /// <param name="startTime">The start time for the query.</param>
+    /// <param name="endTime">The end time for the query.</param>
+    /// <param name="zoomLevel">The zoom level for the query.</param>
+    /// <param name="signals">A collection of signal calculations to apply to the query.</param>
+    /// <returns>A dictionary of signals and their corresponding data as SignalDataBase.</returns>
+    public IDictionary<Guid, SignalDataBase> GetQueryResult(DateTime startTime, DateTime endTime, int zoomLevel, IEnumerable<ISignalCalculation> signals)
+    {
+        using ClientDatabaseBase<HistorianKey, HistorianValue> db = m_historian.GetDatabase<HistorianKey, HistorianValue>("PPA");
+        PeriodicScanner scanner = new(m_samplesPerSecond);
+        SeekFilterBase<HistorianKey> timestamps = scanner.GetParser(startTime, endTime, 1500u);
+        SortedTreeEngineReaderOptions options = new(TimeSpan.FromSeconds(1));
+        IDictionary<Guid, SignalDataBase> results = db.GetSignalsWithCalculations(timestamps, signals, options);
 
-        public IDictionary<Guid, SignalDataBase> GetQueryResult(DateTime startTime, DateTime endTime, int zoomLevel, IEnumerable<ISignalCalculation> signals)
-        {
-            using (ClientDatabaseBase<HistorianKey, HistorianValue> db = m_historian.GetDatabase<HistorianKey, HistorianValue>("PPA"))
-            {
-                //var db = m_historian.ConnectToDatabase("Full Resolution Synchrophasor");
-                PeriodicScanner scanner = new PeriodicScanner(m_samplesPerSecond);
-                SeekFilterBase<HistorianKey> timestamps = scanner.GetParser(startTime, endTime, 1500u);
-                SortedTreeEngineReaderOptions options = new SortedTreeEngineReaderOptions(TimeSpan.FromSeconds(1));
-                IDictionary<Guid, SignalDataBase> results = db.GetSignalsWithCalculations(timestamps, signals, options);
-                return results;
-            }
-        }
+        return results;
     }
 }

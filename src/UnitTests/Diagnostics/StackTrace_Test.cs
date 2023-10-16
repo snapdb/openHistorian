@@ -38,7 +38,7 @@ namespace openHistorian.UnitTests.Diagnostics
             Console.WriteLine(Environment.StackTrace);
 
             RunMethod();
-            DebugStopwatch sw = new DebugStopwatch();
+            DebugStopwatch sw = new();
             double time = sw.TimeEvent(() =>
             {
                 for (int x = 0; x < 1000; x++)
@@ -57,10 +57,10 @@ namespace openHistorian.UnitTests.Diagnostics
         }
         void RunMethod2()
         {
-            StackTrace st = new StackTrace(true);
+            StackTrace st = new(true);
             StackFrame[] frames = st.GetFrames();
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             foreach (StackFrame frame in frames)
             {
                 sb.AppendLine(frame.GetMethod().Name);

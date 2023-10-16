@@ -50,12 +50,22 @@ namespace openHistorian.Snap
         /// </summary>
         public ulong Value3;
 
+        /// <summary>
+        /// The generic GUID type to use for encoding.
+        /// </summary>
         public override Guid GenericTypeGuid =>
             // {24DDE7DC-67F9-42B6-A11B-E27C3E62D9EF}
-            new Guid(0x24dde7dc, 0x67f9, 0x42b6, 0xa1, 0x1b, 0xe2, 0x7c, 0x3e, 0x62, 0xd9, 0xef);
+            new(0x24dde7dc, 0x67f9, 0x42b6, 0xa1, 0x1b, 0xe2, 0x7c, 0x3e, 0x62, 0xd9, 0xef);
 
+        /// <summary>
+        /// The size of the encoded data.
+        /// </summary>
         public override int Size => 24;
 
+        /// <summary>
+        /// Copies the values to a specified destination.
+        /// </summary>
+        /// <param name="destination">The destination to send the copies to.</param>
         public override void CopyTo(HistorianValue destination)
         {
             destination.Value1 = Value1;
@@ -144,7 +154,7 @@ namespace openHistorian.Snap
         /// <returns>A clone of the <see cref="HistorianValue"/> class.</returns>
         public HistorianValue Clone()
         {
-            HistorianValue value = new HistorianValue();
+            HistorianValue value = new();
             value.Value1 = Value1;
             value.Value2 = Value2;
             value.Value3 = Value3;
@@ -200,12 +210,21 @@ namespace openHistorian.Snap
 
         #region [ Optional Overrides ]
 
+        /// <summary>
+        /// Reads the byte stream and assigns values to Value1, Value2, and Value3.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
         public override unsafe void Read(byte* stream)
         {
             Value1 = *(ulong*)stream;
             Value2 = *(ulong*)(stream + 8);
             Value3 = *(ulong*)(stream + 16);
         }
+        
+        /// <summary>
+        /// Writes the data for Value1, Value2, and Value3 to the stream.
+        /// </summary>
+        /// <param name="stream">The stream to write to.</param>
         public override unsafe void Write(byte* stream)
         {
             *(ulong*)stream = Value1;

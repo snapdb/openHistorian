@@ -45,9 +45,12 @@ namespace openHistorian.Snap
         /// </remarks>
         public ulong EntryNumber;
 
+        /// <summary>
+        /// The generic GUID used for the encoding.
+        /// </summary>
         public override Guid GenericTypeGuid =>
             // {6527D41B-9D04-4BFA-8133-05273D521D46}
-            new Guid(0x6527d41b, 0x9d04, 0x4bfa, 0x81, 0x33, 0x05, 0x27, 0x3d, 0x52, 0x1d, 0x46);
+            new(0x6527d41b, 0x9d04, 0x4bfa, 0x81, 0x33, 0x05, 0x27, 0x3d, 0x52, 0x1d, 0x46);
 
         /// <summary>
         /// Sets the available size.
@@ -65,7 +68,7 @@ namespace openHistorian.Snap
         }
 
         /// <summary>
-        /// Sets all of the values in this class to their maximum value
+        /// Sets all of the values in this class to their maximum value.
         /// </summary>
         public override void SetMax()
         {
@@ -167,10 +170,12 @@ namespace openHistorian.Snap
         /// <returns>The clone of the HistorianKey.</returns>
         public HistorianKey Clone()
         {
-            HistorianKey key = new HistorianKey();
-            key.Timestamp = Timestamp;
-            key.PointID = PointID;
-            key.EntryNumber = EntryNumber;
+            HistorianKey key = new()
+            {
+                Timestamp = Timestamp,
+                PointID = PointID,
+                EntryNumber = EntryNumber
+            };
             return key;
         }
 
@@ -182,7 +187,7 @@ namespace openHistorian.Snap
         /// </remarks>
         public DateTime TimestampAsDate
         {
-            get => new DateTime((long)Timestamp, DateTimeKind.Utc);
+            get => new((long)Timestamp, DateTimeKind.Utc);
             set => Timestamp = (ulong)value.Ticks;
         }
 
@@ -210,20 +215,21 @@ namespace openHistorian.Snap
 
         #region [ Optional Overrides ]
 
-        // Read(byte*)
-        // Write(byte*)
-        // IsLessThan(T)
-        // IsEqualTo(T)
-        // IsGreaterThan(T)
-        // IsLessThanOrEqualTo(T)
-        // IsBetween(T,T)
-
+        /// <summary>
+        /// Reads the byte stream data and sets the timestamp, point ID, and entry number.
+        /// </summary>
+        /// <param name="stream">The stream to read.</param>
         public override unsafe void Read(byte* stream)
         {
             Timestamp = *(ulong*)stream;
             PointID = *(ulong*)(stream + 8);
             EntryNumber = *(ulong*)(stream + 16);
         }
+
+        /// <summary>
+        /// Writes the timestamp, point ID, and entry number to the stream.
+        /// </summary>
+        /// <param name="stream">The stream to write to.</param>
         public override unsafe void Write(byte* stream)
         {
             *(ulong*)stream = Timestamp;

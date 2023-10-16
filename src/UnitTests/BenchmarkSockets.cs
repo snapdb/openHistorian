@@ -10,15 +10,15 @@ namespace openHistorian.PerformanceTests
     [TestFixture]
     public class BenchmarkSockets
     {
-        const int Loop = 10000;
+        private const int Loop = 10000;
 
         [Test]
         public void Run()
         {
-            Thread read = new Thread(Reader);
+            Thread read = new(Reader);
             read.IsBackground = true;
 
-            TcpListener listen = new TcpListener(IPAddress.Parse("127.0.0.1"), 36345);
+            TcpListener listen = new(IPAddress.Parse("127.0.0.1"), 36345);
             listen.Start();
 
             Thread.Sleep(100);
@@ -27,7 +27,7 @@ namespace openHistorian.PerformanceTests
             TcpClient client = listen.AcceptTcpClient();
 
             byte[] data = new byte[154600];
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
 
             NetworkStream stream = client.GetStream();
 
@@ -47,10 +47,10 @@ namespace openHistorian.PerformanceTests
         void Reader()
         {
 
-            TcpClient client = new TcpClient();
+            TcpClient client = new();
             client.Connect("127.0.0.1", 36345);
 
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             NetworkStream stream = client.GetStream();
             byte[] data = new byte[154600];
             sw.Start();

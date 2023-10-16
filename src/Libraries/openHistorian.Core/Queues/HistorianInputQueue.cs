@@ -50,8 +50,8 @@ namespace openHistorian.Queues
 
             public bool Load(TreeStream<HistorianKey, HistorianValue> stream)
             {
-                HistorianKey key = new HistorianKey();
-                HistorianValue value = new HistorianValue();
+                HistorianKey key = new();
+                HistorianValue value = new();
                 if (stream.Read(key, value))
                 {
                     Key1 = key.Timestamp;
@@ -77,6 +77,10 @@ namespace openHistorian.Queues
 
         private readonly Func<ClientDatabaseBase<HistorianKey, HistorianValue>> m_getDatabase;
 
+        /// <summary>
+        /// Initializes a new instance of the HistorianInputQueue with the specified function to get a database.
+        /// </summary>
+        /// <param name="getDatabase">A function that returns a ClientDatabaseBase of HistorianKey and HistorianValue.</param>
         public HistorianInputQueue(Func<ClientDatabaseBase<HistorianKey, HistorianValue>> getDatabase)
         {
             m_syncWrite = new object();
@@ -118,7 +122,7 @@ namespace openHistorian.Queues
         {
             lock (m_syncWrite)
             {
-                PointData data = new PointData()
+                PointData data = new()
                 {
                     Key1 = key.Timestamp,
                     Key2 = key.PointID,

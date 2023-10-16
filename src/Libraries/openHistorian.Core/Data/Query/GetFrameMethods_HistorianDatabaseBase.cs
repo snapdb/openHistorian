@@ -32,8 +32,6 @@ using SnapDB.Snap.Services.Reader;
 
 namespace openHistorian.Data.Query
 {
-
-
     /// <summary>
     /// Queries a historian database for a set of signals. 
     /// </summary>
@@ -42,8 +40,8 @@ namespace openHistorian.Data.Query
         /// <summary>
         /// Gets frames from the historian as individual frames.
         /// </summary>
-        /// <param name="database">the database to use</param>
-        /// <returns></returns>
+        /// <param name="database">The database to use.</param>
+        /// <returns>The frames from the historian.</returns>
         public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database, DateTime startTime, DateTime stopTime)
         {
             return database.GetFrames(SortedTreeEngineReaderOptions.Default, TimestampSeekFilter.CreateFromRange<HistorianKey>(startTime, stopTime), null);
@@ -52,8 +50,8 @@ namespace openHistorian.Data.Query
         /// <summary>
         /// Gets frames from the historian as individual frames.
         /// </summary>
-        /// <param name="database">the database to use</param>
-        /// <returns></returns>
+        /// <param name="database">The database to use.</param>
+        /// <returns>The frames from the historian.</returns>
         public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, params ulong[] points)
         {
             return database.GetFrames(SortedTreeEngineReaderOptions.Default, timestamps, PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(points));
@@ -62,41 +60,20 @@ namespace openHistorian.Data.Query
         /// <summary>
         /// Gets frames from the historian as individual frames.
         /// </summary>
-        /// <param name="database">the database to use</param>
-        /// <returns></returns>
+        /// <param name="database">The database to use.</param>
+        /// <returns>The frames from the historian.</returns>
         public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database, DateTime startTime, DateTime stopTime, params ulong[] points)
         {
             return database.GetFrames(SortedTreeEngineReaderOptions.Default, TimestampSeekFilter.CreateFromRange<HistorianKey>(startTime, stopTime), PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(points));
         }
 
-        ///// <summary>
-        ///// Gets frames from the historian as individual frames.
-        ///// </summary>
-        ///// <param name="database">the database to use</param>
-        ///// <returns></returns>
-        //public static SortedList<DateTime, FrameData> GetFrames(this SortedTreeEngineBase<HistorianKey, HistorianValue> database)
-        //{
-        //    return database.GetFrames(QueryFilterTimestamp.CreateAllKeysValid(), QueryFilterPointID.CreateAllKeysValid(), SortedTreeEngineReaderOptions.Default);
-        //}
-
-        ///// <summary>
-        ///// Gets frames from the historian as individual frames.
-        ///// </summary>
-        ///// <param name="database">the database to use</param>
-        ///// <param name="timestamps">the timestamps to query for</param>
-        ///// <returns></returns>
-        //public static SortedList<DateTime, FrameData> GetFrames(this SortedTreeEngineBase<HistorianKey, HistorianValue> database, QueryFilterTimestamp timestamps)
-        //{
-        //    return database.GetFrames(timestamps, QueryFilterPointID.CreateAllKeysValid(), SortedTreeEngineReaderOptions.Default);
-        //}
-
         /// <summary>
         /// Gets frames from the historian as individual frames.
         /// </summary>
-        /// <param name="database">the database to use</param>
-        /// <param name="timestamps">the timestamps to query for</param>
-        /// <param name="points">the points to query</param>
-        /// <returns></returns>
+        /// <param name="database">The database to use.</param>
+        /// <param name="timestamps">The timestamps to query for.</param>
+        /// <param name="points">The points to query.</param>
+        /// <returns>The frames from the historian.</returns>
         public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, MatchFilterBase<HistorianKey, HistorianValue> points)
         {
             return database.GetFrames(SortedTreeEngineReaderOptions.Default, timestamps, points);
@@ -109,7 +86,7 @@ namespace openHistorian.Data.Query
         /// <param name="timestamps">the timestamps to query for</param>
         /// <param name="points">the points to query</param>
         /// <param name="options">A list of query options</param>
-        /// <returns></returns>
+        /// <returns>The frames from the historian.</returns>
         public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database,
             SortedTreeEngineReaderOptions options, SeekFilterBase<HistorianKey> timestamps, MatchFilterBase<HistorianKey, HistorianValue> points)
         {
@@ -130,14 +107,14 @@ namespace openHistorian.Data.Query
         /// <summary>
         /// Rounds the frame to the nearest level of specified tolerance.
         /// </summary>
-        /// <param name="origional">the frame to round</param>
-        /// <param name="tolerance">the timespan to round on.</param>
+        /// <param name="origional">The frame to round.</param>
+        /// <param name="tolerance">The timespan to round on.</param>
         /// <returns>A new frame that is rounded.</returns>
         public static SortedList<DateTime, FrameData> RoundToTolerance(this SortedList<DateTime, FrameData> origional, TimeSpan tolerance)
         {
-            SortedList<DateTime, FrameData> results = new SortedList<DateTime, FrameData>();
+            SortedList<DateTime, FrameData> results = new();
 
-            SortedList<DateTime, List<FrameData>> buckets = new SortedList<DateTime, List<FrameData>>();
+            SortedList<DateTime, List<FrameData>> buckets = new();
 
             foreach (KeyValuePair<DateTime, FrameData> items in origional)
             {
@@ -159,13 +136,13 @@ namespace openHistorian.Data.Query
                 else
                 {
                     int count = bucket.Value.Sum(x => x.Points.Count);
-                    List<ulong> keys = new List<ulong>(count);
-                    List<HistorianValueStruct> values = new List<HistorianValueStruct>(count);
+                    List<ulong> keys = new(count);
+                    List<HistorianValueStruct> values = new(count);
 
-                    FrameData tempFrame = new FrameData();
+                    FrameData tempFrame = new();
                     tempFrame.Points = new SortedList<ulong, HistorianValueStruct>();
 
-                    List<EnumerableHelper> allFrames = new List<EnumerableHelper>();
+                    List<EnumerableHelper> allFrames = new();
 
                     foreach (FrameData frame in bucket.Value)
                     {
@@ -195,15 +172,16 @@ namespace openHistorian.Data.Query
             return results;
         }
 
-        static DateTime Round(this DateTime origional, TimeSpan tolerance)
+        private static DateTime Round(this DateTime origional, TimeSpan tolerance)
         {
             long delta = origional.Ticks % tolerance.Ticks;
             if (delta >= tolerance.Ticks >> 1)
                 return new DateTime(origional.Ticks - delta + tolerance.Ticks);
+
             return new DateTime(origional.Ticks - delta);
         }
 
-        static EnumerableHelper Min(EnumerableHelper left, EnumerableHelper right)
+        private static EnumerableHelper Min(EnumerableHelper left, EnumerableHelper right)
         {
             if (left is null)
                 return right;
@@ -220,12 +198,12 @@ namespace openHistorian.Data.Query
             return right;
         }
 
-        class EnumerableHelper
+        private class EnumerableHelper
         {
             public bool IsValid;
             public ulong PointID;
             public HistorianValueStruct Value;
-            readonly IEnumerator<KeyValuePair<ulong, HistorianValueStruct>> m_enumerator;
+            private readonly IEnumerator<KeyValuePair<ulong, HistorianValueStruct>> m_enumerator;
             public EnumerableHelper(FrameData frame)
             {
                 m_enumerator = frame.Points.GetEnumerator();
@@ -241,6 +219,7 @@ namespace openHistorian.Data.Query
                     PointID = m_enumerator.Current.Key;
                     Value = m_enumerator.Current.Value;
                 }
+
                 else
                     IsValid = false;
             }

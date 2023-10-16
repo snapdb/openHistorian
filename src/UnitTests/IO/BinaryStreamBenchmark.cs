@@ -29,7 +29,7 @@ using System;
 namespace openHistorian.UnitTests.IO;
 
 [TestFixture]
-unsafe public class BinaryStreamBenchmark
+public unsafe class BinaryStreamBenchmark
 {
     [Test]
     public void Test7Bit1()
@@ -37,26 +37,24 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096 * 5];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write7Bit(1u);
-                            bs.Write7Bit(1u);
-                            bs.Write7Bit(1u);
-                            bs.Write7Bit(1u);
-                        }
+                        bs.Write7Bit(1u);
+                        bs.Write7Bit(1u);
+                        bs.Write7Bit(1u);
+                        bs.Write7Bit(1u);
                     }
+                }
 
-                });
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-            }
+            });
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
     [Test]
@@ -65,26 +63,24 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096 * 5];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write7Bit(128u);
-                            bs.Write7Bit(128u);
-                            bs.Write7Bit(128u);
-                            bs.Write7Bit(128u);
-                        }
+                        bs.Write7Bit(128u);
+                        bs.Write7Bit(128u);
+                        bs.Write7Bit(128u);
+                        bs.Write7Bit(128u);
                     }
+                }
 
-                });
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-            }
+            });
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 
@@ -94,26 +90,24 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096 * 5];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write7Bit(128u * 128u);
-                            bs.Write7Bit(128u * 128u);
-                            bs.Write7Bit(128u * 128u);
-                            bs.Write7Bit(128u * 128u);
-                        }
+                        bs.Write7Bit(128u * 128u);
+                        bs.Write7Bit(128u * 128u);
+                        bs.Write7Bit(128u * 128u);
+                        bs.Write7Bit(128u * 128u);
                     }
+                }
 
-                });
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-            }
+            });
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 
@@ -123,26 +117,24 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096 * 5];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write7Bit(128u * 128u * 128u);
-                            bs.Write7Bit(128u * 128u * 128u);
-                            bs.Write7Bit(128u * 128u * 128u);
-                            bs.Write7Bit(128u * 128u * 128u);
-                        }
+                        bs.Write7Bit(128u * 128u * 128u);
+                        bs.Write7Bit(128u * 128u * 128u);
+                        bs.Write7Bit(128u * 128u * 128u);
+                        bs.Write7Bit(128u * 128u * 128u);
                     }
+                }
 
-                });
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-            }
+            });
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 
@@ -152,26 +144,24 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096 * 6];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write7Bit(uint.MaxValue);
-                            bs.Write7Bit(uint.MaxValue);
-                            bs.Write7Bit(uint.MaxValue);
-                            bs.Write7Bit(uint.MaxValue);
-                        }
+                        bs.Write7Bit(uint.MaxValue);
+                        bs.Write7Bit(uint.MaxValue);
+                        bs.Write7Bit(uint.MaxValue);
+                        bs.Write7Bit(uint.MaxValue);
                     }
+                }
 
-                });
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-            }
+            });
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 
@@ -182,28 +172,25 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write((sbyte)x);
-                            bs.Write((sbyte)x);
-                            bs.Write((sbyte)x);
-                            bs.Write((sbyte)x);
-                        }
+                        bs.Write((sbyte)x);
+                        bs.Write((sbyte)x);
+                        bs.Write((sbyte)x);
+                        bs.Write((sbyte)x);
                     }
+                }
 
-                });
+            });
 
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-
-            }
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 
@@ -213,28 +200,25 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096 * 2];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write((short)x);
-                            bs.Write((short)x);
-                            bs.Write((short)x);
-                            bs.Write((short)x);
-                        }
+                        bs.Write((short)x);
+                        bs.Write((short)x);
+                        bs.Write((short)x);
+                        bs.Write((short)x);
                     }
+                }
 
-                });
+            });
 
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-
-            }
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 
@@ -244,27 +228,25 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096 * 4];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write(x);
-                            bs.Write(x);
-                            bs.Write(x);
-                            bs.Write(x);
-                        }
+                        bs.Write(x);
+                        bs.Write(x);
+                        bs.Write(x);
+                        bs.Write(x);
                     }
+                }
 
-                });
+            });
 
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-            }
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 
@@ -274,27 +256,25 @@ unsafe public class BinaryStreamBenchmark
         byte[] data = new byte[4096 * 8];
         fixed (byte* lp = data)
         {
-            using (BinaryStreamPointerWrapper bs = new BinaryStreamPointerWrapper(lp, data.Length))
+            using BinaryStreamPointerWrapper bs = new(lp, data.Length);
+            DebugStopwatch sw = new();
+            double time = sw.TimeEventMedian(() =>
             {
-                DebugStopwatch sw = new DebugStopwatch();
-                double time = sw.TimeEventMedian(() =>
+                for (int repeat = 0; repeat < 1000; repeat++)
                 {
-                    for (int repeat = 0; repeat < 1000; repeat++)
+                    bs.Position = 0;
+                    for (int x = 0; x < 1000; x++)
                     {
-                        bs.Position = 0;
-                        for (int x = 0; x < 1000; x++)
-                        {
-                            bs.Write((long)x);
-                            bs.Write((long)x);
-                            bs.Write((long)x);
-                            bs.Write((long)x);
-                        }
+                        bs.Write((long)x);
+                        bs.Write((long)x);
+                        bs.Write((long)x);
+                        bs.Write((long)x);
                     }
+                }
 
-                });
+            });
 
-                Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
-            }
+            Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 

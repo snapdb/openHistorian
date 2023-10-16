@@ -26,14 +26,21 @@
 
 namespace openHistorian.Data.Query
 {
-    public interface ISignalCalculation
-        : ISignalWithType
+    /// <summary>
+    /// Represents a signal calculation with additional properties and methods.
+    /// </summary>
+    public interface ISignalCalculation : ISignalWithType
     {
-        Guid SignalId
-        {
-            get;
-        }
+        /// <summary>
+        /// Gets the unique identifier associated with the signal calculation.
+        /// </summary>
+        Guid SignalId { get; }
 
+        /// <summary>
+        /// Calculates the signal value based on the provided signal data.
+        /// </summary>
+        /// <param name="signals">A dictionary of signal data indexed by their unique identifiers.</param>
         void Calculate(IDictionary<Guid, SignalDataBase> signals);
     }
+
 }

@@ -34,21 +34,35 @@ namespace openHistorian.Data.Types
     public unsafe class TypeSingle
         : TypeBase
     {
-        public static readonly TypeSingle Instance = new TypeSingle();
+        /// <summary>
+        /// A readonly instance of TypeSingle.
+        /// </summary>
+        public static readonly TypeSingle Instance = new();
 
         /// <summary>
-        /// Must use the static instance
+        /// Must use the static instance.
         /// </summary>
         private TypeSingle()
         {
         }
 
+        /// <summary>
+        /// Converts a convertible value to its raw form.
+        /// </summary>
+        /// <param name="value">The value to convert.</param>
+        /// <returns>The raw value.</returns>
         protected override ulong ToRaw(IConvertible value)
         {
             float tmp = value.ToSingle(null);
+
             return *(uint*)&tmp;
         }
 
+        /// <summary>
+        /// Gets the value of the raw form data and converts it to a float.
+        /// </summary>
+        /// <param name="value">The value to convert.</param>
+        /// <returns>The float value.</returns>
         protected override IConvertible GetValue(ulong value)
         {
             uint tmp = (uint)value;

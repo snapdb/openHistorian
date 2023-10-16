@@ -40,16 +40,27 @@ namespace openHistorian.Core.Utility
     /// </summary>
     public static class ConvertArchiveFile
     {
+        /// <summary>
+        /// Converts a Version 1 historian file, handles duplicates, and writes the data to a new file.
+        /// </summary>
+        /// <param name="oldFileName">The path to the old historian file.</param>
+        /// <param name="newFileName">The path to the new historian file.</param>
+        /// <param name="compressionMethod">The encoding definition for compression.</param>
+        /// <param name="readTime">The time taken for reading data from the old file (output).</param>
+        /// <param name="sortTime">The time taken for sorting the data (output).</param>
+        /// <param name="writeTime">The time taken for writing data to the new file (output).</param>
+        /// <returns>The total count of data points converted.</returns>
+        /// <exception cref="ArgumentException">Thrown when the old file does not exist, or when the new file already exists.</exception>
         public static long ConvertVersion1FileHandleDuplicates(string oldFileName, string newFileName, EncodingDefinition compressionMethod, out long readTime, out long sortTime, out long writeTime)
         {
             if (!File.Exists(oldFileName))
-                throw new ArgumentException("Old file does not exist", "oldFileName");
+                throw new ArgumentException("Old file does not exist", nameof(oldFileName));
 
             if (File.Exists(newFileName))
-                throw new ArgumentException("New file already exists", "newFileName");
+                throw new ArgumentException("New file already exists", nameof(newFileName));
 
-            HistorianKey key = new HistorianKey();
-            HistorianValue value = new HistorianValue();
+            HistorianKey key = new();
+            HistorianValue value = new();
             long startTime;
             int count;
 
@@ -58,7 +69,7 @@ namespace openHistorian.Core.Utility
 
             startTime = DateTime.UtcNow.Ticks;
 
-            using (OldHistorianReader archiveFile = new OldHistorianReader())
+            using (OldHistorianReader archiveFile = new())
             {
                 archiveFile.Open(oldFileName);
 
@@ -101,16 +112,15 @@ namespace openHistorian.Core.Utility
         public static long ConvertVersion1FileIgnoreDuplicates(string oldFileName, string newFileName, EncodingDefinition compressionMethod)
         {
             if (!File.Exists(oldFileName))
-                throw new ArgumentException("Old file does not exist", "oldFileName");
+                throw new ArgumentException("Old file does not exist", nameof(oldFileName));
 
             if (File.Exists(newFileName))
-                throw new ArgumentException("New file already exists", "newFileName");
+                throw new ArgumentException("New file already exists", nameof(newFileName);
 
-            using (OldHistorianStream reader = new OldHistorianStream(oldFileName))
-            {
-                SortedTreeFileSimpleWriter<HistorianKey, HistorianValue>.CreateNonSequential(Path.Combine(FilePath.GetDirectoryName(newFileName), FilePath.GetFileNameWithoutExtension(newFileName) + ".~d2i"), newFileName, 4096, null, compressionMethod, reader);
-                return reader.PointCount;
-            }
+            using OldHistorianStream reader = new(oldFileName);
+            SortedTreeFileSimpleWriter<HistorianKey, HistorianValue>.CreateNonSequential(Path.Combine(FilePath.GetDirectoryName(newFileName), FilePath.GetFileNameWithoutExtension(newFileName) + ".~d2i"), newFileName, 4096, null, compressionMethod, reader);
+            
+            return reader.PointCount;
         }
 
         private class OldHistorianStream
@@ -140,8 +150,7 @@ namespace openHistorian.Core.Utility
                     {
                         if (disposing)
                         {
-                            if (m_archiveFile != null)
-                                m_archiveFile.Dispose();
+                            m_archiveFile?.Dispose();
                         }
                     }
                     finally

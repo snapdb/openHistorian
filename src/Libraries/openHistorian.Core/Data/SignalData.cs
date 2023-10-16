@@ -35,11 +35,15 @@ namespace openHistorian.Data.Query
     public class SignalData
         : SignalDataBase
     {
-        private readonly List<ulong> m_dateTime = new List<ulong>();
-        private readonly List<ulong> m_values = new List<ulong>();
+        private readonly List<ulong> m_dateTime = new();
+        private readonly List<ulong> m_values = new();
 
         private readonly TypeBase m_type;
 
+        /// <summary>
+        /// Declares a <see cref="SignalData"/> with an unspecified <see cref="TypeBase"/> type.
+        /// </summary>
+        /// <param name="type">The type of the <see cref="TypeBase"/>, stored as m_type.</param>
         public SignalData(TypeBase type)
         {
             m_type = type;

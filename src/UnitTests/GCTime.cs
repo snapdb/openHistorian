@@ -32,8 +32,8 @@ namespace openHistorian.UnitTests;
 [TestFixture]
 public class GCTime
 {
-    private readonly List<AClass[]> m_objects = new List<AClass[]>();
-    private readonly List<FinalizableClass[]> m_objects2 = new List<FinalizableClass[]>();
+    private readonly List<AClass[]> m_objects = new();
+    private readonly List<FinalizableClass[]> m_objects2 = new();
 
     [Test]
     public void Test()
@@ -61,7 +61,7 @@ public class GCTime
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
-        Stopwatch sw = new Stopwatch();
+        Stopwatch sw = new();
         AClass swap = m_objects[0][0];
         m_objects[0][0] = m_objects[0][1];
         m_objects[0][1] = swap;
@@ -119,7 +119,7 @@ public class GCTime
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
-        Stopwatch sw = new Stopwatch();
+        Stopwatch sw = new();
         FinalizableClass swap = m_objects2[0][0];
         m_objects2[0][0] = m_objects2[0][1];
         m_objects2[0][1] = swap;

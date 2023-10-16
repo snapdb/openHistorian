@@ -35,7 +35,7 @@
             <ddue:linkUri>https://github.com/GridProtectionAlliance/gsf/</ddue:linkUri>
             <ddue:linkTarget>_blank</ddue:linkTarget>
           </ddue:externalLink>
-          (GSF), which has long been in use by various open source projects and electric power utilities worldwide.
+          (SnapDB), which has long been in use by various open source projects and electric power utilities worldwide.
         </ddue:para>
         <ddue:para>
           The Gemstone Libraries contain a large variety of code useful for any .NET project with of hundreds of class libraries that extend or expand the functionality provided with .NET,

@@ -35,23 +35,26 @@ namespace openHistorian.Data.Query
     public class SignalDataSingle
         : SignalDataBase
     {
-        private readonly List<ulong> m_dateTime = new List<ulong>();
-        private readonly List<float> m_values = new List<float>();
+        private readonly List<ulong> m_dateTime = new();
+        private readonly List<float> m_values = new();
 
         private readonly TypeBase m_type;
 
+        /// <summary>
+        /// The <see cref="SignalDataSingle"/> that creates an instance of <see cref="TypeSingle"/> as m_type.
+        /// </summary>
         public SignalDataSingle()
         {
             m_type = TypeSingle.Instance;
         }
 
         /// <summary>
-        /// Provides the type conversion method for the base class to use
+        /// Provides the type conversion method for the base class to use.
         /// </summary>
         protected override TypeBase Method => m_type;
 
         /// <summary>
-        /// Gets the number of values that are in the signal
+        /// Gets the number of values that are in the signal.
         /// </summary>
         public override int Count => m_values.Count;
 
@@ -59,8 +62,8 @@ namespace openHistorian.Data.Query
         /// Adds a value to the signal and converts it from a <see cref="float"/>
         /// into its native format.
         /// </summary>
-        /// <param name="time">the time value to consider</param>
-        /// <param name="value">the value to convert</param>
+        /// <param name="time">the time value to consider.</param>
+        /// <param name="value">the value to convert.</param>
         public override void AddData(ulong time, float value)
         {
             if (IsComplete)
@@ -73,9 +76,9 @@ namespace openHistorian.Data.Query
         /// Gets a value from the signal with the provided index and automatically 
         /// converts it to a <see cref="float"/>.
         /// </summary>
-        /// <param name="index">The zero based index of the position</param>
-        /// <param name="time">an output field for the time</param>
-        /// <param name="value">an output field for the converted value</param>
+        /// <param name="index">The zero based index of the position.</param>
+        /// <param name="time">An output field for the time.</param>
+        /// <param name="value">An output field for the converted value.</param>
         public override void GetData(int index, out ulong time, out float value)
         {
             time = m_dateTime[index];
@@ -100,14 +103,19 @@ namespace openHistorian.Data.Query
         /// raw 64-bit format.
         /// </summary>
         /// <param name="index">The zero based index of the position</param>
-        /// <param name="time">an output field for the time</param>
-        /// <param name="value">an output field for the raw 64-bit value</param>
+        /// <param name="time">An output field for the time</param>
+        /// <param name="value">An output field for the raw 64-bit value</param>
         public override unsafe void GetDataRaw(int index, out ulong time, out ulong value)
         {
             GetData(index, out time, out float tmp);
             value = *(uint*)&tmp;
         }
 
+        /// <summary>
+        /// Gets the date stamp from the specified index.
+        /// </summary>
+        /// <param name="index">The index to retrieve the date from.</param>
+        /// <returns>The date stamp from the signal stored at the specified index.</returns>
         public override ulong GetDate(int index)
         {
             return m_dateTime[index];

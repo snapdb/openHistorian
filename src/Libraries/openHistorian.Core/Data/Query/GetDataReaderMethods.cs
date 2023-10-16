@@ -35,14 +35,14 @@ namespace openHistorian.Data.Query
     /// </summary>
     public class TableDefinition
     {
-        bool m_finishedColumns;
-        string m_timestampColumn;
-        string m_identifierColumn;
-        Type m_identifierType;
+        private bool m_finishedColumns;
+        private string m_timestampColumn;
+        private string m_identifierColumn;
+        private Type m_identifierType;
 
-        readonly DataTable m_table;
+        private readonly DataTable m_table;
         internal List<KeyValuePair<object, int?[]>> m_signalGroups;
-        readonly List<string> m_customColumns;
+        private readonly List<string> m_customColumns;
 
         /// <summary>
         /// Initializes a new instance of the TableDefinition class with default settings.
@@ -133,9 +133,9 @@ namespace openHistorian.Data.Query
     public class HistorianDataPointReader
         : IDataReader
     {
-        TableDefinition m_tableDefinition;
-        SortedList<DateTime, FrameData> m_results;
-        int m_currentFrame;
+        private TableDefinition m_tableDefinition;
+        private SortedList<DateTime, FrameData> m_results;
+        private int m_currentFrame;
 
         /// <summary>
         /// Initializes a new instance of the HistorianDataPointReader class.
@@ -146,7 +146,7 @@ namespace openHistorian.Data.Query
         /// <param name="tableDefinition">The table definition for organizing and defining data tables.</param>
         public HistorianDataPointReader(ClientDatabaseBase<HistorianKey, HistorianValue> database, DateTime start, DateTime stop, TableDefinition tableDefinition)
         {
-            HashSet<ulong> allPoints = new HashSet<ulong>();
+            HashSet<ulong> allPoints = new();
             m_tableDefinition = tableDefinition;
 
             foreach (KeyValuePair<object, int?[]> signal in tableDefinition.m_signalGroups)
@@ -159,6 +159,11 @@ namespace openHistorian.Data.Query
             }
             m_currentFrame = -1;
         }
+
+        /// <summary>
+        /// The number of fields included in the query.
+        /// </summary>
+        public int FieldCount { get; private set; }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
@@ -271,7 +276,9 @@ namespace openHistorian.Data.Query
         /// <returns>
         /// The actual number of bytes read.
         /// </returns>
-        /// <param name="i">The zero-based column ordinal. </param><param name="fieldOffset">The index within the field from which to start the read operation. </param><param name="buffer">The buffer into which to read the stream of bytes. </param><param name="bufferoffset">The index for <paramref name="buffer"/> to start the read operation. </param><param name="length">The number of bytes to read. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+        /// <param name="i">The zero-based column ordinal. </param><param name="fieldOffset">The index within the field from which to start the read operation. </param><param name="buffer">The buffer into which to read the stream of bytes.</param>
+        /// <param name="bufferoffset">The index for <paramref name="buffer"/> to start the read operation. </param>
+        /// <param name="length">The number of bytes to read. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception><filterpriority>2</filterpriority>
         public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
         {
             throw new NotImplementedException();
@@ -439,8 +446,6 @@ namespace openHistorian.Data.Query
             throw new NotImplementedException();
         }
 
-        public int FieldCount { get; private set; }
-
         /// <summary>
         /// Gets the column located at the specified index.
         /// </summary>
@@ -550,7 +555,7 @@ namespace openHistorian.Data.Query
             object[] rowValues = new object[columns.Count + 1];
             SignalDataBase[] signals = new SignalDataBase[columns.Count];
 
-            DataTable table = new DataTable();
+            DataTable table = new();
             table.Columns.Add("Time", typeof(DateTime));
             foreach (ISignalWithName signal in columns)
             {

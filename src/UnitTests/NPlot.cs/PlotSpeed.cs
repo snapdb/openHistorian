@@ -37,16 +37,16 @@ namespace openHistorian.PerformanceTests.NPlot
         [Test]
         public void RefreshSpeed()
         {
-            List<double> xVal = new List<double>();
-            List<double> yVal = new List<double>();
+            List<double> xVal = new();
+            List<double> yVal = new();
 
             for (int x = 0; x < 100000; x++)
             {
                 xVal.Add(x);
                 yVal.Add(1 - x);
             }
-            Stopwatch sw = new Stopwatch();
-            Stopwatch sw2 = new Stopwatch();
+            Stopwatch sw = new();
+            Stopwatch sw2 = new();
             LinePlot p1 = new LinePlot(yVal, xVal);
 
             PlotSurface2D plot = new PlotSurface2D(640, 480);
@@ -78,7 +78,7 @@ namespace openHistorian.PerformanceTests.NPlot
         {
             ST.Reset();
 
-            DebugStopwatch sw = new DebugStopwatch();
+            DebugStopwatch sw = new();
             double time = sw.TimeEvent(RefreshSpeed);
             Console.WriteLine(time.ToString() + " seconds to on average");
 

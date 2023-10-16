@@ -38,68 +38,58 @@ namespace openHistorian.PerformanceTests
         public void TestOrig()
         {
 
-            using (StreamWriter csvStream = new StreamWriter("C:\\temp\\file.csv"))
+            using StreamWriter csvStream = new("C:\\temp\\file.csv");
+            Stopwatch sw = new();
+            sw.Start();
+            for (float x = 0.216421654f; x < 2000000; x++)
             {
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                for (float x = 0.216421654f; x < 2000000; x++)
-                {
-                    csvStream.Write(x);
-                    csvStream.Write(',');
-                }
-                sw.Stop();
-                Console.WriteLine(sw.Elapsed.TotalSeconds);
+                csvStream.Write(x);
+                csvStream.Write(',');
             }
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed.TotalSeconds);
         }
 
         [Test]
         public void TestOpt1()
         {
 
-            using (StreamWriter csvStream = new StreamWriter("C:\\temp\\file.csv"))
-            {
-                IFormatProvider format = csvStream.FormatProvider;
-                NumberFormatInfo info = NumberFormatInfo.GetInstance(format);
+            using StreamWriter csvStream = new("C:\\temp\\file.csv");
+            IFormatProvider format = csvStream.FormatProvider;
+            NumberFormatInfo info = NumberFormatInfo.GetInstance(format);
 
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                for (float x = 0.216421654f; x < 2000000; x++)
-                {
-                    csvStream.Write(x.ToString(format));// Number.FormatSingle(x, null, info));
-                    csvStream.Write(',');
-                }
-                sw.Stop();
-                Console.WriteLine(sw.Elapsed.TotalSeconds);
+            Stopwatch sw = new();
+            sw.Start();
+            for (float x = 0.216421654f; x < 2000000; x++)
+            {
+                csvStream.Write(x.ToString(format));// Number.FormatSingle(x, null, info));
+                csvStream.Write(',');
             }
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed.TotalSeconds);
         }
 
         [Test]
         public void TestOpt3()
         {
-            using (StreamWriter csvStream = new StreamWriter("C:\\temp\\file.csv"))
-            {
-                UltraStreamWriter usw = new UltraStreamWriter(csvStream);
-                IFormatProvider format = csvStream.FormatProvider;
-                NumberFormatInfo info = NumberFormatInfo.GetInstance(format);
+            using StreamWriter csvStream = new("C:\\temp\\file.csv");
+            UltraStreamWriter usw = new(csvStream);
+            IFormatProvider format = csvStream.FormatProvider;
+            NumberFormatInfo info = NumberFormatInfo.GetInstance(format);
 
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                for (float x = 0.216421654f; x < 2000000; x++)
-                {
-                    usw.Write(x);
-                    usw.Write(',');
-                }
-                usw.Flush();
-                sw.Stop();
-                Console.WriteLine(sw.Elapsed.TotalSeconds);
+            Stopwatch sw = new();
+            sw.Start();
+            for (float x = 0.216421654f; x < 2000000; x++)
+            {
+                usw.Write(x);
+                usw.Write(',');
             }
+            usw.Flush();
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed.TotalSeconds);
         }
 
-
-
-        //const uint IntToConvert = 3u;
-        //const uint IntToConvert = 3463u;
-        const uint IntToConvert = 2214352634u;
+        private const uint IntToConvert = 2214352634u;
         [Test]
         public void TestWriteInt32()
         {
@@ -108,7 +98,7 @@ namespace openHistorian.PerformanceTests
             for (int x = 0; x < 5000000; x++)
                 IntToConvert.WriteToChars(data, 0);
 
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             sw.Start();
 
             for (int x = 0; x < 50000000; x++)
@@ -126,7 +116,7 @@ namespace openHistorian.PerformanceTests
             for (int x = 0; x < 5000000; x++)
                 IntToConvert.WriteToChars2(data, 0);
 
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             sw.Start();
 
             for (int x = 0; x < 50000000; x++)
@@ -146,7 +136,7 @@ namespace openHistorian.PerformanceTests
             for (int x = 0; x < 500000; x++)
                 FloatToConvert.ToString();
 
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             sw.Start();
 
             for (int x = 0; x < 5000000; x++)
@@ -164,7 +154,7 @@ namespace openHistorian.PerformanceTests
             for (int x = 0; x < 5000000; x++)
                 FloatToConvert.WriteToChars(data, 0);
 
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             sw.Start();
 
             for (int x = 0; x < 50000000; x++)

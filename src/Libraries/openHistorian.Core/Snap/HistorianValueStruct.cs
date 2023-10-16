@@ -50,8 +50,8 @@ namespace openHistorian.Snap
         /// Type casts the <see cref="Value1"/> as a single.
         /// </summary>
         public float AsSingle
-        {
-            get => BitConvert.ToSingle(Value1);
+        { 
+            readonly get => BitConvert.ToSingle(Value1);
             set => Value1 = BitConvert.ToUInt64(value);
         }
 

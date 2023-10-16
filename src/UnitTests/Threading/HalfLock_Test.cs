@@ -36,9 +36,9 @@ namespace openHistorian.PerformanceTests.Threading
         public void TestMonitor()
         {
             const int count = 100000000;
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             sw.Start();
-            object obj = new object();
+            object obj = new();
 
             for (int x = 0; x < count; x++)
             {
@@ -61,9 +61,9 @@ namespace openHistorian.PerformanceTests.Threading
         [Test]
         public void TestTinyLock_Lock()
         {
-            HalfLock tl = new HalfLock();
+            HalfLock tl = new();
             const int count = 100000000;
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             sw.Start();
 
             for (int x = 0; x < count; x++)

@@ -50,46 +50,44 @@ namespace openHistorian.PerformanceTests.SortedTreeStore.Engine
         public void VerifyDB()
         {
             //Logger.ReportToConsole(VerboseLevel.All ^ VerboseLevel.DebugLow);
-            //Logger.ConsoleSubscriber.AddIgnored(Logger.LookupType("GSF.SortedTreeStore"));
+            //Logger.ConsoleSubscriber.AddIgnored(Logger.LookupType("SnapDB.SortedTreeStore"));
             Globals.MemoryPool.SetMaximumBufferSize(1000 * 1024 * 1024);
             Globals.MemoryPool.SetTargetUtilizationLevel(TargetUtilizationLevels.Low);
 
-            HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("DB", "c:\\temp\\benchmark\\", true);
-            using (SnapServer engine = new SnapServer(settings))
-            using (SnapClient client = SnapClient.Connect(engine))
-            using (ClientDatabaseBase<HistorianKey, HistorianValue> db = client.GetDatabase<HistorianKey, HistorianValue>("DB"))
-            using (TreeStream<HistorianKey, HistorianValue> scan = db.Read(null, null, null))
+            HistorianServerDatabaseConfig settings = new("DB", "c:\\temp\\benchmark\\", true);
+            using SnapServer engine = new(settings);
+            using SnapClient client = SnapClient.Connect(engine);
+            using ClientDatabaseBase<HistorianKey, HistorianValue> db = client.GetDatabase<HistorianKey, HistorianValue>("DB");
+            using TreeStream<HistorianKey, HistorianValue> scan = db.Read(null, null, null);
+            HistorianKey key = new();
+            HistorianValue value = new();
+
+            Stopwatch sw = new();
+            sw.Start();
+
+            for (int x = 0; x < PointsToArchive; x++)
             {
-                HistorianKey key = new HistorianKey();
-                HistorianValue value = new HistorianValue();
-
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-
-                for (int x = 0; x < PointsToArchive; x++)
-                {
-                    if (!scan.Read(key, value))
-                        throw new Exception("Missing points");
-                    if (key.PointID != (ulong)x)
-                        throw new Exception("Corrupt");
-                    if (key.Timestamp != 0)
-                        throw new Exception("Corrupt");
-                    if (key.EntryNumber != 0)
-                        throw new Exception("Corrupt");
-                    if (value.Value1 != 0)
-                        throw new Exception("Corrupt");
-                    if (value.Value1 != 0)
-                        throw new Exception("Corrupt");
-                    if (value.Value1 != 0)
-                        throw new Exception("Corrupt");
-                }
-
-                double totalTime = sw.Elapsed.TotalSeconds;
-                Console.WriteLine("Completed read test in {0:#,##0.00} seconds at {1:#,##0.00} points per second", totalTime, PointsToArchive / totalTime);
-
-                if (scan.Read(key, value))
-                    throw new Exception("too many points");
+                if (!scan.Read(key, value))
+                    throw new Exception("Missing points");
+                if (key.PointID != (ulong)x)
+                    throw new Exception("Corrupt");
+                if (key.Timestamp != 0)
+                    throw new Exception("Corrupt");
+                if (key.EntryNumber != 0)
+                    throw new Exception("Corrupt");
+                if (value.Value1 != 0)
+                    throw new Exception("Corrupt");
+                if (value.Value1 != 0)
+                    throw new Exception("Corrupt");
+                if (value.Value1 != 0)
+                    throw new Exception("Corrupt");
             }
+
+            double totalTime = sw.Elapsed.TotalSeconds;
+            Console.WriteLine("Completed read test in {0:#,##0.00} seconds at {1:#,##0.00} points per second", totalTime, PointsToArchive / totalTime);
+
+            if (scan.Read(key, value))
+                throw new Exception("too many points");
         }
 
         //[Test]
@@ -164,17 +162,17 @@ namespace openHistorian.PerformanceTests.SortedTreeStore.Engine
 
             //PointCount = 0;
 
-            HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("DB", "c:\\temp\\benchmark\\", true);
+            HistorianServerDatabaseConfig settings = new("DB", "c:\\temp\\benchmark\\", true);
 
-            using (SnapServer engine = new SnapServer(settings))
+            using (SnapServer engine = new(settings))
             using (SnapClient client = SnapClient.Connect(engine))
             using (ClientDatabaseBase<HistorianKey, HistorianValue> db = client.GetDatabase<HistorianKey, HistorianValue>("DB"))
             {
                 Thread.Sleep(100);
-                HistorianKey key = new HistorianKey();
-                HistorianValue value = new HistorianValue();
+                HistorianKey key = new();
+                HistorianValue value = new();
 
-                Stopwatch sw = new Stopwatch();
+                Stopwatch sw = new();
                 sw.Start();
 
                 for (int x = 0; x < PointsToArchive; x++)
@@ -199,8 +197,8 @@ namespace openHistorian.PerformanceTests.SortedTreeStore.Engine
 
             Logger.Console.Verbose = VerboseLevel.All;
 
-            Random r = new Random(1);
-            Thread th = new Thread(WriteSpeed);
+            Random r = new(1);
+            Thread th = new(WriteSpeed);
             th.IsBackground = true;
             th.Start();
 
@@ -210,15 +208,15 @@ namespace openHistorian.PerformanceTests.SortedTreeStore.Engine
 
             PointCount = 0;
 
-            HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("DB", "c:\\temp\\benchmark\\", true);
+            HistorianServerDatabaseConfig settings = new("DB", "c:\\temp\\benchmark\\", true);
 
-            using (SnapServer engine = new SnapServer(settings))
+            using (SnapServer engine = new(settings))
             using (SnapClient client = SnapClient.Connect(engine))
             using (ClientDatabaseBase<HistorianKey, HistorianValue> db = client.GetDatabase<HistorianKey, HistorianValue>("DB"))
             {
                 Thread.Sleep(100);
-                HistorianKey key = new HistorianKey();
-                HistorianValue value = new HistorianValue();
+                HistorianKey key = new();
+                HistorianValue value = new();
                 for (int x = 0; x < 10000000; x++)
                 {
                     key.Timestamp = (ulong)r.Next();
@@ -238,7 +236,7 @@ namespace openHistorian.PerformanceTests.SortedTreeStore.Engine
 
         void WriteSpeed()
         {
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = new();
             sw.Start();
             PointSamples = new SortedList<double, int>();
 
@@ -267,18 +265,18 @@ namespace openHistorian.PerformanceTests.SortedTreeStore.Engine
 
             PointCount = 0;
 
-            HistorianServerDatabaseConfig settings = new HistorianServerDatabaseConfig("DB", "c:\\temp\\Test\\Main\\", true);
+            HistorianServerDatabaseConfig settings = new("DB", "c:\\temp\\Test\\Main\\", true);
             settings.FinalWritePaths.Add("c:\\temp\\Test\\Rollover\\");
 
             ulong time = (ulong)DateTime.Now.Ticks;
 
-            using (SnapServer engine = new SnapServer(settings))
+            using (SnapServer engine = new(settings))
             using (SnapClient client = SnapClient.Connect(engine))
             using (ClientDatabaseBase<HistorianKey, HistorianValue> db = client.GetDatabase<HistorianKey, HistorianValue>("DB"))
             {
                 Thread.Sleep(100);
-                HistorianKey key = new HistorianKey();
-                HistorianValue value = new HistorianValue();
+                HistorianKey key = new();
+                HistorianValue value = new();
                 for (int x = 0; x < 100000000; x++)
                 {
                     if (x % 100 == 0)

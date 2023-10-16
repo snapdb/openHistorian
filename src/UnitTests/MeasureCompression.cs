@@ -21,13 +21,13 @@
 //
 //******************************************************************************************************
 
-using System;
-using System.Text;
-using GSF.Snap;
-using GSF.Snap.Storage;
-using GSF.Snap.Tree;
 using NUnit.Framework;
 using openHistorian.Snap;
+using SnapDB.Snap;
+using SnapDB.Snap.Storage;
+using SnapDB.Snap.Tree;
+using System;
+using System.Text;
 
 namespace openHistorian.UnitTests;
 
@@ -37,25 +37,23 @@ public class MeasureCompression
     [Test]
     public void Test()
     {
-        HistorianKey key = new HistorianKey();
-        HistorianValue value = new HistorianValue();
-        using (SortedTreeFile file = SortedTreeFile.OpenFile(@"C:\Unison\GPA\Codeplex\openHistorian\Main\Build\Output\Release\Applications\openHistorian\Archive\635293583194231435-Stage2-0ef36dcc-4264-498f-b194-01b2043a9231.d2", true))
-        using (SortedTreeTable<HistorianKey, HistorianValue> table = file.OpenTable<HistorianKey, HistorianValue>())
-        using (SortedTreeTableReadSnapshot<HistorianKey, HistorianValue> reader = table.BeginRead())
-        using (SortedTreeScannerBase<HistorianKey, HistorianValue> scan = reader.GetTreeScanner())
-        {
-            scan.SeekToStart();
-            while (scan.Read(key, value))
-                ;
-        }
+        HistorianKey key = new();
+        HistorianValue value = new();
+        using SortedTreeFile file = SortedTreeFile.OpenFile(@"C:\Unison\GPA\Codeplex\openHistorian\Main\Build\Output\Release\Applications\openHistorian\Archive\635293583194231435-Stage2-0ef36dcc-4264-498f-b194-01b2043a9231.d2", true);
+        using SortedTreeTable<HistorianKey, HistorianValue> table = file.OpenTable<HistorianKey, HistorianValue>();
+        using SortedTreeTableReadSnapshot<HistorianKey, HistorianValue> reader = table.BeginRead();
+        using SortedTreeScannerBase<HistorianKey, HistorianValue> scan = reader.GetTreeScanner();
+        scan.SeekToStart();
+        while (scan.Read(key, value))
+            ;
     }
 
     [Test]
     public void GetBits()
     {
-        HistorianKey key = new HistorianKey();
-        HistorianValue value = new HistorianValue();
-        StringBuilder sb = new StringBuilder();
+        HistorianKey key = new();
+        HistorianValue value = new();
+        StringBuilder sb = new();
         sb.AppendLine("Higher Bits, Bucket Number, Count, FloatValue");
         using (SortedTreeFile file = SortedTreeFile.OpenFile(@"C:\Archive\635184227258021940-Stage2-8b835d6a-8299-45bb-9624-d4a470e4abe1.d2", true))
         using (SortedTreeTable<HistorianKey, HistorianValue> table = file.OpenTable<HistorianKey, HistorianValue>())
@@ -80,8 +78,8 @@ public class MeasureCompression
 
     public int[] MeasureBits(TreeStream<HistorianKey, HistorianValue> stream, int higherBits)
     {
-        HistorianKey hkey = new HistorianKey();
-        HistorianValue hvalue = new HistorianValue();
+        HistorianKey hkey = new();
+        HistorianValue hvalue = new();
         int[] bucket = new int[1 << higherBits];
         int shiftBits = 32 - higherBits;
         while (stream.Read(hkey, hvalue))
@@ -109,7 +107,7 @@ public class MeasureCompression
     [Test]
     public void GetDifference()
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new();
         sb.AppendLine("Bucket Number, Count");
         using (SortedTreeFile file = SortedTreeFile.OpenFile(@"C:\Unison\GPA\Codeplex\openHistorian\Main\Build\Output\Release\Applications\openHistorian\Archive\635293583194231435-Stage2-0ef36dcc-4264-498f-b194-01b2043a9231.d2", true))
         using (SortedTreeTable<HistorianKey, HistorianValue> table = file.OpenTable<HistorianKey, HistorianValue>())
@@ -117,9 +115,9 @@ public class MeasureCompression
         using (SortedTreeScannerBase<HistorianKey, HistorianValue> scan = reader.GetTreeScanner())
         {
 
-            HistorianKey key1 = new HistorianKey();
-            HistorianKey key2 = new HistorianKey();
-            HistorianValue value = new HistorianValue();
+            HistorianKey key1 = new();
+            HistorianKey key2 = new();
+            HistorianValue value = new();
 
             int count = 0;
             scan.SeekToStart();
