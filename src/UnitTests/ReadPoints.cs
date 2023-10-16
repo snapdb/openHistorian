@@ -17,11 +17,10 @@
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
 //  10/13/2023 - Lillian Gensolin
-//       Generated original version of source code.
+//       Converted code to .NET core.
 //
 //******************************************************************************************************
 
-//using System.Windows.Forms;
 using NUnit.Framework;
 using openHistorian.Net;
 using openHistorian.Snap;

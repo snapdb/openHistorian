@@ -31,7 +31,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 
-namespace openHistorian.PerformanceTests;
+namespace openHistorian.UnitTests;
 
 [TestFixture]
 public class ConcurrentReading

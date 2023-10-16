@@ -17,7 +17,7 @@
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
 //  10/13/2023 - Lillian Gensolin
-//       Generated original version of source code.
+//       Converted code to .NET core.
 //
 //******************************************************************************************************
 
@@ -28,7 +28,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 
-namespace openHistorian.PerformanceTests.Threading
+namespace openHistorian.UnitTests.Threading
 {
     [TestFixture]
     class ScheduledTaskTest
@@ -58,6 +58,7 @@ namespace openHistorian.PerformanceTests.Threading
 
                 sw.Stop();
             }
+
             m_doWorkCount = 0;
             sw.Reset();
 

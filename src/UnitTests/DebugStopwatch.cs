@@ -17,15 +17,15 @@
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
 //  10/13/2023 - Lillian Gensolin
-//       Generated original version of source code.
+//       Converted code to .NET core.
 //
 //******************************************************************************************************
 
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime;
-using NUnit.Framework;
 
 namespace openHistorian.UnitTests;
 

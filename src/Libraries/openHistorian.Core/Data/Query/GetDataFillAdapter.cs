@@ -80,13 +80,10 @@ namespace openHistorian.Data.Query
                 }
 
                 if (m_stream.CurrentKey.Timestamp == timeStamp)
-                {
                     callback(m_stream.CurrentKey.PointID, m_stream.CurrentValue);
-                }
+
                 else
-                {
                     return true;
-                }
             }
         }
 

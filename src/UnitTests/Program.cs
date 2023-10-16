@@ -17,28 +17,27 @@
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
 //  10/13/2023 - Lillian Gensolin
-//       Generated original version of source code.
+//       Converted code to .NET core.
 //
 //******************************************************************************************************
 
 using openHistorian.UnitTests;
 using System;
 
-namespace openHistorian.PerformanceTests
+namespace openHistorian.UnitTests;
+
+internal static class Program
 {
-    internal static class Program
+    /// <summary>
+    /// The main entry point for the application.
+    /// </summary>
+    [STAThread]
+    private static void Main()
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
-        [STAThread]
-        private static void Main()
-        {
 
-            GCTime GCT = new();
-            GCT.Test2();
+        GCTime GCT = new();
+        GCT.Test2();
 
-            Console.ReadLine();
-        }
+        Console.ReadLine();
     }
 }

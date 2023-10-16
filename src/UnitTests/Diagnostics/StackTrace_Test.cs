@@ -27,56 +27,56 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
-namespace openHistorian.UnitTests.Diagnostics
+namespace openHistorian.UnitTests.Diagnostics;
+
+[TestFixture]
+public class StackTrace_Test
 {
-    [TestFixture]
-    public class StackTrace_Test
+    [Test]
+    public void Test()
     {
-        [Test]
-        public void Test()
-        {
-            Console.WriteLine(Environment.StackTrace);
+        Console.WriteLine(Environment.StackTrace);
 
-            RunMethod();
-            DebugStopwatch sw = new();
-            double time = sw.TimeEvent(() =>
+        RunMethod();
+        DebugStopwatch sw = new();
+        double time = sw.TimeEvent(() =>
+        {
+            for (int x = 0; x < 1000; x++)
             {
-                for (int x = 0; x < 1000; x++)
-                {
-                    RunMethod3();
-                }
-            });
-            Console.WriteLine(1000 / time);
-        }
-
-        void RunMethod()
-        {
-            string str = Environment.StackTrace;
-            if (str is null)
-                throw new Exception();
-        }
-        void RunMethod2()
-        {
-            StackTrace st = new(true);
-            StackFrame[] frames = st.GetFrames();
-
-            StringBuilder sb = new();
-            foreach (StackFrame frame in frames)
-            {
-                sb.AppendLine(frame.GetMethod().Name);
-                sb.AppendLine(frame.GetMethod().Module.Assembly.FullName);
-                sb.AppendLine(frame.GetFileName());
-                sb.AppendLine(frame.GetFileLineNumber().ToString());
+                RunMethod3();
             }
-
-            if (frames.Length == 0)
-                throw new Exception();
-        }
-        void RunMethod3()
-        {
-            _ = new LogStackTrace();
-        }
-
-
+        });
+        Console.WriteLine(1000 / time);
     }
+
+    static void RunMethod()
+    {
+        string str = Environment.StackTrace;
+
+        if (str is null)
+            throw new Exception();
+    }
+    void RunMethod2()
+    {
+        StackTrace st = new(true);
+        StackFrame[] frames = st.GetFrames();
+
+        StringBuilder sb = new();
+        foreach (StackFrame frame in frames)
+        {
+            sb.AppendLine(frame.GetMethod().Name);
+            sb.AppendLine(frame.GetMethod().Module.Assembly.FullName);
+            sb.AppendLine(frame.GetFileName());
+            sb.AppendLine(frame.GetFileLineNumber().ToString());
+        }
+
+        if (frames.Length == 0)
+            throw new Exception();
+    }
+    void RunMethod3()
+    {
+        _ = new LogStackTrace();
+    }
+
+
 }

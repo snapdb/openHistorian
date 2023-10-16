@@ -17,7 +17,7 @@
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
 //  10/13/2023 - Lillian Gensolin
-//       Generated original version of source code.
+//       Converted code to .NET core.
 //
 //******************************************************************************************************
 
@@ -28,7 +28,7 @@ using SnapDB.Security.Cryptography;
 using NUnit.Framework;
 using Random = System.Random;
 
-namespace openHistorian.PerformanceTests
+namespace openHistorian.UnitTests
 {
 	[TestFixture]
 	public class GuidTest

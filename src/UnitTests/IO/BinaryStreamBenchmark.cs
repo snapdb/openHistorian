@@ -22,7 +22,6 @@
 //******************************************************************************************************
 
 using NUnit.Framework;
-using openHistorian.UnitTests;
 using SnapDB.IO.Unmanaged;
 using System;
 

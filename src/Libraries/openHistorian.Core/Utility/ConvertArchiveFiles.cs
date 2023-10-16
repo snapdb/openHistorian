@@ -115,7 +115,7 @@ namespace openHistorian.Core.Utility
                 throw new ArgumentException("Old file does not exist", nameof(oldFileName));
 
             if (File.Exists(newFileName))
-                throw new ArgumentException("New file already exists", nameof(newFileName);
+                throw new ArgumentException("New file already exists", nameof(newFileName));
 
             using OldHistorianStream reader = new(oldFileName);
             SortedTreeFileSimpleWriter<HistorianKey, HistorianValue>.CreateNonSequential(Path.Combine(FilePath.GetDirectoryName(newFileName), FilePath.GetFileNameWithoutExtension(newFileName) + ".~d2i"), newFileName, 4096, null, compressionMethod, reader);

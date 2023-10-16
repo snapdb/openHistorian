@@ -17,72 +17,71 @@
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
 //  10/13/2023 - Lillian Gensolin
-//       Generated original version of source code.
+//       Converted code to .NET core.
 //
 //******************************************************************************************************
 
+using NPlot;
 using NUnit.Framework;
-using openHistorian.UnitTests;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PlotSurface2D = openHistorian.PerformanceTests.NPlot;
-using ST = openHistorian.PerformanceTests.NPlot;
+using PlotSurface2D = openHistorian.UnitTests.NPlot;
+using ST = openHistorian.UnitTests.NPlot;
 
-namespace openHistorian.PerformanceTests.NPlot
+namespace openHistorian.UnitTests.NPlot;
+
+[TestFixture]
+public class PlotSpeed
 {
-    [TestFixture]
-    public class PlotSpeed
+    [Test]
+    public void RefreshSpeed()
     {
-        [Test]
-        public void RefreshSpeed()
+        List<double> xVal = new();
+        List<double> yVal = new();
+
+        for (int x = 0; x < 100000; x++)
         {
-            List<double> xVal = new();
-            List<double> yVal = new();
-
-            for (int x = 0; x < 100000; x++)
-            {
-                xVal.Add(x);
-                yVal.Add(1 - x);
-            }
-            Stopwatch sw = new();
-            Stopwatch sw2 = new();
-            LinePlot p1 = new LinePlot(yVal, xVal);
-
-            PlotSurface2D plot = new PlotSurface2D(640, 480);
-
-            sw.Start();
-
-            plot.Add(p1);
-            plot.Add(p1);
-            plot.Add(p1);
-            plot.Add(p1);
-            plot.Add(p1);
-            plot.Add(p1);
-            plot.Add(p1);
-            plot.Add(p1);
-            plot.Add(p1);
-            plot.Add(p1);
-
-            sw2.Start();
-            plot.Refresh();
-            sw2.Stop();
-            sw.Stop();
-
-            Console.WriteLine(sw2.Elapsed.TotalSeconds.ToString() + " seconds to refresh");
-            Console.WriteLine(sw.Elapsed.TotalSeconds.ToString() + " seconds To add and refresh");
+            xVal.Add(x);
+            yVal.Add(1 - x);
         }
+        Stopwatch sw = new();
+        Stopwatch sw2 = new();
+        LinePlot p1 = new LinePlot(yVal, xVal);
 
-        [Test]
-        public void RefreshSpeedTest()
-        {
-            ST.Reset();
+        PlotSurface2D plot = new PlotSurface2D(640, 480);
 
-            DebugStopwatch sw = new();
-            double time = sw.TimeEvent(RefreshSpeed);
-            Console.WriteLine(time.ToString() + " seconds to on average");
+        sw.Start();
 
-            Console.WriteLine(ST.GetResultsPercent());
-        }
+        plot.Add(p1);
+        plot.Add(p1);
+        plot.Add(p1);
+        plot.Add(p1);
+        plot.Add(p1);
+        plot.Add(p1);
+        plot.Add(p1);
+        plot.Add(p1);
+        plot.Add(p1);
+        plot.Add(p1);
+
+        sw2.Start();
+        plot.Refresh();
+        sw2.Stop();
+        sw.Stop();
+
+        Console.WriteLine(sw2.Elapsed.TotalSeconds.ToString() + " seconds to refresh");
+        Console.WriteLine(sw.Elapsed.TotalSeconds.ToString() + " seconds To add and refresh");
+    }
+
+    [Test]
+    public void RefreshSpeedTest()
+    {
+        ST.Reset();
+
+        DebugStopwatch sw = new();
+        double time = sw.TimeEvent(RefreshSpeed);
+        Console.WriteLine(time.ToString() + " seconds to on average");
+
+        Console.WriteLine(ST.GetResultsPercent());
     }
 }
