@@ -207,38 +207,6 @@ namespace openHistorian.UnitTests
         public static void TestReadFilteredPoints()
         {
             throw new NotImplementedException();
-
-            //Stopwatch sw = new Stopwatch();
-            //int pointCount = 0;
-            //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
-            //db.InMemoryArchive = true;
-            //db.ConnectionString = "port=12345";
-            //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
-
-            //using (HistorianServer server = new HistorianServer(db))
-            //{
-            //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
-            //    clientOptions.NetworkPort = 12345;
-            //    clientOptions.ServerNameOrIp = "127.0.0.1";
-
-            //    //using (var client = new HistorianClient(clientOptions))
-            //    //{
-            //    var database = server.GetDefaultDatabase();
-            //    var stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
-            //    while (stream.Read())
-            //        ;
-
-            //    sw.Start();
-            //    stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
-            //    while (stream.Read())
-            //        pointCount++;
-
-            //    sw.Stop();
-            //    //}
-            //}
-            //Console.WriteLine(pointCount);
-            //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
-            //Console.WriteLine((140107816 / sw.Elapsed.TotalSeconds / 1000000).ToString());
         }
 
         [Test]
