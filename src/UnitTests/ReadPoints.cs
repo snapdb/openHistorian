@@ -30,282 +30,288 @@ using SnapDB.Snap.Services.Reader;
 using System;
 using System.Diagnostics;
 
-namespace openHistorian.UnitTests;
-
-[TestFixture]
-public class ReadPoints
+namespace openHistorian.UnitTests
 {
-    [Test]
-    public void ReadFrames()
+
+    [TestFixture]
+    public class ReadPoints
     {
-        throw new NotImplementedException();
-
-        //Stopwatch sw = new Stopwatch();
-        //int pointCount = 0;
-        //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
-        //db.InMemoryArchive = true;
-        //db.ConnectionString = "port=12345";
-        //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
-
-        //using (HistorianServer server = new HistorianServer(db))
-        //{
-        //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
-        //    clientOptions.NetworkPort = 12345;
-        //    clientOptions.ServerNameOrIp = "127.0.0.1";
-
-        //    using (var client = new HistorianClient(clientOptions))
-        //    {
-        //        var database = server.GetDefaultDatabase();
-
-        //        using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue).GetFrameReader())
-        //        {
-        //            while (frameReader.Read())
-        //                ;
-        //        }
-
-
-        //        sw.Start();
-        //        using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue).GetFrameReader())
-        //        {
-        //            while (frameReader.Read())
-        //                ;
-        //        }
-        //        sw.Stop();
-        //    }
-        //}
-        //Console.WriteLine(pointCount);
-        //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
-
-    }
-
-    [Test]
-    public static void ReadAllPoints()
-    {
-        Stopwatch sw = new();
-        int pointCount = 0;
-
-        HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
-        using (HistorianServer server = new(settings))
+        [Test]
+        public void ReadFrames()
         {
-            DateTime start = DateTime.FromBinary(Convert.ToDateTime("2/1/2014").Date.Ticks + Convert.ToDateTime("6:00:00PM").TimeOfDay.Ticks).ToUniversalTime();
+            throw new NotImplementedException();
 
-            using HistorianClient client = new("127.0.0.1", 12345);
-            using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
+            //Stopwatch sw = new Stopwatch();
+            //int pointCount = 0;
+            //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
+            //db.InMemoryArchive = true;
+            //db.ConnectionString = "port=12345";
+            //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
+
+            //using (HistorianServer server = new HistorianServer(db))
+            //{
+            //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
+            //    clientOptions.NetworkPort = 12345;
+            //    clientOptions.ServerNameOrIp = "127.0.0.1";
+
+            //    using (var client = new HistorianClient(clientOptions))
+            //    {
+            //        var database = server.GetDefaultDatabase();
+
+            //        using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue).GetFrameReader())
+            //        {
+            //            while (frameReader.Read())
+            //                ;
+            //        }
+
+
+            //        sw.Start();
+            //        using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue).GetFrameReader())
+            //        {
+            //            while (frameReader.Read())
+            //                ;
+            //        }
+            //        sw.Stop();
+            //    }
+            //}
+            //Console.WriteLine(pointCount);
+            //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
+
+        }
+
+        [Test]
+        public static void ReadAllPoints()
+        {
+            Stopwatch sw = new();
+            int pointCount = 0;
+
+            HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
+            using (HistorianServer server = new(settings))
+            {
+                DateTime start = DateTime.FromBinary(Convert.ToDateTime("2/1/2014").Date.Ticks + Convert.ToDateTime("6:00:00PM").TimeOfDay.Ticks).ToUniversalTime();
+
+                using HistorianClient client = new("127.0.0.1", 12345);
+                using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
+                HistorianKey key = new();
+                HistorianValue value = new();
+
+                sw.Start();
+                TreeStream<HistorianKey, HistorianValue> scan = database.Read((ulong)start.Ticks, ulong.MaxValue);
+                while (scan.Read(key, value) && pointCount < 10000000)
+                    pointCount++;
+                sw.Stop();
+
+                //sw.Start();
+                //using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue))
+                //{
+                //    while (frameReader.Read())
+                //        ;
+                //}
+                //sw.Stop();
+            }
+
+            Console.WriteLine(pointCount);
+            Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
+            Console.WriteLine((pointCount / sw.Elapsed.TotalSeconds / 1000000).ToString());
+
+        }
+
+        [Test]
+        public static void ReadAllPointsServer()
+        {
+            throw new NotImplementedException();
+
+            //Stopwatch sw = new Stopwatch();
+            //int pointCount = 0;
+            //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
+            //db.InMemoryArchive = true;
+            //db.ConnectionString = "port=12345";
+            //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
+
+            //using (HistorianServer server = new HistorianServer(db))
+            //{
+            //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
+            //    clientOptions.NetworkPort = 12345;
+            //    clientOptions.ServerNameOrIp = "127.0.0.1";
+
+            //    //using (var client = new HistorianClient(clientOptions))
+            //    //{
+            //    var database = server.GetDefaultDatabase();
+
+            //    HistorianKey key = new HistorianKey();
+            //    HistorianValue value = new HistorianValue();
+
+            //    var scan = database.Read(0, ulong.MaxValue);
+            //    while (scan.Read(key, value))// && pointCount < 1000000)
+            //        ;
+
+            //    sw.Start();
+            //    scan = database.Read(0, ulong.MaxValue);
+            //    while (scan.Read(key, value))// && pointCount < 1000000)
+            //        pointCount++;
+            //    //using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue))
+            //    //{
+            //    //    while (frameReader.Read())// && pointCount < 1000000)
+            //    //        pointCount++;
+            //    //}
+            //    sw.Stop();
+
+            //    //sw.Start();
+            //    //using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue))
+            //    //{
+            //    //    while (frameReader.Read())
+            //    //        ;
+            //    //}
+            //    //sw.Stop();
+            //    //}
+            //}
+            //Console.WriteLine(pointCount);
+            //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
+            //Console.WriteLine((pointCount / sw.Elapsed.TotalSeconds / 1000000).ToString());
+
+        }
+
+        [Test]
+        public void TestReadPoints()
+        {
+            Stopwatch sw = new();
+            int pointCount = 0;
+
             HistorianKey key = new();
             HistorianValue value = new();
 
-            sw.Start();
-            TreeStream<HistorianKey, HistorianValue> scan = database.Read((ulong)start.Ticks, ulong.MaxValue);
-            while (scan.Read(key, value) && pointCount < 10000000)
-                pointCount++;
-            sw.Stop();
+            HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
 
-            //sw.Start();
-            //using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue))
+            using (HistorianServer server = new(settings))
+            {
+                using HistorianClient client = new("127.0.0.1", 12345);
+                using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
+
+                TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
+                while (stream.Read(key, value))
+                    ;
+
+                sw.Start();
+                stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
+                while (stream.Read(key, value))
+                    pointCount++;
+
+                sw.Stop();
+            }
+
+            Console.WriteLine(pointCount);
+            Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
+        }
+
+        [Test]
+        public static void TestReadFilteredPoints()
+        {
+            throw new NotImplementedException();
+
+            //Stopwatch sw = new Stopwatch();
+            //int pointCount = 0;
+            //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
+            //db.InMemoryArchive = true;
+            //db.ConnectionString = "port=12345";
+            //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
+
+            //using (HistorianServer server = new HistorianServer(db))
             //{
-            //    while (frameReader.Read())
+            //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
+            //    clientOptions.NetworkPort = 12345;
+            //    clientOptions.ServerNameOrIp = "127.0.0.1";
+
+            //    //using (var client = new HistorianClient(clientOptions))
+            //    //{
+            //    var database = server.GetDefaultDatabase();
+            //    var stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
+            //    while (stream.Read())
             //        ;
+
+            //    sw.Start();
+            //    stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
+            //    while (stream.Read())
+            //        pointCount++;
+
+            //    sw.Stop();
+            //    //}
             //}
-            //sw.Stop();
+            //Console.WriteLine(pointCount);
+            //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
+            //Console.WriteLine((140107816 / sw.Elapsed.TotalSeconds / 1000000).ToString());
         }
-        Console.WriteLine(pointCount);
-        Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
-        Console.WriteLine((pointCount / sw.Elapsed.TotalSeconds / 1000000).ToString());
 
-    }
-
-    [Test]
-    public static void ReadAllPointsServer()
-    {
-        throw new NotImplementedException();
-
-        //Stopwatch sw = new Stopwatch();
-        //int pointCount = 0;
-        //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
-        //db.InMemoryArchive = true;
-        //db.ConnectionString = "port=12345";
-        //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
-
-        //using (HistorianServer server = new HistorianServer(db))
-        //{
-        //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
-        //    clientOptions.NetworkPort = 12345;
-        //    clientOptions.ServerNameOrIp = "127.0.0.1";
-
-        //    //using (var client = new HistorianClient(clientOptions))
-        //    //{
-        //    var database = server.GetDefaultDatabase();
-
-        //    HistorianKey key = new HistorianKey();
-        //    HistorianValue value = new HistorianValue();
-
-        //    var scan = database.Read(0, ulong.MaxValue);
-        //    while (scan.Read(key, value))// && pointCount < 1000000)
-        //        ;
-
-        //    sw.Start();
-        //    scan = database.Read(0, ulong.MaxValue);
-        //    while (scan.Read(key, value))// && pointCount < 1000000)
-        //        pointCount++;
-        //    //using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue))
-        //    //{
-        //    //    while (frameReader.Read())// && pointCount < 1000000)
-        //    //        pointCount++;
-        //    //}
-        //    sw.Stop();
-
-        //    //sw.Start();
-        //    //using (var frameReader = database.GetPointStream(DateTime.MinValue, DateTime.MaxValue))
-        //    //{
-        //    //    while (frameReader.Read())
-        //    //        ;
-        //    //}
-        //    //sw.Stop();
-        //    //}
-        //}
-        //Console.WriteLine(pointCount);
-        //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
-        //Console.WriteLine((pointCount / sw.Elapsed.TotalSeconds / 1000000).ToString());
-
-    }
-
-    [Test]
-    public void TestReadPoints()
-    {
-        Stopwatch sw = new();
-        int pointCount = 0;
-
-        HistorianKey key = new();
-        HistorianValue value = new();
-
-        HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
-
-        using (HistorianServer server = new(settings))
+        [Test]
+        public void TestReadFilteredPointsAll()
         {
-            using HistorianClient client = new("127.0.0.1", 12345);
-            using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
+            throw new NotImplementedException();
 
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
-            while (stream.Read(key, value))
-                ;
+            //HistorianKey key = new HistorianKey();
+            //HistorianValue value = new HistorianValue();
+            //Stopwatch sw = new Stopwatch();
+            //int pointCount = 0;
+            //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
+            //db.InMemoryArchive = true;
+            //db.ConnectionString = "port=12345";
+            //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
 
+            //var lst = new List<ulong>();
+            //for (uint x = 0; x < 6000; x++)
+            //{
+            //    lst.Add(x);
+            //}
+
+
+
+            //using (HistorianServer server = new HistorianServer(db))
+            //{
+            //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
+            //    clientOptions.NetworkPort = 12345;
+            //    clientOptions.ServerNameOrIp = "127.0.0.1";
+
+            //    //using (var client = new HistorianClient(clientOptions))
+            //    //{
+            //    var database = server.GetDefaultDatabase();
+            //    var stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
+            //    while (stream.Read(key, value))
+            //        ;
+
+            //    sw.Start();
+            //    stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, lst);
+            //    while (stream.Read(key, value))
+            //        pointCount++;
+
+            //    sw.Stop();
+            //    //}
+            //}
+            //Console.WriteLine(pointCount);
+            //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
+            //Console.WriteLine((140107816 / sw.Elapsed.TotalSeconds / 1000000).ToString());
+        }
+
+
+        public static void TestReadPoints2()
+        {
+            int pointCount = 0;
+            HistorianKey key = new();
+            HistorianValue value = new();
+            HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
+            using HistorianServer server = new(settings);
+            Stopwatch sw = new();
             sw.Start();
-            stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
-            while (stream.Read(key, value))
-                pointCount++;
+            using (HistorianClient client = new("127.0.0.1", 12345))
+            using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty))
+            {
+
+                TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
+                while (stream.Read(key, value))
+                    pointCount++;
+
+            }
 
             sw.Stop();
+            //MessageBox.Show(sw.Elapsed.TotalSeconds.ToString());
         }
-        Console.WriteLine(pointCount);
-        Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
     }
 
-    [Test]
-    public static void TestReadFilteredPoints()
-    {
-        throw new NotImplementedException();
-
-        //Stopwatch sw = new Stopwatch();
-        //int pointCount = 0;
-        //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
-        //db.InMemoryArchive = true;
-        //db.ConnectionString = "port=12345";
-        //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
-
-        //using (HistorianServer server = new HistorianServer(db))
-        //{
-        //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
-        //    clientOptions.NetworkPort = 12345;
-        //    clientOptions.ServerNameOrIp = "127.0.0.1";
-
-        //    //using (var client = new HistorianClient(clientOptions))
-        //    //{
-        //    var database = server.GetDefaultDatabase();
-        //    var stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
-        //    while (stream.Read())
-        //        ;
-
-        //    sw.Start();
-        //    stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
-        //    while (stream.Read())
-        //        pointCount++;
-
-        //    sw.Stop();
-        //    //}
-        //}
-        //Console.WriteLine(pointCount);
-        //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
-        //Console.WriteLine((140107816 / sw.Elapsed.TotalSeconds / 1000000).ToString());
-    }
-
-    [Test]
-    public void TestReadFilteredPointsAll()
-    {
-        throw new NotImplementedException();
-
-        //HistorianKey key = new HistorianKey();
-        //HistorianValue value = new HistorianValue();
-        //Stopwatch sw = new Stopwatch();
-        //int pointCount = 0;
-        //HistorianDatabaseInstance db = new HistorianDatabaseInstance();
-        //db.InMemoryArchive = true;
-        //db.ConnectionString = "port=12345";
-        //db.Paths = new[] { @"C:\Program Files\openHistorian\Archive\" };
-
-        //var lst = new List<ulong>();
-        //for (uint x = 0; x < 6000; x++)
-        //{
-        //    lst.Add(x);
-        //}
-
-
-
-        //using (HistorianServer server = new HistorianServer(db))
-        //{
-        //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
-        //    clientOptions.NetworkPort = 12345;
-        //    clientOptions.ServerNameOrIp = "127.0.0.1";
-
-        //    //using (var client = new HistorianClient(clientOptions))
-        //    //{
-        //    var database = server.GetDefaultDatabase();
-        //    var stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
-        //    while (stream.Read(key, value))
-        //        ;
-
-        //    sw.Start();
-        //    stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, lst);
-        //    while (stream.Read(key, value))
-        //        pointCount++;
-
-        //    sw.Stop();
-        //    //}
-        //}
-        //Console.WriteLine(pointCount);
-        //Console.WriteLine(sw.Elapsed.TotalSeconds.ToString());
-        //Console.WriteLine((140107816 / sw.Elapsed.TotalSeconds / 1000000).ToString());
-    }
-
-
-    public static void TestReadPoints2()
-    {
-        int pointCount = 0;
-        HistorianKey key = new();
-        HistorianValue value = new();
-        HistorianServerDatabaseConfig settings = new("PPA", @"C:\Program Files\openHistorian\Archive\", true);
-        using HistorianServer server = new(settings);
-        Stopwatch sw = new();
-        sw.Start();
-        using (HistorianClient client = new("127.0.0.1", 12345))
-        using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty))
-        {
-
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
-            while (stream.Read(key, value))
-                pointCount++;
-
-        }
-        sw.Stop();
-        //MessageBox.Show(sw.Elapsed.TotalSeconds.ToString());
-    }
 }

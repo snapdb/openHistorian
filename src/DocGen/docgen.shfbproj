@@ -98,12 +98,12 @@
           <configuration>
             <urlProviders>
               <formattedProvider title="BouncyCastle URL Provider">
-                <targetMatcher pattern=".:Org\.BouncyCastle(\.|$).*" fullyQualifiedMemberName="false" sandcastleTarget="true"/>
-                <urlFormatter format="https://gridprotectionalliance.github.io/bc-csharp/help/html/{target}.htm" target="_self"/>
+                <targetMatcher pattern=".:Org\.BouncyCastle(\.|$).*" fullyQualifiedMemberName="false" sandcastleTarget="true" />
+                <urlFormatter format="https://gridprotectionalliance.github.io/bc-csharp/help/html/{target}.htm" target="_self" />
               </formattedProvider>
               <formattedProvider title="Gemstone.Diagnostics URL Provider">
-                <targetMatcher pattern=".:Gemstone\.Diagnostics(\.|$).*" fullyQualifiedMemberName="false" sandcastleTarget="true"/>
-                <urlFormatter format="https://gemstone.github.io/diagnostics/help/html/{target}.htm" target="_self"/>
+                <targetMatcher pattern=".:Gemstone\.Diagnostics(\.|$).*" fullyQualifiedMemberName="false" sandcastleTarget="true" />
+                <urlFormatter format="https://gemstone.github.io/diagnostics/help/html/{target}.htm" target="_self" />
               </formattedProvider>
             </urlProviders>
           </configuration>
@@ -116,7 +116,7 @@
       </PlugInConfig>
     </PlugInConfigurations>
     <DocumentationSources>
-      <DocumentationSource sourceFile="..\SnapDB\SnapDB.csproj" />
+      <DocumentationSource sourceFile="..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
     </DocumentationSources>
     <WarnOnMissingSourceContext>False</WarnOnMissingSourceContext>
     <HelpTitle>SnapDB Library</HelpTitle>

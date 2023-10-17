@@ -25,7 +25,6 @@
 //******************************************************************************************************
 
 using SnapDB.Snap.Services.Net;
-using Gemstone.Diagnostics;
 
 namespace openHistorian.Net
 {
