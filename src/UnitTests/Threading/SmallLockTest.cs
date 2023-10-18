@@ -30,8 +30,11 @@ using System.Threading;
 namespace openHistorian.UnitTests.Threading;
 
 [TestFixture]
-public class SmallLock_Test
+public class SmallLockTest
 {
+    /// <summary>
+    /// Measures the performance of using the "lock" statement.
+    /// </summary>
     [Test]
     public void TestMonitor()
     {
@@ -63,6 +66,9 @@ public class SmallLock_Test
     long m_value;
     const long max = 100000000;
 
+    /// <summary>
+    /// Test method to evaluate contention in a multi-threaded environment.
+    /// </summary>
     [Test]
     public void TestContention()
     {
@@ -85,6 +91,10 @@ public class SmallLock_Test
         Console.WriteLine(m_value);
     }
 
+    /// <summary>
+    /// Worker method that increments the shared value in a multi-threaded environment.
+    /// </summary>
+    /// <param name="obj">An optional object parameter.</param>
     public void Adder(object obj)
     {
         m_event.WaitOne();

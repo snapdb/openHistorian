@@ -26,30 +26,29 @@
 
 using openHistorian.Data.Types;
 
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// An interface that allows the results of DatabaseMethods.ExecuteQuery
+/// to be strong typed.
+/// </summary>
+public interface ISignalWithType
 {
     /// <summary>
-    /// An interface that allows the results of DatabaseMethods.ExecuteQuery
-    /// to be strong typed.
+    /// The Id value of the historian point.
+    /// Null means that the point is not in the historian
     /// </summary>
-    public interface ISignalWithType
+    ulong? HistorianId
     {
-        /// <summary>
-        /// The Id value of the historian point.
-        /// Null means that the point is not in the historian
-        /// </summary>
-        ulong? HistorianId
-        {
-            get;
-        }
+        get;
+    }
 
-        /// <summary>
-        /// A set of functions that will properly convert the value type
-        /// from its native format
-        /// </summary>
-        TypeBase Functions
-        {
-            get;
-        }
+    /// <summary>
+    /// A set of functions that will properly convert the value type
+    /// from its native format
+    /// </summary>
+    TypeBase Functions
+    {
+        get;
     }
 }

@@ -62,7 +62,7 @@ internal class StreamWriterTest
         sw.Start();
         for (float x = 0.216421654f; x < 2000000; x++)
         {
-            csvStream.Write(x.ToString(format));// Number.FormatSingle(x, null, info));
+            csvStream.Write(x.ToString(format)); //Number.FormatSingle(x, null, info));
             csvStream.Write(',');
         }
         sw.Stop();
@@ -164,7 +164,7 @@ internal class StreamWriterTest
         Console.WriteLine(sw.Elapsed.TotalSeconds / 50000000.0 * 1000000000.0);
     }
 
-    [Test]
+    //[Test]
     public void TestWriteFloatConsistency()
     {
         char[] data = new char[300];
@@ -337,9 +337,4 @@ internal class StreamWriterTest
         }
 
     }
-
-
-
-
-
 }

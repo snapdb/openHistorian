@@ -29,9 +29,15 @@ using System.Threading;
 
 namespace openHistorian.UnitTests.Threading;
 
+/// <summary>
+/// This class contains test methods for evaluating different locking mechanisms.
+/// </summary>
 [TestFixture]
-public class HalfLock_Test
+public class HalfLockTest
 {
+    /// <summary>
+    /// Measures the performance of using the "lock" statement.
+    /// </summary>
     [Test]
     public void TestMonitor()
     {
@@ -58,6 +64,9 @@ public class HalfLock_Test
         Console.WriteLine(count * 10.0 / sw.Elapsed.TotalSeconds / 1000000);
     }
 
+    /// <summary>
+    /// Measures the performance of using the "HalfLock" for locking.
+    /// </summary>
     [Test]
     public void TestTinyLock_Lock()
     {
@@ -90,6 +99,9 @@ public class HalfLock_Test
     long m_value;
     const long max = 100000000;
 
+    /// <summary>
+    /// Test method to evaluate contention in a multi-threaded environment.
+    /// </summary>
     [Test]
     public void TestContention()
     {
@@ -112,9 +124,14 @@ public class HalfLock_Test
         Console.WriteLine(m_value);
     }
 
+    /// <summary>
+    /// Worker method that increments the shared value in a multi-threaded environment.
+    /// </summary>
+    /// <param name="obj">An optional object parameter.</param>
     public void Adder(object obj)
     {
         m_event.WaitOne();
+
         for (int x = 0; x < max; x++)
         {
             using (m_sync.Lock())

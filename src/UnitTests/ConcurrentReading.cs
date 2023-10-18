@@ -30,9 +30,13 @@ using SnapDB.Snap.Services.Reader;
 using System;
 using System.Diagnostics;
 using System.Threading;
+using openHistorian.Core.Snap;
 
 namespace openHistorian.UnitTests;
 
+/// <summary>
+/// This class contains methods for testing concurrent reading of historian data.
+/// </summary>
 [TestFixture]
 public class ConcurrentReading
 {
@@ -41,6 +45,9 @@ public class ConcurrentReading
     int ThreadNumber;
     volatile bool StopReading;
 
+    /// <summary>
+    /// Test concurrent scanning of points using multiple threads.
+    /// </summary>
     [Test]
     public void ScanAllPoints()
     {
@@ -73,7 +80,9 @@ public class ConcurrentReading
 
     }
 
-
+    /// <summary>
+    /// Test concurrent reading of points using multiple threads.
+    /// </summary>
     [Test]
     public void SendAllPoints()
     {
@@ -106,6 +115,9 @@ public class ConcurrentReading
 
     }
 
+    /// <summary>
+    /// Starts a scanner thread for concurrent scanning of historian data.
+    /// </summary>
     void StartScanner()
     {
         Thread th = new(ScannerThread);
@@ -113,7 +125,9 @@ public class ConcurrentReading
         th.Start();
     }
 
-
+    /// <summary>
+    /// Runs a scanner thread for concurrent scanning of historian data.
+    /// </summary>
     void ScannerThread()
     {
         int threadId = Interlocked.Increment(ref ThreadNumber);
@@ -146,6 +160,9 @@ public class ConcurrentReading
         Console.WriteLine("Thread: " + threadId.ToString() + " Quit");
     }
 
+    /// <summary>
+    /// Starts a reader thread for concurrent reading of historian data.
+    /// </summary>
     void StartReader()
     {
         Thread th = new(ReaderThread);
@@ -153,7 +170,9 @@ public class ConcurrentReading
         th.Start();
     }
 
-
+    /// <summary>
+    /// Runs a reader thread for concurrent reading of historian data.
+    /// </summary>
     void ReaderThread()
     {
         int threadId = Interlocked.Increment(ref ThreadNumber);

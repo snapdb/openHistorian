@@ -30,9 +30,16 @@ using Random = System.Random;
 
 namespace openHistorian.UnitTests
 {
-	[TestFixture]
+    /// <summary>
+    /// This class contains methods to test the performance of generating and hashing GUIDs.
+    /// </summary>
+    [TestFixture]
 	public class GuidTest
 	{
+        /// <summary>
+        /// Tests generating GUIDs and comparing two different methods for computing their hash.
+        /// </summary>
+        /// <exception cref="Exception"></exception>
 		[Test]
 		public void Test()
 		{
@@ -60,6 +67,9 @@ namespace openHistorian.UnitTests
 			}
 		}
 
+        /// <summary>
+        /// Computes the hash of a GUID using a custom method and measures the performance.
+        /// </summary>
 		[Test]
 		public void ComputeManaged()
 		{
@@ -86,6 +96,9 @@ namespace openHistorian.UnitTests
 			Console.WriteLine(10000000 / sw.Elapsed.TotalSeconds / 1000000);
 		}
 
+        /// <summary>
+        /// Computes the hash of a GUID using a custom method (GUIDSHA1Helper) and measures the performance.
+        /// </summary>
 		[Test]
 		public void ComputeCustom()
 		{
@@ -112,6 +125,9 @@ namespace openHistorian.UnitTests
 			Console.WriteLine(10000000 / sw.Elapsed.TotalSeconds / 1000000);
 		}
 
+        /// <summary>
+        /// Computes the hash code of a GUID using the GetHashCode method and measures the performance.
+        /// </summary>
 		[Test]
 		public void ComputeGetHashCode()
 		{
@@ -138,6 +154,9 @@ namespace openHistorian.UnitTests
 			Console.WriteLine(10000000 / sw.Elapsed.TotalSeconds / 1000000);
 		}
 
+        /// <summary>
+        /// Tests the performanc eof generating random numbers using the Random class.
+        /// </summary>
 		[Test]
 		public void CountRandom()
 		{

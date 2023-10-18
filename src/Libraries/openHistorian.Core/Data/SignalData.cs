@@ -26,74 +26,73 @@
 
 using openHistorian.Data.Types;
 
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// Contains a series of Times and Values for an individual signal.
+/// If using this class, you must specify a <see cref="TypeBase"/>. 
+/// </summary>
+public class SignalData
+    : SignalDataBase
 {
+    private readonly List<ulong> m_dateTime = new();
+    private readonly List<ulong> m_values = new();
+
+    private readonly TypeBase m_type;
+
     /// <summary>
-    /// Contains a series of Times and Values for an individual signal.
-    /// If using this class, you must specify a <see cref="TypeBase"/>. 
+    /// Declares a <see cref="SignalData"/> with an unspecified <see cref="TypeBase"/> type.
     /// </summary>
-    public class SignalData
-        : SignalDataBase
+    /// <param name="type">The type of the <see cref="TypeBase"/>, stored as m_type.</param>
+    public SignalData(TypeBase type)
     {
-        private readonly List<ulong> m_dateTime = new();
-        private readonly List<ulong> m_values = new();
+        m_type = type;
+    }
 
-        private readonly TypeBase m_type;
+    /// <summary>
+    /// Provides the type conversion method for the base class to use
+    /// </summary>
+    protected override TypeBase Method => m_type;
 
-        /// <summary>
-        /// Declares a <see cref="SignalData"/> with an unspecified <see cref="TypeBase"/> type.
-        /// </summary>
-        /// <param name="type">The type of the <see cref="TypeBase"/>, stored as m_type.</param>
-        public SignalData(TypeBase type)
-        {
-            m_type = type;
-        }
+    /// <summary>
+    /// Gets the number of values that are in the signal
+    /// </summary>
+    public override int Count => m_values.Count;
 
-        /// <summary>
-        /// Provides the type conversion method for the base class to use
-        /// </summary>
-        protected override TypeBase Method => m_type;
+    /// <summary>
+    /// Adds a value to the signal in its raw 64-bit format.
+    /// </summary>
+    /// <param name="time">The time value to consider.</param>
+    /// <param name="value">The 64-bit value.</param>
+    public override void AddDataRaw(ulong time, ulong value)
+    {
+        if (IsComplete)
+            throw new Exception("Signal has already been marked as complete");
 
-        /// <summary>
-        /// Gets the number of values that are in the signal
-        /// </summary>
-        public override int Count => m_values.Count;
+        m_dateTime.Add(time);
+        m_values.Add(value);
+    }
 
-        /// <summary>
-        /// Adds a value to the signal in its raw 64-bit format.
-        /// </summary>
-        /// <param name="time">The time value to consider.</param>
-        /// <param name="value">The 64-bit value.</param>
-        public override void AddDataRaw(ulong time, ulong value)
-        {
-            if (IsComplete)
-                throw new Exception("Signal has already been marked as complete");
+    /// <summary>
+    /// Gets a value from the signal with the provided index in its
+    /// raw 64-bit format.
+    /// </summary>
+    /// <param name="index">The zero based index of the position.</param>
+    /// <param name="time">An output field for the time.</param>
+    /// <param name="value">An output field for the raw 64-bit value.</param>
+    public override void GetDataRaw(int index, out ulong time, out ulong value)
+    {
+        time = m_dateTime[index];
+        value = m_values[index];
+    }
 
-            m_dateTime.Add(time);
-            m_values.Add(value);
-        }
-
-        /// <summary>
-        /// Gets a value from the signal with the provided index in its
-        /// raw 64-bit format.
-        /// </summary>
-        /// <param name="index">The zero based index of the position.</param>
-        /// <param name="time">An output field for the time.</param>
-        /// <param name="value">An output field for the raw 64-bit value.</param>
-        public override void GetDataRaw(int index, out ulong time, out ulong value)
-        {
-            time = m_dateTime[index];
-            value = m_values[index];
-        }
-
-        /// <summary>
-        /// Retrieves a ulong value representing a date at the specified index.
-        /// </summary>
-        /// <param name="index">The index at which to retrieve the date.</param>
-        /// <returns>The ulong value representing the date at the specified index.</returns>
-        public override ulong GetDate(int index)
-        {
-            return m_dateTime[index];
-        }
+    /// <summary>
+    /// Retrieves a ulong value representing a date at the specified index.
+    /// </summary>
+    /// <param name="index">The index at which to retrieve the date.</param>
+    /// <returns>The ulong value representing the date at the specified index.</returns>
+    public override ulong GetDate(int index)
+    {
+        return m_dateTime[index];
     }
 }

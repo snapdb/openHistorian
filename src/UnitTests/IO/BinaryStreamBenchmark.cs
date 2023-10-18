@@ -27,6 +27,9 @@ using System;
 
 namespace openHistorian.UnitTests.IO;
 
+/// <summary>
+/// Performs a test to write 7-bit encoded values with one byte to a binary stream and measures the performance.
+/// </summary>
 [TestFixture]
 public unsafe class BinaryStreamBenchmark
 {
@@ -56,6 +59,10 @@ public unsafe class BinaryStreamBenchmark
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
+
+    /// <summary>
+    /// Performs a test to write 7-bit encoded values with one byte to a binary stream and measures the performance.
+    /// </summary>
     [Test]
     public void Test7Bit2()
     {
@@ -83,6 +90,9 @@ public unsafe class BinaryStreamBenchmark
         }
     }
 
+    /// <summary>
+    /// Performs a test to write 7-bit encoded values with two bytes to a binary stream and measures the performance.
+    /// </summary>
     [Test]
     public void Test7Bit3()
     {
@@ -96,6 +106,7 @@ public unsafe class BinaryStreamBenchmark
                 for (int repeat = 0; repeat < 1000; repeat++)
                 {
                     bs.Position = 0;
+
                     for (int x = 0; x < 1000; x++)
                     {
                         bs.Write7Bit(128u * 128u);
@@ -110,6 +121,9 @@ public unsafe class BinaryStreamBenchmark
         }
     }
 
+    /// <summary>
+    /// Performs a test to write large 7-bit encoded values to a binary stream and measures the performance.
+    /// </summary>
     [Test]
     public void Test7Bit4()
     {
@@ -123,6 +137,7 @@ public unsafe class BinaryStreamBenchmark
                 for (int repeat = 0; repeat < 1000; repeat++)
                 {
                     bs.Position = 0;
+
                     for (int x = 0; x < 1000; x++)
                     {
                         bs.Write7Bit(128u * 128u * 128u);
@@ -137,6 +152,9 @@ public unsafe class BinaryStreamBenchmark
         }
     }
 
+    /// <summary>
+    /// Performs a test to write 7-bit encoded values to a binary stream and measures the performance.
+    /// </summary>
     [Test]
     public void Test7Bit5()
     {
@@ -150,6 +168,7 @@ public unsafe class BinaryStreamBenchmark
                 for (int repeat = 0; repeat < 1000; repeat++)
                 {
                     bs.Position = 0;
+
                     for (int x = 0; x < 1000; x++)
                     {
                         bs.Write7Bit(uint.MaxValue);
@@ -164,7 +183,9 @@ public unsafe class BinaryStreamBenchmark
         }
     }
 
-
+    /// <summary>
+    /// Performs a test to write byte values to a binary stream and measures the performance.
+    /// </summary>
     [Test]
     public void TestWriteByte()
     {
@@ -178,6 +199,7 @@ public unsafe class BinaryStreamBenchmark
                 for (int repeat = 0; repeat < 1000; repeat++)
                 {
                     bs.Position = 0;
+
                     for (int x = 0; x < 1000; x++)
                     {
                         bs.Write((sbyte)x);
@@ -193,6 +215,9 @@ public unsafe class BinaryStreamBenchmark
         }
     }
 
+    /// <summary>
+    /// Performs a test to write short values to a binary stream and measures the performance
+    /// </summary>
     [Test]
     public void TestWriteShort()
     {
@@ -206,6 +231,7 @@ public unsafe class BinaryStreamBenchmark
                 for (int repeat = 0; repeat < 1000; repeat++)
                 {
                     bs.Position = 0;
+
                     for (int x = 0; x < 1000; x++)
                     {
                         bs.Write((short)x);
@@ -221,6 +247,9 @@ public unsafe class BinaryStreamBenchmark
         }
     }
 
+    /// <summary>
+    /// Performs a test to write integer values to a binary stream and measures the performance.
+    /// </summary>
     [Test]
     public void TestWriteInt()
     {
@@ -234,6 +263,7 @@ public unsafe class BinaryStreamBenchmark
                 for (int repeat = 0; repeat < 1000; repeat++)
                 {
                     bs.Position = 0;
+
                     for (int x = 0; x < 1000; x++)
                     {
                         bs.Write(x);
@@ -249,6 +279,9 @@ public unsafe class BinaryStreamBenchmark
         }
     }
 
+    /// <summary>
+    /// Performs a test to write long values to a binary stream and measures the performance.
+    /// </summary>
     [Test]
     public void TestWriteLong()
     {
@@ -262,6 +295,7 @@ public unsafe class BinaryStreamBenchmark
                 for (int repeat = 0; repeat < 1000; repeat++)
                 {
                     bs.Position = 0;
+
                     for (int x = 0; x < 1000; x++)
                     {
                         bs.Write((long)x);

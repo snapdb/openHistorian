@@ -29,12 +29,18 @@ using System.Runtime.InteropServices;
 
 namespace openHistorian.UnitTests;
 
+/// <summary>
+/// Class to measure garbage collection (GC) and memory allocation times.
+/// </summary>
 [TestFixture]
 public class GCTime
 {
     private readonly List<AClass[]> m_objects = new();
     private readonly List<FinalizableClass[]> m_objects2 = new();
 
+    /// <summary>
+    /// Runs a test to measure garbage collection and memory allocation times.
+    /// </summary>
     [Test]
     public void Test()
     {
@@ -42,6 +48,9 @@ public class GCTime
             AddItemsAndTime();
     }
 
+    /// <summary>
+    /// Adds items to a list, triggers garbage collection, and measures the collection time.
+    /// </summary>
     void AddItemsAndTime()
     {
         AClass[] array = new AClass[100000];
@@ -93,6 +102,9 @@ public class GCTime
         }
     }
 
+    /// <summary>
+    /// Runs a test to measure garbage collection and memory allocation times for finalizable classes.
+    /// </summary>
     [Test]
     public void Test2()
     {
@@ -100,6 +112,9 @@ public class GCTime
             AddItemsAndTime2();
     }
 
+    /// <summary>
+    /// Adds finalizable items to a list, triggers garbage collection, and measures the collection time.
+    /// </summary>
     void AddItemsAndTime2()
     {
         FinalizableClass[] array = new FinalizableClass[100000];

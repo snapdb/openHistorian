@@ -26,70 +26,69 @@
 
 using openHistorian.Data.Types;
 
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// This type of signal only supports reading and writing data via 
+/// its raw type. Type conversions are not supported since its original
+/// type is unknown.
+/// </summary>
+public class SignalDataUnknown
+    : SignalDataBase
 {
+    private readonly List<ulong> m_dateTime = new();
+    private readonly List<ulong> m_values = new();
+
     /// <summary>
-    /// This type of signal only supports reading and writing data via 
-    /// its raw type. Type conversions are not supported since its original
-    /// type is unknown.
+    /// Data whose original type is unknown and therefore cannot be converted.
     /// </summary>
-    public class SignalDataUnknown
-        : SignalDataBase
+    public SignalDataUnknown()
     {
-        private readonly List<ulong> m_dateTime = new();
-        private readonly List<ulong> m_values = new();
+    }
 
-        /// <summary>
-        /// Data whose original type is unknown and therefore cannot be converted.
-        /// </summary>
-        public SignalDataUnknown()
-        {
-        }
+    /// <summary>
+    /// Provides the type conversion method for the base class to use
+    /// </summary>
+    protected override TypeBase Method => throw new Exception("SignalDataRaw only supports raw formats and will not convert any values.");
 
-        /// <summary>
-        /// Provides the type conversion method for the base class to use
-        /// </summary>
-        protected override TypeBase Method => throw new Exception("SignalDataRaw only supports raw formats and will not convert any values.");
+    /// <summary>
+    /// Gets the number of values that are in the signal
+    /// </summary>
+    public override int Count => m_values.Count;
 
-        /// <summary>
-        /// Gets the number of values that are in the signal
-        /// </summary>
-        public override int Count => m_values.Count;
+    /// <summary>
+    /// Adds a value to the signal in its raw 64-bit format.
+    /// </summary>
+    /// <param name="time">The time value to consider.</param>
+    /// <param name="value">The 64-bit value.</param>
+    public override void AddDataRaw(ulong time, ulong value)
+    {
+        if (IsComplete)
+            throw new Exception("Signal has already been marked as complete");
+        m_dateTime.Add(time);
+        m_values.Add(value);
+    }
 
-        /// <summary>
-        /// Adds a value to the signal in its raw 64-bit format.
-        /// </summary>
-        /// <param name="time">The time value to consider.</param>
-        /// <param name="value">The 64-bit value.</param>
-        public override void AddDataRaw(ulong time, ulong value)
-        {
-            if (IsComplete)
-                throw new Exception("Signal has already been marked as complete");
-            m_dateTime.Add(time);
-            m_values.Add(value);
-        }
+    /// <summary>
+    /// Gets a value from the signal with the provided index in its
+    /// raw 64-bit format.
+    /// </summary>
+    /// <param name="index">The zero based index of the position</param>
+    /// <param name="time">An output field for the time</param>
+    /// <param name="value">An output field for the raw 64-bit value</param>
+    public override void GetDataRaw(int index, out ulong time, out ulong value)
+    {
+        time = m_dateTime[index];
+        value = m_values[index];
+    }
 
-        /// <summary>
-        /// Gets a value from the signal with the provided index in its
-        /// raw 64-bit format.
-        /// </summary>
-        /// <param name="index">The zero based index of the position</param>
-        /// <param name="time">An output field for the time</param>
-        /// <param name="value">An output field for the raw 64-bit value</param>
-        public override void GetDataRaw(int index, out ulong time, out ulong value)
-        {
-            time = m_dateTime[index];
-            value = m_values[index];
-        }
-
-        /// <summary>
-        /// Gets the date from the signal with the provided index in its raw 64-bit format.
-        /// </summary>
-        /// <param name="index">The zero-based index of the position.</param>
-        /// <returns>The date at that specified index.</returns>
-        public override ulong GetDate(int index)
-        {
-            return m_dateTime[index];
-        }
+    /// <summary>
+    /// Gets the date from the signal with the provided index in its raw 64-bit format.
+    /// </summary>
+    /// <param name="index">The zero-based index of the position.</param>
+    /// <returns>The date at that specified index.</returns>
+    public override ulong GetDate(int index)
+    {
+        return m_dateTime[index];
     }
 }

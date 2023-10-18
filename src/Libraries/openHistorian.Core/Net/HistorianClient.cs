@@ -26,29 +26,28 @@
 
 using SnapDB.Snap.Services.Net;
 
-namespace openHistorian.Net
+namespace openHistorian.Net;
+
+/// <summary>
+/// Connects to a socket based remote historian database collection.
+/// </summary>
+public class HistorianClient :
+    SnapNetworkClient
 {
     /// <summary>
-    /// Connects to a socket based remote historian database collection.
+    /// 
     /// </summary>
-    public class HistorianClient :
-        SnapNetworkClient
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="serverNameOrIp"></param>
-        /// <param name="port"></param>
-        /// <param name="integratedSecurity"></param>
-        public HistorianClient(string serverNameOrIp, int port, bool integratedSecurity = false)
-            : base(new SnapNetworkClientSettings()
-            {
-                NetworkPort = port,
-                ServerNameOrIp = serverNameOrIp,
-                UseIntegratedSecurity = integratedSecurity
-            }, null, false)
+    /// <param name="serverNameOrIp"></param>
+    /// <param name="port"></param>
+    /// <param name="integratedSecurity"></param>
+    public HistorianClient(string serverNameOrIp, int port, bool integratedSecurity = false)
+        : base(new SnapNetworkClientSettings()
         {
+            NetworkPort = port,
+            ServerNameOrIp = serverNameOrIp,
+            UseIntegratedSecurity = integratedSecurity
+        }, null, false)
+    {
 
-        }
     }
 }

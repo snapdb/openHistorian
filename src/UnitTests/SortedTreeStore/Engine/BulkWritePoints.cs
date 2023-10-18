@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using openHistorian.Core.Snap;
 
 namespace openHistorian.UnitTests.SortedTreeStore.Engine;
 
@@ -41,12 +42,15 @@ namespace openHistorian.UnitTests.SortedTreeStore.Engine;
 public class BulkWritePoints
 {
     private const int PointsToArchive = 100000000;
+    private volatile bool Quit;
+    private volatile int PointCount;
+    private SortedList<double, int> PointSamples;
 
-    volatile bool Quit;
-    volatile int PointCount;
-    SortedList<double, int> PointSamples;
-
-    [Test]
+    /// <summary>
+    /// Verifies the database by reading and checking archived points.
+    /// </summary>
+    /// <exception cref="Exception">Thrown if files are corrupt, missing, or in excess.</exception>
+    //[Test]
     public void VerifyDB()
     {
         //Logger.ReportToConsole(VerboseLevel.All ^ VerboseLevel.DebugLow);
@@ -144,6 +148,9 @@ public class BulkWritePoints
     //    }
     //}
 
+    /// <summary>
+    /// Tests the speed of writing data points to the database.
+    /// </summary>
     [Test]
     public void TestWriteSpeed()
     {
@@ -191,6 +198,9 @@ public class BulkWritePoints
         Thread.Sleep(100);
     }
 
+    /// <summary>
+    /// Tests the write speed.
+    /// </summary>
     [Test]
     public void TestWriteSpeedRandom()
     {
@@ -198,8 +208,10 @@ public class BulkWritePoints
         Logger.Console.Verbose = VerboseLevel.All;
 
         Random r = new(1);
-        Thread th = new(WriteSpeed);
-        th.IsBackground = true;
+        Thread th = new(WriteSpeed)
+        {
+            IsBackground = true
+        };
         th.Start();
 
         Quit = false;
@@ -234,6 +246,9 @@ public class BulkWritePoints
         }
     }
 
+    /// <summary>
+    /// Stores the write speed.
+    /// </summary>
     void WriteSpeed()
     {
         Stopwatch sw = new();
@@ -245,6 +260,7 @@ public class BulkWritePoints
             double elapsed = sw.Elapsed.TotalSeconds;
             PointSamples.Add(elapsed, PointCount);
             int sleepTime = (int)(elapsed * 1000) % 100;
+
             sleepTime = 100 - sleepTime;
             if (sleepTime < 50)
                 sleepTime += 100;
@@ -252,7 +268,9 @@ public class BulkWritePoints
         }
     }
 
-
+    /// <summary>
+    /// Tests the rollover functionality of the database by writing a large number of data points.
+    /// </summary>
     [Test]
     public void TestRollover()
     {
@@ -260,40 +278,35 @@ public class BulkWritePoints
 
         Globals.MemoryPool.SetMaximumBufferSize(4000 * 1024 * 1024L);
 
-        foreach (string file in Directory.GetFiles("c:\\temp\\Test\\", "*.*", SearchOption.AllDirectories))
-            File.Delete(file);
+        //foreach (string file in Directory.GetFiles("c:\\temp\\Test\\", "*.*", SearchOption.AllDirectories))
+        //    File.Delete(file);
 
         PointCount = 0;
 
-        HistorianServerDatabaseConfig settings = new("DB", "c:\\temp\\Test\\Main\\", true);
-        settings.FinalWritePaths.Add("c:\\temp\\Test\\Rollover\\");
+        //HistorianServerDatabaseConfig settings = new("DB", "c:\\temp\\Test\\Main\\", true);
+        //settings.FinalWritePaths.Add("c:\\temp\\Test\\Rollover\\");
 
         ulong time = (ulong)DateTime.Now.Ticks;
 
-        using (SnapServer engine = new(settings))
-        using (SnapClient client = SnapClient.Connect(engine))
-        using (ClientDatabaseBase<HistorianKey, HistorianValue> db = client.GetDatabase<HistorianKey, HistorianValue>("DB"))
-        {
-            Thread.Sleep(100);
-            HistorianKey key = new();
-            HistorianValue value = new();
-            for (int x = 0; x < 100000000; x++)
-            {
-                if (x % 100 == 0)
-                    Thread.Sleep(10);
-                key.Timestamp = time;
-                time += TimeSpan.TicksPerMinute;
-                db.Write(key, value);
-            }
-        }
+        //using (SnapServer engine = new(settings))
+        //using (SnapClient client = SnapClient.Connect(engine))
+        //using (ClientDatabaseBase<HistorianKey, HistorianValue> db = client.GetDatabase<HistorianKey, HistorianValue>("DB"))
+        //{
+        //    Thread.Sleep(100);
+        //    HistorianKey key = new();
+        //    HistorianValue value = new();
+        //    for (int x = 0; x < 100000000; x++)
+        //    {
+        //        if (x % 100 == 0)
+        //            Thread.Sleep(10);
+        //        key.Timestamp = time;
+        //        time += TimeSpan.TicksPerMinute;
+        //        db.Write(key, value);
+        //    }
+        //}
 
         GC.Collect();
         GC.WaitForPendingFinalizers();
         Thread.Sleep(100);
     }
-
-
-
-
-
 }

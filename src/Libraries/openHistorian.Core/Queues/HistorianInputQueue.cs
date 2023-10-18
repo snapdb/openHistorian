@@ -26,190 +26,190 @@
 
 using Gemstone;
 using Gemstone.Threading;
+using openHistorian.Core.Snap;
 using openHistorian.Snap;
 using SnapDB;
 using SnapDB.Snap;
 using SnapDB.Snap.Services;
 
-namespace openHistorian.Queues
+namespace openHistorian.Queues;
+
+/// <summary>
+/// Serves as a local queue for getting data into a remote historian. 
+/// This queue will isolate the input from the volitality of a 
+/// remote historian. Data is also kept in this buffer until it has been committed
+/// to the disk subsystem. 
+/// </summary>
+public class HistorianInputQueue : IDisposable
 {
-    /// <summary>
-    /// Serves as a local queue for getting data into a remote historian. 
-    /// This queue will isolate the input from the volitality of a 
-    /// remote historian. Data is also kept in this buffer until it has been committed
-    /// to the disk subsystem. 
-    /// </summary>
-    public class HistorianInputQueue : IDisposable
+    private struct PointData
     {
-        private struct PointData
+        public ulong Key1;
+        public ulong Key2;
+        public ulong Value1;
+        public ulong Value2;
+
+        public bool Load(TreeStream<HistorianKey, HistorianValue> stream)
         {
-            public ulong Key1;
-            public ulong Key2;
-            public ulong Value1;
-            public ulong Value2;
-
-            public bool Load(TreeStream<HistorianKey, HistorianValue> stream)
+            HistorianKey key = new();
+            HistorianValue value = new();
+            if (stream.Read(key, value))
             {
-                HistorianKey key = new();
-                HistorianValue value = new();
-                if (stream.Read(key, value))
-                {
-                    Key1 = key.Timestamp;
-                    Key2 = key.PointID;
-                    Value1 = value.Value3;
-                    Value2 = value.Value1;
+                Key1 = key.Timestamp;
+                Key2 = key.PointID;
+                Value1 = value.Value3;
+                Value2 = value.Value1;
 
-                    return true;
-                }
-                return false;
+                return true;
             }
+            return false;
         }
+    }
 
-        private readonly StreamPoints m_pointStream;
+    private readonly StreamPoints m_pointStream;
 
-        private readonly object m_syncWrite;
+    private readonly object m_syncWrite;
 
-        private ClientDatabaseBase<HistorianKey, HistorianValue> m_database;
+    private ClientDatabaseBase<HistorianKey, HistorianValue> m_database;
 
-        private readonly IsolatedQueue<PointData> m_blocks;
+    private readonly IsolatedQueue<PointData> m_blocks;
 
-        private readonly ScheduledTask m_worker;
+    private readonly ScheduledTask m_worker;
 
-        private readonly Func<ClientDatabaseBase<HistorianKey, HistorianValue>> m_getDatabase;
+    private readonly Func<ClientDatabaseBase<HistorianKey, HistorianValue>> m_getDatabase;
 
-        /// <summary>
-        /// Initializes a new instance of the HistorianInputQueue with the specified function to get a database.
-        /// </summary>
-        /// <param name="getDatabase">A function that returns a ClientDatabaseBase of HistorianKey and HistorianValue.</param>
-        public HistorianInputQueue(Func<ClientDatabaseBase<HistorianKey, HistorianValue>> getDatabase)
+    /// <summary>
+    /// Initializes a new instance of the HistorianInputQueue with the specified function to get a database.
+    /// </summary>
+    /// <param name="getDatabase">A function that returns a ClientDatabaseBase of HistorianKey and HistorianValue.</param>
+    public HistorianInputQueue(Func<ClientDatabaseBase<HistorianKey, HistorianValue>> getDatabase)
+    {
+        m_syncWrite = new object();
+        m_blocks = new IsolatedQueue<PointData>();
+        m_pointStream = new StreamPoints(m_blocks, 1000);
+        m_getDatabase = getDatabase;
+        m_worker = new ScheduledTask(ThreadingMode.DedicatedForeground);
+        m_worker.Running += WorkerDoWork;
+    }
+
+    /// <summary>
+    /// Gets queue size.
+    /// </summary>
+    public long Size => m_blocks is null ? 0L : m_blocks.Count;
+
+    /// <summary>
+    /// Provides a thread safe way to enqueue points. 
+    /// While points are streaming all other writes are blocked. Therefore,
+    /// this point stream should be high speed.
+    /// </summary>
+    /// <param name="stream"></param>
+    public void Enqueue(TreeStream<HistorianKey, HistorianValue> stream)
+    {
+        lock (m_syncWrite)
         {
-            m_syncWrite = new object();
-            m_blocks = new IsolatedQueue<PointData>();
-            m_pointStream = new StreamPoints(m_blocks, 1000);
-            m_getDatabase = getDatabase;
-            m_worker = new ScheduledTask(ThreadingMode.DedicatedForeground);
-            m_worker.Running += WorkerDoWork;
-        }
-
-        /// <summary>
-        /// Gets queue size.
-        /// </summary>
-        public long Size => m_blocks is null ? 0L : m_blocks.Count;
-
-        /// <summary>
-        /// Provides a thread safe way to enqueue points. 
-        /// While points are streaming all other writes are blocked. Therefore,
-        /// this point stream should be high speed.
-        /// </summary>
-        /// <param name="stream"></param>
-        public void Enqueue(TreeStream<HistorianKey, HistorianValue> stream)
-        {
-            lock (m_syncWrite)
+            PointData data = default;
+            while (data.Load(stream))
             {
-                PointData data = default;
-                while (data.Load(stream))
-                {
-                    m_blocks.Enqueue(data);
-                }
-            }
-            m_worker.Start();
-        }
-
-        /// <summary>
-        /// Adds point data to the queue.
-        /// </summary>
-        public void Enqueue(HistorianKey key, HistorianValue value)
-        {
-            lock (m_syncWrite)
-            {
-                PointData data = new()
-                {
-                    Key1 = key.Timestamp,
-                    Key2 = key.PointID,
-                    Value1 = value.Value3,
-                    Value2 = value.Value1
-                };
                 m_blocks.Enqueue(data);
             }
+        }
+        m_worker.Start();
+    }
+
+    /// <summary>
+    /// Adds point data to the queue.
+    /// </summary>
+    public void Enqueue(HistorianKey key, HistorianValue value)
+    {
+        lock (m_syncWrite)
+        {
+            PointData data = new()
+            {
+                Key1 = key.Timestamp,
+                Key2 = key.PointID,
+                Value1 = value.Value3,
+                Value2 = value.Value1
+            };
+            m_blocks.Enqueue(data);
+        }
+        m_worker.Start();
+    }
+
+    private void WorkerDoWork(object sender, EventArgs<ScheduledTaskRunningReason> eventArgs)
+    {
+        m_pointStream.Reset();
+
+        try
+        {
+            if (m_database is null)
+                m_database = m_getDatabase();
+            m_database.Write(m_pointStream);
+        }
+        catch (Exception)
+        {
+            m_database = null;
+            m_worker.Start(1000);
+            return;
+        }
+
+        if (m_pointStream.QuitOnPointCount)
             m_worker.Start();
-        }
+        else
+            m_worker.Start(1000);
+    }
 
-        private void WorkerDoWork(object sender, EventArgs<ScheduledTaskRunningReason> eventArgs)
+
+    private class StreamPoints
+        : TreeStream<HistorianKey, HistorianValue>
+    {
+        private readonly IsolatedQueue<PointData> m_measurements;
+        private readonly int m_maxPoints;
+        private int m_count;
+
+        public StreamPoints(IsolatedQueue<PointData> measurements, int maxPointsPerStream)
         {
-            m_pointStream.Reset();
-
-            try
-            {
-                if (m_database is null)
-                    m_database = m_getDatabase();
-                m_database.Write(m_pointStream);
-            }
-            catch (Exception)
-            {
-                m_database = null;
-                m_worker.Start(1000);
-                return;
-            }
-
-            if (m_pointStream.QuitOnPointCount)
-                m_worker.Start();
-            else
-                m_worker.Start(1000);
+            m_measurements = measurements;
+            m_maxPoints = maxPointsPerStream;
         }
 
-
-        private class StreamPoints
-            : TreeStream<HistorianKey, HistorianValue>
+        public void Reset()
         {
-            private readonly IsolatedQueue<PointData> m_measurements;
-            private readonly int m_maxPoints;
-            private int m_count;
-
-            public StreamPoints(IsolatedQueue<PointData> measurements, int maxPointsPerStream)
-            {
-                m_measurements = measurements;
-                m_maxPoints = maxPointsPerStream;
-            }
-
-            public void Reset()
-            {
-                m_count = 0;
-                SetEos(false);
-            }
-
-            protected override void EndOfStreamReached()
-            {
-                SetEos(true);
-            }
-
-            public bool QuitOnPointCount => m_count >= m_maxPoints;
-
-            protected override bool ReadNext(HistorianKey key, HistorianValue value)
-            {
-                if (m_count < m_maxPoints && m_measurements.TryDequeue(out PointData data))
-                {
-                    key.Timestamp = data.Key1;
-                    key.PointID = data.Key2;
-                    value.Value3 = data.Value1;
-                    value.Value1 = data.Value2;
-                    m_count++;
-                    return true;
-                }
-                key.Timestamp = 0;
-                key.PointID = 0;
-                value.Value3 = 0;
-                value.Value1 = 0;
-                return false;
-            }
-
+            m_count = 0;
+            SetEos(false);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public void Dispose()
+        protected override void EndOfStreamReached()
         {
-            m_worker.Dispose();
+            SetEos(true);
         }
+
+        public bool QuitOnPointCount => m_count >= m_maxPoints;
+
+        protected override bool ReadNext(HistorianKey key, HistorianValue value)
+        {
+            if (m_count < m_maxPoints && m_measurements.TryDequeue(out PointData data))
+            {
+                key.Timestamp = data.Key1;
+                key.PointID = data.Key2;
+                value.Value3 = data.Value1;
+                value.Value1 = data.Value2;
+                m_count++;
+                return true;
+            }
+            key.Timestamp = 0;
+            key.PointID = 0;
+            value.Value3 = 0;
+            value.Value1 = 0;
+            return false;
+        }
+
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void Dispose()
+    {
+        m_worker.Dispose();
     }
 }

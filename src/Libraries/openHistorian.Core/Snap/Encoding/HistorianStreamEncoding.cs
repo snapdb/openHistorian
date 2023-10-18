@@ -24,6 +24,7 @@
 //
 //******************************************************************************************************
 
+using openHistorian.Core.Snap;
 using openHistorian.Snap.Definitions;
 using SnapDB.IO;
 using SnapDB.Snap;

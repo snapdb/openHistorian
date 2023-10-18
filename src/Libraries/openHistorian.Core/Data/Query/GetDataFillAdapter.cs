@@ -23,96 +23,96 @@
 //       Converted code to .NET core.
 //
 //******************************************************************************************************
-using openHistorian.Snap;
 
-namespace openHistorian.Data.Query
+using openHistorian.Core.Snap;
+
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// 
+/// </summary>
+public class DataFillAdapter
+    : IDisposable
 {
     /// <summary>
-    /// 
+    /// The underlying point stream used for data retrieval.
     /// </summary>
-    public class DataFillAdapter
-        : IDisposable
-    {
-        /// <summary>
-        /// The underlying point stream used for data retrieval.
-        /// </summary>
 #pragma warning disable CS0618 // Type or member is obsolete
-        private readonly PointStream m_stream;
+    private readonly PointStream m_stream;
 #pragma warning restore CS0618 // Type or member is obsolete
 
-        /// <summary>
-        /// Initializes a new instance of the DataFillAdapter class with the specified point stream.
-        /// </summary>
-        /// <param name="stream">The point stream used for data retrieval.</param>
-        public DataFillAdapter(PointStream stream)
+    /// <summary>
+    /// Initializes a new instance of the DataFillAdapter class with the specified point stream.
+    /// </summary>
+    /// <param name="stream">The point stream used for data retrieval.</param>
+    public DataFillAdapter(PointStream stream)
+    {
+        m_stream = stream;
+        m_stream.Read();
+    }
+
+    /// <summary>
+    /// Gets or sets the frame time of the <see cref="DataFillAdapter"/>.
+    /// </summary>
+    public DateTime FrameTime;
+
+    /// <summary>
+    /// Fills data frames using the specified callback.
+    /// </summary>
+    /// <param name="callback">The callback function needed to process the data frames.</param>
+    /// <returns>
+    /// <c>true</c> if data filling is successful; otherwise, <c>false</c> indicates the stream is invalid.
+    /// </returns>
+    public bool Fill(Action<ulong, HistorianValue> callback)
+    {
+        if (!m_stream.IsValid)
+            return false;
+
+        ulong timeStamp = m_stream.CurrentKey.Timestamp;
+        FrameTime = m_stream.CurrentKey.TimestampAsDate;
+        callback(m_stream.CurrentKey.PointID, m_stream.CurrentValue);
+
+        while (true)
         {
-            m_stream = stream;
-            m_stream.Read();
-        }
-
-        /// <summary>
-        /// Gets or sets the frame time of the <see cref="DataFillAdapter"/>.
-        /// </summary>
-        public DateTime FrameTime;
-
-        /// <summary>
-        /// Fills data frames using the specified callback.
-        /// </summary>
-        /// <param name="callback">The callback function needed to process the data frames.</param>
-        /// <returns>
-        /// <c>true</c> if data filling is successful; otherwise, <c>false</c> indicates the stream is invalid.
-        /// </returns>
-        public bool Fill(Action<ulong, HistorianValue> callback)
-        {
-            if (!m_stream.IsValid)
-                return false;
-
-            ulong timeStamp = m_stream.CurrentKey.Timestamp;
-            FrameTime = m_stream.CurrentKey.TimestampAsDate;
-            callback(m_stream.CurrentKey.PointID, m_stream.CurrentValue);
-
-            while (true)
+            if (!m_stream.Read())
             {
-                if (!m_stream.Read())
-                {
-                    Dispose();
-                    return true; // End of stream
-                }
-
-                if (m_stream.CurrentKey.Timestamp == timeStamp)
-                    callback(m_stream.CurrentKey.PointID, m_stream.CurrentValue);
-
-                else
-                    return true;
+                Dispose();
+                return true; // End of stream
             }
-        }
 
-        /// <summary>
-        /// Once completed, disposes of the <see cref="DataFillAdapter"/> and releases the associated resources.
-        /// </summary>
-        public void Dispose()
-        {
-            m_stream.Dispose();
+            if (m_stream.CurrentKey.Timestamp == timeStamp)
+                callback(m_stream.CurrentKey.PointID, m_stream.CurrentValue);
+
+            else
+                return true;
         }
     }
 
     /// <summary>
-    /// Queries a historian database for a set of signals. 
+    /// Once completed, disposes of the <see cref="DataFillAdapter"/> and releases the associated resources.
     /// </summary>
-    public static partial class GetDataFillAdapterMethods
+    public void Dispose()
     {
-
-        /// <summary>
-        /// Gets concentrated frames from the provided stream
-        /// </summary>
-        /// <param name="stream">The database to use.</param>
-        /// <returns>
-        /// A <see cref="DataFillAdapter"/> for the provided point stream.
-        /// </returns>
-        public static DataFillAdapter GetFillAdapter(this PointStream stream)
-        {
-            return new DataFillAdapter(stream);
-        }
-
+        m_stream.Dispose();
     }
+}
+
+/// <summary>
+/// Queries a historian database for a set of signals. 
+/// </summary>
+public static partial class GetDataFillAdapterMethods
+{
+
+    /// <summary>
+    /// Gets concentrated frames from the provided stream
+    /// </summary>
+    /// <param name="stream">The database to use.</param>
+    /// <returns>
+    /// A <see cref="DataFillAdapter"/> for the provided point stream.
+    /// </returns>
+    public static DataFillAdapter GetFillAdapter(this PointStream stream)
+    {
+        return new DataFillAdapter(stream);
+    }
+
 }

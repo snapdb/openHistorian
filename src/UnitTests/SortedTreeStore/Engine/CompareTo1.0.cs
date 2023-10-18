@@ -38,7 +38,10 @@ namespace openHistorian.UnitTests.SortedTreeStore.Engine;
 		private const int PointsToArchive = 100000000;
 		private const int MetaDataPoints = 100;
 
-		[Test]
+        /// <summary>
+        /// Tests the speed of writing data points to the database.
+        /// </summary>
+    [Test]
 		public void TestWriteSpeed()
 		{
 			foreach (string file in Directory.GetFiles("c:\\temp\\benchmark\\", "*.*", SearchOption.AllDirectories))
@@ -77,7 +80,10 @@ namespace openHistorian.UnitTests.SortedTreeStore.Engine;
 			}
 		}
 
-		[Test]
+    /// <summary>
+    /// Tests the speed of reading data points from the database.
+    /// </summary>
+    [Test]
 		public void TestReadSpeed()
 		{
 			Console.WriteLine("Opening archive file...");

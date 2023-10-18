@@ -26,99 +26,98 @@
 
 using openHistorian.Data.Types;
 
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// Contains a series of Times and Values for an individual signal.
+/// This class will store the value as a <see cref="float"/>.
+/// </summary>
+public class SignalDataSingle
+    : SignalDataBase
 {
+    private readonly List<ulong> m_dateTime = new();
+    private readonly List<float> m_values = new();
+
+    private readonly TypeBase m_type;
+
     /// <summary>
-    /// Contains a series of Times and Values for an individual signal.
-    /// This class will store the value as a <see cref="float"/>.
+    /// The <see cref="SignalDataSingle"/> that creates an instance of <see cref="TypeSingle"/> as m_type.
     /// </summary>
-    public class SignalDataSingle
-        : SignalDataBase
+    public SignalDataSingle()
     {
-        private readonly List<ulong> m_dateTime = new();
-        private readonly List<float> m_values = new();
+        m_type = TypeSingle.Instance;
+    }
 
-        private readonly TypeBase m_type;
+    /// <summary>
+    /// Provides the type conversion method for the base class to use.
+    /// </summary>
+    protected override TypeBase Method => m_type;
 
-        /// <summary>
-        /// The <see cref="SignalDataSingle"/> that creates an instance of <see cref="TypeSingle"/> as m_type.
-        /// </summary>
-        public SignalDataSingle()
-        {
-            m_type = TypeSingle.Instance;
-        }
+    /// <summary>
+    /// Gets the number of values that are in the signal.
+    /// </summary>
+    public override int Count => m_values.Count;
 
-        /// <summary>
-        /// Provides the type conversion method for the base class to use.
-        /// </summary>
-        protected override TypeBase Method => m_type;
+    /// <summary>
+    /// Adds a value to the signal and converts it from a <see cref="float"/>
+    /// into its native format.
+    /// </summary>
+    /// <param name="time">the time value to consider.</param>
+    /// <param name="value">the value to convert.</param>
+    public override void AddData(ulong time, float value)
+    {
+        if (IsComplete)
+            throw new Exception("Signal has already been marked as complete");
+        m_dateTime.Add(time);
+        m_values.Add(value);
+    }
 
-        /// <summary>
-        /// Gets the number of values that are in the signal.
-        /// </summary>
-        public override int Count => m_values.Count;
+    /// <summary>
+    /// Gets a value from the signal with the provided index and automatically 
+    /// converts it to a <see cref="float"/>.
+    /// </summary>
+    /// <param name="index">The zero based index of the position.</param>
+    /// <param name="time">An output field for the time.</param>
+    /// <param name="value">An output field for the converted value.</param>
+    public override void GetData(int index, out ulong time, out float value)
+    {
+        time = m_dateTime[index];
+        value = m_values[index];
+    }
 
-        /// <summary>
-        /// Adds a value to the signal and converts it from a <see cref="float"/>
-        /// into its native format.
-        /// </summary>
-        /// <param name="time">the time value to consider.</param>
-        /// <param name="value">the value to convert.</param>
-        public override void AddData(ulong time, float value)
-        {
-            if (IsComplete)
-                throw new Exception("Signal has already been marked as complete");
-            m_dateTime.Add(time);
-            m_values.Add(value);
-        }
+    /// <summary>
+    /// Adds a value to the signal in its raw 64-bit format.
+    /// </summary>
+    /// <param name="time">the time value to consider</param>
+    /// <param name="value">the 64-bit value</param>
+    public override unsafe void AddDataRaw(ulong time, ulong value)
+    {
+        if (IsComplete)
+            throw new Exception("Signal has already been marked as complete");
+        uint tmp = (uint)value;
+        AddData(time, *(float*)&tmp);
+    }
 
-        /// <summary>
-        /// Gets a value from the signal with the provided index and automatically 
-        /// converts it to a <see cref="float"/>.
-        /// </summary>
-        /// <param name="index">The zero based index of the position.</param>
-        /// <param name="time">An output field for the time.</param>
-        /// <param name="value">An output field for the converted value.</param>
-        public override void GetData(int index, out ulong time, out float value)
-        {
-            time = m_dateTime[index];
-            value = m_values[index];
-        }
+    /// <summary>
+    /// Gets a value from the signal with the provided index in its
+    /// raw 64-bit format.
+    /// </summary>
+    /// <param name="index">The zero based index of the position</param>
+    /// <param name="time">An output field for the time</param>
+    /// <param name="value">An output field for the raw 64-bit value</param>
+    public override unsafe void GetDataRaw(int index, out ulong time, out ulong value)
+    {
+        GetData(index, out time, out float tmp);
+        value = *(uint*)&tmp;
+    }
 
-        /// <summary>
-        /// Adds a value to the signal in its raw 64-bit format.
-        /// </summary>
-        /// <param name="time">the time value to consider</param>
-        /// <param name="value">the 64-bit value</param>
-        public override unsafe void AddDataRaw(ulong time, ulong value)
-        {
-            if (IsComplete)
-                throw new Exception("Signal has already been marked as complete");
-            uint tmp = (uint)value;
-            AddData(time, *(float*)&tmp);
-        }
-
-        /// <summary>
-        /// Gets a value from the signal with the provided index in its
-        /// raw 64-bit format.
-        /// </summary>
-        /// <param name="index">The zero based index of the position</param>
-        /// <param name="time">An output field for the time</param>
-        /// <param name="value">An output field for the raw 64-bit value</param>
-        public override unsafe void GetDataRaw(int index, out ulong time, out ulong value)
-        {
-            GetData(index, out time, out float tmp);
-            value = *(uint*)&tmp;
-        }
-
-        /// <summary>
-        /// Gets the date stamp from the specified index.
-        /// </summary>
-        /// <param name="index">The index to retrieve the date from.</param>
-        /// <returns>The date stamp from the signal stored at the specified index.</returns>
-        public override ulong GetDate(int index)
-        {
-            return m_dateTime[index];
-        }
+    /// <summary>
+    /// Gets the date stamp from the specified index.
+    /// </summary>
+    /// <param name="index">The index to retrieve the date from.</param>
+    /// <returns>The date stamp from the signal stored at the specified index.</returns>
+    public override ulong GetDate(int index)
+    {
+        return m_dateTime[index];
     }
 }

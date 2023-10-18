@@ -29,22 +29,35 @@ using System.Runtime;
 
 namespace openHistorian.UnitTests;
 
+/// <summary>
+/// Utility class for measuring and asserting execution time of methods or code blocks.
+/// </summary>
 public class DebugStopwatch
 {
     private readonly Stopwatch sw;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DebugStopwatch"/> class.
+    /// </summary>
     public DebugStopwatch()
     {
         GCSettings.LatencyMode = GCLatencyMode.Batch;
         sw = new Stopwatch();
     }
 
+    /// <summary>
+    /// Forces a garbage collection and waits for pending finalizers.
+    /// </summary>
     public void DoGC()
     {
         GC.Collect();
         GC.WaitForPendingFinalizers();
     }
 
+    /// <summary>
+    /// Starts the stopwatch and optionally performs a garbage collection.
+    /// </summary>
+    /// <param name="skipCollection">True to skip garbage collection, false to collect before starting the stopwatch.</param>
     public void Start(bool skipCollection = false)
     {
         if (skipCollection)
@@ -55,12 +68,21 @@ public class DebugStopwatch
         sw.Restart();
     }
 
+    /// <summary>
+    /// Stops the stopwatch and asserts that the elapsed time is within a specified maximum time.
+    /// </summary>
+    /// <param name="maximumTime">The maximum allowed time in milliseconds.</param>
     public void Stop(double maximumTime)
     {
         sw.Stop();
         Assert.IsTrue(sw.Elapsed.TotalMilliseconds <= maximumTime);
     }
 
+    /// <summary>
+    /// Stops the stopwatch and asserts that the elapsed time is within a specified range of time.
+    /// </summary>
+    /// <param name="minimumTime">The minimum allowed time in milliseconds.</param>
+    /// <param name="maximumTime">The maximum allowed time in milliseconds.</param>
     public void Stop(double minimumTime, double maximumTime)
     {
         sw.Stop();
@@ -68,12 +90,18 @@ public class DebugStopwatch
         Assert.IsTrue(sw.Elapsed.TotalMilliseconds <= maximumTime);
     }
 
+    /// <summary>
+    /// Measures the time taken to execute an action and returns the average execution time.
+    /// </summary>
+    /// <param name="function">The action to be executed and measured.</param>
+    /// <returns>The average execution time in seconds.</returns>
     public double TimeEvent(Action function)
     {
         GC.Collect();
         function();
         int count = 0;
         sw.Reset();
+
         while (sw.Elapsed.TotalSeconds < .25)
         {
             sw.Start();
@@ -81,9 +109,15 @@ public class DebugStopwatch
             sw.Stop();
             count++;
         }
+
         return sw.Elapsed.TotalSeconds / count;
     }
 
+    /// <summary>
+    /// Measures the time taken to execute an action multiple times and returns the median execution time.
+    /// </summary>
+    /// <param name="function">The action to be executed and measured.</param>
+    /// <returns>The median execution time in seconds.</returns>
     public double TimeEventMedian(Action function)
     {
         List<double> values = new();

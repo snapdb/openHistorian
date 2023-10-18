@@ -27,6 +27,9 @@ using System.Text;
 
 namespace openHistorian.UnitTests;
 
+/// <summary>
+/// 
+/// </summary>
 public static class StepTimer
 {
     private static readonly Dictionary<string, Stopwatch> AllStopwatches;

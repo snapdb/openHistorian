@@ -24,45 +24,44 @@
 //
 //******************************************************************************************************
 
-namespace openHistorian.Data.Types
+namespace openHistorian.Data.Types;
+
+/// <summary>
+/// Method for converting data to and from a <see cref="double"/>.
+/// </summary>
+public unsafe class TypeDouble
+    : TypeBase
 {
     /// <summary>
-    /// Method for converting data to and from a <see cref="double"/>.
+    /// Creates a new instance of TypeDouble.
     /// </summary>
-    public unsafe class TypeDouble
-        : TypeBase
+    public static readonly TypeDouble Instance = new();
+
+    /// <summary>
+    /// Must use the static instance
+    /// </summary>
+    private TypeDouble()
     {
-        /// <summary>
-        /// Creates a new instance of TypeDouble.
-        /// </summary>
-        public static readonly TypeDouble Instance = new();
+    }
 
-        /// <summary>
-        /// Must use the static instance
-        /// </summary>
-        private TypeDouble()
-        {
-        }
+    /// <summary>
+    /// Converts from a double value to a raw ulong.
+    /// </summary>
+    /// <param name="value">The value to convert to raw.</param>
+    /// <returns>The value in raw ulong form.</returns>
+    protected override ulong ToRaw(IConvertible value)
+    {
+        double tmp = value.ToDouble(null);
+        return *(ulong*)&tmp;
+    }
 
-        /// <summary>
-        /// Converts from a double value to a raw ulong.
-        /// </summary>
-        /// <param name="value">The value to convert to raw.</param>
-        /// <returns>The value in raw ulong form.</returns>
-        protected override ulong ToRaw(IConvertible value)
-        {
-            double tmp = value.ToDouble(null);
-            return *(ulong*)&tmp;
-        }
-
-        /// <summary>
-        /// Retrieves the ulong value and converts to a double.
-        /// </summary>
-        /// <param name="value">The value to convert to double.</param>
-        /// <returns>The value in double form.</returns>
-        protected override IConvertible GetValue(ulong value)
-        {
-            return *(double*)&value;
-        }
+    /// <summary>
+    /// Retrieves the ulong value and converts to a double.
+    /// </summary>
+    /// <param name="value">The value to convert to double.</param>
+    /// <returns>The value in double form.</returns>
+    protected override IConvertible GetValue(ulong value)
+    {
+        return *(double*)&value;
     }
 }

@@ -28,186 +28,192 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 
-namespace openHistorian.UnitTests.Threading
+namespace openHistorian.UnitTests.Threading;
+
+[TestFixture]
+internal class ScheduledTaskTest
 {
-    [TestFixture]
-    class ScheduledTaskTest
+    int m_doWorkCount;
+
+    /// <summary>
+    /// Test method that measures execution performance with different threading modes.
+    /// </summary>
+    [Test]
+    public void Test()
     {
-        int m_doWorkCount;
+        Test(ThreadingMode.DedicatedBackground);
+        Test(ThreadingMode.DedicatedForeground);
+        Test(ThreadingMode.ThreadPool);
+    }
 
-        [Test]
-        public void Test()
+    private void Test(ThreadingMode mode)
+    {
+        const int Count = 1000000000;
+        Stopwatch sw = new();
+        m_doWorkCount = 0;
+        using (ScheduledTask work = new(mode))
         {
-            Test(ThreadingMode.DedicatedBackground);
-            Test(ThreadingMode.DedicatedForeground);
-            Test(ThreadingMode.ThreadPool);
+            work.Running += work_DoWork;
+
+            sw.Start();
+            for (int x = 0; x < 1000; x++)
+                work.Start();
+
+            sw.Stop();
         }
 
-        void Test(ThreadingMode mode)
+        m_doWorkCount = 0;
+        sw.Reset();
+
+        using (ScheduledTask work = new(mode))
         {
-            const int Count = 1000000000;
-            Stopwatch sw = new();
-            m_doWorkCount = 0;
-            using (ScheduledTask work = new(mode))
-            {
-                work.Running += work_DoWork;
+            work.Running += work_DoWork;
 
-                sw.Start();
-                for (int x = 0; x < 1000; x++)
-                    work.Start();
+            sw.Start();
+            for (int x = 0; x < Count; x++)
+                work.Start();
 
-                sw.Stop();
-            }
-
-            m_doWorkCount = 0;
-            sw.Reset();
-
-            using (ScheduledTask work = new(mode))
-            {
-                work.Running += work_DoWork;
-
-                sw.Start();
-                for (int x = 0; x < Count; x++)
-                    work.Start();
-
-                sw.Stop();
-            }
-
-            Console.WriteLine(mode.ToString());
-            Console.WriteLine(" Fire Event Count: " + m_doWorkCount.ToString());
-            Console.WriteLine("  Fire Event Rate: " + (m_doWorkCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
-            Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
-            Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
-            Console.WriteLine();
+            sw.Stop();
         }
 
-        [Test]
-        public void TestTimed()
+        Console.WriteLine(mode.ToString());
+        Console.WriteLine(" Fire Event Count: " + m_doWorkCount.ToString());
+        Console.WriteLine("  Fire Event Rate: " + (m_doWorkCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
+        Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
+        Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Test method that measures timed execution performance with different threading modes.
+    /// </summary>
+    [Test]
+    public void TestTimed()
+    {
+        TestTimed(ThreadingMode.DedicatedBackground);
+        TestTimed(ThreadingMode.DedicatedForeground);
+        TestTimed(ThreadingMode.ThreadPool);
+    }
+
+    private void TestTimed(ThreadingMode mode)
+    {
+
+        const int Count = 1000000000;
+        Stopwatch sw = new();
+        m_doWorkCount = 0;
+        using (ScheduledTask work = new(mode))
         {
-            TestTimed(ThreadingMode.DedicatedBackground);
-            TestTimed(ThreadingMode.DedicatedForeground);
-            TestTimed(ThreadingMode.ThreadPool);
+            work.Running += work_DoWork;
 
-        }
-
-        void TestTimed(ThreadingMode mode)
-        {
-
-            const int Count = 1000000000;
-            Stopwatch sw = new();
-            m_doWorkCount = 0;
-            using (ScheduledTask work = new(mode))
+            sw.Start();
+            for (int x = 0; x < 1000; x++)
             {
-                work.Running += work_DoWork;
-
-                sw.Start();
-                for (int x = 0; x < 1000; x++)
-                {
-                    work.Start(1);
-                    work.Start();
-                }
-
-                sw.Stop();
-            }
-            m_doWorkCount = 0;
-            sw.Reset();
-
-            using (ScheduledTask work = new(mode))
-            {
-                work.Running += work_DoWork;
-
-                sw.Start();
-                for (int x = 0; x < Count; x++)
-                {
-                    work.Start(1000);
-                    work.Start();
-                }
-
-                sw.Stop();
+                work.Start(1);
+                work.Start();
             }
 
-            Console.WriteLine(mode.ToString());
-            Console.WriteLine(" Fire Event Count: " + m_doWorkCount.ToString());
-            Console.WriteLine("  Fire Event Rate: " + (m_doWorkCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
-            Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
-            Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
-            Console.WriteLine();
+            sw.Stop();
         }
+        m_doWorkCount = 0;
+        sw.Reset();
 
-        [Test]
-        public void TestConcurrent()
+        using (ScheduledTask work = new(mode))
         {
-            TestConcurrent(ThreadingMode.DedicatedBackground);
-            TestConcurrent(ThreadingMode.DedicatedForeground);
-            TestConcurrent(ThreadingMode.ThreadPool);
+            work.Running += work_DoWork;
 
-        }
-
-        void TestConcurrent(ThreadingMode mode)
-        {
-            int workCount;
-
-            const int Count = 100000000;
-            Stopwatch sw = new();
-            m_doWorkCount = 0;
-            using (ScheduledTask work = new(mode))
+            sw.Start();
+            for (int x = 0; x < Count; x++)
             {
-                work.Running += work_DoWork;
-
-                sw.Start();
-                for (int x = 0; x < 1000; x++)
-                    work.Start();
-
-                sw.Stop();
-            }
-            m_doWorkCount = 0;
-            sw.Reset();
-
-            using (ScheduledTask work = new(mode))
-            {
-                work.Running += work_DoWork;
-
-
-                sw.Start();
-                ThreadPool.QueueUserWorkItem(BlastStartMethod, work);
-                ThreadPool.QueueUserWorkItem(BlastStartMethod, work);
-
-                for (int x = 0; x < Count; x++)
-                    work.Start();
-                workCount = m_doWorkCount;
-                sw.Stop();
-                Thread.Sleep(100);
+                work.Start(1000);
+                work.Start();
             }
 
-            Console.WriteLine(mode.ToString());
-            Console.WriteLine(" Fire Event Count: " + workCount.ToString());
-            Console.WriteLine("  Fire Event Rate: " + (workCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
-            Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
-            Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
-            Console.WriteLine();
+            sw.Stop();
         }
 
+        Console.WriteLine(mode.ToString());
+        Console.WriteLine(" Fire Event Count: " + m_doWorkCount.ToString());
+        Console.WriteLine("  Fire Event Rate: " + (m_doWorkCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
+        Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
+        Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
+        Console.WriteLine();
+    }
 
-        void BlastStartMethod(object obj)
-        {
-            try
-            {
-                ScheduledTask task = (ScheduledTask)obj;
-                const int Count = 100000000;
-                for (int x = 0; x < Count; x++)
-                    task.Start();
-            }
-            catch (Exception)
-            {
-
-            }
-        }
-
-
-        private void work_DoWork(object sender, EventArgs<ScheduledTaskRunningReason> eventArgs)
-        {
-            m_doWorkCount++;
-        }
+    /// <summary>
+    /// Test method that measures concurrent execution performance with different threading modes.
+    /// </summary>
+    [Test]
+    public void TestConcurrent()
+    {
+        TestConcurrent(ThreadingMode.DedicatedBackground);
+        TestConcurrent(ThreadingMode.DedicatedForeground);
+        TestConcurrent(ThreadingMode.ThreadPool);
 
     }
+
+    private void TestConcurrent(ThreadingMode mode)
+    {
+        int workCount;
+
+        const int Count = 100000000;
+        Stopwatch sw = new();
+        m_doWorkCount = 0;
+        using (ScheduledTask work = new(mode))
+        {
+            work.Running += work_DoWork;
+
+            sw.Start();
+            for (int x = 0; x < 1000; x++)
+                work.Start();
+
+            sw.Stop();
+        }
+        m_doWorkCount = 0;
+        sw.Reset();
+
+        using (ScheduledTask work = new(mode))
+        {
+            work.Running += work_DoWork;
+
+
+            sw.Start();
+            ThreadPool.QueueUserWorkItem(BlastStartMethod, work);
+            ThreadPool.QueueUserWorkItem(BlastStartMethod, work);
+
+            for (int x = 0; x < Count; x++)
+                work.Start();
+            workCount = m_doWorkCount;
+            sw.Stop();
+            Thread.Sleep(100);
+        }
+
+        Console.WriteLine(mode.ToString());
+        Console.WriteLine(" Fire Event Count: " + workCount.ToString());
+        Console.WriteLine("  Fire Event Rate: " + (workCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
+        Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
+        Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
+        Console.WriteLine();
+    }
+
+    private void BlastStartMethod(object obj)
+    {
+        try
+        {
+            ScheduledTask task = (ScheduledTask)obj;
+            const int Count = 100000000;
+            for (int x = 0; x < Count; x++)
+                task.Start();
+        }
+        catch (Exception)
+        {
+
+        }
+    }
+
+
+    private void work_DoWork(object sender, EventArgs<ScheduledTaskRunningReason> eventArgs)
+    {
+        m_doWorkCount++;
+    }
+
 }

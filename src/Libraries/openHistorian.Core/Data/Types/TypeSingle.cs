@@ -24,49 +24,46 @@
 //
 //******************************************************************************************************
 
-using System;
+namespace openHistorian.Data.Types;
 
-namespace openHistorian.Data.Types
+/// <summary>
+/// Method for converting data to and from a <see cref="float"/>.
+/// </summary>
+public unsafe class TypeSingle
+    : TypeBase
 {
     /// <summary>
-    /// Method for converting data to and from a <see cref="float"/>.
+    /// A readonly instance of TypeSingle.
     /// </summary>
-    public unsafe class TypeSingle
-        : TypeBase
+    public static readonly TypeSingle Instance = new();
+
+    /// <summary>
+    /// Must use the static instance.
+    /// </summary>
+    private TypeSingle()
     {
-        /// <summary>
-        /// A readonly instance of TypeSingle.
-        /// </summary>
-        public static readonly TypeSingle Instance = new();
+    }
 
-        /// <summary>
-        /// Must use the static instance.
-        /// </summary>
-        private TypeSingle()
-        {
-        }
+    /// <summary>
+    /// Converts a convertible value to its raw form.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <returns>The raw value.</returns>
+    protected override ulong ToRaw(IConvertible value)
+    {
+        float tmp = value.ToSingle(null);
 
-        /// <summary>
-        /// Converts a convertible value to its raw form.
-        /// </summary>
-        /// <param name="value">The value to convert.</param>
-        /// <returns>The raw value.</returns>
-        protected override ulong ToRaw(IConvertible value)
-        {
-            float tmp = value.ToSingle(null);
+        return *(uint*)&tmp;
+    }
 
-            return *(uint*)&tmp;
-        }
-
-        /// <summary>
-        /// Gets the value of the raw form data and converts it to a float.
-        /// </summary>
-        /// <param name="value">The value to convert.</param>
-        /// <returns>The float value.</returns>
-        protected override IConvertible GetValue(ulong value)
-        {
-            uint tmp = (uint)value;
-            return *(float*)&tmp;
-        }
+    /// <summary>
+    /// Gets the value of the raw form data and converts it to a float.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <returns>The float value.</returns>
+    protected override IConvertible GetValue(ulong value)
+    {
+        uint tmp = (uint)value;
+        return *(float*)&tmp;
     }
 }

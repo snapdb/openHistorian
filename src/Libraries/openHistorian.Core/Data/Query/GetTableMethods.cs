@@ -27,6 +27,7 @@
 using openHistorian.Snap;
 using SnapDB.Snap.Services;
 using System.Data;
+using openHistorian.Core.Snap;
 
 namespace openHistorian.Data.Query;
 

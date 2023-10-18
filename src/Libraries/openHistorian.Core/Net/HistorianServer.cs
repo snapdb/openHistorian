@@ -30,98 +30,97 @@
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Net;
 
-namespace openHistorian.Net
+namespace openHistorian.Net;
+
+/// <summary>
+/// Represents a historian server instance that can be used to read and write time-series data.
+/// </summary>
+public class HistorianServer : IDisposable
 {
+
+    #region [ Members ]
+
+    #endregion
+
+    #region [ Constructors ]
+
     /// <summary>
-    /// Represents a historian server instance that can be used to read and write time-series data.
+    /// Creates a new instance of <see cref="HistorianServer"/>.
     /// </summary>
-    public class HistorianServer : IDisposable
+    public HistorianServer()
     {
-
-        #region [ Members ]
-
-        #endregion
-
-        #region [ Constructors ]
-
-        /// <summary>
-        /// Creates a new instance of <see cref="HistorianServer"/>.
-        /// </summary>
-        public HistorianServer()
-        {
-            Host = new SnapServer();
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="HistorianServer"/> instance.
-        /// </summary>
-        public HistorianServer(int? port, string networkInterfaceIP = null)
-        {
-            ServerSettings server = new();
-
-            if (port.HasValue || !string.IsNullOrWhiteSpace(networkInterfaceIP))
-            {
-                SnapSocketListenerSettings settings = new()
-                {
-                    LocalTcpPort = port ?? SnapSocketListenerSettings.DefaultNetworkPort,
-                    LocalIpAddress = networkInterfaceIP,
-                    DefaultUserCanRead = true,
-                    DefaultUserCanWrite = true,
-                    DefaultUserIsAdmin = true
-                };
-
-                server.Listeners.Add(settings);
-            }
-
-            // Maintain a member level list of all established archive database engines
-            Host = new SnapServer(server);
-        }
-
-        /// <summary>
-        /// Adds a specified database to the historian..
-        /// </summary>
-        /// <param name="database">The database to add to the historian server.</param>
-        /// <param name="port"><c>null</c>. The port number to be associated with the added database.</param>
-        /// <param name="networkInterfaceIP"><c>null</c>. IP to be associated with the added database.</param>
-        public HistorianServer(HistorianServerDatabaseConfig database, int? port = null, string networkInterfaceIP = null)
-            : this(port, networkInterfaceIP)
-        {
-            AddDatabase(database);
-        }
-
-        #endregion
-
-        #region [ Properties ]
-
-        /// <summary>
-        /// Gets the underlying host ending for the historian.
-        /// </summary>
-        public SnapServer Host { get; }
-
-        /// <summary>
-        /// Adds the supplied database to this server.
-        /// </summary>
-        /// <param name="database">The database to add to the server.</param>
-        public void AddDatabase(HistorianServerDatabaseConfig database) => Host.AddDatabase(database);
-
-        /// <summary>
-        /// Removes the supplied database from the historian.
-        /// </summary>
-        /// <param name="database">The database to remove from the server.</param>
-        public void RemoveDatabase(string database) => Host.RemoveDatabase(database);
-
-        #endregion
-
-        #region [ Methods ]
-
-        /// <summary>
-        /// Disposes of the new snap server initialized above.
-        /// </summary>
-        public void Dispose()
-        {
-            Host.Dispose();
-        }
-
-        #endregion
+        Host = new SnapServer();
     }
+
+    /// <summary>
+    /// Creates a new <see cref="HistorianServer"/> instance.
+    /// </summary>
+    public HistorianServer(int? port, string networkInterfaceIP = null)
+    {
+        ServerSettings server = new();
+
+        if (port.HasValue || !string.IsNullOrWhiteSpace(networkInterfaceIP))
+        {
+            SnapSocketListenerSettings settings = new()
+            {
+                LocalTcpPort = port ?? SnapSocketListenerSettings.DefaultNetworkPort,
+                LocalIpAddress = networkInterfaceIP,
+                DefaultUserCanRead = true,
+                DefaultUserCanWrite = true,
+                DefaultUserIsAdmin = true
+            };
+
+            server.Listeners.Add(settings);
+        }
+
+        // Maintain a member level list of all established archive database engines
+        Host = new SnapServer(server);
+    }
+
+    /// <summary>
+    /// Adds a specified database to the historian..
+    /// </summary>
+    /// <param name="database">The database to add to the historian server.</param>
+    /// <param name="port"><c>null</c>. The port number to be associated with the added database.</param>
+    /// <param name="networkInterfaceIP"><c>null</c>. IP to be associated with the added database.</param>
+    public HistorianServer(HistorianServerDatabaseConfig database, int? port = null, string networkInterfaceIP = null)
+        : this(port, networkInterfaceIP)
+    {
+        AddDatabase(database);
+    }
+
+    #endregion
+
+    #region [ Properties ]
+
+    /// <summary>
+    /// Gets the underlying host ending for the historian.
+    /// </summary>
+    public SnapServer Host { get; }
+
+    /// <summary>
+    /// Adds the supplied database to this server.
+    /// </summary>
+    /// <param name="database">The database to add to the server.</param>
+    public void AddDatabase(HistorianServerDatabaseConfig database) => Host.AddDatabase(database);
+
+    /// <summary>
+    /// Removes the supplied database from the historian.
+    /// </summary>
+    /// <param name="database">The database to remove from the server.</param>
+    public void RemoveDatabase(string database) => Host.RemoveDatabase(database);
+
+    #endregion
+
+    #region [ Methods ]
+
+    /// <summary>
+    /// Disposes of the new snap server initialized above.
+    /// </summary>
+    public void Dispose()
+    {
+        Host.Dispose();
+    }
+
+    #endregion
 }

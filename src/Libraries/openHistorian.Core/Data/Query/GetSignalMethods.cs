@@ -24,6 +24,7 @@
 //
 //******************************************************************************************************
 
+using openHistorian.Core.Snap;
 using openHistorian.Data.Types;
 using openHistorian.Snap;
 using SnapDB.Snap;
@@ -31,201 +32,200 @@ using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services.Reader;
 
 // ReSharper disable NotAccessedVariable
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// Queries a historian database for a set of signals. 
+/// </summary>
+public static class GetSignalMethods
 {
     /// <summary>
-    /// Queries a historian database for a set of signals. 
+    /// Queries all of the signals at the given time.
     /// </summary>
-    public static class GetSignalMethods
+    /// <param name="database"></param>
+    /// <param name="time">The time to query.</param>
+    /// <returns></returns>
+    public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong time)
     {
-        /// <summary>
-        /// Queries all of the signals at the given time.
-        /// </summary>
-        /// <param name="database"></param>
-        /// <param name="time">The time to query.</param>
-        /// <returns></returns>
-        public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong time)
+        return database.GetSignals(time, time);
+    }
+
+    /// <summary>
+    /// Queries all of the signals within a the provided time window [Inclusive]
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="startTime">the lower bound of the time</param>
+    /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
+    /// <returns></returns>
+    public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime)
+    {
+        HistorianKey key = new();
+        HistorianValue hvalue = new();
+        Dictionary<ulong, SignalDataBase> results = new();
+
+        TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, endTime);
+        ulong time, point, quality, value;
+        while (stream.Read(key, hvalue))
         {
-            return database.GetSignals(time, time);
+            time = key.Timestamp;
+            point = key.PointID;
+            quality = hvalue.Value3;
+            value = hvalue.Value1;
+            results.AddSignal(time, point, value);
         }
+        foreach (SignalDataBase signal in results.Values)
+            signal.Completed();
 
-        /// <summary>
-        /// Queries all of the signals within a the provided time window [Inclusive]
-        /// </summary>
-        /// <param name="database"></param>
-        /// <param name="startTime">the lower bound of the time</param>
-        /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
-        /// <returns></returns>
-        public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime)
+        return results;
+    }
+
+    /// <summary>
+    /// Queries the provided signals within a the provided time window [Inclusive]
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="startTime">the lower bound of the time</param>
+    /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
+    /// <param name="signals">an IEnumerable of all of the signals to query as part of the results set.</param>
+    /// <returns></returns>
+    public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ulong> signals)
+    {
+        HistorianKey key = new();
+        HistorianValue hvalue = new();
+        Dictionary<ulong, SignalDataBase> results = signals.ToDictionary((x) => x, (x) => (SignalDataBase)new SignalDataUnknown());
+
+        TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, endTime, signals);
+        ulong time, point, quality, value;
+        while (stream.Read(key, hvalue))
         {
-            HistorianKey key = new();
-            HistorianValue hvalue = new();
-            Dictionary<ulong, SignalDataBase> results = new();
+            time = key.Timestamp;
+            point = key.PointID;
+            quality = hvalue.Value3;
+            value = hvalue.Value1;
+            results.AddSignalIfExists(time, point, value);
+        }
+        foreach (SignalDataBase signal in results.Values)
+            signal.Completed();
+        return results;
+    }
 
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, endTime);
-            ulong time, point, quality, value;
-            while (stream.Read(key, hvalue))
+    /// <summary>
+    /// Queries the provided signals within a the provided time window [Inclusive]
+    /// This method will strong type the signals, but all signals must be of the same type for this to work.
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="startTime">the lower bound of the time</param>
+    /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
+    /// <param name="signals">an IEnumerable of all of the signals to query as part of the results set.</param>
+    /// <param name="conversion">a single conversion method to use for all signals</param>
+    /// <returns></returns>
+    public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ulong> signals, TypeBase conversion)
+    {
+        HistorianKey key = new();
+        HistorianValue hvalue = new();
+        Dictionary<ulong, SignalDataBase> results = signals.ToDictionary((x) => x, (x) => (SignalDataBase)new SignalData(conversion));
+
+        TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, endTime, signals);
+        ulong time, point, quality, value;
+        while (stream.Read(key, hvalue))
+        {
+            time = key.Timestamp;
+            point = key.PointID;
+            quality = hvalue.Value3;
+            value = hvalue.Value1;
+            results.AddSignalIfExists(time, point, value);
+        }
+        foreach (SignalDataBase signal in results.Values)
+            signal.Completed();
+        return results;
+    }
+
+    /// <summary>
+    /// Queries the provided signals within a the provided time window [Inclusive].
+    /// With this method, the signals will be strong typed and therefore can be converted.
+    /// </summary>
+    /// <param name="database">The database to query.</param>
+    /// <param name="startTime">The lower bound of the time.</param>
+    /// <param name="endTime">The upper bound of the time [Inclusive].</param>
+    /// <param name="signals">An IEnumerable of all of the signals to query as part of the results set.</param>
+    /// <returns>The results of the query.</returns>
+    public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ISignalWithType> signals)
+    {
+        return database.GetSignals(TimestampSeekFilter.CreateFromRange<HistorianKey>(startTime, endTime), signals, SortedTreeEngineReaderOptions.Default);
+    }
+
+    /// <summary>
+    /// Retrieves historian signals and their data from the database using specified timestamps, signals, and reader options.
+    /// </summary>
+    /// <param name="database">The database reader instance used for signal retrieval.</param>
+    /// <param name="timestamps">The seek filter for specifying the timestamp range.</param>
+    /// <param name="signals">An enumerable collection of signals with type information.</param>
+    /// <param name="readerOptions">The reader options for accessing the database.</param>
+    /// <returns>A dictionary containing signals (identified by their historian IDs) and corresponding signal data.</returns>
+    public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, IEnumerable<ISignalWithType> signals, SortedTreeEngineReaderOptions readerOptions)
+    {
+        Dictionary<ulong, SignalDataBase> results = new();
+
+        foreach (ISignalWithType pt in signals)
+        {
+            if (pt.HistorianId.HasValue)
             {
-                time = key.Timestamp;
-                point = key.PointID;
-                quality = hvalue.Value3;
-                value = hvalue.Value1;
-                results.AddSignal(time, point, value);
-            }
-            foreach (SignalDataBase signal in results.Values)
-                signal.Completed();
-
-            return results;
-        }
-
-        /// <summary>
-        /// Queries the provided signals within a the provided time window [Inclusive]
-        /// </summary>
-        /// <param name="database"></param>
-        /// <param name="startTime">the lower bound of the time</param>
-        /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
-        /// <param name="signals">an IEnumerable of all of the signals to query as part of the results set.</param>
-        /// <returns></returns>
-        public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ulong> signals)
-        {
-            HistorianKey key = new();
-            HistorianValue hvalue = new();
-            Dictionary<ulong, SignalDataBase> results = signals.ToDictionary((x) => x, (x) => (SignalDataBase)new SignalDataUnknown());
-
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, endTime, signals);
-            ulong time, point, quality, value;
-            while (stream.Read(key, hvalue))
-            {
-                time = key.Timestamp;
-                point = key.PointID;
-                quality = hvalue.Value3;
-                value = hvalue.Value1;
-                results.AddSignalIfExists(time, point, value);
-            }
-            foreach (SignalDataBase signal in results.Values)
-                signal.Completed();
-            return results;
-        }
-
-        /// <summary>
-        /// Queries the provided signals within a the provided time window [Inclusive]
-        /// This method will strong type the signals, but all signals must be of the same type for this to work.
-        /// </summary>
-        /// <param name="database"></param>
-        /// <param name="startTime">the lower bound of the time</param>
-        /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
-        /// <param name="signals">an IEnumerable of all of the signals to query as part of the results set.</param>
-        /// <param name="conversion">a single conversion method to use for all signals</param>
-        /// <returns></returns>
-        public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ulong> signals, TypeBase conversion)
-        {
-            HistorianKey key = new();
-            HistorianValue hvalue = new();
-            Dictionary<ulong, SignalDataBase> results = signals.ToDictionary((x) => x, (x) => (SignalDataBase)new SignalData(conversion));
-
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, endTime, signals);
-            ulong time, point, quality, value;
-            while (stream.Read(key, hvalue))
-            {
-                time = key.Timestamp;
-                point = key.PointID;
-                quality = hvalue.Value3;
-                value = hvalue.Value1;
-                results.AddSignalIfExists(time, point, value);
-            }
-            foreach (SignalDataBase signal in results.Values)
-                signal.Completed();
-            return results;
-        }
-
-        /// <summary>
-        /// Queries the provided signals within a the provided time window [Inclusive].
-        /// With this method, the signals will be strong typed and therefore can be converted.
-        /// </summary>
-        /// <param name="database">The database to query.</param>
-        /// <param name="startTime">The lower bound of the time.</param>
-        /// <param name="endTime">The upper bound of the time [Inclusive].</param>
-        /// <param name="signals">An IEnumerable of all of the signals to query as part of the results set.</param>
-        /// <returns>The results of the query.</returns>
-        public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ISignalWithType> signals)
-        {
-            return database.GetSignals(TimestampSeekFilter.CreateFromRange<HistorianKey>(startTime, endTime), signals, SortedTreeEngineReaderOptions.Default);
-        }
-
-        /// <summary>
-        /// Retrieves historian signals and their data from the database using specified timestamps, signals, and reader options.
-        /// </summary>
-        /// <param name="database">The database reader instance used for signal retrieval.</param>
-        /// <param name="timestamps">The seek filter for specifying the timestamp range.</param>
-        /// <param name="signals">An enumerable collection of signals with type information.</param>
-        /// <param name="readerOptions">The reader options for accessing the database.</param>
-        /// <returns>A dictionary containing signals (identified by their historian IDs) and corresponding signal data.</returns>
-        public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, IEnumerable<ISignalWithType> signals, SortedTreeEngineReaderOptions readerOptions)
-        {
-            Dictionary<ulong, SignalDataBase> results = new();
-
-            foreach (ISignalWithType pt in signals)
-            {
-                if (pt.HistorianId.HasValue)
+                if (!results.ContainsKey(pt.HistorianId.Value))
                 {
-                    if (!results.ContainsKey(pt.HistorianId.Value))
-                    {
-                        results.Add(pt.HistorianId.Value, new SignalData(pt.Functions));
-                    }
+                    results.Add(pt.HistorianId.Value, new SignalData(pt.Functions));
                 }
             }
-
-            HistorianKey key = new();
-            HistorianValue hvalue = new();
-            MatchFilterBase<HistorianKey, HistorianValue> keyParser = PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(signals.Where((x) => x.HistorianId.HasValue).Select((x) => x.HistorianId.Value));
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(readerOptions, timestamps, keyParser);
-            ulong time, point, quality, value;
-            while (stream.Read(key, hvalue))
-            {
-                time = key.Timestamp;
-                point = key.PointID;
-                quality = hvalue.Value3;
-                value = hvalue.Value1;
-                results.AddSignalIfExists(time, point, value);
-            }
-
-            foreach (SignalDataBase signal in results.Values)
-            {
-                signal.Completed();
-            }
-            return results;
         }
 
-        /// <summary>
-        /// Adds the following signal to the dictionary. If the signal is
-        /// not part of the dictionary, it is added automatically.
-        /// </summary>
-        /// <param name="results"></param>
-        /// <param name="time"></param>
-        /// <param name="point"></param>
-        /// <param name="value"></param>
-        private static void AddSignal(this Dictionary<ulong, SignalDataBase> results, ulong time, ulong point, ulong value)
+        HistorianKey key = new();
+        HistorianValue hvalue = new();
+        MatchFilterBase<HistorianKey, HistorianValue> keyParser = PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(signals.Where((x) => x.HistorianId.HasValue).Select((x) => x.HistorianId.Value));
+        TreeStream<HistorianKey, HistorianValue> stream = database.Read(readerOptions, timestamps, keyParser);
+        ulong time, point, quality, value;
+        while (stream.Read(key, hvalue))
         {
-            if (!results.TryGetValue(point, out SignalDataBase signalData))
-            {
-                signalData = new SignalDataUnknown();
-                results.Add(point, signalData);
-            }
+            time = key.Timestamp;
+            point = key.PointID;
+            quality = hvalue.Value3;
+            value = hvalue.Value1;
+            results.AddSignalIfExists(time, point, value);
+        }
+
+        foreach (SignalDataBase signal in results.Values)
+        {
+            signal.Completed();
+        }
+        return results;
+    }
+
+    /// <summary>
+    /// Adds the following signal to the dictionary. If the signal is
+    /// not part of the dictionary, it is added automatically.
+    /// </summary>
+    /// <param name="results"></param>
+    /// <param name="time"></param>
+    /// <param name="point"></param>
+    /// <param name="value"></param>
+    private static void AddSignal(this Dictionary<ulong, SignalDataBase> results, ulong time, ulong point, ulong value)
+    {
+        if (!results.TryGetValue(point, out SignalDataBase signalData))
+        {
+            signalData = new SignalDataUnknown();
+            results.Add(point, signalData);
+        }
+        signalData.AddDataRaw(time, value);
+    }
+
+    /// <summary>
+    /// Adds the provided signal to the dictionary unless the signal is not
+    /// already part of the dictionary.
+    /// </summary>
+    /// <param name="results"></param>
+    /// <param name="time"></param>
+    /// <param name="point"></param>
+    /// <param name="value"></param>
+    private static void AddSignalIfExists(this Dictionary<ulong, SignalDataBase> results, ulong time, ulong point, ulong value)
+    {
+        if (results.TryGetValue(point, out SignalDataBase signalData))
             signalData.AddDataRaw(time, value);
-        }
-
-        /// <summary>
-        /// Adds the provided signal to the dictionary unless the signal is not
-        /// already part of the dictionary.
-        /// </summary>
-        /// <param name="results"></param>
-        /// <param name="time"></param>
-        /// <param name="point"></param>
-        /// <param name="value"></param>
-        private static void AddSignalIfExists(this Dictionary<ulong, SignalDataBase> results, ulong time, ulong point, ulong value)
-        {
-            if (results.TryGetValue(point, out SignalDataBase signalData))
-                signalData.AddDataRaw(time, value);
-        }
     }
 }

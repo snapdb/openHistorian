@@ -24,77 +24,75 @@
 //
 //******************************************************************************************************
 
+using openHistorian.Core.Snap;
 using SnapDB;
 
-namespace openHistorian.Snap
+namespace openHistorian.Snap;
+
+/// <summary>
+/// A struct that represents the standard historian value.
+/// </summary>
+public struct HistorianValueStruct
 {
     /// <summary>
-    /// A struct that represents the standard historian value.
+    /// Value 1 should be where the first 64 bits of the field is stored. For 32 bit values, use this field only.
     /// </summary>
-    public struct HistorianValueStruct
+    public ulong Value1;
+    /// <summary>
+    /// Should only be used if value cannot be entirely stored in Value1. Compression penalty occurs when using this field.
+    /// </summary>
+    public ulong Value2;
+    /// <summary>
+    /// Should contain any kind of digital data such as Quality. Compression penalty occurs when used for any other type of field.
+    /// </summary>
+    public ulong Value3;
+
+    /// <summary>
+    /// Type casts the <see cref="Value1"/> as a single.
+    /// </summary>
+    public float AsSingle
+    { 
+        readonly get => BitConvert.ToSingle(Value1);
+        set => Value1 = BitConvert.ToUInt64(value);
+    }
+
+    /// <summary>
+    /// Type casts <see cref="Value1"/> and <see cref="Value2"/> into a 16 character string.
+    /// </summary>
+    public string AsString
     {
-        /// <summary>
-        /// Value 1 should be where the first 64 bits of the field is stored. For 32 bit values, use this field only.
-        /// </summary>
-        public ulong Value1;
-        /// <summary>
-        /// Should only be used if value cannot be entirely stored in Value1. Compression penalty occurs when using this field.
-        /// </summary>
-        public ulong Value2;
-        /// <summary>
-        /// Should contain any kind of digital data such as Quality. Compression penalty occurs when used for any other type of field.
-        /// </summary>
-        public ulong Value3;
+        get
+        {
+            byte[] data = new byte[16];
+            BitConverter.GetBytes(Value1).CopyTo(data, 0);
+            BitConverter.GetBytes(Value2).CopyTo(data, 8);
 
-        /// <summary>
-        /// Type casts the <see cref="Value1"/> as a single.
-        /// </summary>
-        public float AsSingle
-        { 
-            readonly get => BitConvert.ToSingle(Value1);
-            set => Value1 = BitConvert.ToUInt64(value);
+            return System.Text.Encoding.ASCII.GetString(data);
         }
 
-        /// <summary>
-        /// Type casts <see cref="Value1"/> and <see cref="Value2"/> into a 16 character string.
-        /// </summary>
-        public string AsString
+        set
         {
-            get
-            {
-                byte[] data = new byte[16];
-                BitConverter.GetBytes(Value1).CopyTo(data, 0);
-                BitConverter.GetBytes(Value2).CopyTo(data, 8);
+            if (value.Length > 16)
+                throw new OverflowException("String cannot be larger than 16 characters");
 
-                return System.Text.Encoding.ASCII.GetString(data);
-            }
-
-            set
-            {
-                if (value.Length > 16)
-                    throw new OverflowException("String cannot be larger than 16 characters");
-
-                byte[] data = new byte[16];
-                System.Text.Encoding.ASCII.GetBytes(value).CopyTo(data, 0);
-                Value1 = BitConverter.ToUInt64(data, 0);
-                Value2 = BitConverter.ToUInt64(data, 8);
-            }
-        }
-
-        /// <summary>
-        /// Creates a class instance from this value.
-        /// </summary>
-        /// <returns>The class instance based on the value.</returns>
-        public HistorianValue ToClass()
-        {
-            return new HistorianValue
-            {
-                Value1 = Value1,
-                Value2 = Value2,
-                Value3 = Value3
-            };
+            byte[] data = new byte[16];
+            System.Text.Encoding.ASCII.GetBytes(value).CopyTo(data, 0);
+            Value1 = BitConverter.ToUInt64(data, 0);
+            Value2 = BitConverter.ToUInt64(data, 8);
         }
     }
 
-
+    /// <summary>
+    /// Creates a class instance from this value.
+    /// </summary>
+    /// <returns>The class instance based on the value.</returns>
+    public HistorianValue ToClass()
+    {
+        return new HistorianValue
+        {
+            Value1 = Value1,
+            Value2 = Value2,
+            Value3 = Value3
+        };
+    }
 }

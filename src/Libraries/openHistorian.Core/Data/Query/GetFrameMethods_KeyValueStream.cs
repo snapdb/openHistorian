@@ -24,105 +24,105 @@
 //
 //******************************************************************************************************
 
+using openHistorian.Core.Snap;
 using openHistorian.Snap;
 using SnapDB.Snap;
 using SnapDB.Collections;
 
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// Represents a container for frame data, including sorted points and values.
+/// </summary>
+public class FrameData
 {
     /// <summary>
-    /// Represents a container for frame data, including sorted points and values.
+    /// Initializes a new instance of the FrameData class with an empty sorted list for points and values.
     /// </summary>
-    public class FrameData
+    public FrameData()
     {
-        /// <summary>
-        /// Initializes a new instance of the FrameData class with an empty sorted list for points and values.
-        /// </summary>
-        public FrameData()
-        {
-            Points = new SortedList<ulong, HistorianValueStruct>();
-        }
-        /// <summary>
-        /// Initializes a new instance of the FrameData class with a sorted list of points and their associated values.
-        /// </summary>
-        /// <param name="pointId">A list of point IDs to be included in the frame.</param>
-        /// <param name="values">A list of historian values associated with the points.</param>
-        public FrameData(List<ulong> pointId, List<HistorianValueStruct> values)
-        {
-            Points = SortedListFactory.Create(pointId, values);
-        }
-
-        /// <summary>
-        /// Points within the <see cref="FrameData"/>.
-        /// </summary>
-        public SortedList<ulong, HistorianValueStruct> Points;
+        Points = new SortedList<ulong, HistorianValueStruct>();
+    }
+    /// <summary>
+    /// Initializes a new instance of the FrameData class with a sorted list of points and their associated values.
+    /// </summary>
+    /// <param name="pointId">A list of point IDs to be included in the frame.</param>
+    /// <param name="values">A list of historian values associated with the points.</param>
+    public FrameData(List<ulong> pointId, List<HistorianValueStruct> values)
+    {
+        Points = SortedListFactory.Create(pointId, values);
     }
 
     /// <summary>
-    /// Provides extension methods for querying a historian database for sets of signals.
+    /// Points within the <see cref="FrameData"/>.
     /// </summary>
-    public static partial class GetFrameMethods
+    public SortedList<ulong, HistorianValueStruct> Points;
+}
+
+/// <summary>
+/// Provides extension methods for querying a historian database for sets of signals.
+/// </summary>
+public static partial class GetFrameMethods
+{
+    /// <summary>
+    /// Helper class for constructing FrameData instances by accumulating point IDs and values.
+    /// </summary>
+    public class FrameDataConstructor
     {
         /// <summary>
-        /// Helper class for constructing FrameData instances by accumulating point IDs and values.
+        /// Gets a list of point IDs to be included in the frame.
         /// </summary>
-        public class FrameDataConstructor
-        {
-            /// <summary>
-            /// Gets a list of point IDs to be included in the frame.
-            /// </summary>
-            public readonly List<ulong> PointID = new List<ulong>();
-
-            /// <summary>
-            /// Gets a list of historian values associated with the points.
-            /// </summary>
-            public readonly List<HistorianValueStruct> Values = new List<HistorianValueStruct>();
-
-            /// <summary>
-            /// Creates a new FrameData instance from the accumulated point IDs and values.
-            /// </summary>
-            /// <returns>A FrameData instance based on the accumulated data.</returns>
-            public FrameData ToFrameData()
-            {
-                return new FrameData(PointID, Values);
-            }
-        }
+        public readonly List<ulong> PointID = new List<ulong>();
 
         /// <summary>
-        /// Retrieves concentrated frames from the provided stream and organizes them by timestamp.
+        /// Gets a list of historian values associated with the points.
         /// </summary>
-        /// <param name="stream">The database stream to use for data retrieval.</param>
-        /// <returns>A sorted list of frame data organized by timestamps.</returns>
-        public static SortedList<DateTime, FrameData> GetFrames(this TreeStream<HistorianKey, HistorianValue> stream)
+        public readonly List<HistorianValueStruct> Values = new List<HistorianValueStruct>();
+
+        /// <summary>
+        /// Creates a new FrameData instance from the accumulated point IDs and values.
+        /// </summary>
+        /// <returns>A FrameData instance based on the accumulated data.</returns>
+        public FrameData ToFrameData()
         {
-            SortedList<DateTime, FrameDataConstructor> results = new SortedList<DateTime, FrameDataConstructor>();
-            ulong lastTime = ulong.MinValue;
-            FrameDataConstructor lastFrame = null;
-            HistorianKey key = new HistorianKey();
-            HistorianValue value = new HistorianValue();
-
-            while (stream.Read(key, value))
-            {
-                if (lastFrame is null || key.Timestamp != lastTime)
-                {
-                    lastTime = key.Timestamp;
-                    DateTime timestamp = new DateTime((long)lastTime);
-
-                    if (!results.TryGetValue(timestamp, out lastFrame))
-                    {
-                        lastFrame = new FrameDataConstructor();
-                        results.Add(timestamp, lastFrame);
-                    }
-                }
-                lastFrame.PointID.Add(key.PointID);
-                lastFrame.Values.Add(value.ToStruct());
-            }
-            List<FrameData> data = new List<FrameData>(results.Count);
-            data.AddRange(results.Values.Select(x => x.ToFrameData()));
-
-            return SortedListFactory.Create(results.Keys, data);
+            return new FrameData(PointID, Values);
         }
-
-
     }
+
+    /// <summary>
+    /// Retrieves concentrated frames from the provided stream and organizes them by timestamp.
+    /// </summary>
+    /// <param name="stream">The database stream to use for data retrieval.</param>
+    /// <returns>A sorted list of frame data organized by timestamps.</returns>
+    public static SortedList<DateTime, FrameData> GetFrames(this TreeStream<HistorianKey, HistorianValue> stream)
+    {
+        SortedList<DateTime, FrameDataConstructor> results = new SortedList<DateTime, FrameDataConstructor>();
+        ulong lastTime = ulong.MinValue;
+        FrameDataConstructor lastFrame = null;
+        HistorianKey key = new HistorianKey();
+        HistorianValue value = new HistorianValue();
+
+        while (stream.Read(key, value))
+        {
+            if (lastFrame is null || key.Timestamp != lastTime)
+            {
+                lastTime = key.Timestamp;
+                DateTime timestamp = new DateTime((long)lastTime);
+
+                if (!results.TryGetValue(timestamp, out lastFrame))
+                {
+                    lastFrame = new FrameDataConstructor();
+                    results.Add(timestamp, lastFrame);
+                }
+            }
+            lastFrame.PointID.Add(key.PointID);
+            lastFrame.Values.Add(value.ToStruct());
+        }
+        List<FrameData> data = new List<FrameData>(results.Count);
+        data.AddRange(results.Values.Select(x => x.ToFrameData()));
+
+        return SortedListFactory.Create(results.Keys, data);
+    }
+
+
 }

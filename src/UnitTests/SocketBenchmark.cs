@@ -25,7 +25,6 @@ using NUnit.Framework;
 using openHistorian.Net;
 using openHistorian.Snap;
 using openHistorian.Snap.Definitions;
-using openHistorian.UnitTests;
 using SnapDB.Snap;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Reader;
@@ -33,13 +32,17 @@ using SnapDB.Snap.Storage;
 using SnapDB.Snap.Tree;
 using System;
 using System.IO;
+using openHistorian.Core.Snap;
 
-namespace SampleCode.openHistorian.Server.dll;
+namespace openHistorian.UnitTests;
 
+/// <summary>
+/// Performs socket benchmark testing and measures performance.
+/// </summary>
 [TestFixture]
 public class SocketBenchmark
 {
-    [Test]
+    //[Test]
     public void CreateScadaDatabase()
     {
         throw new NotImplementedException();
@@ -79,6 +82,9 @@ public class SocketBenchmark
         //}
     }
 
+    /// <summary>
+    /// Measures the speed by writing points to the database.
+    /// </summary>
     [Test]
     public void BenchmarkWriteSpeed()
     {
@@ -112,32 +118,35 @@ public class SocketBenchmark
         Console.WriteLine((count / 1000000 / time).ToString() + " Million PPS");
     }
 
+    /// <summary>
+    /// Measures the speed by reading from the database.
+    /// </summary>
     [Test]
     public void TestReadData()
     {
         HistorianKey key = new();
         HistorianValue value = new();
 
-        HistorianServerDatabaseConfig settings = new("PPA", @"c:\temp\Scada\", true);
-        using HistorianServer server = new(settings);
-        double count = 0;
+        //HistorianServerDatabaseConfig settings = new("PPA", @"c:\temp\Scada\", true);
+        //using HistorianServer server = new(settings);
+        //double count = 0;
 
-        DebugStopwatch sw = new();
-        double time = sw.TimeEvent(() =>
-        {
-            count = 0;
-            using HistorianClient client = new("127.0.0.1", 12345);
-            using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty);
-            //IHistorianDatabase<HistorianKey, HistorianValue> database = server.GetDefaultDatabase();//.GetDatabase();
-            //TreeStream<HistorianKey, HistorianValue> stream = reader.Read(0, ulong.MaxValue, new ulong[] { 2 });
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, ulong.MaxValue);
-            while (stream.Read(key, value))
-            {
-                count++;
-            }
-        });
+        //DebugStopwatch sw = new();
+        //double time = sw.TimeEvent(() =>
+        //{
+        //    count = 0;
+        //    using HistorianClient client = new("127.0.0.1", 12345);
+        //    using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty);
+        //    //IHistorianDatabase<HistorianKey, HistorianValue> database = server.GetDefaultDatabase();//.GetDatabase();
+        //    //TreeStream<HistorianKey, HistorianValue> stream = reader.Read(0, ulong.MaxValue, new ulong[] { 2 });
+        //    TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, ulong.MaxValue);
+        //    while (stream.Read(key, value))
+        //    {
+        //        count++;
+        //    }
+        //});
 
-        Console.WriteLine((count / 1000000 / time).ToString() + " Million PPS");
+        //Console.WriteLine((count / 1000000 / time).ToString() + " Million PPS");
 
         //Console.WriteLine("KeyMethodsBase calls");
         //for (int x = 0; x < 23; x++)
@@ -155,6 +164,9 @@ public class SocketBenchmark
         //}
     }
 
+    /// <summary>
+    /// Tests archived data readability and measures performance.
+    /// </summary>
     [Test]
     public void TestReadDataFromArchive()
     {
@@ -163,27 +175,28 @@ public class SocketBenchmark
         HistorianKey key = new();
         HistorianValue value = new();
 
-        string path = Directory.GetFiles(@"c:\temp\Scada\", "*.d2")[0];
+        //string path = Directory.GetFiles(@"C:\Temp\SCADA\", "*.d2")[0];
         double time;
         double count = 0;
 
-        using (SortedTreeFile file = SortedTreeFile.OpenFile(path, true))
-        {
-            SortedTreeTable<HistorianKey, HistorianValue> table = file.OpenTable<HistorianKey, HistorianValue>();
+        //using (SortedTreeFile file = SortedTreeFile.OpenFile(path, true))
+        //{
+        //    SortedTreeTable<HistorianKey, HistorianValue> table = file.OpenTable<HistorianKey, HistorianValue>();
 
-            time = sw.TimeEvent(() =>
-            {
-                count = 0;
-                using SortedTreeTableReadSnapshot<HistorianKey, HistorianValue> scan = table.BeginRead();
-                SortedTreeScannerBase<HistorianKey, HistorianValue> t = scan.GetTreeScanner();
-                t.SeekToStart();
-                while (t.Read(key, value))
-                {
-                    count++;
-                }
-            });
-        }
-        Console.WriteLine((count / 1000000 / time).ToString() + " Million PPS");
+        //    time = sw.TimeEvent(() =>
+        //    {
+        //        count = 0;
+        //        using SortedTreeTableReadSnapshot<HistorianKey, HistorianValue> scan = table.BeginRead();
+        //        SortedTreeScannerBase<HistorianKey, HistorianValue> t = scan.GetTreeScanner();
+        //        t.SeekToStart();
+
+        //        while (t.Read(key, value))
+        //        {
+        //            count++;
+        //        }
+        //    });
+        //}
+        //Console.WriteLine((count / 1000000 / time).ToString() + " Million PPS");
 
         //Console.WriteLine("KeyMethodsBase calls");
         //for (int x = 0; x < 23; x++)

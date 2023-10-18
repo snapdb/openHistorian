@@ -28,60 +28,67 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace openHistorian.UnitTests
+namespace openHistorian.UnitTests;
+
+/// <summary>
+/// This class contains methods to benchmark socket communication performance.
+/// </summary>
+[TestFixture]
+public class BenchmarkSockets
 {
-    [TestFixture]
-    public class BenchmarkSockets
+    private const int Loop = 10000;
+
+    /// <summary>
+    /// Runs socket benchmark; measures read and write performance.
+    /// </summary>
+    [Test]
+    public void Run()
     {
-        private const int Loop = 10000;
+        Thread read = new(Reader);
+        read.IsBackground = true;
 
-        [Test]
-        public void Run()
-        {
-            Thread read = new(Reader);
-            read.IsBackground = true;
+        TcpListener listen = new(IPAddress.Parse("127.0.0.1"), 36345);
+        listen.Start();
 
-            TcpListener listen = new(IPAddress.Parse("127.0.0.1"), 36345);
-            listen.Start();
+        Thread.Sleep(100);
+        read.Start();
 
-            Thread.Sleep(100);
-            read.Start();
+        TcpClient client = listen.AcceptTcpClient();
 
-            TcpClient client = listen.AcceptTcpClient();
+        byte[] data = new byte[154600];
+        Stopwatch sw = new();
 
-            byte[] data = new byte[154600];
-            Stopwatch sw = new();
+        NetworkStream stream = client.GetStream();
 
-            NetworkStream stream = client.GetStream();
+        sw.Start();
+        for (int x = 0; x < Loop; x++)
+            stream.Write(data, 0, data.Length);
+        sw.Stop();
+        stream.Close();
 
-            sw.Start();
-            for (int x = 0; x < Loop; x++)
-                stream.Write(data, 0, data.Length);
-            sw.Stop();
-            stream.Close();
+        Console.WriteLine("Write: " + (Loop * data.Length / sw.Elapsed.TotalSeconds / 1000000).ToString());
+        Thread.Sleep(1000);
 
-            Console.WriteLine("Write: " + (Loop * data.Length / sw.Elapsed.TotalSeconds / 1000000).ToString());
-            Thread.Sleep(1000);
+        read.Join();
+    }
 
-            read.Join();
-        }
+    /// <summary>
+    /// Performs the reading part of the socket benchmark.
+    /// </summary>
+    void Reader()
+    {
 
+        TcpClient client = new();
+        client.Connect("127.0.0.1", 36345);
 
-        void Reader()
-        {
+        Stopwatch sw = new();
+        NetworkStream stream = client.GetStream();
+        byte[] data = new byte[154600];
+        sw.Start();
+        while (stream.Read(data, 0, data.Length) > 0)
+            ;
+        sw.Stop();
 
-            TcpClient client = new();
-            client.Connect("127.0.0.1", 36345);
-
-            Stopwatch sw = new();
-            NetworkStream stream = client.GetStream();
-            byte[] data = new byte[154600];
-            sw.Start();
-            while (stream.Read(data, 0, data.Length) > 0)
-                ;
-            sw.Stop();
-
-            Console.WriteLine("Read: " + (Loop * data.Length / sw.Elapsed.TotalSeconds / 1000000).ToString());
-        }
+        Console.WriteLine("Read: " + (Loop * data.Length / sw.Elapsed.TotalSeconds / 1000000).ToString());
     }
 }

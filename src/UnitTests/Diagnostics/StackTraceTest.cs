@@ -29,9 +29,15 @@ using System.Text;
 
 namespace openHistorian.UnitTests.Diagnostics;
 
+/// <summary>
+/// This class contains test methods to explore stack trace functionality.
+/// </summary>
 [TestFixture]
-public class StackTrace_Test
+public class StackTraceTest
 {
+    /// <summary>
+    /// Test method that prints the environment's stack trace and measures execution time.
+    /// </summary>
     [Test]
     public void Test()
     {
@@ -49,14 +55,15 @@ public class StackTrace_Test
         Console.WriteLine(1000 / time);
     }
 
-    static void RunMethod()
+    private static void RunMethod()
     {
         string str = Environment.StackTrace;
 
         if (str is null)
             throw new Exception();
     }
-    void RunMethod2()
+
+    private static void RunMethod2()
     {
         StackTrace st = new(true);
         StackFrame[] frames = st.GetFrames();
@@ -73,7 +80,8 @@ public class StackTrace_Test
         if (frames.Length == 0)
             throw new Exception();
     }
-    void RunMethod3()
+
+    private static void RunMethod3()
     {
         _ = new LogStackTrace();
     }

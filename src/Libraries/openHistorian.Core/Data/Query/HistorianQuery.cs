@@ -24,6 +24,7 @@
 //
 //******************************************************************************************************
 
+using openHistorian.Core.Snap;
 using openHistorian.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services;

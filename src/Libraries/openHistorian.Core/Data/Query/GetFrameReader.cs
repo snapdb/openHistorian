@@ -26,101 +26,100 @@
 
 using openHistorian.Snap;
 
-namespace openHistorian.Data.Query
+namespace openHistorian.Data.Query;
+
+/// <summary>
+/// Represents a frame reader for querying historian data.
+/// </summary>
+public class FrameReader
+    : IDisposable
 {
+    private readonly PointStream m_stream;
+
     /// <summary>
-    /// Represents a frame reader for querying historian data.
+    /// Initializes a new instance of the FrameReader class.
     /// </summary>
-    public class FrameReader
-        : IDisposable
+    /// <param name="stream">The point stream for querying historian data.</param>
+    public FrameReader(PointStream stream)
     {
-        private readonly PointStream m_stream;
+        m_stream = stream;
+        Frame = new SortedList<ulong, HistorianValueStruct>();
+        m_stream.Read();
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the FrameReader class.
-        /// </summary>
-        /// <param name="stream">The point stream for querying historian data.</param>
-        public FrameReader(PointStream stream)
+    /// <summary>
+    /// The timestamp associated with the current  frame.
+    /// </summary>
+    public DateTime FrameTime;
+
+
+    /// <summary>
+    /// Frame data containing point IDs and historian values.
+    /// </summary>
+    public SortedList<ulong, HistorianValueStruct> Frame;
+
+    /// <summary>
+    /// Reads the next frame from the historian data stream.
+    /// </summary>
+    /// <returns>True if there is another frame, false if the end of the stream is reached.</returns>
+    public bool Read()
+    {
+        if (!m_stream.IsValid)
+            return false;
+
+        Frame.Clear();
+        Frame.Add(m_stream.CurrentKey.PointID, m_stream.CurrentValue.ToStruct());
+        FrameTime = m_stream.CurrentKey.TimestampAsDate;
+
+        while (true)
         {
-            m_stream = stream;
-            Frame = new SortedList<ulong, HistorianValueStruct>();
-            m_stream.Read();
-        }
-
-        /// <summary>
-        /// The timestamp associated with the current  frame.
-        /// </summary>
-        public DateTime FrameTime;
-
-
-        /// <summary>
-        /// Frame data containing point IDs and historian values.
-        /// </summary>
-        public SortedList<ulong, HistorianValueStruct> Frame;
-
-        /// <summary>
-        /// Reads the next frame from the historian data stream.
-        /// </summary>
-        /// <returns>True if there is another frame, false if the end of the stream is reached.</returns>
-        public bool Read()
-        {
-            if (!m_stream.IsValid)
-                return false;
-
-            Frame.Clear();
-            Frame.Add(m_stream.CurrentKey.PointID, m_stream.CurrentValue.ToStruct());
-            FrameTime = m_stream.CurrentKey.TimestampAsDate;
-
-            while (true)
+            if (!m_stream.Read())
             {
-                if (!m_stream.Read())
-                {
-                    Dispose();
-                    return true; //End of stream
-                }
+                Dispose();
+                return true; //End of stream
+            }
 
-                if (m_stream.CurrentKey.TimestampAsDate == FrameTime)
-                {
-                    //try
-                    //{
-                    Frame.Add(m_stream.CurrentKey.PointID, m_stream.CurrentValue.ToStruct());
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    ex = ex;
-                    //}
-                }
-                else
-                {
-                    return true;
-                }
+            if (m_stream.CurrentKey.TimestampAsDate == FrameTime)
+            {
+                //try
+                //{
+                Frame.Add(m_stream.CurrentKey.PointID, m_stream.CurrentValue.ToStruct());
+                //}
+                //catch (Exception ex)
+                //{
+                //    ex = ex;
+                //}
+            }
+            else
+            {
+                return true;
             }
         }
-
-        /// <summary>
-        /// Disposes of the stream.
-        /// </summary>
-        public void Dispose()
-        {
-            m_stream.Dispose();
-        }
     }
 
     /// <summary>
-    /// Queries a historian database for a set of signals. 
+    /// Disposes of the stream.
     /// </summary>
-    public static partial class GetFrameReaderMethods
+    public void Dispose()
     {
-
-        /// <summary>
-        /// Gets concentrated frames from the provided stream.
-        /// </summary>
-        /// <param name="stream">The database to use.</param>
-        /// <returns>The concentrated frames.</returns>
-        public static FrameReader GetFrameReader(this PointStream stream)
-        {
-            return new FrameReader(stream);
-        }
-
+        m_stream.Dispose();
     }
+}
+
+/// <summary>
+/// Queries a historian database for a set of signals. 
+/// </summary>
+public static partial class GetFrameReaderMethods
+{
+
+    /// <summary>
+    /// Gets concentrated frames from the provided stream.
+    /// </summary>
+    /// <param name="stream">The database to use.</param>
+    /// <returns>The concentrated frames.</returns>
+    public static FrameReader GetFrameReader(this PointStream stream)
+    {
+        return new FrameReader(stream);
+    }
+
 }
