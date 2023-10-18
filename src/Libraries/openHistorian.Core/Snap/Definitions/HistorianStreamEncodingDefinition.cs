@@ -34,14 +34,9 @@ namespace openHistorian.Core.Snap.Definitions;
 /// <summary>
 /// Defines an encoding definition for historian stream data.
 /// </summary>
-public class HistorianStreamEncodingDefinition
-    : PairEncodingDefinitionBase
+public class HistorianStreamEncodingDefinition : PairEncodingDefinitionBase
 {
-    /// <summary>
-    /// Sets the encoding definition.
-    /// </summary>
-    // {0418B3A7-F631-47AF-BBFA-8B9BC0378328}
-    public static readonly EncodingDefinition TypeGuid = new(new Guid(0x0418b3a7, 0xf631, 0x47af, 0xbb, 0xfa, 0x8b, 0x9b, 0xc0, 0x37, 0x83, 0x28));
+    #region [ Properties ]
 
     /// <summary>
     /// Gets the type of the key if not specified as a generic parameter.
@@ -49,14 +44,18 @@ public class HistorianStreamEncodingDefinition
     public override Type KeyTypeIfNotGeneric => typeof(HistorianKey);
 
     /// <summary>
+    /// Gets the encoding method.
+    /// </summary>
+    public override EncodingDefinition Method => TypeGuid;
+
+    /// <summary>
     /// Gets the type of the value if not specified as a generic parameter.
     /// </summary>
     public override Type ValueTypeIfNotGeneric => typeof(HistorianValue);
 
-    /// <summary>
-    /// Gets the encoding method.
-    /// </summary>
-    public override EncodingDefinition Method => TypeGuid;
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Creates an instance of the historian stream encoding for the specified key and value types.
@@ -68,4 +67,16 @@ public class HistorianStreamEncodingDefinition
     {
         return (PairEncodingBase<TKey, TValue>)(object)new HistorianStreamEncoding();
     }
+
+    #endregion
+
+    #region [ Static ]
+
+    /// <summary>
+    /// Sets the encoding definition.
+    /// </summary>
+    // {0418B3A7-F631-47AF-BBFA-8B9BC0378328}
+    public static readonly EncodingDefinition TypeGuid = new(new Guid(0x0418b3a7, 0xf631, 0x47af, 0xbb, 0xfa, 0x8b, 0x9b, 0xc0, 0x37, 0x83, 0x28));
+
+    #endregion
 }

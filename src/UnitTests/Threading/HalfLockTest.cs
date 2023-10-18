@@ -21,11 +21,11 @@
 //
 //******************************************************************************************************
 
-using NUnit.Framework;
-using SnapDB.Threading;
 using System;
 using System.Diagnostics;
 using System.Threading;
+using NUnit.Framework;
+using SnapDB.Threading;
 
 namespace openHistorian.UnitTests.Threading;
 
@@ -35,6 +35,18 @@ namespace openHistorian.UnitTests.Threading;
 [TestFixture]
 public class HalfLockTest
 {
+    #region [ Members ]
+
+    private const long max = 100000000;
+
+    private ManualResetEvent m_event;
+    private TinyLock m_sync;
+    private long m_value;
+
+    #endregion
+
+    #region [ Methods ]
+
     /// <summary>
     /// Measures the performance of using the "lock" statement.
     /// </summary>
@@ -48,17 +60,28 @@ public class HalfLockTest
 
         for (int x = 0; x < count; x++)
         {
-            lock (obj) ;
-            lock (obj) ;
-            lock (obj) ;
-            lock (obj) ;
-            lock (obj) ;
-            lock (obj) ;
-            lock (obj) ;
-            lock (obj) ;
-            lock (obj) ;
-            lock (obj) ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
+            lock (obj)
+                ;
         }
+
         sw.Stop();
 
         Console.WriteLine(count * 10.0 / sw.Elapsed.TotalSeconds / 1000000);
@@ -77,27 +100,32 @@ public class HalfLockTest
 
         for (int x = 0; x < count; x++)
         {
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-            using (tl.Lock()) ;
-
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
+            using (tl.Lock())
+                ;
         }
+
         sw.Stop();
 
         Console.WriteLine(count * 10.0 / sw.Elapsed.TotalSeconds / 1000000);
     }
-
-    ManualResetEvent m_event;
-    TinyLock m_sync;
-    long m_value;
-    const long max = 100000000;
 
     /// <summary>
     /// Test method to evaluate contention in a multi-threaded environment.
@@ -138,4 +166,6 @@ public class HalfLockTest
                 m_value++;
         }
     }
+
+    #endregion
 }

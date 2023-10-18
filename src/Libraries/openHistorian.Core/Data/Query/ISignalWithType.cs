@@ -34,21 +34,19 @@ namespace openHistorian.Core.Data.Query;
 /// </summary>
 public interface ISignalWithType
 {
-    /// <summary>
-    /// The Id value of the historian point.
-    /// Null means that the point is not in the historian
-    /// </summary>
-    ulong? HistorianId
-    {
-        get;
-    }
+    #region [ Properties ]
 
     /// <summary>
     /// A set of functions that will properly convert the value type
     /// from its native format
     /// </summary>
-    TypeBase Functions
-    {
-        get;
-    }
+    TypeBase Functions { get; }
+
+    /// <summary>
+    /// The Id value of the historian point.
+    /// Null means that the point is not in the historian
+    /// </summary>
+    ulong? HistorianId { get; }
+
+    #endregion
 }

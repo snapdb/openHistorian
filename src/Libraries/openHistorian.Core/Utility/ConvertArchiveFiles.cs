@@ -40,6 +40,86 @@ namespace openHistorian.Core.Utility;
 /// </summary>
 public static class ConvertArchiveFile
 {
+    #region [ Members ]
+
+    private class OldHistorianStream : TreeStream<HistorianKey, HistorianValue>
+    {
+        #region [ Members ]
+
+        private readonly OldHistorianReader m_archiveFile;
+        private readonly IEnumerator<OldHistorianReader.DataPoint> m_enumerator;
+        private readonly HistorianKey m_key;
+        private readonly HistorianValue m_value;
+        private bool m_disposed;
+
+        #endregion
+
+        #region [ Constructors ]
+
+        public OldHistorianStream(string oldFileName)
+        {
+            m_key = new HistorianKey();
+            m_value = new HistorianValue();
+
+            m_archiveFile = new OldHistorianReader();
+            m_archiveFile.Open(oldFileName);
+            m_enumerator = m_archiveFile.Read().GetEnumerator();
+        }
+
+        #endregion
+
+        #region [ Properties ]
+
+        public override bool IsAlwaysSequential => true;
+
+        public override bool NeverContainsDuplicates => true;
+
+        public int PointCount => m_archiveFile.PointsArchived;
+
+        #endregion
+
+        #region [ Methods ]
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!m_disposed)
+                try
+                {
+                    if (disposing)
+                        m_archiveFile?.Dispose();
+                }
+                finally
+                {
+                    m_disposed = true; // Prevent duplicate dispose.
+                    base.Dispose(disposing); // Call base class Dispose().
+                }
+        }
+
+        protected override unsafe bool ReadNext(HistorianKey key, HistorianValue value)
+        {
+            if (m_enumerator.MoveNext())
+            {
+                OldHistorianReader.DataPoint point = m_enumerator.Current;
+
+                key.MillisecondTimestamp = (ulong)point.Timestamp.Ticks;
+                key.PointID = (ulong)point.PointID;
+
+                value.Value1 = *(uint*)&point.Value;
+                value.Value3 = (ulong)point.Flags;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion
+    }
+
+    #endregion
+
+    #region [ Static ]
+
     /// <summary>
     /// Converts a Version 1 historian file, handles duplicates, and writes the data to a new file.
     /// </summary>
@@ -119,70 +199,9 @@ public static class ConvertArchiveFile
 
         using OldHistorianStream reader = new(oldFileName);
         SortedTreeFileSimpleWriter<HistorianKey, HistorianValue>.CreateNonSequential(Path.Combine(FilePath.GetDirectoryName(newFileName), FilePath.GetFileNameWithoutExtension(newFileName) + ".~d2i"), newFileName, 4096, null, compressionMethod, reader);
-            
+
         return reader.PointCount;
     }
 
-    private class OldHistorianStream
-        : TreeStream<HistorianKey, HistorianValue>
-    {
-        private readonly HistorianKey m_key;
-        private readonly HistorianValue m_value;
-        private readonly OldHistorianReader m_archiveFile;
-        private readonly IEnumerator<OldHistorianReader.DataPoint> m_enumerator;
-        private bool m_disposed;
-
-        public OldHistorianStream(string oldFileName)
-        {
-            m_key = new HistorianKey();
-            m_value = new HistorianValue();
-
-            m_archiveFile = new OldHistorianReader();
-            m_archiveFile.Open(oldFileName);
-            m_enumerator = m_archiveFile.Read().GetEnumerator();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (!m_disposed)
-            {
-                try
-                {
-                    if (disposing)
-                    {
-                        m_archiveFile?.Dispose();
-                    }
-                }
-                finally
-                {
-                    m_disposed = true;          // Prevent duplicate dispose.
-                    base.Dispose(disposing);    // Call base class Dispose().
-                }
-            }
-        }
-
-        public int PointCount => m_archiveFile.PointsArchived;
-
-        public override bool IsAlwaysSequential => true;
-
-        public override bool NeverContainsDuplicates => true;
-
-        protected override unsafe bool ReadNext(HistorianKey key, HistorianValue value)
-        {
-            if (m_enumerator.MoveNext())
-            {
-                OldHistorianReader.DataPoint point = m_enumerator.Current;
-
-                key.MillisecondTimestamp = (ulong)point.Timestamp.Ticks;
-                key.PointID = (ulong)point.PointID;
-
-                value.Value1 = *(uint*)&point.Value;
-                value.Value3 = (ulong)point.Flags;
-
-                return true;
-            }
-
-            return false;
-        }
-    }
+    #endregion
 }

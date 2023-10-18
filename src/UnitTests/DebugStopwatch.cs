@@ -21,11 +21,11 @@
 //
 //******************************************************************************************************
 
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime;
+using NUnit.Framework;
 
 namespace openHistorian.UnitTests;
 
@@ -34,7 +34,13 @@ namespace openHistorian.UnitTests;
 /// </summary>
 public class DebugStopwatch
 {
+    #region [ Members ]
+
     private readonly Stopwatch sw;
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DebugStopwatch"/> class.
@@ -44,6 +50,10 @@ public class DebugStopwatch
         GCSettings.LatencyMode = GCLatencyMode.Batch;
         sw = new Stopwatch();
     }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Forces a garbage collection and waits for pending finalizers.
@@ -65,6 +75,7 @@ public class DebugStopwatch
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
+
         sw.Restart();
     }
 
@@ -134,6 +145,8 @@ public class DebugStopwatch
             values.Add(sw.Elapsed.TotalSeconds);
         }
 
-        return values[values.Count - 1 >> 1];
+        return values[(values.Count - 1) >> 1];
     }
+
+    #endregion
 }

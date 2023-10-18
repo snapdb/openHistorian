@@ -33,31 +33,43 @@ namespace openHistorian.Data.Query;
 /// Contains a series of Times and Values for an individual signal.
 /// This class will store the value as a <see cref="float"/>.
 /// </summary>
-public class SignalDataSingle
-    : SignalDataBase
+public class SignalDataSingle : SignalDataBase
 {
+    #region [ Members ]
+
     private readonly List<ulong> m_dateTime = new();
+
     private readonly List<float> m_values = new();
 
-    private readonly TypeBase m_type;
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// The <see cref="SignalDataSingle"/> that creates an instance of <see cref="TypeSingle"/> as m_type.
     /// </summary>
     public SignalDataSingle()
     {
-        m_type = TypeSingle.Instance;
+        Method = TypeSingle.Instance;
     }
 
-    /// <summary>
-    /// Provides the type conversion method for the base class to use.
-    /// </summary>
-    protected override TypeBase Method => m_type;
+    #endregion
+
+    #region [ Properties ]
 
     /// <summary>
     /// Gets the number of values that are in the signal.
     /// </summary>
     public override int Count => m_values.Count;
+
+    /// <summary>
+    /// Provides the type conversion method for the base class to use.
+    /// </summary>
+    protected override TypeBase Method { get; }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Adds a value to the signal and converts it from a <see cref="float"/>
@@ -74,7 +86,7 @@ public class SignalDataSingle
     }
 
     /// <summary>
-    /// Gets a value from the signal with the provided index and automatically 
+    /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="float"/>.
     /// </summary>
     /// <param name="index">The zero based index of the position.</param>
@@ -121,4 +133,6 @@ public class SignalDataSingle
     {
         return m_dateTime[index];
     }
+
+    #endregion
 }

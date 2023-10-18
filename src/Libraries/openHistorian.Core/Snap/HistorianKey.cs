@@ -33,9 +33,10 @@ namespace openHistorian.Core.Snap;
 /// <summary>
 /// The standard key used for the historian.
 /// </summary>
-public class HistorianKey
-    : TimestampPointIDBase<HistorianKey>
+public class HistorianKey : TimestampPointIDBase<HistorianKey>
 {
+    #region [ Members ]
+
     // TODO: Engine, not user, should accommodate incrementing EntryNumber for duplicates.
     /// <summary>
     /// The number of the entry. This allows for duplicate values to be stored using the same Timestamp and PointID.
@@ -45,6 +46,10 @@ public class HistorianKey
     /// </remarks>
     public ulong EntryNumber;
 
+    #endregion
+
+    #region [ Properties ]
+
     /// <summary>
     /// The generic GUID used for the encoding.
     /// </summary>
@@ -53,9 +58,34 @@ public class HistorianKey
         new(0x6527d41b, 0x9d04, 0x4bfa, 0x81, 0x33, 0x05, 0x27, 0x3d, 0x52, 0x1d, 0x46);
 
     /// <summary>
+    /// Gets or sets timestamp restricted to millisecond resolution.
+    /// </summary>
+    public ulong MillisecondTimestamp
+    {
+        get => Timestamp / Ticks.PerMillisecond * Ticks.PerMillisecond;
+        set => Timestamp = value / Ticks.PerMillisecond * Ticks.PerMillisecond;
+    }
+
+    /// <summary>
     /// Sets the available size.
     /// </summary>
     public override int Size => 24;
+
+    /// <summary>
+    /// Conveniently type cast the Timestamp as <see cref="DateTime"/>.
+    /// </summary>
+    /// <remarks>
+    /// Assignments expected to be in UTC.
+    /// </remarks>
+    public DateTime TimestampAsDate
+    {
+        get => new((long)Timestamp, DateTimeKind.Utc);
+        set => Timestamp = (ulong)value.Ticks;
+    }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Sets all of the values in this class to their minimum value.
@@ -180,27 +210,6 @@ public class HistorianKey
     }
 
     /// <summary>
-    /// Conveniently type cast the Timestamp as <see cref="DateTime"/>.
-    /// </summary>
-    /// <remarks>
-    /// Assignments expected to be in UTC.
-    /// </remarks>
-    public DateTime TimestampAsDate
-    {
-        get => new((long)Timestamp, DateTimeKind.Utc);
-        set => Timestamp = (ulong)value.Ticks;
-    }
-
-    /// <summary>
-    /// Gets or sets timestamp restricted to millisecond resolution.
-    /// </summary>
-    public ulong MillisecondTimestamp
-    {
-        get => Timestamp / Ticks.PerMillisecond * Ticks.PerMillisecond;
-        set => Timestamp = value / Ticks.PerMillisecond * Ticks.PerMillisecond;
-    }
-
-    /// <summary>
     /// Casts the DateTime as a string.
     /// </summary>
     /// <returns>The <see cref="DateTime"/> as a string.</returns>
@@ -209,11 +218,8 @@ public class HistorianKey
         if (Timestamp <= (ulong)DateTime.MaxValue.Ticks)
             return TimestampAsDate.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "/" + PointID;
 
-        return Timestamp.ToString() + "/" + PointID;
-
+        return Timestamp + "/" + PointID;
     }
-
-    #region [ Optional Overrides ]
 
     /// <summary>
     /// Reads the byte stream data and sets the timestamp, point ID, and entry number.
@@ -301,6 +307,8 @@ public class HistorianKey
         return EntryNumber >= right.EntryNumber;
     }
 
+    #endregion
+
     //public override bool IsBetween(HistorianKey lowerBounds, HistorianKey upperBounds)
     //{
     //    
@@ -310,6 +318,4 @@ public class HistorianKey
     //{
     //    
     //}
-
-    #endregion
 }

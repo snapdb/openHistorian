@@ -21,19 +21,25 @@
 //
 //******************************************************************************************************
 
-using Gemstone;
-using Gemstone.Threading;
-using NUnit.Framework;
 using System;
 using System.Diagnostics;
 using System.Threading;
+using Gemstone;
+using Gemstone.Threading;
+using NUnit.Framework;
 
 namespace openHistorian.UnitTests.Threading;
 
 [TestFixture]
 internal class ScheduledTaskTest
 {
-    int m_doWorkCount;
+    #region [ Members ]
+
+    private int m_doWorkCount;
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Test method that measures execution performance with different threading modes.
@@ -44,6 +50,28 @@ internal class ScheduledTaskTest
         Test(ThreadingMode.DedicatedBackground);
         Test(ThreadingMode.DedicatedForeground);
         Test(ThreadingMode.ThreadPool);
+    }
+
+    /// <summary>
+    /// Test method that measures timed execution performance with different threading modes.
+    /// </summary>
+    [Test]
+    public void TestTimed()
+    {
+        TestTimed(ThreadingMode.DedicatedBackground);
+        TestTimed(ThreadingMode.DedicatedForeground);
+        TestTimed(ThreadingMode.ThreadPool);
+    }
+
+    /// <summary>
+    /// Test method that measures concurrent execution performance with different threading modes.
+    /// </summary>
+    [Test]
+    public void TestConcurrent()
+    {
+        TestConcurrent(ThreadingMode.DedicatedBackground);
+        TestConcurrent(ThreadingMode.DedicatedForeground);
+        TestConcurrent(ThreadingMode.ThreadPool);
     }
 
     private void Test(ThreadingMode mode)
@@ -77,27 +105,15 @@ internal class ScheduledTaskTest
         }
 
         Console.WriteLine(mode.ToString());
-        Console.WriteLine(" Fire Event Count: " + m_doWorkCount.ToString());
+        Console.WriteLine(" Fire Event Count: " + m_doWorkCount);
         Console.WriteLine("  Fire Event Rate: " + (m_doWorkCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
         Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
         Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
         Console.WriteLine();
     }
 
-    /// <summary>
-    /// Test method that measures timed execution performance with different threading modes.
-    /// </summary>
-    [Test]
-    public void TestTimed()
-    {
-        TestTimed(ThreadingMode.DedicatedBackground);
-        TestTimed(ThreadingMode.DedicatedForeground);
-        TestTimed(ThreadingMode.ThreadPool);
-    }
-
     private void TestTimed(ThreadingMode mode)
     {
-
         const int Count = 1000000000;
         Stopwatch sw = new();
         m_doWorkCount = 0;
@@ -114,6 +130,7 @@ internal class ScheduledTaskTest
 
             sw.Stop();
         }
+
         m_doWorkCount = 0;
         sw.Reset();
 
@@ -132,23 +149,11 @@ internal class ScheduledTaskTest
         }
 
         Console.WriteLine(mode.ToString());
-        Console.WriteLine(" Fire Event Count: " + m_doWorkCount.ToString());
+        Console.WriteLine(" Fire Event Count: " + m_doWorkCount);
         Console.WriteLine("  Fire Event Rate: " + (m_doWorkCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
         Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
         Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
         Console.WriteLine();
-    }
-
-    /// <summary>
-    /// Test method that measures concurrent execution performance with different threading modes.
-    /// </summary>
-    [Test]
-    public void TestConcurrent()
-    {
-        TestConcurrent(ThreadingMode.DedicatedBackground);
-        TestConcurrent(ThreadingMode.DedicatedForeground);
-        TestConcurrent(ThreadingMode.ThreadPool);
-
     }
 
     private void TestConcurrent(ThreadingMode mode)
@@ -168,6 +173,7 @@ internal class ScheduledTaskTest
 
             sw.Stop();
         }
+
         m_doWorkCount = 0;
         sw.Reset();
 
@@ -188,7 +194,7 @@ internal class ScheduledTaskTest
         }
 
         Console.WriteLine(mode.ToString());
-        Console.WriteLine(" Fire Event Count: " + workCount.ToString());
+        Console.WriteLine(" Fire Event Count: " + workCount);
         Console.WriteLine("  Fire Event Rate: " + (workCount / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
         Console.WriteLine(" Total Calls Time: " + sw.Elapsed.TotalMilliseconds.ToString("0.0") + "ms");
         Console.WriteLine(" Total Calls Rate: " + (Count / sw.Elapsed.TotalSeconds / 1000000).ToString("0.00"));
@@ -206,7 +212,6 @@ internal class ScheduledTaskTest
         }
         catch (Exception)
         {
-
         }
     }
 
@@ -216,4 +221,5 @@ internal class ScheduledTaskTest
         m_doWorkCount++;
     }
 
+    #endregion
 }

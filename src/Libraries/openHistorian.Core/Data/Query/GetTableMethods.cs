@@ -24,9 +24,9 @@
 //
 //******************************************************************************************************
 
+using System.Data;
 using openHistorian.Core.Snap;
 using SnapDB.Snap.Services;
-using System.Data;
 
 namespace openHistorian.Core.Data.Query;
 
@@ -35,21 +35,19 @@ namespace openHistorian.Core.Data.Query;
 /// </summary>
 public interface IDelinearizedSignals
 {
-    /// <summary>
-    /// Gets the string form column headers corresponding to the delinearized signals.
-    /// </summary>
-    IList<string> ColumnHeaders
-    {
-        get;
-    }
+    #region [ Properties ]
 
     /// <summary>
     /// Gets the key-value pairs of the delinearized signals.
     /// </summary>
-    KeyValuePair<object, IList<ISignalWithType>> ColumnGroups
-    {
-        get;
-    }
+    KeyValuePair<object, IList<ISignalWithType>> ColumnGroups { get; }
+
+    /// <summary>
+    /// Gets the string form column headers corresponding to the delinearized signals.
+    /// </summary>
+    IList<string> ColumnHeaders { get; }
+
+    #endregion
 }
 
 /// <summary>
@@ -57,13 +55,14 @@ public interface IDelinearizedSignals
 /// </summary>
 public interface ISignalWithName : ISignalWithType
 {
+    #region [ Properties ]
+
     /// <summary>
     /// The name for the signal of a certain type.
     /// </summary>
-    string TagName
-    {
-        get;
-    }
+    string TagName { get; }
+
+    #endregion
 }
 
 /// <summary>
@@ -71,6 +70,8 @@ public interface ISignalWithName : ISignalWithType
 /// </summary>
 public static class GetTableMethods
 {
+    #region [ Static ]
+
     /// <summary>
     /// Gets the DataTable from the historian database using delinearized signals
     /// </summary>
@@ -95,7 +96,7 @@ public static class GetTableMethods
     /// <exception cref="Exception">Thrown if columns do not exist in the historian, thus causing the function not to work.</exception>
     public static DataTable GetTable(this ClientDatabaseBase<HistorianKey, HistorianValue> database, ulong start, ulong stop, IList<ISignalWithName> columns)
     {
-        if (columns.Any((x) => !x.HistorianId.HasValue))
+        if (columns.Any(x => !x.HistorianId.HasValue))
             throw new Exception("All columns must be contained in the historian for this function to work.");
 
         Dictionary<ulong, SignalDataBase> results = database.GetSignals(start, stop, columns);
@@ -137,7 +138,7 @@ public static class GetTableMethods
                 }
             }
 
-            if (minDate == ulong.MaxValue && rowValues.All((x) => x is null))
+            if (minDate == ulong.MaxValue && rowValues.All(x => x is null))
                 return table;
 
             rowValues[0] = minDate;
@@ -145,4 +146,6 @@ public static class GetTableMethods
             table.Rows.Add(rowValues);
         }
     }
+
+    #endregion
 }

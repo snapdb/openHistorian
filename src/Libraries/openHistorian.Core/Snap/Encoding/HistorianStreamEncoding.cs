@@ -34,13 +34,29 @@ namespace openHistorian.Core.Snap.Encoding;
 /// <summary>
 /// A class for encoding and decoding pairs of HistorianKey and HistorianValue.
 /// </summary>
-public class HistorianStreamEncoding
-    : PairEncodingBase<HistorianKey, HistorianValue>
+public class HistorianStreamEncoding : PairEncodingBase<HistorianKey, HistorianValue>
 {
+    #region [ Properties ]
+
+    /// <summary>
+    /// Does contain an end of stream symbol.
+    /// </summary>
+    public override bool ContainsEndOfStreamSymbol => true;
+
     /// <summary>
     /// Gets the unique identifier for this encoding method.
     /// </summary>
     public override EncodingDefinition EncodingMethod => HistorianStreamEncodingDefinition.TypeGuid;
+
+    /// <summary>
+    /// States the end of stream symbol used in encoding.
+    /// </summary>
+    public override byte EndOfStreamSymbol => 255;
+
+    /// <summary>
+    /// Sets the maximum compression size.
+    /// </summary>
+    public override int MaxCompressionSize => 55; // 3 extra bytes just to be safe.
 
     /// <summary>
     /// The method uses the previous key during encoding.
@@ -52,20 +68,9 @@ public class HistorianStreamEncoding
     /// </summary>
     public override bool UsesPreviousValue => false;
 
-    /// <summary>
-    /// Sets the maximum compression size.
-    /// </summary>
-    public override int MaxCompressionSize => 55; // 3 extra bytes just to be safe.
+    #endregion
 
-    /// <summary>
-    /// Does contain an end of stream symbol.
-    /// </summary>
-    public override bool ContainsEndOfStreamSymbol => true;
-
-    /// <summary>
-    /// States the end of stream symbol used in encoding.
-    /// </summary>
-    public override byte EndOfStreamSymbol => 255;
+    #region [ Methods ]
 
     /// <summary>
     /// Encodes historical data.
@@ -76,14 +81,10 @@ public class HistorianStreamEncoding
     /// <param name="currentKey">The current key to encode.</param>
     /// <param name="currentValue">The current value to encode.</param>
     /// <returns>The size in bytes of the final encode.</returns>
-    public override unsafe void Encode(BinaryStreamBase stream, HistorianKey prevKey, HistorianValue prevValue, HistorianKey currentKey, HistorianValue currentValue)
+    public override void Encode(BinaryStreamBase stream, HistorianKey prevKey, HistorianValue prevValue, HistorianKey currentKey, HistorianValue currentValue)
     {
-        if (currentKey.Timestamp == prevKey.Timestamp
-            && (currentKey.PointID ^ prevKey.PointID) < 64
-            && currentKey.EntryNumber == 0
-            && currentValue.Value1 <= uint.MaxValue // Must be a 32-bit value
-            && currentValue.Value2 == 0
-            && currentValue.Value3 == 0)
+        if (currentKey.Timestamp == prevKey.Timestamp && (currentKey.PointID ^ prevKey.PointID) < 64 && currentKey.EntryNumber == 0 && currentValue.Value1 <= uint.MaxValue // Must be a 32-bit value
+            && currentValue.Value2 == 0 && currentValue.Value3 == 0)
         {
             if (currentValue.Value1 == 0)
             {
@@ -94,6 +95,7 @@ public class HistorianStreamEncoding
                 stream.Write((byte)((currentKey.PointID ^ prevKey.PointID) | 64));
                 stream.Write((uint)currentValue.Value1);
             }
+
             return;
         }
 
@@ -140,7 +142,6 @@ public class HistorianStreamEncoding
             stream.Write(currentValue.Value3);
         else if (currentValue.Value3 > 0)
             stream.Write((uint)currentValue.Value3);
-
     }
 
     /// <summary>
@@ -217,8 +218,6 @@ public class HistorianStreamEncoding
             value.Value3 = stream.ReadUInt32();
         else
             value.Value3 = 0;
-
-        return;
     }
 
     /// <summary>
@@ -229,4 +228,6 @@ public class HistorianStreamEncoding
     {
         return new HistorianStreamEncoding();
     }
+
+    #endregion
 }

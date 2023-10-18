@@ -21,11 +21,11 @@
 //
 //******************************************************************************************************
 
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using NUnit.Framework;
 
 namespace openHistorian.UnitTests;
 
@@ -35,8 +35,42 @@ namespace openHistorian.UnitTests;
 [TestFixture]
 public class GCTime
 {
+    #region [ Members ]
+
+    private class AClass
+    {
+        #region [ Members ]
+
+        public int Value = 1;
+
+        #endregion
+    }
+
+    private class FinalizableClass
+    {
+        #region [ Members ]
+
+        public readonly int Value = 1;
+
+        #endregion
+
+        #region [ Constructors ]
+
+        ~FinalizableClass()
+        {
+            if (Value == int.MaxValue)
+                Marshal.FreeHGlobal(Marshal.AllocHGlobal(10));
+        }
+
+        #endregion
+    }
+
     private readonly List<AClass[]> m_objects = new();
     private readonly List<FinalizableClass[]> m_objects2 = new();
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Runs a test to measure garbage collection and memory allocation times.
@@ -49,9 +83,19 @@ public class GCTime
     }
 
     /// <summary>
+    /// Runs a test to measure garbage collection and memory allocation times for finalizable classes.
+    /// </summary>
+    [Test]
+    public void Test2()
+    {
+        for (int x = 0; x < 100; x++)
+            AddItemsAndTime2();
+    }
+
+    /// <summary>
     /// Adds items to a list, triggers garbage collection, and measures the collection time.
     /// </summary>
-    void AddItemsAndTime()
+    private void AddItemsAndTime()
     {
         AClass[] array = new AClass[100000];
         for (int x = 0; x < array.Length; x++)
@@ -80,42 +124,14 @@ public class GCTime
         GC.Collect();
         GC.WaitForPendingFinalizers();
         sw.Stop();
-        long memorySize = Process.GetCurrentProcess().VirtualMemorySize64;//GC.GetTotalMemory(false);
+        long memorySize = Process.GetCurrentProcess().VirtualMemorySize64; //GC.GetTotalMemory(false);
         Console.WriteLine("{0}00k items: {1}ms  {2}", m_objects.Count.ToString(), sw.Elapsed.TotalMilliseconds.ToString("0.00"), (memorySize / 1024.0 / 1024.0).ToString("0.0MB"));
-    }
-
-    private class AClass
-    {
-        public int Value = 1;
-    }
-
-    private class FinalizableClass
-    {
-        public readonly int Value = 1;
-
-        ~FinalizableClass()
-        {
-            if (Value == int.MaxValue)
-            {
-                Marshal.FreeHGlobal(Marshal.AllocHGlobal(10));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Runs a test to measure garbage collection and memory allocation times for finalizable classes.
-    /// </summary>
-    [Test]
-    public void Test2()
-    {
-        for (int x = 0; x < 100; x++)
-            AddItemsAndTime2();
     }
 
     /// <summary>
     /// Adds finalizable items to a list, triggers garbage collection, and measures the collection time.
     /// </summary>
-    void AddItemsAndTime2()
+    private void AddItemsAndTime2()
     {
         FinalizableClass[] array = new FinalizableClass[100000];
         for (int x = 0; x < array.Length; x++)
@@ -144,9 +160,10 @@ public class GCTime
         GC.Collect();
         GC.WaitForPendingFinalizers();
         sw.Stop();
-        long memorySize = Process.GetCurrentProcess().VirtualMemorySize64;//GC.GetTotalMemory(false);
+        long memorySize = Process.GetCurrentProcess().VirtualMemorySize64; //GC.GetTotalMemory(false);
         //long memorySize = Process.GetCurrentProcess().PrivateMemorySize64;//GC.GetTotalMemory(false);
         Console.WriteLine("{0}00k items: {1}ms  {2}", m_objects2.Count.ToString(), sw.Elapsed.TotalMilliseconds.ToString("0.00"), (memorySize / 1024.0 / 1024.0).ToString("0.0MB"));
     }
 
+    #endregion
 }

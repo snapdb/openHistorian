@@ -36,8 +36,14 @@ namespace openHistorian.Core.Data.Query;
 /// </summary>
 public class HistorianQuery
 {
+    #region [ Members ]
+
     private readonly SnapClient m_historian;
     private readonly int m_samplesPerSecond = 30;
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Initializes a new instance of the HistorianQuery class using server and port information.
@@ -57,6 +63,10 @@ public class HistorianQuery
         m_historian = historian;
     }
 
+    #endregion
+
+    #region [ Methods ]
+
     /// <summary>
     /// Retrieves a query result from the historian for the specified time range and signals.
     /// </summary>
@@ -75,4 +85,6 @@ public class HistorianQuery
 
         return results;
     }
+
+    #endregion
 }

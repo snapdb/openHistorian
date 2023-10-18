@@ -33,10 +33,61 @@ using SnapDB.Snap.Services.Reader;
 namespace openHistorian.Core.Data.Query;
 
 /// <summary>
-/// Queries a historian database for a set of signals. 
+/// Queries a historian database for a set of signals.
 /// </summary>
 public static partial class GetFrameMethods
 {
+    #region [ Members ]
+
+    private class EnumerableHelper
+    {
+        #region [ Members ]
+
+        public bool IsValid;
+        public ulong PointID;
+        public HistorianValueStruct Value;
+        private readonly IEnumerator<KeyValuePair<ulong, HistorianValueStruct>> m_enumerator;
+
+        #endregion
+
+        #region [ Constructors ]
+
+        public EnumerableHelper(FrameData frame)
+        {
+            m_enumerator = frame.Points.GetEnumerator();
+            IsValid = true;
+            Read();
+        }
+
+        #endregion
+
+        #region [ Methods ]
+
+        /// <summary>
+        /// Reads the data and ensures that it is valid by iterating through until it reaches an invalid item.
+        /// </summary>
+        public void Read()
+        {
+            if (IsValid && m_enumerator.MoveNext())
+            {
+                IsValid = true;
+                PointID = m_enumerator.Current.Key;
+                Value = m_enumerator.Current.Value;
+            }
+
+            else
+            {
+                IsValid = false;
+            }
+        }
+
+        #endregion
+    }
+
+    #endregion
+
+    #region [ Static ]
+
     /// <summary>
     /// Gets frames from the historian as individual frames.
     /// </summary>
@@ -94,8 +145,7 @@ public static partial class GetFrameMethods
     /// <param name="points">the points to query</param>
     /// <param name="options">A list of query options</param>
     /// <returns>The frames from the historian.</returns>
-    public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database,
-        SortedTreeEngineReaderOptions options, SeekFilterBase<HistorianKey> timestamps, MatchFilterBase<HistorianKey, HistorianValue> points)
+    public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database, SortedTreeEngineReaderOptions options, SeekFilterBase<HistorianKey> timestamps, MatchFilterBase<HistorianKey, HistorianValue> points)
     {
         return database.Read(options, timestamps, points).GetFrames();
     }
@@ -131,6 +181,7 @@ public static partial class GetFrameMethods
                 frames = new List<FrameData>();
                 buckets.Add(roundedDate, frames);
             }
+
             frames.Add(items.Value);
         }
 
@@ -152,9 +203,7 @@ public static partial class GetFrameMethods
                 List<EnumerableHelper> allFrames = new();
 
                 foreach (FrameData frame in bucket.Value)
-                {
                     allFrames.Add(new EnumerableHelper(frame));
-                }
 
                 while (true)
                 {
@@ -172,10 +221,12 @@ public static partial class GetFrameMethods
                     //tempFrame.Points.Add(lowestKey.PointID, lowestKey.Value);
                     lowestKey.Read();
                 }
+
                 tempFrame.Points = SortedListFactory.Create(keys, values);
                 results.Add(bucket.Key, tempFrame);
             }
         }
+
         return results;
     }
 
@@ -205,35 +256,5 @@ public static partial class GetFrameMethods
         return right;
     }
 
-    private class EnumerableHelper
-    {
-        public bool IsValid;
-        public ulong PointID;
-        public HistorianValueStruct Value;
-        private readonly IEnumerator<KeyValuePair<ulong, HistorianValueStruct>> m_enumerator;
-        public EnumerableHelper(FrameData frame)
-        {
-            m_enumerator = frame.Points.GetEnumerator();
-            IsValid = true;
-            Read();
-        }
-
-        /// <summary>
-        /// Reads the data and ensures that it is valid by iterating through until it reaches an invalid item.
-        /// </summary>
-        public void Read()
-        {
-            if (IsValid && m_enumerator.MoveNext())
-            {
-                IsValid = true;
-                PointID = m_enumerator.Current.Key;
-                Value = m_enumerator.Current.Value;
-            }
-
-            else
-                IsValid = false;
-        }
-
-    }
-
+    #endregion
 }

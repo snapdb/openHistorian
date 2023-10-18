@@ -31,23 +31,23 @@ namespace openHistorian.Core.Net;
 /// <summary>
 /// Connects to a socket based remote historian database collection.
 /// </summary>
-public class HistorianClient :
-    SnapNetworkClient
+public class HistorianClient : SnapNetworkClient
 {
+    #region [ Constructors ]
+
     /// <summary>
-    /// 
     /// </summary>
     /// <param name="serverNameOrIp"></param>
     /// <param name="port"></param>
     /// <param name="integratedSecurity"></param>
-    public HistorianClient(string serverNameOrIp, int port, bool integratedSecurity = false)
-        : base(new SnapNetworkClientSettings()
-        {
-            NetworkPort = port,
-            ServerNameOrIp = serverNameOrIp,
-            UseIntegratedSecurity = integratedSecurity
-        }, null, false)
+    public HistorianClient(string serverNameOrIp, int port, bool integratedSecurity = false) : base(new SnapNetworkClientSettings
     {
-
+        NetworkPort = port,
+        ServerNameOrIp = serverNameOrIp,
+        UseIntegratedSecurity = integratedSecurity
+    })
+    {
     }
+
+    #endregion
 }

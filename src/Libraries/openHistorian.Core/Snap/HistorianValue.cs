@@ -34,21 +34,60 @@ namespace openHistorian.Core.Snap;
 /// <summary>
 /// The standard value used in the OpenHistorian.
 /// </summary>
-public class HistorianValue
-    : SnapTypeBase<HistorianValue>
+public class HistorianValue : SnapTypeBase<HistorianValue>
 {
+    #region [ Members ]
+
     /// <summary>
     /// Value1 should be where the first 64 bits of the field is stored. For 32 bit values, use this field only.
     /// </summary>
     public ulong Value1;
+
     /// <summary>
     /// Should only be used if value cannot be entirely stored in Value1. Compression penalty occurs when using this field.
     /// </summary>
     public ulong Value2;
+
     /// <summary>
     /// Should contain any kind of digital data such as Quality. Compression penalty occurs when used for any other type of field.
     /// </summary>
     public ulong Value3;
+
+    #endregion
+
+    #region [ Properties ]
+
+    /// <summary>
+    /// Type casts the <see cref="Value1"/> as a single.
+    /// </summary>
+    public float AsSingle
+    {
+        get => BitConvert.ToSingle(Value1);
+        set => Value1 = BitConvert.ToUInt64(value);
+    }
+
+    /// <summary>
+    /// Type casts <see cref="Value1"/> and <see cref="Value2"/> into a 16 character string.
+    /// </summary>
+    public string AsString
+    {
+        get
+        {
+            byte[] data = new byte[16];
+            BitConverter.GetBytes(Value1).CopyTo(data, 0);
+            BitConverter.GetBytes(Value2).CopyTo(data, 8);
+            return System.Text.Encoding.ASCII.GetString(data);
+        }
+        set
+        {
+            if (value.Length > 16)
+                throw new OverflowException("String cannot be larger than 16 characters");
+            byte[] data = new byte[16];
+            System.Text.Encoding.ASCII.GetBytes(value).CopyTo(data, 0);
+            Value1 = BitConverter.ToUInt64(data, 0);
+            Value2 = BitConverter.ToUInt64(data, 8);
+        }
+    }
 
     /// <summary>
     /// The generic GUID type to use for encoding.
@@ -61,6 +100,10 @@ public class HistorianValue
     /// The size of the encoded data.
     /// </summary>
     public override int Size => 24;
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Copies the values to a specified destination.
@@ -177,41 +220,6 @@ public class HistorianValue
     }
 
     /// <summary>
-    /// Type casts the <see cref="Value1"/> as a single.
-    /// </summary>
-    public float AsSingle
-    {
-        get => BitConvert.ToSingle(Value1);
-        set => Value1 = BitConvert.ToUInt64(value);
-    }
-
-    /// <summary>
-    /// Type casts <see cref="Value1"/> and <see cref="Value2"/> into a 16 character string.
-    /// </summary>
-    public string AsString
-    {
-        get
-        {
-            byte[] data = new byte[16];
-            BitConverter.GetBytes(Value1).CopyTo(data, 0);
-            BitConverter.GetBytes(Value2).CopyTo(data, 8);
-            return System.Text.Encoding.ASCII.GetString(data);
-        }
-        set
-        {
-            if (value.Length > 16)
-                throw new OverflowException("String cannot be larger than 16 characters");
-            byte[] data = new byte[16];
-            System.Text.Encoding.ASCII.GetBytes(value).CopyTo(data, 0);
-            Value1 = BitConverter.ToUInt64(data, 0);
-            Value2 = BitConverter.ToUInt64(data, 8);
-        }
-    }
-
-
-    #region [ Optional Overrides ]
-
-    /// <summary>
     /// Reads the byte stream and assigns values to Value1, Value2, and Value3.
     /// </summary>
     /// <param name="stream">The stream to read from.</param>
@@ -221,7 +229,7 @@ public class HistorianValue
         Value2 = *(ulong*)(stream + 8);
         Value3 = *(ulong*)(stream + 16);
     }
-        
+
     /// <summary>
     /// Writes the data for Value1, Value2, and Value3 to the stream.
     /// </summary>

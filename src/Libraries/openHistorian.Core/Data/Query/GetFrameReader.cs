@@ -32,10 +32,25 @@ namespace openHistorian.Core.Data.Query;
 /// <summary>
 /// Represents a frame reader for querying historian data.
 /// </summary>
-public class FrameReader
-    : IDisposable
+public class FrameReader : IDisposable
 {
+    #region [ Members ]
+
+    /// <summary>
+    /// Frame data containing point IDs and historian values.
+    /// </summary>
+    public SortedList<ulong, HistorianValueStruct> Frame;
+
+    /// <summary>
+    /// The timestamp associated with the current  frame.
+    /// </summary>
+    public DateTime FrameTime;
+
     private readonly PointStream m_stream;
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Initializes a new instance of the FrameReader class.
@@ -48,16 +63,17 @@ public class FrameReader
         m_stream.Read();
     }
 
-    /// <summary>
-    /// The timestamp associated with the current  frame.
-    /// </summary>
-    public DateTime FrameTime;
+    #endregion
 
+    #region [ Methods ]
 
     /// <summary>
-    /// Frame data containing point IDs and historian values.
+    /// Disposes of the stream.
     /// </summary>
-    public SortedList<ulong, HistorianValueStruct> Frame;
+    public void Dispose()
+    {
+        m_stream.Dispose();
+    }
 
     /// <summary>
     /// Reads the next frame from the historian data stream.
@@ -81,37 +97,28 @@ public class FrameReader
             }
 
             if (m_stream.CurrentKey.TimestampAsDate == FrameTime)
-            {
                 //try
                 //{
                 Frame.Add(m_stream.CurrentKey.PointID, m_stream.CurrentValue.ToStruct());
-                //}
-                //catch (Exception ex)
-                //{
-                //    ex = ex;
-                //}
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    ex = ex;
+            //}
             else
-            {
                 return true;
-            }
         }
     }
 
-    /// <summary>
-    /// Disposes of the stream.
-    /// </summary>
-    public void Dispose()
-    {
-        m_stream.Dispose();
-    }
+    #endregion
 }
 
 /// <summary>
-/// Queries a historian database for a set of signals. 
+/// Queries a historian database for a set of signals.
 /// </summary>
-public static partial class GetFrameReaderMethods
+public static class GetFrameReaderMethods
 {
+    #region [ Static ]
 
     /// <summary>
     /// Gets concentrated frames from the provided stream.
@@ -123,4 +130,5 @@ public static partial class GetFrameReaderMethods
         return new FrameReader(stream);
     }
 
+    #endregion
 }

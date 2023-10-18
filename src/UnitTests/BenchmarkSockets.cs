@@ -21,12 +21,12 @@
 //
 //******************************************************************************************************
 
-using NUnit.Framework;
 using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using NUnit.Framework;
 
 namespace openHistorian.UnitTests;
 
@@ -36,7 +36,13 @@ namespace openHistorian.UnitTests;
 [TestFixture]
 public class BenchmarkSockets
 {
+    #region [ Members ]
+
     private const int Loop = 10000;
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Runs socket benchmark; measures read and write performance.
@@ -66,7 +72,7 @@ public class BenchmarkSockets
         sw.Stop();
         stream.Close();
 
-        Console.WriteLine("Write: " + (Loop * data.Length / sw.Elapsed.TotalSeconds / 1000000).ToString());
+        Console.WriteLine("Write: " + Loop * data.Length / sw.Elapsed.TotalSeconds / 1000000);
         Thread.Sleep(1000);
 
         read.Join();
@@ -75,9 +81,8 @@ public class BenchmarkSockets
     /// <summary>
     /// Performs the reading part of the socket benchmark.
     /// </summary>
-    void Reader()
+    private void Reader()
     {
-
         TcpClient client = new();
         client.Connect("127.0.0.1", 36345);
 
@@ -89,6 +94,8 @@ public class BenchmarkSockets
             ;
         sw.Stop();
 
-        Console.WriteLine("Read: " + (Loop * data.Length / sw.Elapsed.TotalSeconds / 1000000).ToString());
+        Console.WriteLine("Read: " + Loop * data.Length / sw.Elapsed.TotalSeconds / 1000000);
     }
+
+    #endregion
 }

@@ -32,6 +32,8 @@ namespace openHistorian.UnitTests;
 /// </summary>
 public static class StepTimer
 {
+    #region [ Static ]
+
     private static readonly Dictionary<string, Stopwatch> AllStopwatches;
 
     /// <summary>
@@ -50,9 +52,7 @@ public static class StepTimer
     public static Stopwatch Start(string name)
     {
         if (!AllStopwatches.ContainsKey(name))
-        {
             AllStopwatches.Add(name, new Stopwatch());
-        }
         Stopwatch sw = AllStopwatches[name];
         sw.Start();
         return sw;
@@ -83,9 +83,9 @@ public static class StepTimer
     {
         StringBuilder sb = new();
         foreach (KeyValuePair<string, Stopwatch> kvp in AllStopwatches)
-        {
-            sb.Append(kvp.Key + '\t' + kvp.Value.Elapsed.TotalMilliseconds.ToString());
-        }
+            sb.Append(kvp.Key + '\t' + kvp.Value.Elapsed.TotalMilliseconds);
         return sb.ToString();
     }
+
+    #endregion
 }

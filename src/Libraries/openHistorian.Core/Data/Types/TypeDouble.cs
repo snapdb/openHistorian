@@ -29,13 +29,9 @@ namespace openHistorian.Core.Data.Types;
 /// <summary>
 /// Method for converting data to and from a <see cref="double"/>.
 /// </summary>
-public unsafe class TypeDouble
-    : TypeBase
+public unsafe class TypeDouble : TypeBase
 {
-    /// <summary>
-    /// Creates a new instance of TypeDouble.
-    /// </summary>
-    public static readonly TypeDouble Instance = new();
+    #region [ Constructors ]
 
     /// <summary>
     /// Must use the static instance
@@ -43,6 +39,10 @@ public unsafe class TypeDouble
     private TypeDouble()
     {
     }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Converts from a double value to a raw ulong.
@@ -64,4 +64,15 @@ public unsafe class TypeDouble
     {
         return *(double*)&value;
     }
+
+    #endregion
+
+    #region [ Static ]
+
+    /// <summary>
+    /// Creates a new instance of TypeDouble.
+    /// </summary>
+    public static readonly TypeDouble Instance = new();
+
+    #endregion
 }

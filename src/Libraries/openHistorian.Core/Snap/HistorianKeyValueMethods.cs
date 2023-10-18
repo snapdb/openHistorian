@@ -29,11 +29,11 @@ using SnapDB.Snap.Tree;
 namespace openHistorian.Core.Snap;
 
 /// <summary>
-/// 
 /// </summary>
-public class HistorianKeyValueMethods
-    : KeyValueMethods<HistorianKey, HistorianValue>
+public class HistorianKeyValueMethods : KeyValueMethods<HistorianKey, HistorianValue>
 {
+    #region [ Methods ]
+
     /// <summary>
     /// Copies HistorianKey and HistorianValue from a specified source to a specified destination.
     /// </summary>
@@ -50,4 +50,6 @@ public class HistorianKeyValueMethods
         dstValue.Value2 = srcValue.Value2;
         dstValue.Value3 = srcValue.Value3;
     }
+
+    #endregion
 }

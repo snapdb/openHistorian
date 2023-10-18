@@ -24,10 +24,10 @@
 //
 //******************************************************************************************************
 
+using System.Data;
 using openHistorian.Core.Data.Query;
 using openHistorian.Core.Snap;
 using SnapDB.Snap.Services;
-using System.Data;
 
 namespace openHistorian.Data.Query;
 
@@ -36,14 +36,20 @@ namespace openHistorian.Data.Query;
 /// </summary>
 public class TableDefinition
 {
+    #region [ Members ]
+
+    internal List<KeyValuePair<object, int?[]>> m_signalGroups;
+    private readonly List<string> m_customColumns;
     private bool m_finishedColumns;
-    private string m_timestampColumn;
     private string m_identifierColumn;
     private Type m_identifierType;
 
     private readonly DataTable m_table;
-    internal List<KeyValuePair<object, int?[]>> m_signalGroups;
-    private readonly List<string> m_customColumns;
+    private string m_timestampColumn;
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Initializes a new instance of the TableDefinition class with default settings.
@@ -55,6 +61,10 @@ public class TableDefinition
         m_table = new DataTable();
         m_signalGroups = new List<KeyValuePair<object, int?[]>>();
     }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Adds a timestamp column to the table definition.
@@ -121,6 +131,7 @@ public class TableDefinition
             if (m_customColumns.Count == 0)
                 throw new Exception("Must have custom columns");
         }
+
         if (identifier.GetType() != m_identifierType)
             throw new Exception("Type Mismatch: identifier is not of the correct type");
 
@@ -128,19 +139,25 @@ public class TableDefinition
             throw new Exception("The number of points must equal the number of custom columns.");
 
         m_finishedColumns = true;
-
     }
+
+    #endregion
 }
 
 /// <summary>
 /// Represents a data point reader for querying historian data.
 /// </summary>
-public class HistorianDataPointReader
-    : IDataReader
+public class HistorianDataPointReader : IDataReader
 {
-    private TableDefinition m_tableDefinition;
-    private SortedList<DateTime, FrameData> m_results;
+    #region [ Members ]
+
     private int m_currentFrame;
+    private SortedList<DateTime, FrameData> m_results;
+    private TableDefinition m_tableDefinition;
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Initializes a new instance of the HistorianDataPointReader class.
@@ -162,13 +179,59 @@ public class HistorianDataPointReader
                     allPoints.Add((ulong)point.Value);
             }
         }
+
         m_currentFrame = -1;
     }
+
+    #endregion
+
+    #region [ Properties ]
+
+    /// <summary>
+    /// Gets the depth of the data point reader.
+    /// </summary>
+    public int Depth { get; }
 
     /// <summary>
     /// The number of fields included in the query.
     /// </summary>
-    public int FieldCount { get; private set; }
+    public int FieldCount { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the data point reader is closed.
+    /// </summary>
+    public bool IsClosed { get; }
+
+    /// <summary>
+    /// Gets the number of records affected by the data point reader.
+    /// </summary>
+    public int RecordsAffected => -1;
+
+    /// <summary>
+    /// Gets the column located at the specified index.
+    /// </summary>
+    /// <returns>
+    /// The column located at the specified index as an <see cref="T:System.Object"/>.
+    /// </returns>
+    /// <param name="i">The zero-based index of the column to get.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
+    object IDataRecord.this[int i] => throw new NotImplementedException();
+
+    /// <summary>
+    /// Gets the column with the specified name.
+    /// </summary>
+    /// <returns>
+    /// The column with the specified name as an <see cref="T:System.Object"/>.
+    /// </returns>
+    /// <param name="name">The name of the column to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">No column with the specified name was found.</exception>
+    /// <filterpriority>2</filterpriority>
+    object IDataRecord.this[string name] => throw new NotImplementedException();
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
@@ -213,7 +276,8 @@ public class HistorianDataPointReader
     /// <returns>
     /// The <see cref="T:System.Type"/> information corresponding to the type of <see cref="T:System.Object"/> that would be returned from <see cref="M:System.Data.IDataRecord.GetValue(System.Int32)"/>.
     /// </returns>
-    /// <param name="i">The index of the field to find.</param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
     /// <filterpriority>2</filterpriority>
     public Type GetFieldType(int i)
     {
@@ -495,28 +559,6 @@ public class HistorianDataPointReader
     }
 
     /// <summary>
-    /// Gets the column located at the specified index.
-    /// </summary>
-    /// <returns>
-    /// The column located at the specified index as an <see cref="T:System.Object"/>.
-    /// </returns>
-    /// <param name="i">The zero-based index of the column to get.</param>
-    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
-    /// <filterpriority>2</filterpriority>
-    object IDataRecord.this[int i] => throw new NotImplementedException();
-
-    /// <summary>
-    /// Gets the column with the specified name.
-    /// </summary>
-    /// <returns>
-    /// The column with the specified name as an <see cref="T:System.Object"/>.
-    /// </returns>
-    /// <param name="name">The name of the column to find.</param>
-    /// <exception cref="T:System.IndexOutOfRangeException">No column with the specified name was found.</exception>
-    /// <filterpriority>2</filterpriority>
-    object IDataRecord.this[string name] => throw new NotImplementedException();
-
-    /// <summary>
     /// Closes the data point reader.
     /// </summary>
     public void Close()
@@ -551,20 +593,7 @@ public class HistorianDataPointReader
         throw new NotImplementedException();
     }
 
-    /// <summary>
-    /// Gets the depth of the data point reader.
-    /// </summary>
-    public int Depth { get; private set; }
-
-    /// <summary>
-    /// Gets a value indicating whether the data point reader is closed.
-    /// </summary>
-    public bool IsClosed { get; private set; }
-
-    /// <summary>
-    /// Gets the number of records affected by the data point reader.
-    /// </summary>
-    public int RecordsAffected => -1;
+    #endregion
 }
 
 /// <summary>
@@ -572,6 +601,7 @@ public class HistorianDataPointReader
 /// </summary>
 public static class GetDataReaderMethods
 {
+    #region [ Static ]
 
     /// <summary>
     /// Gets a data reader from the historian database for the specified time range and table definition.
@@ -583,7 +613,6 @@ public static class GetDataReaderMethods
     /// <returns>An instance of the data reader for the specified query.</returns>
     public static IDataReader GetTable(this ClientDatabaseBase<HistorianKey, HistorianValue> database, DateTime start, DateTime stop, TableDefinition tableDefinition)
     {
-
         return null;
     }
 
@@ -597,10 +626,8 @@ public static class GetDataReaderMethods
     /// <returns>A data table containing the retrieved data from the historian database.</returns>
     public static DataTable GetDataReaderTable(this ClientDatabaseBase<HistorianKey, HistorianValue> database, ulong start, ulong stop, IList<ISignalWithName> columns)
     {
-        if (columns.Any((x) => !x.HistorianId.HasValue))
-        {
+        if (columns.Any(x => !x.HistorianId.HasValue))
             throw new Exception("All columns must be contained in the historian for this function to work.");
-        }
 
         Dictionary<ulong, SignalDataBase> results = database.GetSignals(start, stop, columns);
         int[] columnPosition = new int[columns.Count];
@@ -610,14 +637,10 @@ public static class GetDataReaderMethods
         DataTable table = new();
         table.Columns.Add("Time", typeof(DateTime));
         foreach (ISignalWithName signal in columns)
-        {
             table.Columns.Add(signal.TagName, typeof(double));
-        }
 
         for (int x = 0; x < columns.Count; x++)
-        {
             signals[x] = results[columns[x].HistorianId.Value];
-        }
 
         while (true)
         {
@@ -626,9 +649,7 @@ public static class GetDataReaderMethods
             {
                 SignalDataBase signal = signals[x];
                 if (signal.Count < columnPosition[x])
-                {
                     minDate = Math.Min(minDate, signals[x].GetDate(columnPosition[x]));
-                }
             }
 
             rowValues[0] = null;
@@ -647,11 +668,13 @@ public static class GetDataReaderMethods
                 }
             }
 
-            if (minDate == ulong.MaxValue && rowValues.All((x) => x is null))
+            if (minDate == ulong.MaxValue && rowValues.All(x => x is null))
                 return table;
             rowValues[0] = minDate;
 
             table.Rows.Add(rowValues);
         }
     }
+
+    #endregion
 }

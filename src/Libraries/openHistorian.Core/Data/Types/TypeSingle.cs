@@ -29,13 +29,9 @@ namespace openHistorian.Core.Data.Types;
 /// <summary>
 /// Method for converting data to and from a <see cref="float"/>.
 /// </summary>
-public unsafe class TypeSingle
-    : TypeBase
+public unsafe class TypeSingle : TypeBase
 {
-    /// <summary>
-    /// A readonly instance of TypeSingle.
-    /// </summary>
-    public static readonly TypeSingle Instance = new();
+    #region [ Constructors ]
 
     /// <summary>
     /// Must use the static instance.
@@ -43,6 +39,10 @@ public unsafe class TypeSingle
     private TypeSingle()
     {
     }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Converts a convertible value to its raw form.
@@ -66,4 +66,15 @@ public unsafe class TypeSingle
         uint tmp = (uint)value;
         return *(float*)&tmp;
     }
+
+    #endregion
+
+    #region [ Static ]
+
+    /// <summary>
+    /// A readonly instance of TypeSingle.
+    /// </summary>
+    public static readonly TypeSingle Instance = new();
+
+    #endregion
 }

@@ -21,11 +21,11 @@
 //
 //******************************************************************************************************
 
+using System;
+using System.Text;
 using NUnit.Framework;
 using openHistorian.Core.Snap;
 using SnapDB.Snap;
-using System;
-using System.Text;
 
 namespace openHistorian.UnitTests;
 
@@ -35,6 +35,8 @@ namespace openHistorian.UnitTests;
 [TestFixture]
 public class MeasureCompression
 {
+    #region [ Methods ]
+
     /// <summary>
     /// Test method to read data from a historian storage file.
     /// </summary>
@@ -100,6 +102,7 @@ public class MeasureCompression
             uint value = (uint)hvalue.Value1 >> shiftBits;
             bucket[value]++;
         }
+
         return bucket;
     }
 
@@ -119,7 +122,7 @@ public class MeasureCompression
             float valuef = *(float*)&value;
             double percent = buckets[x] / (double)count * 100.0;
             if (percent > 0.01)
-                sb.AppendLine(higherBits.ToString() + "," + x.ToString() + "," + (buckets[x] / (double)count * 100.0).ToString("0.00") + "," + valuef.ToString());
+                sb.AppendLine(higherBits + "," + x + "," + (buckets[x] / (double)count * 100.0).ToString("0.00") + "," + valuef);
         }
     }
 
@@ -179,4 +182,6 @@ public class MeasureCompression
         //}
         Console.WriteLine(sb.ToString());
     }
+
+    #endregion
 }

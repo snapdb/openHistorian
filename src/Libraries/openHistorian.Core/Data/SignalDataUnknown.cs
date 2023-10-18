@@ -30,15 +30,20 @@ using openHistorian.Core.Data.Types;
 namespace openHistorian.Data.Query;
 
 /// <summary>
-/// This type of signal only supports reading and writing data via 
+/// This type of signal only supports reading and writing data via
 /// its raw type. Type conversions are not supported since its original
 /// type is unknown.
 /// </summary>
-public class SignalDataUnknown
-    : SignalDataBase
+public class SignalDataUnknown : SignalDataBase
 {
+    #region [ Members ]
+
     private readonly List<ulong> m_dateTime = new();
     private readonly List<ulong> m_values = new();
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Data whose original type is unknown and therefore cannot be converted.
@@ -47,15 +52,23 @@ public class SignalDataUnknown
     {
     }
 
-    /// <summary>
-    /// Provides the type conversion method for the base class to use
-    /// </summary>
-    protected override TypeBase Method => throw new Exception("SignalDataRaw only supports raw formats and will not convert any values.");
+    #endregion
+
+    #region [ Properties ]
 
     /// <summary>
     /// Gets the number of values that are in the signal
     /// </summary>
     public override int Count => m_values.Count;
+
+    /// <summary>
+    /// Provides the type conversion method for the base class to use
+    /// </summary>
+    protected override TypeBase Method => throw new Exception("SignalDataRaw only supports raw formats and will not convert any values.");
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Adds a value to the signal in its raw 64-bit format.
@@ -92,4 +105,6 @@ public class SignalDataUnknown
     {
         return m_dateTime[index];
     }
+
+    #endregion
 }

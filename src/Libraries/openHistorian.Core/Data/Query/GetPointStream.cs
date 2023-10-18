@@ -37,22 +37,9 @@ namespace openHistorian.Data.Query;
 /// A helper way to read data from a stream.
 /// </summary>
 [Obsolete("This will soon be removed")]
-public class PointStream
-    : TreeStream<HistorianKey, HistorianValue>
+public class PointStream : TreeStream<HistorianKey, HistorianValue>
 {
-    private IDatabaseReader<HistorianKey, HistorianValue> m_reader;
-    private readonly TreeStream<HistorianKey, HistorianValue> m_stream;
-
-    /// <summary>
-    /// Creates a new point stream.
-    /// </summary>
-    /// <param name="reader">The reader, which will be called m_reader for this instance, to use.</param>
-    /// <param name="stream">The stream, which will be called m_stream for this instance, to use.</param>
-    public PointStream(IDatabaseReader<HistorianKey, HistorianValue> reader, TreeStream<HistorianKey, HistorianValue> stream)
-    {
-        m_stream = stream;
-        m_reader = reader;
-    }
+    #region [ Members ]
 
     /// <summary>
     /// Creates a new historian key to be used as the current key.
@@ -68,6 +55,41 @@ public class PointStream
     /// Checks to see if something is valid.
     /// </summary>
     public bool IsValid;
+
+    private IDatabaseReader<HistorianKey, HistorianValue> m_reader;
+    private readonly TreeStream<HistorianKey, HistorianValue> m_stream;
+
+    #endregion
+
+    #region [ Constructors ]
+
+    /// <summary>
+    /// Creates a new point stream.
+    /// </summary>
+    /// <param name="reader">The reader, which will be called m_reader for this instance, to use.</param>
+    /// <param name="stream">The stream, which will be called m_stream for this instance, to use.</param>
+    public PointStream(IDatabaseReader<HistorianKey, HistorianValue> reader, TreeStream<HistorianKey, HistorianValue> stream)
+    {
+        m_stream = stream;
+        m_reader = reader;
+    }
+
+    #endregion
+
+    #region [ Methods ]
+
+    /// <summary>
+    /// Disposes of the reader.
+    /// </summary>
+    /// <param name="disposing">If <c>true</c>, disposes of the m_reader and sets its default value to null; otherwise, <c>false</c> does nothing.</param>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            m_reader.Dispose();
+            m_reader = null;
+        }
+    }
 
     /// <summary>
     /// Checks to see if the current key and value are read.
@@ -91,32 +113,47 @@ public class PointStream
             IsValid = true;
             return IsValid;
         }
-        else
-        {
-            IsValid = false;
-            return IsValid;
-        }
+
+        IsValid = false;
+        return IsValid;
     }
 
-    /// <summary>
-    /// Disposes of the reader.
-    /// </summary>
-    /// <param name="disposing">If <c>true</c>, disposes of the m_reader and sets its default value to null; otherwise, <c>false</c> does nothing.</param>
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            m_reader.Dispose();
-            m_reader = null;
-        }
-    }
+    #endregion
 }
 
 /// <summary>
-/// Queries a historian database for a set of signals. 
+/// Queries a historian database for a set of signals.
 /// </summary>
-public static partial class GetPointStreamExtensionMethods
+public static class GetPointStreamExtensionMethods
 {
+    #region [ Members ]
+
+    /// <summary>
+    /// Creates lists for point IDs and value .
+    /// </summary>
+    private class FrameDataConstructor
+    {
+        #region [ Members ]
+
+        public readonly List<ulong> PointID = new();
+        public readonly List<HistorianValueStruct> Values = new();
+
+        #endregion
+
+        #region [ Methods ]
+
+        public FrameData ToFrameData()
+        {
+            return new FrameData(PointID, Values);
+        }
+
+        #endregion
+    }
+
+    #endregion
+
+    #region [ Static ]
+
     /// <summary>
     /// Gets frames from the historian as individual frames.
     /// </summary>
@@ -171,24 +208,9 @@ public static partial class GetPointStreamExtensionMethods
     /// <param name="points">The points to query.</param>
     /// <param name="options">A list of query options.</param>
     /// <returns>The frames from the historian</returns>
-    public static PointStream GetPointStream(this IDatabaseReader<HistorianKey, HistorianValue> database,
-        SortedTreeEngineReaderOptions options, SeekFilterBase<HistorianKey> timestamps, MatchFilterBase<HistorianKey, HistorianValue> points)
+    public static PointStream GetPointStream(this IDatabaseReader<HistorianKey, HistorianValue> database, SortedTreeEngineReaderOptions options, SeekFilterBase<HistorianKey> timestamps, MatchFilterBase<HistorianKey, HistorianValue> points)
     {
         return new PointStream(database, database.Read(options, timestamps, points));
-    }
-
-
-    /// <summary>
-    /// Creates lists for point IDs and value .
-    /// </summary>
-    class FrameDataConstructor
-    {
-        public readonly List<ulong> PointID = new();
-        public readonly List<HistorianValueStruct> Values = new();
-        public FrameData ToFrameData()
-        {
-            return new FrameData(PointID, Values);
-        }
     }
 
     /// <summary>
@@ -217,14 +239,16 @@ public static partial class GetPointStreamExtensionMethods
                     results.Add(timestamp, lastFrame);
                 }
             }
+
             lastFrame.PointID.Add(key.PointID);
             lastFrame.Values.Add(value.ToStruct());
         }
+
         List<FrameData> data = new(results.Count);
         data.AddRange(results.Values.Select(x => x.ToFrameData()));
 
         return SortedListFactory.Create(results.Keys, data);
     }
 
-
+    #endregion
 }

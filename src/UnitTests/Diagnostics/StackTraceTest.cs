@@ -21,11 +21,11 @@
 //
 //******************************************************************************************************
 
-using Gemstone.Diagnostics;
-using NUnit.Framework;
 using System;
 using System.Diagnostics;
 using System.Text;
+using Gemstone.Diagnostics;
+using NUnit.Framework;
 
 namespace openHistorian.UnitTests.Diagnostics;
 
@@ -35,6 +35,8 @@ namespace openHistorian.UnitTests.Diagnostics;
 [TestFixture]
 public class StackTraceTest
 {
+    #region [ Methods ]
+
     /// <summary>
     /// Test method that prints the environment's stack trace and measures execution time.
     /// </summary>
@@ -48,12 +50,14 @@ public class StackTraceTest
         double time = sw.TimeEvent(() =>
         {
             for (int x = 0; x < 1000; x++)
-            {
                 RunMethod3();
-            }
         });
         Console.WriteLine(1000 / time);
     }
+
+    #endregion
+
+    #region [ Static ]
 
     private static void RunMethod()
     {
@@ -86,5 +90,5 @@ public class StackTraceTest
         _ = new LogStackTrace();
     }
 
-
+    #endregion
 }

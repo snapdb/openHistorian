@@ -27,7 +27,7 @@
 namespace openHistorian.Core.Data.Types;
 
 /// <summary>
-/// This base class supports proper conversion of 
+/// This base class supports proper conversion of
 /// each primitive type into a native format.
 /// The native format is specified.
 /// If not overloading individual properties, boxing will
@@ -35,6 +35,7 @@ namespace openHistorian.Core.Data.Types;
 /// </summary>
 public abstract class TypeBase
 {
+    #region [ Methods ]
 
     /// <summary>
     /// Converts a raw ulong value to a double value using the GetValue method and assigns it to the 'value' out parameter.
@@ -390,4 +391,6 @@ public abstract class TypeBase
     /// <param name="value">The ulong raw value from which to obtain the value.</param>
     /// <returns>The IConvertible value obtained from the ulong raw value.</returns>
     protected abstract IConvertible GetValue(ulong value);
+
+    #endregion
 }

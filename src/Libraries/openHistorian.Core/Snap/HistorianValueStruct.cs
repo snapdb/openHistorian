@@ -37,10 +37,12 @@ public struct HistorianValueStruct
     /// Value 1 should be where the first 64 bits of the field is stored. For 32 bit values, use this field only.
     /// </summary>
     public ulong Value1;
+
     /// <summary>
     /// Should only be used if value cannot be entirely stored in Value1. Compression penalty occurs when using this field.
     /// </summary>
     public ulong Value2;
+
     /// <summary>
     /// Should contain any kind of digital data such as Quality. Compression penalty occurs when used for any other type of field.
     /// </summary>
@@ -50,7 +52,7 @@ public struct HistorianValueStruct
     /// Type casts the <see cref="Value1"/> as a single.
     /// </summary>
     public float AsSingle
-    { 
+    {
         readonly get => BitConvert.ToSingle(Value1);
         set => Value1 = BitConvert.ToUInt64(value);
     }

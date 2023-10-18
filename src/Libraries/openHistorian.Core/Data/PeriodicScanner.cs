@@ -30,28 +30,31 @@ using SnapDB.Snap.Filters;
 namespace openHistorian.Core.Data;
 
 /// <summary>
-/// 
 /// </summary>
 public class PeriodicScanner
 {
-    private readonly TimeSpan m_windowTolerance;
+    #region [ Members ]
+
+    private const decimal DecimalTicksPerDay = TimeSpan.TicksPerDay;
 
     private readonly List<long> m_downSampleRates;
     private readonly List<long> m_downSampleTicks;
-    private const decimal DecimalTicksPerDay = TimeSpan.TicksPerDay;
+    private readonly TimeSpan m_windowTolerance;
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Initializes a new instance of the PeriodicScanner class with the specified number of samples per second.
     /// The default sampling period is the number of ticks per second, divided by the number of samples per second, divided by four.
     /// </summary>
     /// <param name="samplesPerSecond">The number of samples per second for the scanner.</param>
-    public PeriodicScanner(int samplesPerSecond)
-        : this(samplesPerSecond, new TimeSpan(TimeSpan.TicksPerSecond / samplesPerSecond / 4))
+    public PeriodicScanner(int samplesPerSecond) : this(samplesPerSecond, new TimeSpan(TimeSpan.TicksPerSecond / samplesPerSecond / 4))
     {
     }
 
     /// <summary>
-    /// 
     /// </summary>
     /// <param name="samplesPerSecond">The number of samples per second for the scanner.</param>
     /// <param name="windowTolerance">The acceptable margin on either side of the specified window.</param>
@@ -62,6 +65,10 @@ public class PeriodicScanner
         m_downSampleTicks = new List<long>();
         CalculateDownSampleRates(samplesPerSecond);
     }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Suggests the number of samples per day based on the specified time range and sample count.
@@ -74,7 +81,7 @@ public class PeriodicScanner
     {
         double days = (endTime - startTime).TotalDays;
 
-        long sampleRate = m_downSampleRates.FirstOrDefault((x) => sampleCount <= x * days);
+        long sampleRate = m_downSampleRates.FirstOrDefault(x => sampleCount <= x * days);
         if (sampleRate == 0)
             sampleRate = m_downSampleRates.Last();
 
@@ -113,80 +120,18 @@ public class PeriodicScanner
         while (true)
         {
             if (samplesPerDay % count == 0)
-            {
                 if (TimeSpan.TicksPerDay % (samplesPerDay / count) == 0)
                 {
                     bigInterval = TimeSpan.TicksPerDay / (samplesPerDay / count);
                     break;
                 }
-            }
+
             count++;
         }
+
         return TimestampSeekFilter.CreateFromIntervalData<HistorianKey>((ulong)startTime2, (ulong)endTime2, bigInterval, (ulong)interval, (ulong)m_windowTolerance.Ticks);
     }
-    private static long RoundDownToNearestSample(long startTime, long samplesPerDay, long interval)
-    {
-        if (interval * samplesPerDay == TimeSpan.TicksPerDay)
-        {
-            return startTime - startTime % interval;
-        }
-        else
-        {
-            //Not exact, but close enough.
-            //ToDo: Consider the error if using double precision instead of decimal.
-            long dateTicks = startTime - startTime % TimeSpan.TicksPerDay;
-            long timeTicks = startTime - dateTicks; // timeticks cannot be more than 864 billion.
 
-            decimal interval2 = DecimalTicksPerDay / samplesPerDay;
-            decimal overBy = timeTicks % interval2;
-
-            return dateTicks + timeTicks - (long)overBy;
-        }
-    }
-
-    private static long RoundUpToNearestSample(long startTime, long samplesPerDay, long interval)
-    {
-        if (interval * samplesPerDay == TimeSpan.TicksPerDay)
-        {
-            long delta = startTime % interval;
-            if (delta == 0)
-                return startTime;
-            else
-                return startTime - delta + interval;
-        }
-        else
-        {
-            //Not exact, but close enough.
-            //ToDo: Consider the error if using double precision instead of decimal.
-            long dateTicks = startTime - startTime % TimeSpan.TicksPerDay;
-            long timeTicks = startTime - dateTicks; //timeticks cannot be more than 864 billion.
-
-            decimal interval2 = DecimalTicksPerDay / samplesPerDay;
-            decimal overBy = timeTicks % interval2;
-
-            if (overBy == 0)
-                return dateTicks + timeTicks;
-            else
-                return dateTicks + timeTicks - (long)overBy + interval;
-        }
-    }
-    private static List<int> FactorNumber(int number)
-    {
-        if (number < 1)
-            throw new ArgumentOutOfRangeException(nameof(number), "Must be greather than or equal to 1");
-        List<int> factors = new();
-        for (int x = 1; x * x <= number; x++)
-        {
-            if (number % x == 0)
-            {
-                factors.Add(x);
-                if (x * x != number)
-                    factors.Add(number / x);
-            }
-        }
-        factors.Sort();
-        return factors;
-    }
     private void CalculateDownSampleRates(int samplesPerSecond)
     {
         m_downSampleRates.Add(1); //1 sample per day
@@ -224,13 +169,73 @@ public class PeriodicScanner
         List<int> factors = FactorNumber(samplesPerSecond);
 
         for (int x = 1; x < factors.Count; x++)
-        {
             m_downSampleRates.Add(24L * 60L * 60L * factors[x]);
-        }
 
         foreach (long rate in m_downSampleRates)
-        {
             m_downSampleTicks.Add(TimeSpan.TicksPerDay / rate);
-        }
     }
+
+    #endregion
+
+    #region [ Static ]
+
+    private static long RoundDownToNearestSample(long startTime, long samplesPerDay, long interval)
+    {
+        if (interval * samplesPerDay == TimeSpan.TicksPerDay)
+            return startTime - startTime % interval;
+
+        //Not exact, but close enough.
+        //ToDo: Consider the error if using double precision instead of decimal.
+        long dateTicks = startTime - startTime % TimeSpan.TicksPerDay;
+        long timeTicks = startTime - dateTicks; // timeticks cannot be more than 864 billion.
+
+        decimal interval2 = DecimalTicksPerDay / samplesPerDay;
+        decimal overBy = timeTicks % interval2;
+
+        return dateTicks + timeTicks - (long)overBy;
+    }
+
+    private static long RoundUpToNearestSample(long startTime, long samplesPerDay, long interval)
+    {
+        if (interval * samplesPerDay == TimeSpan.TicksPerDay)
+        {
+            long delta = startTime % interval;
+            if (delta == 0)
+                return startTime;
+            return startTime - delta + interval;
+        }
+
+        //Not exact, but close enough.
+        //ToDo: Consider the error if using double precision instead of decimal.
+        long dateTicks = startTime - startTime % TimeSpan.TicksPerDay;
+        long timeTicks = startTime - dateTicks; //timeticks cannot be more than 864 billion.
+
+        decimal interval2 = DecimalTicksPerDay / samplesPerDay;
+        decimal overBy = timeTicks % interval2;
+
+        if (overBy == 0)
+            return dateTicks + timeTicks;
+        return dateTicks + timeTicks - (long)overBy + interval;
+    }
+
+    private static List<int> FactorNumber(int number)
+    {
+        if (number < 1)
+            throw new ArgumentOutOfRangeException(nameof(number), "Must be greather than or equal to 1");
+        List<int> factors = new();
+        for (int x = 1; x * x <= number; x++)
+        {
+            if (number % x == 0)
+            {
+                factors.Add(x);
+                if (x * x != number)
+                    factors.Add(number / x);
+            }
+        }
+
+        factors.Sort();
+        return factors;
+    }
+
+    #endregion
 }

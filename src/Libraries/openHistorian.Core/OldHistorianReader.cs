@@ -30,8 +30,8 @@
 //
 //******************************************************************************************************
 
-using Gemstone;
 using System.Text;
+using Gemstone;
 
 namespace openHistorian.Core;
 
@@ -45,7 +45,9 @@ public class OldHistorianReader : IDisposable
     // Nested Types        
     private class TimeTag
     {
-        static DateTime Jan11995 = DateTime.Parse("01/01/1995");
+        #region [ Static ]
+
+        private static readonly DateTime Jan11995 = DateTime.Parse("01/01/1995");
 
         public static DateTime Convert(double timestamp)
         {
@@ -56,6 +58,8 @@ public class OldHistorianReader : IDisposable
         {
             return Jan11995.AddTicks(timestamp * 0x2710L);
         }
+
+        #endregion
     }
 
     private struct DataBlock
@@ -90,16 +94,11 @@ public class OldHistorianReader : IDisposable
         public int Flags;
     }
 
+    private byte[] m_buffer;
+    private List<DataBlock> m_dataBlocks;
+
     // Fields
     private FileStream m_fileStream;
-    private DateTime m_startTime;
-    private DateTime m_endTime;
-    private int m_pointsReceived;
-    private int m_pointsArchived;
-    private int m_dataBlockSize;
-    private int m_dataBlockCount;
-    private List<DataBlock> m_dataBlocks;
-    private byte[] m_buffer;
     private bool m_disposed;
 
     #endregion
@@ -119,34 +118,34 @@ public class OldHistorianReader : IDisposable
     #region [ Properties ]
 
     /// <summary>
-    /// Gets start time of the data in archive as serialized in the header data.
+    /// Gets data-block count as serialized in header data.
     /// </summary>
-    private DateTime StartTime => m_startTime;
-
-    /// <summary>
-    /// Gets the end time of the data in the archive as serialized in the header data.
-    /// </summary>
-    private DateTime EndTime => m_endTime;
-
-    /// <summary>
-    /// Gets points received by archive as serialized in header data.
-    /// </summary>
-    public int PointsReceived => m_pointsReceived;
-
-    /// <summary>
-    /// Gets points received by archive as serialized in header data.
-    /// </summary>
-    public int PointsArchived => m_pointsArchived;
+    public int DataBlockCount { get; private set; }
 
     /// <summary>
     /// Gets data-block size as serialized in header data.
     /// </summary>
-    public int DataBlockSize => m_dataBlockSize;
+    public int DataBlockSize { get; private set; }
 
     /// <summary>
-    /// Gets data-block count as serialized in header data.
+    /// Gets points received by archive as serialized in header data.
     /// </summary>
-    public int DataBlockCount => m_dataBlockCount;
+    public int PointsArchived { get; private set; }
+
+    /// <summary>
+    /// Gets points received by archive as serialized in header data.
+    /// </summary>
+    public int PointsReceived { get; private set; }
+
+    /// <summary>
+    /// Gets the end time of the data in the archive as serialized in the header data.
+    /// </summary>
+    private DateTime EndTime { get; set; }
+
+    /// <summary>
+    /// Gets start time of the data in archive as serialized in the header data.
+    /// </summary>
+    private DateTime StartTime { get; set; }
 
     #endregion
 
@@ -170,23 +169,19 @@ public class OldHistorianReader : IDisposable
     protected virtual void Dispose(bool disposing)
     {
         if (!m_disposed)
-        {
             try
             {
                 if (disposing)
-                {
                     if (m_fileStream != null)
                     {
                         m_fileStream.Dispose();
                         m_fileStream = null;
                     }
-                }
             }
             finally
             {
-                m_disposed = true;  // Prevent duplicate dispose.
+                m_disposed = true; // Prevent duplicate dispose.
             }
-        }
     }
 
     /// <summary>
@@ -201,24 +196,24 @@ public class OldHistorianReader : IDisposable
         m_fileStream.Position = footerPosition;
 
         using BinaryReader reader = new(m_fileStream, Encoding.Default, true);
-        m_startTime = TimeTag.Convert(reader.ReadDouble());
-        m_endTime = TimeTag.Convert(reader.ReadDouble());
-        m_pointsReceived = reader.ReadInt32();
-        m_pointsArchived = reader.ReadInt32();
-        m_dataBlockSize = reader.ReadInt32();
-        m_dataBlockCount = reader.ReadInt32();
+        StartTime = TimeTag.Convert(reader.ReadDouble());
+        EndTime = TimeTag.Convert(reader.ReadDouble());
+        PointsReceived = reader.ReadInt32();
+        PointsArchived = reader.ReadInt32();
+        DataBlockSize = reader.ReadInt32();
+        DataBlockCount = reader.ReadInt32();
 
-        int fatPosition = footerPosition - 10 - 12 * m_dataBlockCount;
+        int fatPosition = footerPosition - 10 - 12 * DataBlockCount;
         m_fileStream.Position = fatPosition;
 
-        m_dataBlocks = new List<DataBlock>(m_dataBlockCount);
+        m_dataBlocks = new List<DataBlock>(DataBlockCount);
 
         // Scan through header bytes
         reader.ReadBytes(10);
 
         DataBlock block = default;
 
-        for (int x = 1; x <= m_dataBlockCount; x++)
+        for (int x = 1; x <= DataBlockCount; x++)
         {
             block.BlockID = reader.ReadInt32();
             block.Timestamp = TimeTag.Convert(reader.ReadDouble());
@@ -226,7 +221,7 @@ public class OldHistorianReader : IDisposable
         }
 
         m_fileStream.Position = 0;
-        m_buffer = new byte[m_dataBlockSize * 1024];
+        m_buffer = new byte[DataBlockSize * 1024];
     }
 
     /// <summary>
@@ -239,11 +234,11 @@ public class OldHistorianReader : IDisposable
 
         foreach (DataBlock block in m_dataBlocks)
         {
-            m_fileStream.Read(m_buffer, 0, m_dataBlockSize * 1024);
+            m_fileStream.Read(m_buffer, 0, DataBlockSize * 1024);
 
             int position = 0;
 
-            while (position < m_dataBlockSize * 1024 - 9)
+            while (position < DataBlockSize * 1024 - 9)
             {
                 int baseTime = LittleEndian.ToInt32(m_buffer, position);
                 short flags = LittleEndian.ToInt16(m_buffer, position + 4);
@@ -265,5 +260,6 @@ public class OldHistorianReader : IDisposable
             }
         }
     }
-}
+
     #endregion
+}

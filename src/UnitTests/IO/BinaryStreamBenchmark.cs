@@ -21,9 +21,9 @@
 //
 //******************************************************************************************************
 
+using System;
 using NUnit.Framework;
 using SnapDB.IO.Unmanaged;
-using System;
 
 namespace openHistorian.UnitTests.IO;
 
@@ -33,6 +33,8 @@ namespace openHistorian.UnitTests.IO;
 [TestFixture]
 public unsafe class BinaryStreamBenchmark
 {
+    #region [ Methods ]
+
     [Test]
     public void Test7Bit1()
     {
@@ -54,7 +56,6 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write7Bit(1u);
                     }
                 }
-
             });
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
@@ -84,7 +85,6 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write7Bit(128u);
                     }
                 }
-
             });
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
@@ -115,7 +115,6 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write7Bit(128u * 128u);
                     }
                 }
-
             });
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
@@ -146,7 +145,6 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write7Bit(128u * 128u * 128u);
                     }
                 }
-
             });
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
@@ -177,7 +175,6 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write7Bit(uint.MaxValue);
                     }
                 }
-
             });
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
@@ -208,7 +205,6 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write((sbyte)x);
                     }
                 }
-
             });
 
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
@@ -240,7 +236,6 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write((short)x);
                     }
                 }
-
             });
 
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
@@ -272,7 +267,6 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write(x);
                     }
                 }
-
             });
 
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
@@ -304,11 +298,11 @@ public unsafe class BinaryStreamBenchmark
                         bs.Write((long)x);
                     }
                 }
-
             });
 
             Console.WriteLine(4 * 1000 * 1000 / time / 1000 / 1000);
         }
     }
 
+    #endregion
 }

@@ -34,13 +34,76 @@ using SnapDB.Snap.Services;
 namespace openHistorian.Core.Queues;
 
 /// <summary>
-/// Serves as a local queue for getting data into a remote historian. 
-/// This queue will isolate the input from the volatility of a 
+/// Serves as a local queue for getting data into a remote historian.
+/// This queue will isolate the input from the volatility of a
 /// remote historian. Data is also kept in this buffer until it has been committed
-/// to the disk subsystem. 
+/// to the disk subsystem.
 /// </summary>
 public class HistorianInputQueue : IDisposable
 {
+    #region [ Members ]
+
+    private class StreamPoints : TreeStream<HistorianKey, HistorianValue>
+    {
+        #region [ Members ]
+
+        private int m_count;
+        private readonly int m_maxPoints;
+        private readonly IsolatedQueue<PointData> m_measurements;
+
+        #endregion
+
+        #region [ Constructors ]
+
+        public StreamPoints(IsolatedQueue<PointData> measurements, int maxPointsPerStream)
+        {
+            m_measurements = measurements;
+            m_maxPoints = maxPointsPerStream;
+        }
+
+        #endregion
+
+        #region [ Properties ]
+
+        public bool QuitOnPointCount => m_count >= m_maxPoints;
+
+        #endregion
+
+        #region [ Methods ]
+
+        public void Reset()
+        {
+            m_count = 0;
+            SetEos(false);
+        }
+
+        protected override void EndOfStreamReached()
+        {
+            SetEos(true);
+        }
+
+        protected override bool ReadNext(HistorianKey key, HistorianValue value)
+        {
+            if (m_count < m_maxPoints && m_measurements.TryDequeue(out PointData data))
+            {
+                key.Timestamp = data.Key1;
+                key.PointID = data.Key2;
+                value.Value3 = data.Value1;
+                value.Value1 = data.Value2;
+                m_count++;
+                return true;
+            }
+
+            key.Timestamp = 0;
+            key.PointID = 0;
+            value.Value3 = 0;
+            value.Value1 = 0;
+            return false;
+        }
+
+        #endregion
+    }
+
     private struct PointData
     {
         public ulong Key1;
@@ -61,21 +124,26 @@ public class HistorianInputQueue : IDisposable
 
                 return true;
             }
+
             return false;
         }
     }
+
+    private readonly IsolatedQueue<PointData> m_blocks;
+
+    private ClientDatabaseBase<HistorianKey, HistorianValue> m_database;
+
+    private readonly Func<ClientDatabaseBase<HistorianKey, HistorianValue>> m_getDatabase;
 
     private readonly StreamPoints m_pointStream;
 
     private readonly object m_syncWrite;
 
-    private ClientDatabaseBase<HistorianKey, HistorianValue> m_database;
-
-    private readonly IsolatedQueue<PointData> m_blocks;
-
     private readonly ScheduledTask m_worker;
 
-    private readonly Func<ClientDatabaseBase<HistorianKey, HistorianValue>> m_getDatabase;
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Initializes a new instance of the HistorianInputQueue with the specified function to get a database.
@@ -91,13 +159,28 @@ public class HistorianInputQueue : IDisposable
         m_worker.Running += WorkerDoWork;
     }
 
+    #endregion
+
+    #region [ Properties ]
+
     /// <summary>
     /// Gets queue size.
     /// </summary>
     public long Size => m_blocks is null ? 0L : m_blocks.Count;
 
+    #endregion
+
+    #region [ Methods ]
+
     /// <summary>
-    /// Provides a thread safe way to enqueue points. 
+    /// </summary>
+    public void Dispose()
+    {
+        m_worker.Dispose();
+    }
+
+    /// <summary>
+    /// Provides a thread safe way to enqueue points.
     /// While points are streaming all other writes are blocked. Therefore,
     /// this point stream should be high speed.
     /// </summary>
@@ -108,10 +191,9 @@ public class HistorianInputQueue : IDisposable
         {
             PointData data = default;
             while (data.Load(stream))
-            {
                 m_blocks.Enqueue(data);
-            }
         }
+
         m_worker.Start();
     }
 
@@ -131,6 +213,7 @@ public class HistorianInputQueue : IDisposable
             };
             m_blocks.Enqueue(data);
         }
+
         m_worker.Start();
     }
 
@@ -157,58 +240,5 @@ public class HistorianInputQueue : IDisposable
             m_worker.Start(1000);
     }
 
-
-    private class StreamPoints
-        : TreeStream<HistorianKey, HistorianValue>
-    {
-        private readonly IsolatedQueue<PointData> m_measurements;
-        private readonly int m_maxPoints;
-        private int m_count;
-
-        public StreamPoints(IsolatedQueue<PointData> measurements, int maxPointsPerStream)
-        {
-            m_measurements = measurements;
-            m_maxPoints = maxPointsPerStream;
-        }
-
-        public void Reset()
-        {
-            m_count = 0;
-            SetEos(false);
-        }
-
-        protected override void EndOfStreamReached()
-        {
-            SetEos(true);
-        }
-
-        public bool QuitOnPointCount => m_count >= m_maxPoints;
-
-        protected override bool ReadNext(HistorianKey key, HistorianValue value)
-        {
-            if (m_count < m_maxPoints && m_measurements.TryDequeue(out PointData data))
-            {
-                key.Timestamp = data.Key1;
-                key.PointID = data.Key2;
-                value.Value3 = data.Value1;
-                value.Value1 = data.Value2;
-                m_count++;
-                return true;
-            }
-            key.Timestamp = 0;
-            key.PointID = 0;
-            value.Value3 = 0;
-            value.Value1 = 0;
-            return false;
-        }
-
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public void Dispose()
-    {
-        m_worker.Dispose();
-    }
+    #endregion
 }

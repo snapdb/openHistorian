@@ -21,29 +21,35 @@
 //
 //******************************************************************************************************
 
-using Gemstone.Diagnostics;
-using NUnit.Framework;
-using openHistorian.Core.Snap;
-using SnapDB;
-using SnapDB.IO.Unmanaged;
-using SnapDB.Snap;
-using SnapDB.Snap.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using Gemstone.Diagnostics;
+using NUnit.Framework;
 using openHistorian.Core.Net;
+using openHistorian.Core.Snap;
+using SnapDB;
+using SnapDB.IO.Unmanaged;
+using SnapDB.Snap;
+using SnapDB.Snap.Services;
 
 namespace openHistorian.UnitTests.SortedTreeStore.Engine;
 
 [TestFixture]
 public class BulkWritePoints
 {
+    #region [ Members ]
+
     private const int PointsToArchive = 100000000;
-    private volatile bool Quit;
     private volatile int PointCount;
     private SortedList<double, int> PointSamples;
+    private volatile bool Quit;
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Verifies the database by reading and checking archived points.
@@ -203,14 +209,10 @@ public class BulkWritePoints
     [Test]
     public void TestWriteSpeedRandom()
     {
-
         Logger.Console.Verbose = VerboseLevel.All;
 
         Random r = new(1);
-        Thread th = new(WriteSpeed)
-        {
-            IsBackground = true
-        };
+        Thread th = new(WriteSpeed) { IsBackground = true };
         th.Start();
 
         Quit = false;
@@ -236,35 +238,12 @@ public class BulkWritePoints
                 db.Write(key, value);
             }
         }
+
         Quit = true;
         th.Join();
         Console.WriteLine("Time (sec)\tPoints");
         foreach (KeyValuePair<double, int> kvp in PointSamples)
-        {
-            Console.WriteLine(kvp.Key.ToString() + "\t" + kvp.Value.ToString());
-        }
-    }
-
-    /// <summary>
-    /// Stores the write speed.
-    /// </summary>
-    void WriteSpeed()
-    {
-        Stopwatch sw = new();
-        sw.Start();
-        PointSamples = new SortedList<double, int>();
-
-        while (!Quit)
-        {
-            double elapsed = sw.Elapsed.TotalSeconds;
-            PointSamples.Add(elapsed, PointCount);
-            int sleepTime = (int)(elapsed * 1000) % 100;
-
-            sleepTime = 100 - sleepTime;
-            if (sleepTime < 50)
-                sleepTime += 100;
-            Thread.Sleep(sleepTime);
-        }
+            Console.WriteLine(kvp.Key + "\t" + kvp.Value);
     }
 
     /// <summary>
@@ -308,4 +287,28 @@ public class BulkWritePoints
         GC.WaitForPendingFinalizers();
         Thread.Sleep(100);
     }
+
+    /// <summary>
+    /// Stores the write speed.
+    /// </summary>
+    private void WriteSpeed()
+    {
+        Stopwatch sw = new();
+        sw.Start();
+        PointSamples = new SortedList<double, int>();
+
+        while (!Quit)
+        {
+            double elapsed = sw.Elapsed.TotalSeconds;
+            PointSamples.Add(elapsed, PointCount);
+            int sleepTime = (int)(elapsed * 1000) % 100;
+
+            sleepTime = 100 - sleepTime;
+            if (sleepTime < 50)
+                sleepTime += 100;
+            Thread.Sleep(sleepTime);
+        }
+    }
+
+    #endregion
 }

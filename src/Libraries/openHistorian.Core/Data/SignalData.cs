@@ -25,21 +25,24 @@
 //******************************************************************************************************
 
 using openHistorian.Core.Data.Types;
-using openHistorian.Data.Query;
 
 namespace openHistorian.Core.Data.Query;
 
 /// <summary>
 /// Contains a series of Times and Values for an individual signal.
-/// If using this class, you must specify a <see cref="TypeBase"/>. 
+/// If using this class, you must specify a <see cref="TypeBase"/>.
 /// </summary>
-public class SignalData
-    : SignalDataBase
+public class SignalData : SignalDataBase
 {
+    #region [ Members ]
+
     private readonly List<ulong> m_dateTime = new();
+
     private readonly List<ulong> m_values = new();
 
-    private readonly TypeBase m_type;
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Declares a <see cref="SignalData"/> with an unspecified <see cref="TypeBase"/> type.
@@ -47,18 +50,26 @@ public class SignalData
     /// <param name="type">The type of the <see cref="TypeBase"/>, stored as m_type.</param>
     public SignalData(TypeBase type)
     {
-        m_type = type;
+        Method = type;
     }
 
-    /// <summary>
-    /// Provides the type conversion method for the base class to use
-    /// </summary>
-    protected override TypeBase Method => m_type;
+    #endregion
+
+    #region [ Properties ]
 
     /// <summary>
     /// Gets the number of values that are in the signal
     /// </summary>
     public override int Count => m_values.Count;
+
+    /// <summary>
+    /// Provides the type conversion method for the base class to use
+    /// </summary>
+    protected override TypeBase Method { get; }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Adds a value to the signal in its raw 64-bit format.
@@ -96,4 +107,6 @@ public class SignalData
     {
         return m_dateTime[index];
     }
+
+    #endregion
 }

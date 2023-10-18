@@ -18,7 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\.editorconfig" Link=".editorconfig" />
     <None Include="CheckSHA1Guid.cs" />
     <None Include="SortedTreeStore\Engine\CompareTo1.0.cs" />
   </ItemGroup>
@@ -30,7 +29,6 @@
     <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
-    <PackageReference Include="NPlot" Version="0.9.10" />
     <PackageReference Include="NUnit" Version="3.13.3" />
   </ItemGroup>
 

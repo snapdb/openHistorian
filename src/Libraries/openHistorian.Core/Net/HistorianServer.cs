@@ -37,11 +37,6 @@ namespace openHistorian.Core.Net;
 /// </summary>
 public class HistorianServer : IDisposable
 {
-
-    #region [ Members ]
-
-    #endregion
-
     #region [ Constructors ]
 
     /// <summary>
@@ -55,7 +50,7 @@ public class HistorianServer : IDisposable
     /// <summary>
     /// Creates a new <see cref="HistorianServer"/> instance.
     /// </summary>
-    public HistorianServer(int? port, string networkInterfaceIP = null)
+    public HistorianServer(int? port, string? networkInterfaceIP = null)
     {
         ServerSettings server = new();
 
@@ -83,8 +78,7 @@ public class HistorianServer : IDisposable
     /// <param name="database">The database to add to the historian server.</param>
     /// <param name="port"><c>null</c>. The port number to be associated with the added database.</param>
     /// <param name="networkInterfaceIP"><c>null</c>. IP to be associated with the added database.</param>
-    public HistorianServer(HistorianServerDatabaseConfig database, int? port = null, string networkInterfaceIP = null)
-        : this(port, networkInterfaceIP)
+    public HistorianServer(HistorianServerDatabaseConfig database, int? port = null, string networkInterfaceIP = null) : this(port, networkInterfaceIP)
     {
         AddDatabase(database);
     }
@@ -98,18 +92,6 @@ public class HistorianServer : IDisposable
     /// </summary>
     public SnapServer Host { get; }
 
-    /// <summary>
-    /// Adds the supplied database to this server.
-    /// </summary>
-    /// <param name="database">The database to add to the server.</param>
-    public void AddDatabase(HistorianServerDatabaseConfig database) => Host.AddDatabase(database);
-
-    /// <summary>
-    /// Removes the supplied database from the historian.
-    /// </summary>
-    /// <param name="database">The database to remove from the server.</param>
-    public void RemoveDatabase(string database) => Host.RemoveDatabase(database);
-
     #endregion
 
     #region [ Methods ]
@@ -120,6 +102,24 @@ public class HistorianServer : IDisposable
     public void Dispose()
     {
         Host.Dispose();
+    }
+
+    /// <summary>
+    /// Adds the supplied database to this server.
+    /// </summary>
+    /// <param name="database">The database to add to the server.</param>
+    public void AddDatabase(HistorianServerDatabaseConfig database)
+    {
+        Host.AddDatabase(database);
+    }
+
+    /// <summary>
+    /// Removes the supplied database from the historian.
+    /// </summary>
+    /// <param name="database">The database to remove from the server.</param>
+    public void RemoveDatabase(string database)
+    {
+        Host.RemoveDatabase(database);
     }
 
     #endregion

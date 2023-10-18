@@ -23,6 +23,7 @@
 //       Converted code to .NET core.
 //
 //******************************************************************************************************
+
 using openHistorian.Core.Data.Types;
 
 namespace openHistorian.Core.Data.Query;
@@ -35,36 +36,38 @@ namespace openHistorian.Core.Data.Query;
 /// </summary>
 public abstract class SignalDataBase
 {
-    private bool m_isComplete;
+    #region [ Members ]
 
-    /// <summary>
-    /// Gets if this signal has been processed and can no longer be added to.
-    /// </summary>
-    public bool IsComplete => m_isComplete;
+    #endregion
 
-    /// <summary>
-    /// Flags this signal as complete which locks down the ability to add 
-    /// additional points to it.
-    /// </summary>
-    public void Completed()
-    {
-        m_isComplete = true;
-    }
-
-    /// <summary>
-    /// Provides the type conversion method for the base class to use
-    /// </summary>
-    protected abstract TypeBase Method
-    {
-        get;
-    }
+    #region [ Properties ]
 
     /// <summary>
     /// Gets the number of values that are in the signal
     /// </summary>
-    public abstract int Count
+    public abstract int Count { get; }
+
+    /// <summary>
+    /// Gets if this signal has been processed and can no longer be added to.
+    /// </summary>
+    public bool IsComplete { get; private set; }
+
+    /// <summary>
+    /// Provides the type conversion method for the base class to use
+    /// </summary>
+    protected abstract TypeBase Method { get; }
+
+    #endregion
+
+    #region [ Methods ]
+
+    /// <summary>
+    /// Flags this signal as complete which locks down the ability to add
+    /// additional points to it.
+    /// </summary>
+    public void Completed()
     {
-        get;
+        IsComplete = true;
     }
 
     /// <summary>
@@ -90,7 +93,7 @@ public abstract class SignalDataBase
     public abstract ulong GetDate(int index);
 
     /// <summary>
-    /// Gets a value from the signal with the provided index and automatically 
+    /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="double"/>.
     /// </summary>
     /// <param name="index">The zero based index of the position</param>
@@ -103,7 +106,7 @@ public abstract class SignalDataBase
     }
 
     /// <summary>
-    /// Gets a value from the signal with the provided index and automatically 
+    /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="float"/>.
     /// </summary>
     /// <param name="index">The zero based index of the position</param>
@@ -116,7 +119,7 @@ public abstract class SignalDataBase
     }
 
     /// <summary>
-    /// Gets a value from the signal with the provided index and automatically 
+    /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="long"/>.
     /// </summary>
     /// <param name="index">The zero based index of the position</param>
@@ -129,7 +132,7 @@ public abstract class SignalDataBase
     }
 
     /// <summary>
-    /// Gets a value from the signal with the provided index and automatically 
+    /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="ulong"/>.
     /// </summary>
     /// <param name="index">The zero based index of the position</param>
@@ -192,4 +195,6 @@ public abstract class SignalDataBase
             throw new Exception("Signal has already been marked as complete");
         AddDataRaw(time, Method.ToRaw(value));
     }
+
+    #endregion
 }

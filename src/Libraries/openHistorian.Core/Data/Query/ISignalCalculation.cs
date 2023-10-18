@@ -24,8 +24,6 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Data.Query;
-
 namespace openHistorian.Core.Data.Query;
 
 /// <summary>
@@ -33,14 +31,22 @@ namespace openHistorian.Core.Data.Query;
 /// </summary>
 public interface ISignalCalculation : ISignalWithType
 {
+    #region [ Properties ]
+
     /// <summary>
     /// Gets the unique identifier associated with the signal calculation.
     /// </summary>
     Guid SignalId { get; }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Calculates the signal value based on the provided signal data.
     /// </summary>
     /// <param name="signals">A dictionary of signal data indexed by their unique identifiers.</param>
     void Calculate(IDictionary<Guid, SignalDataBase> signals);
+
+    #endregion
 }

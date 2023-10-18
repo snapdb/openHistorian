@@ -35,6 +35,8 @@ namespace openHistorian.Core.Data.Query;
 /// </summary>
 public static class GetSignalsWithCalculationsMethods
 {
+    #region [ Static ]
+
     /// <summary>
     /// Gets historian signals with calculations within a specified time range.
     /// </summary>
@@ -71,10 +73,10 @@ public static class GetSignalsWithCalculationsMethods
         }
 
         foreach (ISignalCalculation signal in signals)
-        {
             signal.Calculate(calculatedResults);
-        }
 
         return calculatedResults;
     }
+
+    #endregion
 }

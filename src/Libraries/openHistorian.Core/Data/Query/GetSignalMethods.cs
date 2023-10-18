@@ -35,10 +35,12 @@ using SnapDB.Snap.Services.Reader;
 namespace openHistorian.Core.Data.Query;
 
 /// <summary>
-/// Queries a historian database for a set of signals. 
+/// Queries a historian database for a set of signals.
 /// </summary>
 public static class GetSignalMethods
 {
+    #region [ Static ]
+
     /// <summary>
     /// Queries all of the signals at the given time.
     /// </summary>
@@ -73,6 +75,7 @@ public static class GetSignalMethods
             value = hvalue.Value1;
             results.AddSignal(time, point, value);
         }
+
         foreach (SignalDataBase signal in results.Values)
             signal.Completed();
 
@@ -91,7 +94,7 @@ public static class GetSignalMethods
     {
         HistorianKey key = new();
         HistorianValue hvalue = new();
-        Dictionary<ulong, SignalDataBase> results = signals.ToDictionary((x) => x, (x) => (SignalDataBase)new SignalDataUnknown());
+        Dictionary<ulong, SignalDataBase> results = signals.ToDictionary(x => x, x => (SignalDataBase)new SignalDataUnknown());
 
         TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, endTime, signals);
         ulong time, point, quality, value;
@@ -103,6 +106,7 @@ public static class GetSignalMethods
             value = hvalue.Value1;
             results.AddSignalIfExists(time, point, value);
         }
+
         foreach (SignalDataBase signal in results.Values)
             signal.Completed();
 
@@ -123,7 +127,7 @@ public static class GetSignalMethods
     {
         HistorianKey key = new();
         HistorianValue hvalue = new();
-        Dictionary<ulong, SignalDataBase> results = signals.ToDictionary((x) => x, (x) => (SignalDataBase)new SignalData(conversion));
+        Dictionary<ulong, SignalDataBase> results = signals.ToDictionary(x => x, x => (SignalDataBase)new SignalData(conversion));
 
         TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, endTime, signals);
         ulong time, point, quality, value;
@@ -135,6 +139,7 @@ public static class GetSignalMethods
             value = hvalue.Value1;
             results.AddSignalIfExists(time, point, value);
         }
+
         foreach (SignalDataBase signal in results.Values)
             signal.Completed();
 
@@ -170,17 +175,13 @@ public static class GetSignalMethods
         foreach (ISignalWithType pt in signals)
         {
             if (pt.HistorianId.HasValue)
-            {
                 if (!results.ContainsKey(pt.HistorianId.Value))
-                {
                     results.Add(pt.HistorianId.Value, new SignalData(pt.Functions));
-                }
-            }
         }
 
         HistorianKey key = new();
         HistorianValue hvalue = new();
-        MatchFilterBase<HistorianKey, HistorianValue> keyParser = PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(signals.Where((x) => x.HistorianId.HasValue).Select((x) => x.HistorianId.Value));
+        MatchFilterBase<HistorianKey, HistorianValue> keyParser = PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(signals.Where(x => x.HistorianId.HasValue).Select(x => x.HistorianId.Value));
         TreeStream<HistorianKey, HistorianValue> stream = database.Read(readerOptions, timestamps, keyParser);
         ulong time, point, quality, value;
         while (stream.Read(key, hvalue))
@@ -193,9 +194,7 @@ public static class GetSignalMethods
         }
 
         foreach (SignalDataBase signal in results.Values)
-        {
             signal.Completed();
-        }
         return results;
     }
 
@@ -214,6 +213,7 @@ public static class GetSignalMethods
             signalData = new SignalDataUnknown();
             results.Add(point, signalData);
         }
+
         signalData.AddDataRaw(time, value);
     }
 
@@ -230,4 +230,6 @@ public static class GetSignalMethods
         if (results.TryGetValue(point, out SignalDataBase signalData))
             signalData.AddDataRaw(time, value);
     }
+
+    #endregion
 }

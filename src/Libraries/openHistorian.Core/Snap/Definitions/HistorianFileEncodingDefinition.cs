@@ -34,14 +34,9 @@ namespace openHistorian.Core.Snap.Definitions;
 /// <summary>
 /// Defines the encoding method for storing and retrieving pairs of HistorianKey and HistorianValue.
 /// </summary>
-public class HistorianFileEncodingDefinition
-    : PairEncodingDefinitionBase
+public class HistorianFileEncodingDefinition : PairEncodingDefinitionBase
 {
-    // {AACA05B5-6B72-4512-859A-F4B2DF394BF7}
-    /// <summary>
-    /// A unique identifier for this compression method.
-    /// </summary>
-    public static readonly EncodingDefinition TypeGuid = new(new Guid(0xaaca05b5, 0x6b72, 0x4512, 0x85, 0x9a, 0xf4, 0xb2, 0xdf, 0x39, 0x4b, 0xf7));
+    #region [ Properties ]
 
     /// <summary>
     /// Gets the type of keys used in the encoding method when not used in a generic context.
@@ -49,14 +44,18 @@ public class HistorianFileEncodingDefinition
     public override Type KeyTypeIfNotGeneric => typeof(HistorianKey);
 
     /// <summary>
+    /// Gets the unique encoding method defined by the TypeGuid.
+    /// </summary>
+    public override EncodingDefinition Method => TypeGuid;
+
+    /// <summary>
     /// gets the type of values used in the encoding method when not used in a generic context.
     /// </summary>
     public override Type ValueTypeIfNotGeneric => typeof(HistorianValue);
 
-    /// <summary>
-    /// Gets the unique encoding method defined by the TypeGuid.
-    /// </summary>
-    public override EncodingDefinition Method => TypeGuid;
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Creates a new instance of the encoding method for the specified key and value types.
@@ -68,4 +67,16 @@ public class HistorianFileEncodingDefinition
     {
         return (PairEncodingBase<TKey, TValue>)(object)new HistorianFileEncoding();
     }
+
+    #endregion
+
+    #region [ Static ]
+
+    // {AACA05B5-6B72-4512-859A-F4B2DF394BF7}
+    /// <summary>
+    /// A unique identifier for this compression method.
+    /// </summary>
+    public static readonly EncodingDefinition TypeGuid = new(new Guid(0xaaca05b5, 0x6b72, 0x4512, 0x85, 0x9a, 0xf4, 0xb2, 0xdf, 0x39, 0x4b, 0xf7));
+
+    #endregion
 }

@@ -40,20 +40,22 @@ namespace openHistorian.Core.Net;
 /// <summary>
 /// Creates a configuration for the database to utilize.
 /// </summary>
-public class HistorianServerDatabaseConfig
-    : IToServerDatabaseSettings
+public class HistorianServerDatabaseConfig : IToServerDatabaseSettings
 {
+    #region [ Members ]
+
     private readonly AdvancedServerDatabaseConfig<HistorianKey, HistorianValue> m_config;
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Gets a database config.
     /// </summary>
     public HistorianServerDatabaseConfig(string databaseName, string mainPath, bool supportsWriting)
     {
-        m_config = new AdvancedServerDatabaseConfig<HistorianKey, HistorianValue>(databaseName, mainPath, supportsWriting)
-        {
-            ArchiveEncodingMethod = HistorianFileEncodingDefinition.TypeGuid
-        };
+        m_config = new AdvancedServerDatabaseConfig<HistorianKey, HistorianValue>(databaseName, mainPath, supportsWriting) { ArchiveEncodingMethod = HistorianFileEncodingDefinition.TypeGuid };
 
         m_config.StreamingEncodingMethods.Add(HistorianStreamEncodingDefinition.TypeGuid);
         m_config.StreamingEncodingMethods.Add(EncodingDefinition.FixedSizeCombinedEncoding);
@@ -62,33 +64,33 @@ public class HistorianServerDatabaseConfig
         m_config.DirectoryMethod = ArchiveDirectoryMethod.YearThenMonth;
     }
 
-    /// <summary>
-    /// Specify how archive files will be written into the final directory.
-    /// </summary>
-    public ArchiveDirectoryMethod DirectoryMethod
-    {
-        get => m_config.DirectoryMethod;
-        set => m_config.DirectoryMethod = value;
-    }
+    #endregion
+
+    #region [ Properties ]
 
     /// <summary>
-    /// Gets or sets the desired size of the final stage archive files.
+    /// The number of milliseconds before data is taken from it's cache and put in the
+    /// memory file.
     /// </summary>
-    /// <remarks>Must be between 100MB and 1TB.</remarks>
-    public long TargetFileSize
+    /// <remarks>
+    /// Must be between 1 and 1,000.
+    /// </remarks>
+    public int CacheFlushInterval
     {
-        get => m_config.TargetFileSize;
+        get => m_config.CacheFlushInterval;
         set
         {
-            if (value < 100 * SI2.Mega)
-                throw new ArgumentOutOfRangeException(nameof(value), "Target file size must be between 100MB and 1TB");
+            if (value is < 1 or > 1000)
+                throw new ArgumentOutOfRangeException(nameof(value), "Must be between 1 and 1,000");
 
-            if (value > SI2.Tera)
-                throw new ArgumentOutOfRangeException(nameof(value), "Target file size must be between 100MB and 1TB");
-
-            m_config.TargetFileSize = value;
+            m_config.CacheFlushInterval = value;
         }
     }
+
+    /// <summary>
+    /// The name associated with the database.
+    /// </summary>
+    public string DatabaseName => m_config.DatabaseName;
 
     /// <summary>
     /// Gets or sets the desired remaining drive space, in bytes, for final stage files.
@@ -110,6 +112,15 @@ public class HistorianServerDatabaseConfig
     }
 
     /// <summary>
+    /// Specify how archive files will be written into the final directory.
+    /// </summary>
+    public ArchiveDirectoryMethod DirectoryMethod
+    {
+        get => m_config.DirectoryMethod;
+        set => m_config.DirectoryMethod = value;
+    }
+
+    /// <summary>
     /// The number of milliseconds before data is automatically flushed to the disk.
     /// </summary>
     /// <remarks>
@@ -120,7 +131,7 @@ public class HistorianServerDatabaseConfig
         get => m_config.DiskFlushInterval;
         set
         {
-            if (value < 1000 || value > 60000)
+            if (value is < 1000 or > 60000)
                 throw new ArgumentOutOfRangeException(nameof(value), "Must be between 1,000 ms and 60,000 ms.");
 
             m_config.DiskFlushInterval = value;
@@ -128,50 +139,10 @@ public class HistorianServerDatabaseConfig
     }
 
     /// <summary>
-    /// The number of milliseconds before data is taken from it's cache and put in the
-    /// memory file.
+    /// The list of directories where final files can be placed written.
+    /// If nothing is specified, the main directory is used.
     /// </summary>
-    /// <remarks>
-    /// Must be between 1 and 1,000.
-    /// </remarks>
-    public int CacheFlushInterval
-    {
-        get => m_config.CacheFlushInterval;
-        set
-        {
-            if (value < 1 || value > 1000)
-                throw new ArgumentOutOfRangeException(nameof(value), "Must be between 1 and 1,000");
-
-            m_config.CacheFlushInterval = value;
-        }
-    }
-
-    /// <summary>
-    /// The number of stages to progress through before writing the final file.
-    /// </summary>
-    /// <remarks>
-    /// This defaults to 3 stages which allows files up to 10 hours of data to be combined
-    /// into a single archive file. If <see cref="TargetFileSize"/> is large and files of this
-    /// size are not being created, increase this to 4. 
-    /// 
-    /// Valid settings are 3 or 4.
-    /// </remarks>
-    public int StagingCount
-    {
-        get => m_config.StagingCount;
-        set
-        {
-            if (value < 3 || value > 4)
-                throw new ArgumentOutOfRangeException(nameof(value), "StagingCount must be 3 or 4");
-
-            m_config.StagingCount = value;
-        }
-    }
-
-    /// <summary>
-    /// The name associated with the database.
-    /// </summary>
-    public string DatabaseName => m_config.DatabaseName;
+    public List<string> FinalWritePaths => m_config.FinalWritePaths;
 
     /// <summary>
     /// Determines whether the historian should import attached paths at startup.
@@ -189,14 +160,57 @@ public class HistorianServerDatabaseConfig
     public List<string> ImportPaths => m_config.ImportPaths;
 
     /// <summary>
-    /// The list of directories where final files can be placed written. 
-    /// If nothing is specified, the main directory is used.
+    /// The number of stages to progress through before writing the final file.
     /// </summary>
-    public List<string> FinalWritePaths => m_config.FinalWritePaths;
+    /// <remarks>
+    /// This defaults to 3 stages which allows files up to 10 hours of data to be combined
+    /// into a single archive file. If <see cref="TargetFileSize"/> is large and files of this
+    /// size are not being created, increase this to 4.
+    /// Valid settings are 3 or 4.
+    /// </remarks>
+    public int StagingCount
+    {
+        get => m_config.StagingCount;
+        set
+        {
+            if (value is < 3 or > 4)
+                throw new ArgumentOutOfRangeException(nameof(value), "StagingCount must be 3 or 4");
+
+            m_config.StagingCount = value;
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the desired size of the final stage archive files.
+    /// </summary>
+    /// <remarks>Must be between 100MB and 1TB.</remarks>
+    public long TargetFileSize
+    {
+        get => m_config.TargetFileSize;
+        set
+        {
+            if (value < 100 * SI2.Mega)
+                throw new ArgumentOutOfRangeException(nameof(value), "Target file size must be between 100MB and 1TB");
+
+            if (value > SI2.Tera)
+                throw new ArgumentOutOfRangeException(nameof(value), "Target file size must be between 100MB and 1TB");
+
+            m_config.TargetFileSize = value;
+        }
+    }
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Creates a <see cref="ServerDatabaseSettings"/> configuration that can be used for <see cref="SnapServerDatabase{TKey,TValue}"/>
     /// </summary>
     /// <returns>The <see cref="ServerDatabaseSettings"/> configuration.</returns>
-    public ServerDatabaseSettings ToServerDatabaseSettings() => m_config.ToServerDatabaseSettings();
+    public ServerDatabaseSettings ToServerDatabaseSettings()
+    {
+        return m_config.ToServerDatabaseSettings();
+    }
+
+    #endregion
 }

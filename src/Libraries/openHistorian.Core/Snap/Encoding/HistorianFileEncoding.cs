@@ -35,13 +35,29 @@ namespace openHistorian.Core.Snap.Encoding;
 /// <summary>
 /// Provides an encoding method for storing and retrieving pairs of HistorianKey and HistorianValue.
 /// </summary>
-public class HistorianFileEncoding
-    : PairEncodingBase<HistorianKey, HistorianValue>
+public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianValue>
 {
+    #region [ Properties ]
+
+    /// <summary>
+    /// Does not contain an end of stream symbol.
+    /// </summary>
+    public override bool ContainsEndOfStreamSymbol => false;
+
     /// <summary>
     /// A type of <see cref="EncodingDefinition"/> unique identifier.
     /// </summary>
     public override EncodingDefinition EncodingMethod => HistorianFileEncodingDefinition.TypeGuid;
+
+    /// <summary>
+    /// If end of stream symbol is reached, throws a <see cref="NotSupportedException"/>.
+    /// </summary>
+    public override byte EndOfStreamSymbol => throw new NotSupportedException();
+
+    /// <summary>
+    /// Sets the maximum size for compression.
+    /// </summary>
+    public override int MaxCompressionSize => 54;
 
     /// <summary>
     /// The method uses the previous key.
@@ -53,20 +69,9 @@ public class HistorianFileEncoding
     /// </summary>
     public override bool UsesPreviousValue => false;
 
-    /// <summary>
-    /// Sets the maximum size for compression.
-    /// </summary>
-    public override int MaxCompressionSize => 54;
+    #endregion
 
-    /// <summary>
-    /// Does not contain an end of stream symbol.
-    /// </summary>
-    public override bool ContainsEndOfStreamSymbol => false;
-
-    /// <summary>
-    /// If end of stream symbol is reached, throws a <see cref="NotSupportedException"/>.
-    /// </summary>
-    public override byte EndOfStreamSymbol => throw new NotSupportedException();
+    #region [ Methods ]
 
     /// <summary>
     /// Encodes historical data.
@@ -89,12 +94,8 @@ public class HistorianFileEncoding
         //   Stage 4: 32 bit
         //   Stage 5: Catch all
 
-        if (key.Timestamp == prevKey.Timestamp
-            && key.PointID > prevKey.PointID && key.PointID - prevKey.PointID <= 16
-            && key.EntryNumber == 0
-            && value.Value1 <= uint.MaxValue //must be a 32-bit value
-            && value.Value2 == 0
-            && value.Value3 == 0)
+        if (key.Timestamp == prevKey.Timestamp && key.PointID > prevKey.PointID && key.PointID - prevKey.PointID <= 16 && key.EntryNumber == 0 && value.Value1 <= uint.MaxValue //must be a 32-bit value
+            && value.Value2 == 0 && value.Value3 == 0)
         {
             uint deltaPointID = (uint)(key.PointID - prevKey.PointID);
             //Could match Stage 1, 2, 3, or 4
@@ -115,7 +116,7 @@ public class HistorianFileEncoding
 
                 //Must be stored big endian
                 //ByteCode is 0DDDVVVV
-                stream[0] = (byte)(((value.Value1 >> 24) & 0xF) | (deltaPointID - 1) << 4);
+                stream[0] = (byte)(((value.Value1 >> 24) & 0xF) | ((deltaPointID - 1) << 4));
                 stream[1] = (byte)(value.Value1 >> 16);
                 stream[2] = (byte)(value.Value1 >> 8);
                 stream[3] = (byte)value.Value1;
@@ -127,7 +128,7 @@ public class HistorianFileEncoding
             {
                 //Must be stored big endian
                 //ByteCode is 10DDVVVV
-                stream[0] = (byte)(0x80 | ((value.Value1 >> 24) & 0xF) | (deltaPointID - 1) << 4);
+                stream[0] = (byte)(0x80 | ((value.Value1 >> 24) & 0xF) | ((deltaPointID - 1) << 4));
                 stream[1] = (byte)(value.Value1 >> 16);
                 stream[2] = (byte)(value.Value1 >> 8);
                 stream[3] = (byte)value.Value1;
@@ -140,7 +141,6 @@ public class HistorianFileEncoding
             stream[0] = (byte)(0xD0 | (deltaPointID - 1));
             *(uint*)(stream + 1) = (uint)value.Value1;
             return 5;
-
         }
 
         //Stage 5: Catch All
@@ -181,12 +181,14 @@ public class HistorianFileEncoding
             stream[0] |= 0x02; // Set Bit V2
             Encoding7Bit.Write(stream, ref size, value.Value2);
         }
+
         if (value.Value3 != 0)
         {
             //ToDo: Special encoding of flag fields
             stream[0] |= 0x01; // Set Bit V3
             Encoding7Bit.Write(stream, ref size, value.Value3);
         }
+
         return size;
     }
 
@@ -218,22 +220,24 @@ public class HistorianFileEncoding
             key.Timestamp = prevKey.Timestamp;
             key.PointID = prevKey.PointID + 1 + ((code >> 4) & 0x7);
             key.EntryNumber = 0;
-            value.Value1 = (4u << 28) | (code & 0xF) << 24 | (uint)stream[1] << 16 | (uint)stream[2] << 8 | (uint)stream[3] << 0;
+            value.Value1 = (4u << 28) | ((code & 0xF) << 24) | ((uint)stream[1] << 16) | ((uint)stream[2] << 8) | ((uint)stream[3] << 0);
             value.Value2 = 0;
             value.Value3 = 0;
             return 4;
         }
+
         if (code < 0xC0)
         {
             //If stage 2 (16% success)
             key.Timestamp = prevKey.Timestamp;
             key.PointID = prevKey.PointID + 1 + ((code >> 4) & 0x3);
             key.EntryNumber = 0;
-            value.Value1 = (12u << 28) | (code & 0xF) << 24 | (uint)stream[1] << 16 | (uint)stream[2] << 8 | (uint)stream[3] << 0;
+            value.Value1 = (12u << 28) | ((code & 0xF) << 24) | ((uint)stream[1] << 16) | ((uint)stream[2] << 8) | ((uint)stream[3] << 0);
             value.Value2 = 0;
             value.Value3 = 0;
             return 4;
         }
+
         if (code < 0xD0)
         {
             //If stage 3 (28% success)
@@ -245,6 +249,7 @@ public class HistorianFileEncoding
             value.Value3 = 0;
             return 1;
         }
+
         if (code < 0xE0)
         {
             //If stage 4 (3% success)
@@ -272,13 +277,9 @@ public class HistorianFileEncoding
         }
 
         if ((code & 8) != 0) //E is set)
-        {
             key.EntryNumber = Encoding7Bit.ReadUInt64(stream, ref size);
-        }
         else
-        {
             key.EntryNumber = 0;
-        }
 
         if ((code & 4) != 0) //V1 is set)
         {
@@ -292,22 +293,14 @@ public class HistorianFileEncoding
         }
 
         if ((code & 2) != 0) //V2 is set)
-        {
             value.Value2 = Encoding7Bit.ReadUInt64(stream, ref size);
-        }
         else
-        {
             value.Value2 = 0;
-        }
 
         if ((code & 1) != 0) //V3 is set)
-        {
             value.Value3 = Encoding7Bit.ReadUInt64(stream, ref size);
-        }
         else
-        {
             value.Value3 = 0;
-        }
         return size;
     }
 
@@ -335,7 +328,7 @@ public class HistorianFileEncoding
     /// <param name="key">The current key to decode.</param>
     /// <param name="value">The current value to decode.</param>
     /// <param name="isEndOfStream">If end of stream has been reached, returns <c>true</c>; else, <c>false</c>.</param>
-    public override unsafe void Decode(BinaryStreamBase stream, HistorianKey prevKey, HistorianValue prevValue, HistorianKey key, HistorianValue value, out bool isEndOfStream)
+    public override void Decode(BinaryStreamBase stream, HistorianKey prevKey, HistorianValue prevValue, HistorianKey key, HistorianValue value, out bool isEndOfStream)
     {
         isEndOfStream = false;
         uint code = stream.ReadUInt8();
@@ -359,11 +352,12 @@ public class HistorianFileEncoding
             key.Timestamp = prevKey.Timestamp;
             key.PointID = prevKey.PointID + 1 + ((code >> 4) & 0x7);
             key.EntryNumber = 0;
-            value.Value1 = (4u << 28) | (code & 0xF) << 24 | (uint)b1 << 16 | (uint)b2 << 8 | (uint)b3 << 0;
+            value.Value1 = (4u << 28) | ((code & 0xF) << 24) | ((uint)b1 << 16) | ((uint)b2 << 8) | ((uint)b3 << 0);
             value.Value2 = 0;
             value.Value3 = 0;
             return;
         }
+
         if (code < 0xC0)
         {
             b1 = stream.ReadUInt8();
@@ -374,12 +368,13 @@ public class HistorianFileEncoding
             key.Timestamp = prevKey.Timestamp;
             key.PointID = prevKey.PointID + 1 + ((code >> 4) & 0x3);
             key.EntryNumber = 0;
-            value.Value1 = (12u << 28) | (code & 0xF) << 24 | (uint)b1 << 16 | (uint)b2 << 8 | (uint)b3 << 0;
+            value.Value1 = (12u << 28) | ((code & 0xF) << 24) | ((uint)b1 << 16) | ((uint)b2 << 8) | ((uint)b3 << 0);
             value.Value2 = 0;
             value.Value3 = 0;
 
             return;
         }
+
         if (code < 0xD0)
         {
             //If stage 3 (28% success)
@@ -391,6 +386,7 @@ public class HistorianFileEncoding
             value.Value3 = 0;
             return;
         }
+
         if (code < 0xE0)
         {
             //If stage 4 (3% success)
@@ -418,40 +414,24 @@ public class HistorianFileEncoding
 
 
         if ((code & 8) != 0) //E is set)
-        {
             key.EntryNumber = stream.Read7BitUInt64();
-        }
         else
-        {
             key.EntryNumber = 0;
-        }
 
         if ((code & 4) != 0) //V1 is set)
-        {
             value.Value1 = stream.ReadUInt64();
-        }
         else
-        {
             value.Value1 = stream.ReadUInt32();
-        }
 
         if ((code & 2) != 0) //V2 is set)
-        {
             value.Value2 = stream.Read7BitUInt64();
-        }
         else
-        {
             value.Value2 = 0;
-        }
 
         if ((code & 1) != 0) //V3 is set)
-        {
             value.Value3 = stream.Read7BitUInt64();
-        }
         else
-        {
             value.Value3 = 0;
-        }
     }
 
     /// <summary>
@@ -462,4 +442,6 @@ public class HistorianFileEncoding
     {
         return this;
     }
+
+    #endregion
 }

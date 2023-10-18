@@ -31,19 +31,18 @@ namespace openHistorian.Core.Snap;
 /// <summary>
 /// Represents a sorted point buffer that can properly handle or remove duplicates.
 /// </summary>
-public class SortedPointBuffer :
-    SortedPointBuffer<HistorianKey, HistorianValue>
+public class SortedPointBuffer : SortedPointBuffer<HistorianKey, HistorianValue>
 {
+    #region [ Constructors ]
+
     /// <summary>
     /// Creates a new <see cref="SortedPointBuffer"/>.
     /// </summary>
     /// <param name="capacity">The maximum number of items that can be stored in the buffer.</param>
     /// <param name="removeDuplicates">Flag that specifies if buffer should remove duplicate key values upon reading.</param>
-    public SortedPointBuffer(int capacity, bool removeDuplicates)
-        : base(capacity, removeDuplicates ? (Action<HistorianKey, HistorianKey>)null : (left, right) =>
-        {
-            right.EntryNumber = left.EntryNumber + 1;
-        })
+    public SortedPointBuffer(int capacity, bool removeDuplicates) : base(capacity, removeDuplicates ? null : (left, right) => { right.EntryNumber = left.EntryNumber + 1; })
     {
     }
+
+    #endregion
 }

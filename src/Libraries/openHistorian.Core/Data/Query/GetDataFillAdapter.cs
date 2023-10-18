@@ -30,17 +30,27 @@ using openHistorian.Data.Query;
 namespace openHistorian.Core.Data.Query;
 
 /// <summary>
-/// Retrieves data. 
+/// Retrieves data.
 /// </summary>
-public class DataFillAdapter
-    : IDisposable
+public class DataFillAdapter : IDisposable
 {
+    #region [ Members ]
+
+    /// <summary>
+    /// Gets or sets the frame time of the <see cref="DataFillAdapter"/>.
+    /// </summary>
+    public DateTime FrameTime;
+
     /// <summary>
     /// The underlying point stream used for data retrieval.
     /// </summary>
 #pragma warning disable CS0618 // Type or member is obsolete
     private readonly PointStream m_stream;
 #pragma warning restore CS0618 // Type or member is obsolete
+
+    #endregion
+
+    #region [ Constructors ]
 
     /// <summary>
     /// Initializes a new instance of the DataFillAdapter class with the specified point stream.
@@ -52,10 +62,17 @@ public class DataFillAdapter
         m_stream.Read();
     }
 
+    #endregion
+
+    #region [ Methods ]
+
     /// <summary>
-    /// Gets or sets the frame time of the <see cref="DataFillAdapter"/>.
+    /// Once completed, disposes of the <see cref="DataFillAdapter"/> and releases the associated resources.
     /// </summary>
-    public DateTime FrameTime;
+    public void Dispose()
+    {
+        m_stream.Dispose();
+    }
 
     /// <summary>
     /// Fills data frames using the specified callback.
@@ -89,20 +106,15 @@ public class DataFillAdapter
         }
     }
 
-    /// <summary>
-    /// Once completed, disposes of the <see cref="DataFillAdapter"/> and releases the associated resources.
-    /// </summary>
-    public void Dispose()
-    {
-        m_stream.Dispose();
-    }
+    #endregion
 }
 
 /// <summary>
-/// Queries a historian database for a set of signals. 
+/// Queries a historian database for a set of signals.
 /// </summary>
-public static partial class GetDataFillAdapterMethods
+public static class GetDataFillAdapterMethods
 {
+    #region [ Static ]
 
     /// <summary>
     /// Gets concentrated frames from the provided stream
@@ -116,4 +128,5 @@ public static partial class GetDataFillAdapterMethods
         return new DataFillAdapter(stream);
     }
 
+    #endregion
 }

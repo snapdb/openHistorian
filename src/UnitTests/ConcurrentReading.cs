@@ -21,15 +21,15 @@
 //
 //******************************************************************************************************
 
+using System;
+using System.Diagnostics;
+using System.Threading;
 using NUnit.Framework;
+using openHistorian.Core.Net;
 using openHistorian.Core.Snap;
 using SnapDB.Snap;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Reader;
-using System;
-using System.Diagnostics;
-using System.Threading;
-using openHistorian.Core.Net;
 
 namespace openHistorian.UnitTests;
 
@@ -39,10 +39,16 @@ namespace openHistorian.UnitTests;
 [TestFixture]
 public class ConcurrentReading
 {
-    const int PointsToRead = 10000000;
-    int ReaderNumber;
-    int ThreadNumber;
-    volatile bool StopReading;
+    #region [ Members ]
+
+    private const int PointsToRead = 10000000;
+    private int ReaderNumber;
+    private volatile bool StopReading;
+    private int ThreadNumber;
+
+    #endregion
+
+    #region [ Methods ]
 
     /// <summary>
     /// Test concurrent scanning of points using multiple threads.
@@ -69,14 +75,14 @@ public class ConcurrentReading
                 Interlocked.Exchange(ref Stats.PointsReturned, 0);
                 Thread.Sleep(1000);
                 long v = Interlocked.Read(ref Stats.PointsReturned);
-                Console.WriteLine("Clients: " + x.ToString() + " points " + v.ToString());
+                Console.WriteLine("Clients: " + x + " points " + v);
             }
 
             StopReading = true;
             Thread.Sleep(2000);
         }
-        Thread.Sleep(2000);
 
+        Thread.Sleep(2000);
     }
 
     /// <summary>
@@ -104,20 +110,20 @@ public class ConcurrentReading
                 Interlocked.Exchange(ref Stats.PointsReturned, 0);
                 Thread.Sleep(1000);
                 long v = Interlocked.Read(ref Stats.PointsReturned);
-                Console.WriteLine("Clients: " + x.ToString() + " points " + v.ToString());
+                Console.WriteLine("Clients: " + x + " points " + v);
             }
 
             StopReading = true;
             Thread.Sleep(2000);
         }
-        Thread.Sleep(2000);
 
+        Thread.Sleep(2000);
     }
 
     /// <summary>
     /// Starts a scanner thread for concurrent scanning of historian data.
     /// </summary>
-    void StartScanner()
+    private void StartScanner()
     {
         Thread th = new(ScannerThread);
         th.IsBackground = true;
@@ -127,19 +133,17 @@ public class ConcurrentReading
     /// <summary>
     /// Runs a scanner thread for concurrent scanning of historian data.
     /// </summary>
-    void ScannerThread()
+    private void ScannerThread()
     {
         int threadId = Interlocked.Increment(ref ThreadNumber);
         try
         {
-
             //DateTime start = DateTime.FromBinary(Convert.ToDateTime("2/1/2014").Date.Ticks + Convert.ToDateTime("6:00:00PM").TimeOfDay.Ticks).ToUniversalTime();
             while (!StopReading)
             {
-
                 Stopwatch sw = new();
                 using HistorianClient client = new("127.0.0.1", 12345);
-                using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty);
+                using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
                 HistorianKey key = new();
                 HistorianValue value = new();
 
@@ -156,13 +160,14 @@ public class ConcurrentReading
         {
             //Console.WriteLine(ex.ToString());
         }
-        Console.WriteLine("Thread: " + threadId.ToString() + " Quit");
+
+        Console.WriteLine("Thread: " + threadId + " Quit");
     }
 
     /// <summary>
     /// Starts a reader thread for concurrent reading of historian data.
     /// </summary>
-    void StartReader()
+    private void StartReader()
     {
         Thread th = new(ReaderThread);
         th.IsBackground = true;
@@ -172,26 +177,24 @@ public class ConcurrentReading
     /// <summary>
     /// Runs a reader thread for concurrent reading of historian data.
     /// </summary>
-    void ReaderThread()
+    private void ReaderThread()
     {
         int threadId = Interlocked.Increment(ref ThreadNumber);
         try
         {
-
             DateTime start = DateTime.FromBinary(Convert.ToDateTime("2/1/2014").Date.Ticks + Convert.ToDateTime("6:00:00PM").TimeOfDay.Ticks).ToUniversalTime();
             while (!StopReading)
             {
-
                 int myId = Interlocked.Increment(ref ReaderNumber);
                 Stopwatch sw = new();
                 int pointCount = 0;
                 using HistorianClient client = new("127.0.0.1", 12345);
-                using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(String.Empty);
+                using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
                 HistorianKey key = new();
                 HistorianValue value = new();
 
                 sw.Start();
-                TreeStream<HistorianKey, HistorianValue> scan = database.Read((ulong)start.Ticks, ulong.MaxValue);//, new ulong[] { 65, 953, 5562 });
+                TreeStream<HistorianKey, HistorianValue> scan = database.Read((ulong)start.Ticks, ulong.MaxValue); //, new ulong[] { 65, 953, 5562 });
                 while (scan.Read(key, value) && pointCount < PointsToRead)
                     pointCount++;
                 sw.Stop();
@@ -203,8 +206,9 @@ public class ConcurrentReading
         {
             //Console.WriteLine(ex.ToString());
         }
-        Console.WriteLine("Thread: " + threadId.ToString() + " Quit");
+
+        Console.WriteLine("Thread: " + threadId + " Quit");
     }
 
-
+    #endregion
 }

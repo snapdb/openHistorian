@@ -21,11 +21,11 @@
 //
 //******************************************************************************************************
 
+using System;
 using NUnit.Framework;
 using openHistorian.Core.Snap;
-using SnapDB.Snap.Storage;
-using System;
 using openHistorian.Core.Snap.Definitions;
+using SnapDB.Snap.Storage;
 
 namespace openHistorian.UnitTests;
 
@@ -35,6 +35,8 @@ namespace openHistorian.UnitTests;
 [TestFixture]
 public class SocketBenchmark
 {
+    #region [ Methods ]
+
     //[Test]
     public void CreateScadaDatabase()
     {
@@ -104,11 +106,12 @@ public class SocketBenchmark
                     scan.AddPoint(key, value);
                     count++;
                 }
+
                 scan.Rollback();
             });
         }
 
-        Console.WriteLine((count / 1000000 / time).ToString() + " Million PPS");
+        Console.WriteLine(count / 1000000 / time + " Million PPS");
     }
 
     /// <summary>
@@ -163,7 +166,6 @@ public class SocketBenchmark
     [Test]
     public void TestReadDataFromArchive()
     {
-
         DebugStopwatch sw = new();
         HistorianKey key = new();
         HistorianValue value = new();
@@ -202,4 +204,6 @@ public class SocketBenchmark
         //    Console.WriteLine(TreeValueMethodsBase<HistorianValue>.CallMethods[x] + "\t" + ((TreeValueMethodsBase<HistorianValue>.Method)(x)).ToString());
         //}
     }
+
+    #endregion
 }
