@@ -28,17 +28,25 @@ using System.Text;
 namespace openHistorian.UnitTests;
 
 /// <summary>
-/// 
+/// Provides a simple utility for measuring and tracking time intervals using Stopwatches.
 /// </summary>
 public static class StepTimer
 {
     private static readonly Dictionary<string, Stopwatch> AllStopwatches;
 
+    /// <summary>
+    /// Initializes the StepTimer class and the stopwatch dictionary.
+    /// </summary>
     static StepTimer()
     {
         AllStopwatches = new Dictionary<string, Stopwatch>();
     }
 
+    /// <summary>
+    /// Starts a named Stopwatch or creates a new one if it doesn't exist.
+    /// </summary>
+    /// <param name="name">The name of the Stopwatch.</param>
+    /// <returns>The started Stopwatch instance.</returns>
     public static Stopwatch Start(string name)
     {
         if (!AllStopwatches.ContainsKey(name))
@@ -50,16 +58,27 @@ public static class StepTimer
         return sw;
     }
 
+    /// <summary>
+    /// Stops a given Stopwatch.
+    /// </summary>
+    /// <param name="sw">The Stopwatch to stop.</param>
     public static void Stop(Stopwatch sw)
     {
         sw.Stop();
     }
 
+    /// <summary>
+    /// Resets and clears all the Stopwatches stored in the dictionary.
+    /// </summary>
     public static void Reset()
     {
         AllStopwatches.Clear();
     }
 
+    /// <summary>
+    /// Retrieves the results of all the recorded time intervals as a formatted string.
+    /// </summary>
+    /// <returns>A string containing time interval results with names.</returns>
     public static string GetResults()
     {
         StringBuilder sb = new();

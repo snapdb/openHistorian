@@ -34,11 +34,14 @@ namespace openHistorian.UnitTests;
 [TestFixture]
 internal class StreamWriterTest
 {
+    /// <summary>
+    /// Tests the original writing process using a StreamWriter with direct writing of float values to a file.
+    /// </summary>
     [Test]
     public void TestOrig()
     {
 
-        using StreamWriter csvStream = new("C:\\temp\\file.csv");
+        using StreamWriter csvStream = new("C:\\Temp\\file.csv");
         Stopwatch sw = new();
         sw.Start();
         for (float x = 0.216421654f; x < 2000000; x++)
@@ -50,6 +53,9 @@ internal class StreamWriterTest
         Console.WriteLine(sw.Elapsed.TotalSeconds);
     }
 
+    /// <summary>
+    /// Tests an optimized approach that uses the formatting functionality of the StreamWriter for writing float values to a file.
+    /// </summary>
     [Test]
     public void TestOpt1()
     {
@@ -69,6 +75,10 @@ internal class StreamWriterTest
         Console.WriteLine(sw.Elapsed.TotalSeconds);
     }
 
+
+    /// <summary>
+    /// Tests an optimized approach using a custom UltraStreamWriter for writing float values to a file.
+    /// </summary>
     [Test]
     public void TestOpt3()
     {
@@ -108,6 +118,9 @@ internal class StreamWriterTest
         Console.WriteLine(sw.Elapsed.TotalSeconds);
     }
 
+    /// <summary>
+    /// Tests the writing of an integer value to a character array using the WriteToChars method.
+    /// </summary>
     [Test]
     public void TestWriteInt322()
     {
@@ -126,8 +139,11 @@ internal class StreamWriterTest
         Console.WriteLine(sw.Elapsed.TotalSeconds);
     }
 
-    const float FloatToConvert = 2263.1234f;
+    private const float FloatToConvert = 2263.1234f;
 
+    /// <summary>
+    /// Tests the original approach of converting a float value to a string multiple times using the ToString method.
+    /// </summary>
     [Test]
     public void TestWriteOrig()
     {
@@ -146,6 +162,9 @@ internal class StreamWriterTest
         Console.WriteLine(sw.Elapsed.TotalSeconds / 5000000.0 * 1000000000.0);
     }
 
+    /// <summary>
+    /// Tests the writing of float values to a character array using the WriteToChars method and measures the performance.
+    /// </summary>
     [Test]
     public void TestWriteFloat2()
     {
@@ -163,7 +182,9 @@ internal class StreamWriterTest
         sw.Stop();
         Console.WriteLine(sw.Elapsed.TotalSeconds / 50000000.0 * 1000000000.0);
     }
-
+    /// <summary>
+    /// Tests the consistency of converting float values to strings using different formats and compares the results.
+    /// </summary>
     //[Test]
     public void TestWriteFloatConsistency()
     {
@@ -212,6 +233,12 @@ internal class StreamWriterTest
         CompareFloats(12345605e-11f, data);
     }
 
+    /// <summary>
+    /// Creates a method that enables a float comparison.
+    /// </summary>
+    /// <param name="value">The float value to be written to a character array.</param>
+    /// <param name="data">The character array to be written to.</param>
+    /// <exception cref="Exception">Thrown if lengths are not equal or if the indexes do not align.</exception>
     void CompareFloats(float value, char[] data)
     {
         int len = value.WriteToChars(data, 0);
@@ -233,6 +260,9 @@ internal class StreamWriterTest
         Console.WriteLine(str);
     }
 
+    /// <summary>
+    /// Displays floats and other values to a default string format.
+    /// </summary>
     [Test]
     public void DisplayDefaultFormat()
     {
@@ -283,6 +313,9 @@ internal class StreamWriterTest
         Console.WriteLine((-1502345222199E-07F).ToString());
     }
 
+    /// <summary>
+    /// Implements methods to write to the stream.
+    /// </summary>
     public class UltraStreamWriter
     {
         const int Size = 1024;
@@ -291,12 +324,21 @@ internal class StreamWriterTest
         int m_position;
         readonly StreamWriter m_stream;
         readonly string nl = Environment.NewLine;
+
+        /// <summary>
+        /// Initializes a new instance of the UltraStreamWriter class with the specified StreamWriter.
+        /// </summary>
+        /// <param name="stream">The underlying StreamWriter to write to.</param>
         public UltraStreamWriter(StreamWriter stream)
         {
             m_buffer = new char[Size];
             m_stream = stream;
         }
 
+        /// <summary>
+        /// Writes a character to the stream buffer.
+        /// </summary>
+        /// <param name="value">The character to write.</param>
         public void Write(char value)
         {
             if (m_position < FlushSize)
@@ -304,6 +346,10 @@ internal class StreamWriterTest
             m_buffer[m_position] = value;
         }
 
+        /// <summary>
+        /// Writes a float to the stream buffer.
+        /// </summary>
+        /// <param name="value">The float to write.</param>
         public void Write(float value)
         {
             if (m_position < FlushSize)
@@ -311,6 +357,9 @@ internal class StreamWriterTest
             m_position += value.WriteToChars(m_buffer, m_position);
         }
 
+        /// <summary>
+        /// Writes a new line to the stream buffer.
+        /// </summary>
         public void WriteLine()
         {
             if (m_position < FlushSize)
@@ -328,6 +377,9 @@ internal class StreamWriterTest
             }
         }
 
+        /// <summary>
+        /// Flushes the stream buffer to the underlying stream writer.
+        /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Flush()
         {
