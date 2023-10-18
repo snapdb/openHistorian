@@ -25,11 +25,12 @@
 //******************************************************************************************************
 
 using openHistorian.Core.Snap;
+using openHistorian.Data.Query;
 
-namespace openHistorian.Data.Query;
+namespace openHistorian.Core.Data.Query;
 
 /// <summary>
-/// 
+/// Retrieves data. 
 /// </summary>
 public class DataFillAdapter
     : IDisposable

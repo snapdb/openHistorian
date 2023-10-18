@@ -28,7 +28,7 @@ using Gemstone;
 using SnapDB.IO;
 using SnapDB.Snap.Types;
 
-namespace openHistorian.Snap;
+namespace openHistorian.Core.Snap;
 
 /// <summary>
 /// The standard key used for the historian.

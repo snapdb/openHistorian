@@ -24,12 +24,12 @@
 //
 //******************************************************************************************************
 
+using openHistorian.Core.Data.Query;
 using openHistorian.Core.Snap;
-using openHistorian.Snap;
+using SnapDB.Collections;
 using SnapDB.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services.Reader;
-using SnapDB.Collections;
 
 namespace openHistorian.Data.Query;
 
@@ -83,7 +83,7 @@ public class PointStream
     /// </summary>
     /// <param name="key">The key to read.</param>
     /// <param name="value">The value to read.</param>
-    /// <returns><c>true</c> if the current key and value are being read; otherwise, false.</returns>
+    /// <returns><c>true</c> if the current key and value are being read; otherwise, <c>false</c>.</returns>
     protected override bool ReadNext(HistorianKey key, HistorianValue value)
     {
         if (m_stream.Read(CurrentKey, CurrentValue))
@@ -121,6 +121,8 @@ public static partial class GetPointStreamExtensionMethods
     /// Gets frames from the historian as individual frames.
     /// </summary>
     /// <param name="database">The database to use.</param>
+    /// <param name="startTime">The starting time to be included in the query.</param>
+    /// <param name="stopTime">The ending time to be included in the query.</param>
     /// <returns>The frames from the historian.</returns>
     public static PointStream GetPointStream(this IDatabaseReader<HistorianKey, HistorianValue> database, DateTime startTime, DateTime stopTime)
     {
@@ -131,7 +133,9 @@ public static partial class GetPointStreamExtensionMethods
     /// Gets frames from the historian as individual frames.
     /// </summary>
     /// <param name="database">The database to use.</param>
-    /// <returns>The frames from the historian.</returns>
+    /// <param name="timestamps">The timestamps associated with the frames.</param>
+    /// <param name="points">An array of point IDs for which frames are requested.</param>
+    /// <returns></returns>
     public static PointStream GetPointStream(this IDatabaseReader<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, params ulong[] points)
     {
         return database.GetPointStream(SortedTreeEngineReaderOptions.Default, timestamps, PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(points));
@@ -153,7 +157,7 @@ public static partial class GetPointStreamExtensionMethods
     /// <param name="database">The database to use.</param>
     /// <param name="timestamps">The timestamps to query for.</param>
     /// <param name="points">The points to query.</param>
-    /// <returns>The frames from the historian</returns>
+    /// <returns>The frames from the historian.</returns>
     public static PointStream GetPointStream(this IDatabaseReader<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, MatchFilterBase<HistorianKey, HistorianValue> points)
     {
         return database.GetPointStream(SortedTreeEngineReaderOptions.Default, timestamps, points);
@@ -174,7 +178,9 @@ public static partial class GetPointStreamExtensionMethods
     }
 
 
-
+    /// <summary>
+    /// Creates lists for point IDs and value .
+    /// </summary>
     class FrameDataConstructor
     {
         public readonly List<ulong> PointID = new();
@@ -189,7 +195,7 @@ public static partial class GetPointStreamExtensionMethods
     /// Gets concentrated frames from the provided stream
     /// </summary>
     /// <param name="stream">The database to use</param>
-    /// <returns>The concentrated frames from the historian</returns>
+    /// <returns>The concentrated frames from the historian.</returns>
     public static SortedList<DateTime, FrameData> GetPointStream(this TreeStream<HistorianKey, HistorianValue> stream)
     {
         HistorianKey key = new();
@@ -216,6 +222,7 @@ public static partial class GetPointStreamExtensionMethods
         }
         List<FrameData> data = new(results.Count);
         data.AddRange(results.Values.Select(x => x.ToFrameData()));
+
         return SortedListFactory.Create(results.Keys, data);
     }
 

@@ -24,7 +24,9 @@
 //
 //******************************************************************************************************
 
-namespace openHistorian.Data.Query;
+using openHistorian.Data.Query;
+
+namespace openHistorian.Core.Data.Query;
 
 /// <summary>
 /// Represents a signal calculation with additional properties and methods.

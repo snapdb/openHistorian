@@ -25,13 +25,12 @@
 //******************************************************************************************************
 
 using openHistorian.Core.Snap;
-using openHistorian.Snap;
+using SnapDB.Collections;
 using SnapDB.Snap;
 using SnapDB.Snap.Filters;
-using SnapDB.Collections;
 using SnapDB.Snap.Services.Reader;
 
-namespace openHistorian.Data.Query;
+namespace openHistorian.Core.Data.Query;
 
 /// <summary>
 /// Queries a historian database for a set of signals. 
@@ -42,6 +41,8 @@ public static partial class GetFrameMethods
     /// Gets frames from the historian as individual frames.
     /// </summary>
     /// <param name="database">The database to use.</param>
+    /// <param name="startTime">The starting time to be included in the request.</param>
+    /// <param name="stopTime">The ending time to be included in the request.</param>
     /// <returns>The frames from the historian.</returns>
     public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database, DateTime startTime, DateTime stopTime)
     {
@@ -52,6 +53,8 @@ public static partial class GetFrameMethods
     /// Gets frames from the historian as individual frames.
     /// </summary>
     /// <param name="database">The database to use.</param>
+    /// <param name="timestamps">The timestamp associated with each frame.</param>
+    /// <param name="points">An array of point IDs for which frames are requested.</param>
     /// <returns>The frames from the historian.</returns>
     public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database, SeekFilterBase<HistorianKey> timestamps, params ulong[] points)
     {
@@ -62,6 +65,9 @@ public static partial class GetFrameMethods
     /// Gets frames from the historian as individual frames.
     /// </summary>
     /// <param name="database">The database to use.</param>
+    /// <param name="startTime">The starting time to be included in the request.</param>
+    /// <param name="stopTime">The ending time to be included in the request.</param>
+    /// <param name="points">An array of point IDs for which frames are requested.</param>
     /// <returns>The frames from the historian.</returns>
     public static SortedList<DateTime, FrameData> GetFrames(this IDatabaseReader<HistorianKey, HistorianValue> database, DateTime startTime, DateTime stopTime, params ulong[] points)
     {
@@ -97,27 +103,27 @@ public static partial class GetFrameMethods
     /// <summary>
     /// Rounds the frame to the nearest level of specified tolerance.
     /// </summary>
-    /// <param name="origional">the frame to round</param>
+    /// <param name="original">the frame to round</param>
     /// <param name="toleranceMilliseconds">the timespan in milliseconds.</param>
     /// <returns>A new frame that is rounded.</returns>
-    public static SortedList<DateTime, FrameData> RoundToTolerance(this SortedList<DateTime, FrameData> origional, int toleranceMilliseconds)
+    public static SortedList<DateTime, FrameData> RoundToTolerance(this SortedList<DateTime, FrameData> original, int toleranceMilliseconds)
     {
-        return origional.RoundToTolerance(new TimeSpan(TimeSpan.TicksPerMillisecond * toleranceMilliseconds));
+        return original.RoundToTolerance(new TimeSpan(TimeSpan.TicksPerMillisecond * toleranceMilliseconds));
     }
 
     /// <summary>
     /// Rounds the frame to the nearest level of specified tolerance.
     /// </summary>
-    /// <param name="origional">The frame to round.</param>
+    /// <param name="original">The frame to round.</param>
     /// <param name="tolerance">The timespan to round on.</param>
     /// <returns>A new frame that is rounded.</returns>
-    public static SortedList<DateTime, FrameData> RoundToTolerance(this SortedList<DateTime, FrameData> origional, TimeSpan tolerance)
+    public static SortedList<DateTime, FrameData> RoundToTolerance(this SortedList<DateTime, FrameData> original, TimeSpan tolerance)
     {
         SortedList<DateTime, FrameData> results = new();
 
         SortedList<DateTime, List<FrameData>> buckets = new();
 
-        foreach (KeyValuePair<DateTime, FrameData> items in origional)
+        foreach (KeyValuePair<DateTime, FrameData> items in original)
         {
             DateTime roundedDate = items.Key.Round(tolerance);
             if (!buckets.TryGetValue(roundedDate, out List<FrameData> frames))
@@ -173,13 +179,13 @@ public static partial class GetFrameMethods
         return results;
     }
 
-    private static DateTime Round(this DateTime origional, TimeSpan tolerance)
+    private static DateTime Round(this DateTime original, TimeSpan tolerance)
     {
-        long delta = origional.Ticks % tolerance.Ticks;
+        long delta = original.Ticks % tolerance.Ticks;
         if (delta >= tolerance.Ticks >> 1)
-            return new DateTime(origional.Ticks - delta + tolerance.Ticks);
+            return new DateTime(original.Ticks - delta + tolerance.Ticks);
 
-        return new DateTime(origional.Ticks - delta);
+        return new DateTime(original.Ticks - delta);
     }
 
     private static EnumerableHelper Min(EnumerableHelper left, EnumerableHelper right)
@@ -212,6 +218,9 @@ public static partial class GetFrameMethods
             Read();
         }
 
+        /// <summary>
+        /// Reads the data and ensures that it is valid by iterating through until it reaches an invalid item.
+        /// </summary>
         public void Read()
         {
             if (IsValid && m_enumerator.MoveNext())

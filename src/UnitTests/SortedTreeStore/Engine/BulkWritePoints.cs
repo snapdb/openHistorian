@@ -23,8 +23,7 @@
 
 using Gemstone.Diagnostics;
 using NUnit.Framework;
-using openHistorian.Net;
-using openHistorian.Snap;
+using openHistorian.Core.Snap;
 using SnapDB;
 using SnapDB.IO.Unmanaged;
 using SnapDB.Snap;
@@ -34,7 +33,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using openHistorian.Core.Snap;
+using openHistorian.Core.Net;
 
 namespace openHistorian.UnitTests.SortedTreeStore.Engine;
 

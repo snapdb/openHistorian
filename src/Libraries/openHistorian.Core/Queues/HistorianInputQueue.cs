@@ -27,16 +27,15 @@
 using Gemstone;
 using Gemstone.Threading;
 using openHistorian.Core.Snap;
-using openHistorian.Snap;
 using SnapDB;
 using SnapDB.Snap;
 using SnapDB.Snap.Services;
 
-namespace openHistorian.Queues;
+namespace openHistorian.Core.Queues;
 
 /// <summary>
 /// Serves as a local queue for getting data into a remote historian. 
-/// This queue will isolate the input from the volitality of a 
+/// This queue will isolate the input from the volatility of a 
 /// remote historian. Data is also kept in this buffer until it has been committed
 /// to the disk subsystem. 
 /// </summary>

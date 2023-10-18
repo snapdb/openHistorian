@@ -24,13 +24,12 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap;
-using openHistorian.Snap.Definitions;
+using openHistorian.Core.Snap.Definitions;
 using SnapDB.IO;
 using SnapDB.Snap;
 using SnapDB.Snap.Encoding;
 
-namespace openHistorian.Snap.Encoding;
+namespace openHistorian.Core.Snap.Encoding;
 
 /// <summary>
 /// A class for encoding and decoding pairs of HistorianKey and HistorianValue.

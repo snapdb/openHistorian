@@ -24,7 +24,7 @@
 //
 //******************************************************************************************************
 
-namespace openHistorian.Data.Types;
+namespace openHistorian.Core.Data.Types;
 
 /// <summary>
 /// Method for converting data to and from a <see cref="double"/>.

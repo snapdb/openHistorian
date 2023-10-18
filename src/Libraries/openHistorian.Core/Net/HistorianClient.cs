@@ -26,7 +26,7 @@
 
 using SnapDB.Snap.Services.Net;
 
-namespace openHistorian.Net;
+namespace openHistorian.Core.Net;
 
 /// <summary>
 /// Connects to a socket based remote historian database collection.

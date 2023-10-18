@@ -24,10 +24,9 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap;
 using SnapDB.Snap.Tree;
 
-namespace openHistorian.Snap;
+namespace openHistorian.Core.Snap;
 
 /// <summary>
 /// 

@@ -24,10 +24,9 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap;
 using SnapDB;
 
-namespace openHistorian.Snap;
+namespace openHistorian.Core.Snap;
 
 /// <summary>
 /// A struct that represents the standard historian value.

@@ -22,13 +22,10 @@
 //******************************************************************************************************
 
 using NUnit.Framework;
-using openHistorian.Snap;
+using openHistorian.Core.Snap;
 using SnapDB.Snap;
-using SnapDB.Snap.Storage;
-using SnapDB.Snap.Tree;
 using System;
 using System.Text;
-using openHistorian.Core.Snap;
 
 namespace openHistorian.UnitTests;
 

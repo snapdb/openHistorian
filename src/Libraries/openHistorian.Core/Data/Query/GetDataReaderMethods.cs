@@ -24,10 +24,10 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Snap;
+using openHistorian.Core.Data.Query;
+using openHistorian.Core.Snap;
 using SnapDB.Snap.Services;
 using System.Data;
-using openHistorian.Core.Snap;
 
 namespace openHistorian.Data.Query;
 
@@ -64,6 +64,7 @@ public class TableDefinition
     {
         if (m_finishedColumns)
             throw new Exception("Cannot continue to add columns once groups have been added.");
+
         if (m_timestampColumn is null)
             throw new Exception("Duplicate calls to AddTimestampColumn");
 
@@ -113,8 +114,10 @@ public class TableDefinition
         {
             if (m_timestampColumn is null)
                 throw new Exception("Must first call AddTimestampColumn");
+
             if (m_identifierColumn is null)
                 throw new Exception("Must first call AddColumnGroupIdentifier");
+
             if (m_customColumns.Count == 0)
                 throw new Exception("Must have custom columns");
         }
@@ -123,6 +126,7 @@ public class TableDefinition
 
         if (pointId.Length != m_customColumns.Count)
             throw new Exception("The number of points must equal the number of custom columns.");
+
         m_finishedColumns = true;
 
     }
@@ -181,7 +185,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The name of the field or the empty string (""), if there is no value to return.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public string GetName(int i)
     {
         throw new NotImplementedException();
@@ -193,7 +199,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The data type information for the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public string GetDataTypeName(int i)
     {
         throw new NotImplementedException();
@@ -205,7 +213,8 @@ public class HistorianDataPointReader
     /// <returns>
     /// The <see cref="T:System.Type"/> information corresponding to the type of <see cref="T:System.Object"/> that would be returned from <see cref="M:System.Data.IDataRecord.GetValue(System.Int32)"/>.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public Type GetFieldType(int i)
     {
         throw new NotImplementedException();
@@ -217,7 +226,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The <see cref="T:System.Object"/> which will contain the field value upon return.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public object GetValue(int i)
     {
         throw new NotImplementedException();
@@ -229,7 +240,8 @@ public class HistorianDataPointReader
     /// <returns>
     /// The number of instances of <see cref="T:System.Object"/> in the array.
     /// </returns>
-    /// <param name="values">An array of <see cref="T:System.Object"/> to copy the attribute fields into. </param><filterpriority>2</filterpriority>
+    /// <param name="values">An array of <see cref="T:System.Object"/> to copy the attribute fields into.</param>
+    /// <filterpriority>2</filterpriority>
     public int GetValues(object[] values)
     {
         throw new NotImplementedException();
@@ -241,7 +253,8 @@ public class HistorianDataPointReader
     /// <returns>
     /// The index of the named field.
     /// </returns>
-    /// <param name="name">The name of the field to find. </param><filterpriority>2</filterpriority>
+    /// <param name="name">The name of the field to find.</param>
+    /// <filterpriority>2</filterpriority>
     public int GetOrdinal(string name)
     {
         throw new NotImplementedException();
@@ -253,7 +266,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The value of the column.
     /// </returns>
-    /// <param name="i">The zero-based column ordinal. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The zero-based column ordinal.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public bool GetBoolean(int i)
     {
         throw new NotImplementedException();
@@ -265,7 +280,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The 8-bit unsigned integer value of the specified column.
     /// </returns>
-    /// <param name="i">The zero-based column ordinal. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The zero-based column ordinal.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public byte GetByte(int i)
     {
         throw new NotImplementedException();
@@ -277,9 +294,13 @@ public class HistorianDataPointReader
     /// <returns>
     /// The actual number of bytes read.
     /// </returns>
-    /// <param name="i">The zero-based column ordinal. </param><param name="fieldOffset">The index within the field from which to start the read operation. </param><param name="buffer">The buffer into which to read the stream of bytes.</param>
-    /// <param name="bufferoffset">The index for <paramref name="buffer"/> to start the read operation. </param>
-    /// <param name="length">The number of bytes to read. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception><filterpriority>2</filterpriority>
+    /// <param name="i">The zero-based column ordinal.</param>
+    /// <param name="fieldOffset">The index within the field from which to start the read operation.</param>
+    /// <param name="buffer">The buffer into which to read the stream of bytes.</param>
+    /// <param name="bufferoffset">The index for <paramref name="buffer"/> to start the read operation.</param>
+    /// <param name="length">The number of bytes to read.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
     {
         throw new NotImplementedException();
@@ -291,7 +312,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The character value of the specified column.
     /// </returns>
-    /// <param name="i">The zero-based column ordinal. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The zero-based column ordinal.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public char GetChar(int i)
     {
         throw new NotImplementedException();
@@ -303,7 +326,13 @@ public class HistorianDataPointReader
     /// <returns>
     /// The actual number of characters read.
     /// </returns>
-    /// <param name="i">The zero-based column ordinal. </param><param name="fieldoffset">The index within the row from which to start the read operation. </param><param name="buffer">The buffer into which to read the stream of bytes. </param><param name="bufferoffset">The index for <paramref name="buffer"/> to start the read operation. </param><param name="length">The number of bytes to read. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The zero-based column ordinal.</param>
+    /// <param name="fieldoffset">The index within the row from which to start the read operation.</param>
+    /// <param name="buffer">The buffer into which to read the stream of bytes.</param>
+    /// <param name="bufferoffset">The index for <paramref name="buffer"/> to start the read operation.</param>
+    /// <param name="length">The number of bytes to read.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
     {
         throw new NotImplementedException();
@@ -315,7 +344,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The GUID value of the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public Guid GetGuid(int i)
     {
         throw new NotImplementedException();
@@ -327,7 +358,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The 16-bit signed integer value of the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public short GetInt16(int i)
     {
         throw new NotImplementedException();
@@ -339,7 +372,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The 32-bit signed integer value of the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public int GetInt32(int i)
     {
         throw new NotImplementedException();
@@ -351,9 +386,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The 64-bit signed integer value of the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param>
-    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/> 
-    /// </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public long GetInt64(int i)
     {
         throw new NotImplementedException();
@@ -381,7 +416,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The double-precision floating point number of the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public double GetDouble(int i)
     {
         throw new NotImplementedException();
@@ -393,7 +430,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The string value of the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public string GetString(int i)
     {
         throw new NotImplementedException();
@@ -405,7 +444,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The fixed-position numeric value of the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public decimal GetDecimal(int i)
     {
         throw new NotImplementedException();
@@ -417,7 +458,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The date and time data value of the specified field.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public DateTime GetDateTime(int i)
     {
         throw new NotImplementedException();
@@ -429,7 +472,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The <see cref="T:System.Data.IDataReader"/> for the specified column ordinal.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public IDataReader GetData(int i)
     {
         throw new NotImplementedException();
@@ -439,9 +484,11 @@ public class HistorianDataPointReader
     /// Return whether the specified field is set to null.
     /// </summary>
     /// <returns>
-    /// true if the specified field is set to null; otherwise, false.
+    /// <c>true</c> if the specified field is set to null; otherwise, false.
     /// </returns>
-    /// <param name="i">The index of the field to find. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The index of the field to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     public bool IsDBNull(int i)
     {
         throw new NotImplementedException();
@@ -453,7 +500,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The column located at the specified index as an <see cref="T:System.Object"/>.
     /// </returns>
-    /// <param name="i">The zero-based index of the column to get. </param><exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception><filterpriority>2</filterpriority>
+    /// <param name="i">The zero-based index of the column to get.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>.</exception>
+    /// <filterpriority>2</filterpriority>
     object IDataRecord.this[int i] => throw new NotImplementedException();
 
     /// <summary>
@@ -462,7 +511,9 @@ public class HistorianDataPointReader
     /// <returns>
     /// The column with the specified name as an <see cref="T:System.Object"/>.
     /// </returns>
-    /// <param name="name">The name of the column to find. </param><exception cref="T:System.IndexOutOfRangeException">No column with the specified name was found. </exception><filterpriority>2</filterpriority>
+    /// <param name="name">The name of the column to find.</param>
+    /// <exception cref="T:System.IndexOutOfRangeException">No column with the specified name was found.</exception>
+    /// <filterpriority>2</filterpriority>
     object IDataRecord.this[string name] => throw new NotImplementedException();
 
     /// <summary>
@@ -485,7 +536,7 @@ public class HistorianDataPointReader
     /// <summary>
     /// Moves to the next result set in the data point reader.
     /// </summary>
-    /// <returns>True if there is another result set, otherwise false.</returns>
+    /// <returns><c>true</c> if there is another result set; otherwise, <c>false</c>.</returns>
     public bool NextResult()
     {
         return false;
@@ -494,7 +545,7 @@ public class HistorianDataPointReader
     /// <summary>
     /// Reads the next row of data from the data point reader.
     /// </summary>
-    /// <returns>True if there is more data to read, otherwise false.</returns>
+    /// <returns><c>true</c> if there is more data to read; otherwise, <c>false</c>.</returns>
     public bool Read()
     {
         throw new NotImplementedException();

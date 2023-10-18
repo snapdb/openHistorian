@@ -24,15 +24,15 @@
 //
 //******************************************************************************************************
 
+using openHistorian.Core.Data.Types;
 using openHistorian.Core.Snap;
-using openHistorian.Data.Types;
-using openHistorian.Snap;
+using openHistorian.Data.Query;
 using SnapDB.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services.Reader;
 
 // ReSharper disable NotAccessedVariable
-namespace openHistorian.Data.Query;
+namespace openHistorian.Core.Data.Query;
 
 /// <summary>
 /// Queries a historian database for a set of signals. 
@@ -42,9 +42,9 @@ public static class GetSignalMethods
     /// <summary>
     /// Queries all of the signals at the given time.
     /// </summary>
-    /// <param name="database"></param>
+    /// <param name="database">The database to use.</param>
     /// <param name="time">The time to query.</param>
-    /// <returns></returns>
+    /// <returns>The signals in the database that correspond to the specified time.</returns>
     public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong time)
     {
         return database.GetSignals(time, time);
@@ -53,7 +53,7 @@ public static class GetSignalMethods
     /// <summary>
     /// Queries all of the signals within a the provided time window [Inclusive]
     /// </summary>
-    /// <param name="database"></param>
+    /// <param name="database">The database to use.</param>
     /// <param name="startTime">the lower bound of the time</param>
     /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
     /// <returns></returns>
@@ -105,6 +105,7 @@ public static class GetSignalMethods
         }
         foreach (SignalDataBase signal in results.Values)
             signal.Completed();
+
         return results;
     }
 
@@ -136,6 +137,7 @@ public static class GetSignalMethods
         }
         foreach (SignalDataBase signal in results.Values)
             signal.Completed();
+
         return results;
     }
 
@@ -201,10 +203,10 @@ public static class GetSignalMethods
     /// Adds the following signal to the dictionary. If the signal is
     /// not part of the dictionary, it is added automatically.
     /// </summary>
-    /// <param name="results"></param>
-    /// <param name="time"></param>
-    /// <param name="point"></param>
-    /// <param name="value"></param>
+    /// <param name="results">The results from the dictionary</param>
+    /// <param name="time">The time associated with the signal.</param>
+    /// <param name="point">The point associated with the signal.</param>
+    /// <param name="value">The value associated with the signal.</param>
     private static void AddSignal(this Dictionary<ulong, SignalDataBase> results, ulong time, ulong point, ulong value)
     {
         if (!results.TryGetValue(point, out SignalDataBase signalData))
@@ -219,10 +221,10 @@ public static class GetSignalMethods
     /// Adds the provided signal to the dictionary unless the signal is not
     /// already part of the dictionary.
     /// </summary>
-    /// <param name="results"></param>
-    /// <param name="time"></param>
-    /// <param name="point"></param>
-    /// <param name="value"></param>
+    /// <param name="results">The results from the dictionary.</param>
+    /// <param name="time">The time associated with the signal.</param>
+    /// <param name="point">The point associated with the signal.</param>
+    /// <param name="value">The value associated with the signal.</param>
     private static void AddSignalIfExists(this Dictionary<ulong, SignalDataBase> results, ulong time, ulong point, ulong value)
     {
         if (results.TryGetValue(point, out SignalDataBase signalData))

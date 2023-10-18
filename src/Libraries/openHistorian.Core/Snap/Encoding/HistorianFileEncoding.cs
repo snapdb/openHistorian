@@ -25,13 +25,12 @@
 //******************************************************************************************************
 
 using Gemstone;
-using openHistorian.Core.Snap;
-using openHistorian.Snap.Definitions;
+using openHistorian.Core.Snap.Definitions;
 using SnapDB.IO;
 using SnapDB.Snap;
 using SnapDB.Snap.Encoding;
 
-namespace openHistorian.Snap.Encoding;
+namespace openHistorian.Core.Snap.Encoding;
 
 /// <summary>
 /// Provides an encoding method for storing and retrieving pairs of HistorianKey and HistorianValue.
