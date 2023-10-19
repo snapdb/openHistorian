@@ -24,10 +24,9 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Data.Query;
 using openHistorian.Core.Data.Types;
 
-namespace openHistorian.Data.Query;
+namespace openHistorian.Core.Data;
 
 /// <summary>
 /// This type of signal only supports reading and writing data via

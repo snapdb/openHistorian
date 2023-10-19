@@ -25,7 +25,6 @@
 //******************************************************************************************************
 
 using openHistorian.Core.Snap;
-using openHistorian.Data.Query;
 
 namespace openHistorian.Core.Data.Query;
 

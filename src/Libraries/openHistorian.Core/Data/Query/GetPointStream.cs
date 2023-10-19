@@ -24,14 +24,13 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Data.Query;
 using openHistorian.Core.Snap;
 using SnapDB.Collections;
 using SnapDB.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services.Reader;
 
-namespace openHistorian.Data.Query;
+namespace openHistorian.Core.Data.Query;
 
 /// <summary>
 /// A helper way to read data from a stream.

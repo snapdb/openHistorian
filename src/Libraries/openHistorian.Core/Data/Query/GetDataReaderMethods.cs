@@ -25,11 +25,10 @@
 //******************************************************************************************************
 
 using System.Data;
-using openHistorian.Core.Data.Query;
 using openHistorian.Core.Snap;
 using SnapDB.Snap.Services;
 
-namespace openHistorian.Data.Query;
+namespace openHistorian.Core.Data.Query;
 
 /// <summary>
 /// Represents a table definition for organizing and defining the structure of data tables.

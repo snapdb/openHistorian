@@ -26,7 +26,7 @@
 
 using openHistorian.Core.Data.Types;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Core.Data;
 
 /// <summary>
 /// Contains a series of Times and Values for an individual signal.
@@ -36,10 +36,6 @@ namespace openHistorian.Core.Data.Query;
 /// </summary>
 public abstract class SignalDataBase
 {
-    #region [ Members ]
-
-    #endregion
-
     #region [ Properties ]
 
     /// <summary>

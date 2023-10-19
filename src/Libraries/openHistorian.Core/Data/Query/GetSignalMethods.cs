@@ -26,7 +26,6 @@
 
 using openHistorian.Core.Data.Types;
 using openHistorian.Core.Snap;
-using openHistorian.Data.Query;
 using SnapDB.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services.Reader;
