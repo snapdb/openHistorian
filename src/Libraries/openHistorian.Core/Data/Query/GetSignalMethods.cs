@@ -57,7 +57,7 @@ public static class GetSignalMethods
     /// <param name="database">The database to use.</param>
     /// <param name="startTime">the lower bound of the time</param>
     /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
-    /// <returns></returns>
+    /// <returns>The results of the query within the specified time frame and database.</returns>
     public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime)
     {
         HistorianKey key = new();
@@ -84,11 +84,11 @@ public static class GetSignalMethods
     /// <summary>
     /// Queries the provided signals within a the provided time window [Inclusive]
     /// </summary>
-    /// <param name="database"></param>
+    /// <param name="database">The database to use.</param>
     /// <param name="startTime">the lower bound of the time</param>
     /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
     /// <param name="signals">an IEnumerable of all of the signals to query as part of the results set.</param>
-    /// <returns></returns>
+    /// <returns>The results of the query within the specified time and database.</returns>
     public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ulong> signals)
     {
         HistorianKey key = new();
@@ -116,12 +116,12 @@ public static class GetSignalMethods
     /// Queries the provided signals within a the provided time window [Inclusive]
     /// This method will strong type the signals, but all signals must be of the same type for this to work.
     /// </summary>
-    /// <param name="database"></param>
-    /// <param name="startTime">the lower bound of the time</param>
-    /// <param name="endTime">the upper bound of the time. [Inclusive]</param>
-    /// <param name="signals">an IEnumerable of all of the signals to query as part of the results set.</param>
-    /// <param name="conversion">a single conversion method to use for all signals</param>
-    /// <returns></returns>
+    /// <param name="database">The database to use.</param>
+    /// <param name="startTime">The lower bound of the time</param>
+    /// <param name="endTime">The upper bound of the time. [Inclusive]</param>
+    /// <param name="signals">An IEnumerable of all of the signals to query as part of the results set.</param>
+    /// <param name="conversion">A single conversion method to use for all signals</param>
+    /// <returns>The results from the query.</returns>
     public static Dictionary<ulong, SignalDataBase> GetSignals(this IDatabaseReader<HistorianKey, HistorianValue> database, ulong startTime, ulong endTime, IEnumerable<ulong> signals, TypeBase conversion)
     {
         HistorianKey key = new();

@@ -30,6 +30,7 @@ using SnapDB.Snap.Filters;
 namespace openHistorian.Core.Data;
 
 /// <summary>
+/// Scanner class that parses for queries.
 /// </summary>
 public class PeriodicScanner
 {

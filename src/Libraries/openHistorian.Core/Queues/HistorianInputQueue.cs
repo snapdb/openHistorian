@@ -184,7 +184,7 @@ public class HistorianInputQueue : IDisposable
     /// While points are streaming all other writes are blocked. Therefore,
     /// this point stream should be high speed.
     /// </summary>
-    /// <param name="stream"></param>
+    /// <param name="stream">The high speed point stream.</param>
     public void Enqueue(TreeStream<HistorianKey, HistorianValue> stream)
     {
         lock (m_syncWrite)
@@ -200,6 +200,8 @@ public class HistorianInputQueue : IDisposable
     /// <summary>
     /// Adds point data to the queue.
     /// </summary>
+    /// <param name="key">The key associated with the point being added.</param>
+    /// <param name="value">The value associated with the point being added.</param>
     public void Enqueue(HistorianKey key, HistorianValue value)
     {
         lock (m_syncWrite)

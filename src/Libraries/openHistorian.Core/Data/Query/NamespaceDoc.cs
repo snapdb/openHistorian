@@ -22,6 +22,7 @@
 //******************************************************************************************************
 
 using System.Runtime.CompilerServices;
+using openHistorian.Core.Data.Query;
 
 namespace openHistorian.Core.Data.Query;
 
