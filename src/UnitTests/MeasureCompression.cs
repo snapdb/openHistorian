@@ -27,7 +27,7 @@ using NUnit.Framework;
 using openHistorian.Core.Snap;
 using SnapDB.Snap;
 
-namespace openHistorian.UnitTests;
+namespace openHistorian.Core.UnitTests;
 
 /// <summary>
 /// Class for measuring compression and analyzing data from a historian storage file.

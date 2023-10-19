@@ -26,7 +26,7 @@
 
 using openHistorian.Core.Data.Types;
 
-namespace openHistorian.Core.Data;
+namespace openHistorian.Core.Data.Query;
 
 /// <summary>
 /// Contains a series of Times and Values for an individual signal.

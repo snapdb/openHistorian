@@ -29,7 +29,7 @@ using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using SnapDB;
 
-namespace openHistorian.UnitTests;
+namespace openHistorian.Core.UnitTests;
 
 [TestFixture]
 internal class StreamWriterTest

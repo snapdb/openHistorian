@@ -132,26 +132,13 @@ public static class GetPointStreamExtensionMethods
     /// </summary>
     private class FrameDataConstructor
     {
-        #region [ Members ]
-
-        public readonly List<ulong> PointID = new();
-        public readonly List<HistorianValueStruct> Values = new();
-
-        #endregion
-
-        #region [ Methods ]
-
-        public FrameData ToFrameData()
+        if (disposing)
         {
-            return new FrameData(PointID, Values);
+            m_reader.Dispose();
+            m_reader = null;
         }
-
-        #endregion
     }
-
-    #endregion
-
-    #region [ Static ]
+}
 
     /// <summary>
     /// Gets frames from the historian as individual frames.

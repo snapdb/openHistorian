@@ -27,7 +27,7 @@ using openHistorian.Core.Snap;
 using openHistorian.Core.Snap.Definitions;
 using SnapDB.Snap.Storage;
 
-namespace openHistorian.UnitTests;
+namespace openHistorian.Core.UnitTests;
 
 /// <summary>
 /// Performs socket benchmark testing and measures performance.

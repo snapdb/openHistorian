@@ -25,7 +25,7 @@ using System;
 using NUnit.Framework;
 using SnapDB.IO.Unmanaged;
 
-namespace openHistorian.UnitTests.IO;
+namespace openHistorian.Core.UnitTests.IO;
 
 /// <summary>
 /// Performs a test to write 7-bit encoded values with one byte to a binary stream and measures the performance.

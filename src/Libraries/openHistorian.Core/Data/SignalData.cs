@@ -24,6 +24,7 @@
 //
 //******************************************************************************************************
 
+using openHistorian.Core.Data.Query;
 using openHistorian.Core.Data.Types;
 
 namespace openHistorian.Core.Data;

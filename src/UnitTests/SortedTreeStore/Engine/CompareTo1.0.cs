@@ -30,7 +30,7 @@ using SnapDB.Historian.Files;
 using SnapDB.IO;
 using NUnit.Framework;
 
-namespace openHistorian.UnitTests.SortedTreeStore.Engine;
+namespace openHistorian.Core.UnitTests.SortedTreeStore.Engine;
 
 	[TestFixture]
 	class CompareTo1_0

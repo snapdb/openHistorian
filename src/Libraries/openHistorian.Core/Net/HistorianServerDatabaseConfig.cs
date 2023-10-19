@@ -51,8 +51,11 @@ public class HistorianServerDatabaseConfig : IToServerDatabaseSettings
     #region [ Constructors ]
 
     /// <summary>
-    /// Gets a database config.
+    /// Gets a database config according to a specified database name, path, and returns whether or not it supports writing..
     /// </summary>
+    /// <param name="databaseName">The specified name for the database.</param>
+    /// <param name="mainPath">The path of the database.</param>
+    /// <param name="supportsWriting">A boolean that returns <c>true</c> if it supports writing; otherwise, <c>false</c>.</param>
     public HistorianServerDatabaseConfig(string databaseName, string mainPath, bool supportsWriting)
     {
         m_config = new AdvancedServerDatabaseConfig<HistorianKey, HistorianValue>(databaseName, mainPath, supportsWriting) { ArchiveEncodingMethod = HistorianFileEncodingDefinition.TypeGuid };

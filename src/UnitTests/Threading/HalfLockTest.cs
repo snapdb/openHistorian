@@ -27,7 +27,7 @@ using System.Threading;
 using NUnit.Framework;
 using SnapDB.Threading;
 
-namespace openHistorian.UnitTests.Threading;
+namespace openHistorian.Core.UnitTests.Threading;
 
 /// <summary>
 /// This class contains test methods for evaluating different locking mechanisms.

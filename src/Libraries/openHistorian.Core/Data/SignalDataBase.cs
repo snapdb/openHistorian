@@ -86,6 +86,7 @@ public abstract class SignalDataBase
     /// Gets the date from the signal with the provided index.
     /// </summary>
     /// <param name="index">The zero based index of the position.</param>
+    /// <returns>The date from the specified signal with the provided index.</returns>
     public abstract ulong GetDate(int index);
 
     /// <summary>

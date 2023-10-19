@@ -50,7 +50,8 @@ public class HistorianServer : IDisposable
     /// <summary>
     /// Creates a new <see cref="HistorianServer"/> instance.
     /// </summary>
-    public HistorianServer(int? port, string? networkInterfaceIP = null)
+    /// <param name="networkInterfaceIP">IP to be associated with the added database.</param>
+    public HistorianServer(int? port, string networkInterfaceIP = null)
     {
         ServerSettings server = new();
 

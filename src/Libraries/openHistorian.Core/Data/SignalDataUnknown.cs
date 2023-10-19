@@ -26,7 +26,7 @@
 
 using openHistorian.Core.Data.Types;
 
-namespace openHistorian.Core.Data;
+namespace openHistorian.Core.Data.Query;
 
 /// <summary>
 /// This type of signal only supports reading and writing data via
