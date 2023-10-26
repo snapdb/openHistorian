@@ -155,7 +155,7 @@ namespace openHistorian.Core.UnitTests
 		}
 
         /// <summary>
-        /// Tests the performanc eof generating random numbers using the Random class.
+        /// Tests the performance of generating random numbers using the Random class.
         /// </summary>
 		[Test]
 		public void CountRandom()
@@ -252,8 +252,8 @@ namespace openHistorian.Core.UnitTests
 		/// <summary>
 		/// Computes the hash of the blocks. Words must already be in big endian format.
 		/// </summary>
-		/// <param name="hash">the current values of the hash</param>
-		/// <param name="words">16 words that are already in big endian format.</param>
+		/// <param name="hash">The current values of the hash.</param>
+		/// <param name="words">16 words that are already in big-endian format.</param>
 		static void InternalHashBlock(uint* hash, uint* words)
 		{
 			uint a = hash[0];
