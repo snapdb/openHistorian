@@ -39,7 +39,7 @@ public abstract class SignalDataBase
     #region [ Properties ]
 
     /// <summary>
-    /// Gets the number of values that are in the signal
+    /// Gets the number of values that are in the signal.
     /// </summary>
     public abstract int Count { get; }
 
@@ -49,7 +49,7 @@ public abstract class SignalDataBase
     public bool IsComplete { get; private set; }
 
     /// <summary>
-    /// Provides the type conversion method for the base class to use
+    /// Provides the type conversion method for the base class to use.
     /// </summary>
     protected abstract TypeBase Method { get; }
 
@@ -69,17 +69,17 @@ public abstract class SignalDataBase
     /// <summary>
     /// Adds a value to the signal in its raw 64-bit format.
     /// </summary>
-    /// <param name="time">the time value to consider</param>
-    /// <param name="value">the 64-bit value</param>
+    /// <param name="time">The time value to consider.</param>
+    /// <param name="value">The 64-bit value.</param>
     public abstract void AddDataRaw(ulong time, ulong value);
 
     /// <summary>
     /// Gets a value from the signal with the provided index in its
     /// raw 64-bit format.
     /// </summary>
-    /// <param name="index">The zero based index of the position</param>
-    /// <param name="time">an output field for the time</param>
-    /// <param name="value">an output field for the raw 64-bit value</param>
+    /// <param name="index">The zero based index of the position.</param>
+    /// <param name="time">an output field for the time.</param>
+    /// <param name="value">an output field for the raw 64-bit value.</param>
     public abstract void GetDataRaw(int index, out ulong time, out ulong value);
 
     /// <summary>
@@ -93,9 +93,9 @@ public abstract class SignalDataBase
     /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="double"/>.
     /// </summary>
-    /// <param name="index">The zero based index of the position</param>
-    /// <param name="time">an output field for the time</param>
-    /// <param name="value">an output field for the converted value</param>
+    /// <param name="index">The zero based index of the position.</param>
+    /// <param name="time">An output field for the time.</param>
+    /// <param name="value">An output field for the converted value.</param>
     public virtual void GetData(int index, out ulong time, out double value)
     {
         GetDataRaw(index, out time, out ulong raw);
@@ -106,9 +106,9 @@ public abstract class SignalDataBase
     /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="float"/>.
     /// </summary>
-    /// <param name="index">The zero based index of the position</param>
-    /// <param name="time">an output field for the time</param>
-    /// <param name="value">an output field for the converted value</param>
+    /// <param name="index">The zero based index of the position.</param>
+    /// <param name="time">An output field for the time.</param>
+    /// <param name="value">An output field for the converted value.</param>
     public virtual void GetData(int index, out ulong time, out float value)
     {
         GetDataRaw(index, out time, out ulong raw);
@@ -119,9 +119,9 @@ public abstract class SignalDataBase
     /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="long"/>.
     /// </summary>
-    /// <param name="index">The zero based index of the position</param>
-    /// <param name="time">an output field for the time</param>
-    /// <param name="value">an output field for the converted value</param>
+    /// <param name="index">The zero based index of the position.</param>
+    /// <param name="time">An output field for the time.</param>
+    /// <param name="value">An output field for the converted value.</param>
     public virtual void GetData(int index, out ulong time, out long value)
     {
         GetDataRaw(index, out time, out ulong raw);
@@ -132,9 +132,9 @@ public abstract class SignalDataBase
     /// Gets a value from the signal with the provided index and automatically
     /// converts it to a <see cref="ulong"/>.
     /// </summary>
-    /// <param name="index">The zero based index of the position</param>
-    /// <param name="time">an output field for the time</param>
-    /// <param name="value">an output field for the converted value</param>
+    /// <param name="index">The zero based index of the position.</param>
+    /// <param name="time">An output field for the time.</param>
+    /// <param name="value">An output field for the converted value.</param>
     public virtual void GetData(int index, out ulong time, out ulong value)
     {
         GetDataRaw(index, out time, out ulong raw);
@@ -145,8 +145,8 @@ public abstract class SignalDataBase
     /// Adds a value to the signal and converts it from a <see cref="double"/>
     /// into its native format.
     /// </summary>
-    /// <param name="time">the time value to consider</param>
-    /// <param name="value">the value to convert</param>
+    /// <param name="time">The time value to consider.</param>
+    /// <param name="value">The value to convert.</param>
     public virtual void AddData(ulong time, double value)
     {
         if (IsComplete)
@@ -158,8 +158,8 @@ public abstract class SignalDataBase
     /// Adds a value to the signal and converts it from a <see cref="float"/>
     /// into its native format.
     /// </summary>
-    /// <param name="time">the time value to consider</param>
-    /// <param name="value">the value to convert</param>
+    /// <param name="time">The time value to consider.</param>
+    /// <param name="value">The value to convert.</param>
     public virtual void AddData(ulong time, float value)
     {
         if (IsComplete)
@@ -171,8 +171,8 @@ public abstract class SignalDataBase
     /// Adds a value to the signal and converts it from a <see cref="ulong"/>
     /// into its native format.
     /// </summary>
-    /// <param name="time">the time value to consider</param>
-    /// <param name="value">the value to convert</param>
+    /// <param name="time">The time value to consider.</param>
+    /// <param name="value">The value to convert.</param>
     public virtual void AddData(ulong time, ulong value)
     {
         if (IsComplete)
@@ -184,8 +184,8 @@ public abstract class SignalDataBase
     /// Adds a value to the signal and converts it from a <see cref="long"/>
     /// into its native format.
     /// </summary>
-    /// <param name="time">the time value to consider</param>
-    /// <param name="value">the value to convert</param>
+    /// <param name="time">The time value to consider.</param>
+    /// <param name="value">The value to convert.</param>
     public virtual void AddData(ulong time, long value)
     {
         if (IsComplete)
