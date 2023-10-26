@@ -34,7 +34,7 @@ public unsafe class TypeDouble : TypeBase
     #region [ Constructors ]
 
     /// <summary>
-    /// Must use the static instance
+    /// Must use the static instance.
     /// </summary>
     private TypeDouble()
     {
