@@ -59,12 +59,12 @@ public class SignalData : SignalDataBase
     #region [ Properties ]
 
     /// <summary>
-    /// Gets the number of values that are in the signal
+    /// Gets the number of values that are in the signal.
     /// </summary>
     public override int Count => m_values.Count;
 
     /// <summary>
-    /// Provides the type conversion method for the base class to use
+    /// Provides the type conversion method for the base class to use.
     /// </summary>
     protected override TypeBase Method { get; }
 
