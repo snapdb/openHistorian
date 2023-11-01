@@ -37,13 +37,13 @@ public class HistorianClient : SnapNetworkClient
 
     /// <summary>
     /// </summary>
-    /// <param name="serverNameOrIp">The server name or IP to be specified later.</param>
+    /// <param name="serverNameOrIP">The server name or IP to be specified later.</param>
     /// <param name="port">The port number to be specified later.</param>
     /// <param name="integratedSecurity">Boolean that returns whether or not integratedSecurity is true.</param>
-    public HistorianClient(string serverNameOrIp, int port, bool integratedSecurity = false) : base(new SnapNetworkClientSettings
+    public HistorianClient(string serverNameOrIP, int port, bool integratedSecurity = false) : base(new SnapNetworkClientSettings
     {
         NetworkPort = port,
-        ServerNameOrIp = serverNameOrIp,
+        ServerNameOrIP = serverNameOrIP,
         UseIntegratedSecurity = integratedSecurity
     })
     {
