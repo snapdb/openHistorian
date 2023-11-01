@@ -87,9 +87,12 @@ public class TimeRangeTests
         
         string archivePath = CreateLocalArchive(startTime);
 
-        SnapSocketListenerSettings settings = new()
+        SnapSocketListenerSettings<HistorianKey, HistorianValue> settings = new()
         {
             LocalTcpPort = 12345,
+
+            // Setting all the following values to false will force user authentication on the socket.
+            // This is a test of access control for the point list with fake users, so this is skipped.
             DefaultUserCanRead = true,
             DefaultUserCanWrite = true,
             DefaultUserIsAdmin = false
@@ -108,7 +111,7 @@ public class TimeRangeTests
         // string UserId - The user security ID (SID) of the user attempting to match.
         // TKey instance - The key of the record being matched.
         // AccessControlSeekPosition - The position of the seek. i.e., Start or End.
-        settings.UserCanSeek = (userID, key, pos) => timeRangeRights[userID].Contains(((HistorianKey)key).TimestampAsDate);
+        settings.UserCanSeek = (userID, key, pos) => timeRangeRights[userID].Contains(key.TimestampAsDate);
 
         TestUser("johndoe", 50, 0);
         TestUser("janedoe", 0, 100);

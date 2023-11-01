@@ -84,9 +84,12 @@ public class PointListTests
     {
         string archivePath = CreateLocalArchive();
 
-        SnapSocketListenerSettings settings = new()
+        SnapSocketListenerSettings<HistorianKey, HistorianValue> settings = new()
         {
             LocalTcpPort = 12345,
+
+            // Setting all the following values to false will force user authentication on the socket.
+            // This is a test of access control for the point list with fake users, so this is skipped.
             DefaultUserCanRead = true,
             DefaultUserCanWrite = true,
             DefaultUserIsAdmin = false
@@ -105,7 +108,7 @@ public class PointListTests
         // string UserId - The user security ID (SID) of the user attempting to match.
         // TKey instance - The key of the record being matched.
         // TValue instance - The value of the record being matched.
-        settings.UserCanMatch = (userID, key, value) => pointRights[userID].Contains(((HistorianKey)key).PointID);
+        settings.UserCanMatch = (userID, key, value) => pointRights[userID].Contains(key.PointID);
 
         TestUser("johndoe", 6, 0);
         TestUser("janedoe", 0, 2);
