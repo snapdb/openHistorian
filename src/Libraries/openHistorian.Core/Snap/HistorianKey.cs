@@ -79,7 +79,14 @@ public class HistorianKey : TimestampPointIDBase<HistorianKey>
     /// </remarks>
     public DateTime TimestampAsDate
     {
-        get => new((long)Timestamp, DateTimeKind.Utc);
+        get
+        {
+            ulong ticks = Timestamp;
+
+            return ticks > (ulong)DateTime.MaxValue.Ticks ? 
+                DateTime.MaxValue : 
+                new DateTime((long)ticks, DateTimeKind.Utc);
+        }
         set => Timestamp = (ulong)value.Ticks;
     }
 

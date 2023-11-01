@@ -51,7 +51,7 @@ public class ReadPoints
         //{
         //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
         //    clientOptions.NetworkPort = 12345;
-        //    clientOptions.ServerNameOrIp = "127.0.0.1";
+        //    clientOptions.serverNameOrIP = "127.0.0.1";
 
         //    using (var client = new HistorianClient(clientOptions))
         //    {
@@ -135,7 +135,7 @@ public class ReadPoints
         //{
         //    SortedTreeClientOptions clientOptions = new SortedTreeClientOptions();
         //    clientOptions.NetworkPort = 12345;
-        //    clientOptions.ServerNameOrIp = "127.0.0.1";
+        //    clientOptions.serverNameOrIP = "127.0.0.1";
 
         //    //using (var client = new HistorianClient(clientOptions))
         //    //{

@@ -118,7 +118,7 @@ public class BulkWritePoints
     //        collection.Add(engine);
 
     //        var options = new RemoteClientOptions();
-    //        options.ServerNameOrIp = "127.0.0.1";
+    //        options.serverNameOrIP = "127.0.0.1";
     //        options.NetworkPort = 13141;
 
     //        using (var client = new RemoteClient(options))
