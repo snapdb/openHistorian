@@ -112,6 +112,7 @@ public class PointListTests
 
         TestUser("johndoe", 6, 0);
         TestUser("janedoe", 0, 2);
+
         void TestUser(string userName, int expectedCount1, int expectedCount2)
         {
             settings!.DefaultUser = userName;

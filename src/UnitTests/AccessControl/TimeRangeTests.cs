@@ -115,6 +115,7 @@ public class TimeRangeTests
 
         TestUser("johndoe", 50, 0);
         TestUser("janedoe", 0, 100);
+
         void TestUser(string userName, int expectedCount1, int expectedCount2)
         {
             settings!.DefaultUser = userName;
@@ -123,7 +124,7 @@ public class TimeRangeTests
             HistorianValue value = new();
 
             using HistorianServer server = new(new HistorianServerDatabaseConfig("PPA", archivePath, true), settings);
-            using HistorianClient client = new("127.0.0.1", 12345);
+            using HistorianClient client = new("127.0.0.1", 12345, false);
             using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>("PPA");
             
             using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(startTime, startTime.AddDays(50), Enumerable.Range(1, 50).Select(val => (ulong)val)))
