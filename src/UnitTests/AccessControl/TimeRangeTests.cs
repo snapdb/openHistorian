@@ -108,8 +108,8 @@ public class TimeRangeTests
         };
 
         // Function parameters are:
-        // string UserId - The user security ID (SID) of the user attempting to match.
-        // TKey instance - The key of the record being matched.
+        // string UserId - The user security ID (SID) of the user attempting to seek.
+        // TKey instance - The key of the record being sought.
         // AccessControlSeekPosition - The position of the seek. i.e., Start or End.
         settings.UserCanSeek = (userID, key, pos) => timeRangeRights[userID].Contains(key.TimestampAsDate);
 
