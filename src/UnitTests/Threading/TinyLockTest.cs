@@ -24,57 +24,104 @@
 //
 //******************************************************************************************************
 
-namespace SnapDB.Snap;
+using System;
+using System.Diagnostics;
+using System.Threading;
+using NUnit.Framework;
+using SnapDB.Threading;
 
-/// <summary>
-/// Provides statistical information related to various operations.
-/// </summary>
-public static class Stats
+namespace openHistorian.Core.UnitTests.Threading;
+
+[TestFixture]
+public class TinyLock_Test
 {
-    #region [ Static ]
-
-    /// <summary>
-    /// Checks how many times the checksum was computed. This is used to see IO amplification.
-    /// It is currently a debug term that will soon disappear.
-    /// </summary>
-    public static long ChecksumCount;
-
-    /// <summary>
-    /// Gets or sets the count of lookup keys used.
-    /// </summary>
-    public static long LookupKeys;
-
-    /// <summary>
-    /// Gets or sets the count of points returned.
-    /// </summary>
-    public static long PointsReturned;
-
-    /// <summary>
-    /// Gets or sets the count of points scanned.
-    /// </summary>
-    public static long PointsScanned;
-
-    /// <summary>
-    /// Gets or sets the count of queries executed.
-    /// </summary>
-    public static long QueriesExecuted;
-
-    /// <summary>
-    /// Gets or sets the count of seeks requested.
-    /// </summary>
-    public static long SeeksRequested;
-
-    /// <summary>
-    /// Clears all statistical counters.
-    /// </summary>
-    public static void Clear()
+    [Test]
+    public void TestMonitor()
     {
-        LookupKeys = 0;
-        PointsReturned = 0;
-        PointsScanned = 0;
-        QueriesExecuted = 0;
-        SeeksRequested = 0;
+        const int count = 100000000;
+        Stopwatch sw = new();
+        sw.Start();
+        object obj = new();
+
+        for (int x = 0; x < count; x++)
+        {
+            lock (obj) ;
+            lock (obj) ;
+            lock (obj) ;
+            lock (obj) ;
+            lock (obj) ;
+            lock (obj) ;
+            lock (obj) ;
+            lock (obj) ;
+            lock (obj) ;
+            lock (obj) ;
+        }
+        sw.Stop();
+
+        Console.WriteLine(count * 10.0 / sw.Elapsed.TotalSeconds / 1000000);
     }
 
-    #endregion
+    [Test]
+    public void TestTinyLock_Lock()
+    {
+        TinyLock tl = new();
+        const int count = 100000000;
+        Stopwatch sw = new();
+        sw.Start();
+
+        for (int x = 0; x < count; x++)
+        {
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+            using (tl.Lock()) ;
+
+        }
+        sw.Stop();
+
+        Console.WriteLine(count * 10.0 / sw.Elapsed.TotalSeconds / 1000000);
+    }
+
+    private ManualResetEvent m_event;
+    private TinyLock m_sync;
+    private long m_value;
+    private const long max = 100000000;
+
+    [Test]
+    public void TestContention()
+    {
+        m_value = 0;
+        m_sync = new TinyLock();
+        m_event = new ManualResetEvent(true);
+
+        for (int x = 0; x < 16; x++)
+            ThreadPool.QueueUserWorkItem(Adder);
+
+        Thread.Sleep(100);
+        m_event.Set();
+
+        while (m_value < 16 * max)
+        {
+            Console.WriteLine(m_value);
+            Thread.Sleep(1000);
+        }
+
+        Console.WriteLine(m_value);
+    }
+
+    public void Adder(object obj)
+    {
+        m_event.WaitOne();
+        for (int x = 0; x < max; x++)
+        {
+            using (m_sync.Lock())
+                m_value++;
+        }
+    }
 }

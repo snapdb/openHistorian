@@ -30,10 +30,10 @@ using NUnit.Framework;
 
 namespace openHistorian.UnitTests;
 
-class WriteToCSV
+internal class WriteToCSV
 {
-    const string connectionString = @"Data Source = localhost\SQLEXPRESS; Initial Catalog = openHistorian; Integrated Security = SSPI; Connect Timeout = 5";
-    const string dataProvider = "AssemblyName=Microsoft.Data.SqlClient; ConnectionType=Microsoft.Data.SqlClient.SqlConnection";
+    private const string connectionString = @"Data Source = localhost\SQLEXPRESS; Initial Catalog = openHistorian; Integrated Security = SSPI; Connect Timeout = 5";
+    private const string dataProvider = "AssemblyName=Microsoft.Data.SqlClient; ConnectionType=Microsoft.Data.SqlClient.SqlConnection";
 
     [Test]
     public void ExportDataToCSV()

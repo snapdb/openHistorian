@@ -39,8 +39,8 @@ namespace openHistorian.Core.Data.Query;
 public class PointStream
     : TreeStream<HistorianKey, HistorianValue>
 {
-    IDatabaseReader<HistorianKey, HistorianValue> m_reader;
-    readonly TreeStream<HistorianKey, HistorianValue> m_stream;
+    private IDatabaseReader<HistorianKey, HistorianValue> m_reader;
+    private readonly TreeStream<HistorianKey, HistorianValue> m_stream;
 
     /// <summary>
     /// Initializes a private database reader and a binary tree stream.
@@ -56,12 +56,12 @@ public class PointStream
     /// <summary>
     /// A new <see cref="HistorianKey"/> to be used as the current key.
     /// </summary>
-    public HistorianKey CurrentKey = new HistorianKey();
+    public HistorianKey CurrentKey = new();
 
     /// <summary>
     /// A new <see cref="HistorianValue"/> to be used as the current value.
     /// </summary>
-    public HistorianValue CurrentValue = new HistorianValue();
+    public HistorianValue CurrentValue = new();
 
     /// <summary>
     /// A boolean that returns whether or not a specified item is valid.
@@ -216,10 +216,10 @@ public static partial class GetPointStreamExtensionMethods
         return new PointStream(database, database.Read(options, timestamps, points));
     }
 
-    class FrameDataConstructor
+    private class FrameDataConstructor
     {
-        public readonly List<ulong> PointId = new List<ulong>();
-        public readonly List<HistorianValueStruct> Values = new List<HistorianValueStruct>();
+        public readonly List<ulong> PointId = new();
+        public readonly List<HistorianValueStruct> Values = new();
 
         /// <summary>
         /// Creates a new <see cref="FrameData"/> according to specified point IDs and values.
@@ -238,10 +238,10 @@ public static partial class GetPointStreamExtensionMethods
     /// <returns>The frames from the historian.</returns>
     public static SortedList<DateTime, FrameData> GetPointStream(this TreeStream<HistorianKey, HistorianValue> stream)
     {
-        HistorianKey key = new HistorianKey();
-        HistorianValue value = new HistorianValue();
+        HistorianKey key = new();
+        HistorianValue value = new();
 
-        SortedList<DateTime, FrameDataConstructor> results = new SortedList<DateTime, FrameDataConstructor>();
+        SortedList<DateTime, FrameDataConstructor> results = new();
         ulong lastTime = ulong.MinValue;
         FrameDataConstructor lastFrame = null;
         while (stream.Read(key, value))
@@ -249,7 +249,7 @@ public static partial class GetPointStreamExtensionMethods
             if (lastFrame is null || key.Timestamp != lastTime)
             {
                 lastTime = key.Timestamp;
-                DateTime timestamp = new DateTime((long)lastTime);
+                DateTime timestamp = new((long)lastTime);
 
                 if (!results.TryGetValue(timestamp, out lastFrame))
                 {
@@ -260,7 +260,7 @@ public static partial class GetPointStreamExtensionMethods
             lastFrame.PointId.Add(key.PointID);
             lastFrame.Values.Add(value.ToStruct());
         }
-        List<FrameData> data = new List<FrameData>(results.Count);
+        List<FrameData> data = new(results.Count);
         data.AddRange(results.Values.Select(x => x.ToFrameData()));
 
         return SortedListFactory.Create(results.Keys, data);
