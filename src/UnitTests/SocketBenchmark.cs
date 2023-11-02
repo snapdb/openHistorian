@@ -166,13 +166,12 @@ public class SocketBenchmark
     [Test]
     public void TestReadDataFromArchive()
     {
-        DebugStopwatch sw = new();
-        HistorianKey key = new();
-        HistorianValue value = new();
+        // DebugStopwatch sw = new();
+        //    HistorianKey key = new();
+        //    HistorianValue value = new();
 
         //string path = Directory.GetFiles(@"C:\Temp\SCADA\", "*.d2")[0];
-        double time;
-        double count = 0;
+        //double count = 0;
 
         //using (SortedTreeFile file = SortedTreeFile.OpenFile(path, true))
         //{

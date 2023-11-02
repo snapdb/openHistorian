@@ -134,9 +134,12 @@ public class DebugStopwatch
         List<double> values = new();
         GC.Collect();
         function();
-        int count = 0;
+        
+        //int count = 0;
+        
         Stopwatch swTotal = new();
         swTotal.Start();
+        
         while (swTotal.Elapsed.TotalSeconds < 1 && values.Count < 100)
         {
             sw.Restart();

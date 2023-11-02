@@ -57,7 +57,6 @@ public class ConcurrentReading
     public void ScanAllPoints()
     {
         Stats.Clear();
-        long points;
 
         StopReading = false;
 
@@ -92,7 +91,6 @@ public class ConcurrentReading
     public void SendAllPoints()
     {
         Stats.Clear();
-        long points;
 
         StopReading = false;
 
