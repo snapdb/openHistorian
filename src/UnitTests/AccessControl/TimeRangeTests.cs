@@ -159,7 +159,7 @@ public class TimeRangeTests
 
     private static string CreateLocalArchive(DateTime startTime = default, int totalPointCount = 1000)
     {
-        const string archivePath = @"C:\Temp\Files\";
+        const string archivePath = @"C:\Temp\TimeACLTestFiles\";
         const string fileName = $"{archivePath}ArchiveFile.d2";
 
         if (startTime == default)
