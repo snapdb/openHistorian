@@ -30,7 +30,7 @@ using SnapDB.Snap;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Reader;
 
-namespace openHistorian.Core.UnitTests;
+namespace openHistorian.UnitTests;
 
 [TestFixture]
 public class ReadPoints

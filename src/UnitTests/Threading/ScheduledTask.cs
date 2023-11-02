@@ -28,7 +28,7 @@ using Gemstone;
 using Gemstone.Threading;
 using NUnit.Framework;
 
-namespace openHistorian.Core.UnitTests.Threading;
+namespace openHistorian.UnitTests.Threading;
 
 [TestFixture]
 internal class ScheduledTaskTest

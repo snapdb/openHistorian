@@ -35,7 +35,7 @@ using SnapDB.IO.Unmanaged;
 using SnapDB.Snap;
 using SnapDB.Snap.Services;
 
-namespace openHistorian.Core.UnitTests.SortedTreeStore.Engine;
+namespace openHistorian.UnitTests.SortedTreeStore.Engine;
 
 [TestFixture]
 public class BulkWritePoints

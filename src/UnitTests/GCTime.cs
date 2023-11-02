@@ -27,7 +27,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using NUnit.Framework;
 
-namespace openHistorian.Core.UnitTests;
+namespace openHistorian.UnitTests;
 
 /// <summary>
 /// Class to measure garbage collection (GC) and memory allocation times.

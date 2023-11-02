@@ -27,7 +27,7 @@ using System.Threading;
 using NUnit.Framework;
 using SnapDB.Threading;
 
-namespace openHistorian.Core.UnitTests.Threading;
+namespace openHistorian.UnitTests.Threading;
 
 [TestFixture]
 public class SmallLockTest

@@ -28,7 +28,7 @@ using System.Net.Sockets;
 using System.Threading;
 using NUnit.Framework;
 
-namespace openHistorian.Core.UnitTests;
+namespace openHistorian.UnitTests;
 
 /// <summary>
 /// This class contains methods to benchmark socket communication performance.

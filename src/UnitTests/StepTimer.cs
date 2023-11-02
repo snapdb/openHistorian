@@ -25,7 +25,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace openHistorian.Core.UnitTests;
+namespace openHistorian.UnitTests;
 
 /// <summary>
 /// Provides a simple utility for measuring and tracking time intervals using Stopwatches.

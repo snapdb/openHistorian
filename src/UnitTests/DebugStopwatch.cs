@@ -27,7 +27,7 @@ using System.Diagnostics;
 using System.Runtime;
 using NUnit.Framework;
 
-namespace openHistorian.Core.UnitTests;
+namespace openHistorian.UnitTests;
 
 /// <summary>
 /// Utility class for measuring and asserting execution time of methods or code blocks.

@@ -28,7 +28,7 @@ using SnapDB.Security.Cryptography;
 using NUnit.Framework;
 using Random = System.Random;
 
-namespace openHistorian.Core.UnitTests
+namespace openHistorian.UnitTests
 {
     /// <summary>
     /// This class contains methods to test the performance of generating and hashing GUIDs.

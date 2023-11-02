@@ -27,7 +27,7 @@ using System.Text;
 using Gemstone.Diagnostics;
 using NUnit.Framework;
 
-namespace openHistorian.Core.UnitTests.Diagnostics;
+namespace openHistorian.UnitTests.Diagnostics;
 
 /// <summary>
 /// This class contains test methods to explore stack trace functionality.
