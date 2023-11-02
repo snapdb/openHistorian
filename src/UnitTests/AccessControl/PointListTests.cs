@@ -89,7 +89,7 @@ public class PointListTests
             LocalTcpPort = 12345,
 
             // Setting all the following values to false will force user authentication on the socket.
-            // This is a test of access control for the point list with fake users, so this is skipped.
+            // This is a test of access control for a point list with fake users, so this is skipped.
             DefaultUserCanRead = true,
             DefaultUserCanWrite = true,
             DefaultUserIsAdmin = false
