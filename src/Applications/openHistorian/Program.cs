@@ -8,7 +8,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        SQLitePCL.Batteries.Init();
+        //SQLitePCL.Batteries.Init();
 
         Settings settings = new();
 

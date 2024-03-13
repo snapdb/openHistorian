@@ -17,7 +17,7 @@
 mono_crash.*
 
 # Build results
-[B]uild/
+[Bb]uild/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/

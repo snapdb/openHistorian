@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>openHistorian</RootNamespace>
     <Authors>Grid Protection Alliance</Authors>
     <Company>Grid Protection Alliance</Company>
     <Product>openHistorian</Product>
+    <PackageId>openHistorian3.0</PackageId>
     <Description>openHistorian Iaon Host</Description>
     <Copyright>Copyright © 2024</Copyright>
     <PackageProjectUrl>https://github.com/snapdb</PackageProjectUrl>
@@ -25,8 +25,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <OutputPath>..\..\..\..\build\$(Configuration)</OutputPath>
-    <DocumentationFile>..\..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <OutputPath>..\..\..\build\$(Configuration)</OutputPath>
+    <DocumentationFile>..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Development'">
