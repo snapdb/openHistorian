@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>openHistorian</RootNamespace>
+    <Authors>Grid Protection Alliance</Authors>
+    <Company>Grid Protection Alliance</Company>
+    <Product>openHistorian</Product>
+    <Description>openHistorian Iaon Host</Description>
+    <Copyright>Copyright © 2024</Copyright>
+    <PackageProjectUrl>https://github.com/snapdb</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/snapdb/openHistorian</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <LangVersion>latest</LangVersion>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Version>3.0.1</Version>
+    <InformationalVersion Condition="'$(Configuration)'=='Release'">3.0.1 -- Release Build</InformationalVersion>
+    <InformationalVersion Condition="'$(Configuration)'!='Release'">3.0.1 -- Debug Build</InformationalVersion>
+    <Configurations>Debug;Release;Development</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputPath>..\..\..\..\build\$(Configuration)</OutputPath>
+    <DocumentationFile>..\..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Development'">
+    <DebugType>Full</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" Condition="'$(Configuration)'=='Development'" />
+    <PackageReference Include="Gemstone.Common" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\configuration\src\Gemstone.Configuration\Gemstone.Configuration.csproj" Condition="'$(Configuration)'=='Development'" />
+    <PackageReference Include="Gemstone.Configuration" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+    
+    <ProjectReference Include="..\..\..\..\..\gemstone\data\src\Gemstone.Data\Gemstone.Data.csproj" Condition="'$(Configuration)'=='Development'" />
+    <PackageReference Include="Gemstone.Data" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj" Condition="'$(Configuration)'=='Development'" />
+    <PackageReference Include="Gemstone.Timeseries" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
+    <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
+    <ProjectReference Include="..\openHistorian.WebUI\openHistorian.WebUI.csproj" />
+  </ItemGroup>
+</Project>

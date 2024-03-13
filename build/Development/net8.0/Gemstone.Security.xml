@@ -1,0 +1,158 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Gemstone.Security</name>
+    </assembly>
+    <members>
+        <member name="T:Gemstone.Security.AccessControl.AccessControlListBuilder`2">
+            <summary>
+            Builds access control lists for users given a collection of rules.
+            </summary>
+            <typeparam name="TIdentity">Type of the identifier for users.</typeparam>
+            <typeparam name="TResource">Type of resources being accessed by users.</typeparam>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.AccessControlListBuilder`2.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Gemstone.Security.AccessControl.AccessControlListBuilder`2"/> class.
+            </summary>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.AccessControlListBuilder`2.Allow(System.Func{`0,System.Collections.Generic.IEnumerable{`1}})">
+            <summary>
+            Adds an allow rule to the access control list.
+            </summary>
+            <param name="allowedResourcesFunc">Function that returns the list of resources to be allowed.</param>
+            <returns>The builder, for chaining.</returns>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.AccessControlListBuilder`2.Deny(System.Func{`0,System.Collections.Generic.IEnumerable{`1}})">
+            <summary>
+            Adds a deny rule to the access control list.
+            </summary>
+            <param name="deniedResourcesFunc">Function that returns the list of resources to be denied.</param>
+            <returns>The builder, for chaining.</returns>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.AccessControlListBuilder`2.AllowAllExcept(System.Func{`0,System.Collections.Generic.IEnumerable{`1}})">
+            <summary>
+            Adds an allow rule to the access control list.
+            </summary>
+            <param name="allowedResourcesFunc">Function that returns the list of resources that are not included in the rule.</param>
+            <returns>The builder, for chaining.</returns>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.AccessControlListBuilder`2.DenyAllExcept(System.Func{`0,System.Collections.Generic.IEnumerable{`1}})">
+            <summary>
+            Adds a deny rule to the access control list.
+            </summary>
+            <param name="deniedResourcesFunc">Function that returns the list of resources that are not included in the rule.</param>
+            <returns>The builder, for chaining.</returns>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.AccessControlListBuilder`2.Build(`0)">
+            <summary>
+            Creates an access control list for the given identity.
+            </summary>
+            <param name="identity">The identity of the user the list applies to.</param>
+            <returns>The access control list for the given identity.</returns>
+        </member>
+        <member name="T:Gemstone.Security.AccessControl.IAccessControlList`1">
+            <summary>
+            Represents an access control list that can be used to
+            determine whether a user has access to a given resource.
+            </summary>
+            <typeparam name="TResource">The type of resource the user is accessing.</typeparam>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.IAccessControlList`1.HasAccess(`0)">
+            <summary>
+            Indicates whether the user has access to the given resource.
+            </summary>
+            <param name="resource">The resource to check for access</param>
+            <returns>True if the user has access, false otherwise</returns>
+        </member>
+        <member name="T:Gemstone.Security.AccessControl.IAccessControlListBuilder`2">
+            <summary>
+            Represents a builder for access control lists.
+            </summary>
+            <typeparam name="TIdentity">Type of the identifier for users.</typeparam>
+            <typeparam name="TResource">Type of resources being accessed by users.</typeparam>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.IAccessControlListBuilder`2.Allow(System.Func{`0,System.Collections.Generic.IEnumerable{`1}})">
+            <summary>
+            Adds an allow rule to the access control list.
+            </summary>
+            <param name="allowedResourcesFunc">Function that returns the list of resources to be allowed.</param>
+            <returns>The builder, for chaining.</returns>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.IAccessControlListBuilder`2.Deny(System.Func{`0,System.Collections.Generic.IEnumerable{`1}})">
+            <summary>
+            Adds a deny rule to the access control list.
+            </summary>
+            <param name="deniedResourcesFunc">Function that returns the list of resources to be denied.</param>
+            <returns>The builder, for chaining.</returns>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.IAccessControlListBuilder`2.AllowAllExcept(System.Func{`0,System.Collections.Generic.IEnumerable{`1}})">
+            <summary>
+            Adds an allow rule to the access control list.
+            </summary>
+            <param name="allowedResourcesFunc">Function that returns the list of resources that are not included in the rule.</param>
+            <returns>The builder, for chaining.</returns>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.IAccessControlListBuilder`2.DenyAllExcept(System.Func{`0,System.Collections.Generic.IEnumerable{`1}})">
+            <summary>
+            Adds a deny rule to the access control list.
+            </summary>
+            <param name="deniedResourcesFunc">Function that returns the list of resources that are not included in the rule.</param>
+            <returns>The builder, for chaining.</returns>
+        </member>
+        <member name="M:Gemstone.Security.AccessControl.IAccessControlListBuilder`2.Build(`0)">
+            <summary>
+            Creates an access control list for the given identity.
+            </summary>
+            <param name="identity">The identity of the user the list applies to.</param>
+            <returns>The access control list for the given identity.</returns>
+        </member>
+        <member name="T:Gemstone.Security.Cryptography.RandomInt24">
+            <summary>
+            Generates cryptographically strong random <see cref="T:Gemstone.Numeric.Int24"/> numbers.
+            </summary>
+        </member>
+        <member name="P:Gemstone.Security.Cryptography.RandomInt24.Value">
+            <summary>
+            Generates a cryptographically strong 24-bit random integer.
+            </summary>
+            <exception cref="T:System.Security.Cryptography.CryptographicException">The cryptographic service provider (CSP) cannot be acquired.</exception>
+        </member>
+        <member name="M:Gemstone.Security.Cryptography.RandomInt24.ValueBetween(Gemstone.Numeric.Int24,Gemstone.Numeric.Int24)">
+            <summary>
+            Generates a cryptographically strong 24-bit random integer between specified values.
+            </summary>
+            <exception cref="T:System.Security.Cryptography.CryptographicException">The cryptographic service provider (CSP) cannot be acquired.</exception>
+            <param name="startNumber">A <see cref="T:Gemstone.Numeric.Int24"/> that is the low end of our range.</param>
+            <param name="stopNumber">A <see cref="T:Gemstone.Numeric.Int24"/> that is the high end of our range.</param>
+            <returns>A <see cref="T:Gemstone.Numeric.Int24"/> that is generated between the <paramref name="startNumber"/> and the <paramref name="stopNumber"/>.</returns>
+        </member>
+        <member name="T:Gemstone.Security.Cryptography.RandomUInt24">
+            <summary>
+            Generates cryptographically strong random <see cref="T:Gemstone.Numeric.UInt24"/> numbers.
+            </summary>
+        </member>
+        <member name="P:Gemstone.Security.Cryptography.RandomUInt24.Value">
+            <summary>
+            Generates a cryptographically strong unsigned 24-bit random integer.
+            </summary>
+            <exception cref="T:System.Security.Cryptography.CryptographicException">The cryptographic service provider (CSP) cannot be acquired.</exception>
+        </member>
+        <member name="M:Gemstone.Security.Cryptography.RandomUInt24.ValueBetween(Gemstone.Numeric.UInt24,Gemstone.Numeric.UInt24)">
+            <summary>
+            Generates a cryptographically strong unsigned 24-bit random integer between specified values.
+            </summary>
+            <exception cref="T:System.Security.Cryptography.CryptographicException">The cryptographic service provider (CSP) cannot be acquired.</exception>
+            <param name="startNumber">A <see cref="T:Gemstone.Numeric.UInt24"/> that is the low end of our range.</param>
+            <param name="stopNumber">A <see cref="T:Gemstone.Numeric.UInt24"/> that is the high end of our range.</param>
+            <returns>A <see cref="T:Gemstone.Numeric.UInt24"/> that is generated between the <paramref name="startNumber"/> and the <paramref name="stopNumber"/>.</returns>
+        </member>
+        <member name="T:Gemstone.Security.NamespaceDoc">
+            <summary>
+            The <see cref="N:Gemstone.Security"/> namespace organizes all Gemstone library functionality
+            related to security. The root security namespace also includes common security classes,
+            e.g., <see cref="T:Gemstone.Security.Cryptography.RandomInt24"/>.
+            </summary>
+        </member>
+    </members>
+</doc>

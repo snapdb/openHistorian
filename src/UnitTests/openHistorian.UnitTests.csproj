@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Configurations>Debug;Release;Development</Configurations>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -51,7 +51,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="SnapDB">
+    <ProjectReference Include="..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'" />
+    <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'">
       <HintPath>..\Dependencies\SnapDB\SnapDB.dll</HintPath>
     </Reference>
   </ItemGroup>

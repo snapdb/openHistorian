@@ -1,0 +1,134 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.Core", "Libraries\openHistorian.Core\openHistorian.Core.csproj", "{639E80DD-42F5-4A9B-9FF1-85C9A7597D71}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{069EBC5F-6863-431A-8576-D61EBE5B28FA}"
+	ProjectSection(SolutionItems) = preProject
+		..\docs\README.md = ..\docs\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{AC8924A6-5141-4F21-B45D-016F5892027F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{A5961018-6CCE-489B-ADCA-43DC5C63480E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{D1DEBD67-8EB0-4119-A5DC-1F202475943C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5607DA60-4CD1-4EDF-ADCC-D642873D9045}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		..\.gitignore = ..\.gitignore
+		..\LICENSE = ..\LICENSE
+	EndProjectSection
+EndProject
+Project("{7CF6DF6D-3B04-46F8-A40B-537D21BCA0B4}") = "docgen", "DocGen\docgen.shfbproj", "{E0CCFF2A-C2DF-436C-B34C-A20215DA227A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.UnitTests", "UnitTests\openHistorian.UnitTests.csproj", "{554D6095-55C9-4986-B7D2-9C632F2A9037}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Adapters", "Adapters", "{6EC94694-B06C-4395-B73E-31647F988FBB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.Adapters", "Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj", "{74DC0AA0-1B8A-47BF-BE38-4D7E15BAA259}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "References", "References", "{1224947C-1CED-4EF2-9502-BC2D440F49D2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SnapDB", "..\..\SnapDB\src\SnapDB\SnapDB.csproj", "{ED2CE812-40F0-47F0-800B-0039E458F19B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Common", "..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj", "{CA015C57-B869-4743-9E28-2E12B2487E25}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Communication", "..\..\..\gemstone\communication\src\Gemstone.Communication\Gemstone.Communication.csproj", "{E3061A41-167F-4171-8D8B-0B5EE89175E5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.IO", "..\..\..\gemstone\io\src\Gemstone.IO\Gemstone.IO.csproj", "{53E5890B-D35A-47D3-ACCA-168C4075A9E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Threading", "..\..\..\gemstone\threading\src\Gemstone.Threading\Gemstone.Threading.csproj", "{36F7F617-EACD-4303-8719-A2F54B272BFE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Diagnostics", "..\..\..\gemstone\diagnostics\src\Gemstone.Diagnostics\Gemstone.Diagnostics.csproj", "{CAA171E5-DBE6-4D84-B27B-CB129E8F9B5C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Security", "..\..\..\gemstone\security\src\Gemstone.Security\Gemstone.Security.csproj", "{DC18C8CF-7555-4235-9865-92924C774760}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Numeric", "..\..\..\gemstone\numeric\src\Gemstone.Numeric\Gemstone.Numeric.csproj", "{A044774C-F22D-4A59-9516-2E78CB517940}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Expressions", "..\..\..\gemstone\expressions\src\Gemstone.Expressions\Gemstone.Expressions.csproj", "{11F16880-BE91-45E3-86AD-9C81F26C1392}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Data", "..\..\..\gemstone\data\src\Gemstone.Data\Gemstone.Data.csproj", "{E7254C17-E716-4552-B072-2431F6AD368D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Applications", "Applications", "{BC15EE70-1273-4C44-9395-914ADE50FBE1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian", "Applications\openHistorian\openHistorian.csproj", "{C9E8BF8D-CE79-4CCA-A71C-D76A9A829A60}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Configuration", "..\..\..\gemstone\configuration\src\Gemstone.Configuration\Gemstone.Configuration.csproj", "{2E7DA3C0-A287-4B89-9834-2A458CB4CDF5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.Timeseries", "..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj", "{697F3644-8BB1-4137-A2C1-4EEC19A2E0B2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.WebUI", "Applications\openHistorian.WebUI\openHistorian.WebUI.csproj", "{A6F3A64A-8F68-4BBC-B325-86626A07DFC2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Development|Any CPU = Development|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{639E80DD-42F5-4A9B-9FF1-85C9A7597D71}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{639E80DD-42F5-4A9B-9FF1-85C9A7597D71}.Development|Any CPU.Build.0 = Development|Any CPU
+		{E0CCFF2A-C2DF-436C-B34C-A20215DA227A}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{554D6095-55C9-4986-B7D2-9C632F2A9037}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{554D6095-55C9-4986-B7D2-9C632F2A9037}.Development|Any CPU.Build.0 = Development|Any CPU
+		{74DC0AA0-1B8A-47BF-BE38-4D7E15BAA259}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{74DC0AA0-1B8A-47BF-BE38-4D7E15BAA259}.Development|Any CPU.Build.0 = Development|Any CPU
+		{ED2CE812-40F0-47F0-800B-0039E458F19B}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{ED2CE812-40F0-47F0-800B-0039E458F19B}.Development|Any CPU.Build.0 = Development|Any CPU
+		{CA015C57-B869-4743-9E28-2E12B2487E25}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{CA015C57-B869-4743-9E28-2E12B2487E25}.Development|Any CPU.Build.0 = Development|Any CPU
+		{E3061A41-167F-4171-8D8B-0B5EE89175E5}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{E3061A41-167F-4171-8D8B-0B5EE89175E5}.Development|Any CPU.Build.0 = Development|Any CPU
+		{53E5890B-D35A-47D3-ACCA-168C4075A9E1}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{53E5890B-D35A-47D3-ACCA-168C4075A9E1}.Development|Any CPU.Build.0 = Development|Any CPU
+		{36F7F617-EACD-4303-8719-A2F54B272BFE}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{36F7F617-EACD-4303-8719-A2F54B272BFE}.Development|Any CPU.Build.0 = Development|Any CPU
+		{CAA171E5-DBE6-4D84-B27B-CB129E8F9B5C}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{CAA171E5-DBE6-4D84-B27B-CB129E8F9B5C}.Development|Any CPU.Build.0 = Development|Any CPU
+		{DC18C8CF-7555-4235-9865-92924C774760}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{DC18C8CF-7555-4235-9865-92924C774760}.Development|Any CPU.Build.0 = Development|Any CPU
+		{A044774C-F22D-4A59-9516-2E78CB517940}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{A044774C-F22D-4A59-9516-2E78CB517940}.Development|Any CPU.Build.0 = Development|Any CPU
+		{11F16880-BE91-45E3-86AD-9C81F26C1392}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{11F16880-BE91-45E3-86AD-9C81F26C1392}.Development|Any CPU.Build.0 = Development|Any CPU
+		{E7254C17-E716-4552-B072-2431F6AD368D}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{E7254C17-E716-4552-B072-2431F6AD368D}.Development|Any CPU.Build.0 = Development|Any CPU
+		{C9E8BF8D-CE79-4CCA-A71C-D76A9A829A60}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{C9E8BF8D-CE79-4CCA-A71C-D76A9A829A60}.Development|Any CPU.Build.0 = Development|Any CPU
+		{2E7DA3C0-A287-4B89-9834-2A458CB4CDF5}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{2E7DA3C0-A287-4B89-9834-2A458CB4CDF5}.Development|Any CPU.Build.0 = Development|Any CPU
+		{697F3644-8BB1-4137-A2C1-4EEC19A2E0B2}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{697F3644-8BB1-4137-A2C1-4EEC19A2E0B2}.Development|Any CPU.Build.0 = Development|Any CPU
+		{A6F3A64A-8F68-4BBC-B325-86626A07DFC2}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6F3A64A-8F68-4BBC-B325-86626A07DFC2}.Development|Any CPU.Build.0 = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{639E80DD-42F5-4A9B-9FF1-85C9A7597D71} = {AC8924A6-5141-4F21-B45D-016F5892027F}
+		{E0CCFF2A-C2DF-436C-B34C-A20215DA227A} = {069EBC5F-6863-431A-8576-D61EBE5B28FA}
+		{554D6095-55C9-4986-B7D2-9C632F2A9037} = {A5961018-6CCE-489B-ADCA-43DC5C63480E}
+		{6EC94694-B06C-4395-B73E-31647F988FBB} = {AC8924A6-5141-4F21-B45D-016F5892027F}
+		{74DC0AA0-1B8A-47BF-BE38-4D7E15BAA259} = {6EC94694-B06C-4395-B73E-31647F988FBB}
+		{ED2CE812-40F0-47F0-800B-0039E458F19B} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{CA015C57-B869-4743-9E28-2E12B2487E25} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{E3061A41-167F-4171-8D8B-0B5EE89175E5} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{53E5890B-D35A-47D3-ACCA-168C4075A9E1} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{36F7F617-EACD-4303-8719-A2F54B272BFE} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{CAA171E5-DBE6-4D84-B27B-CB129E8F9B5C} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{DC18C8CF-7555-4235-9865-92924C774760} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{A044774C-F22D-4A59-9516-2E78CB517940} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{11F16880-BE91-45E3-86AD-9C81F26C1392} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{E7254C17-E716-4552-B072-2431F6AD368D} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{C9E8BF8D-CE79-4CCA-A71C-D76A9A829A60} = {BC15EE70-1273-4C44-9395-914ADE50FBE1}
+		{2E7DA3C0-A287-4B89-9834-2A458CB4CDF5} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{697F3644-8BB1-4137-A2C1-4EEC19A2E0B2} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{A6F3A64A-8F68-4BBC-B325-86626A07DFC2} = {BC15EE70-1273-4C44-9395-914ADE50FBE1}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7F524668-5FE5-406F-B1D4-177A413C9DD6}
+	EndGlobalSection
+EndGlobal

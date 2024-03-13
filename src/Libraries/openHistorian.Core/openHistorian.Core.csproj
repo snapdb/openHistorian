@@ -1,23 +1,64 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+
+  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>openHistorian</RootNamespace>
+    <PackageId>openHistorian</PackageId>
+    <Authors>Grid Protection Alliance</Authors>
+    <Company>Grid Protection Alliance</Company>
+    <Product>openHistorian</Product>
+    <Description>openHistorian Core Library</Description>
+    <Copyright>Copyright © 2024</Copyright>
+    <PackageProjectUrl>https://github.com/snapdb</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/snapdb/openHistorian</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <LangVersion>latest</LangVersion>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <Nullable>enable</Nullable>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Version>1.0.101</Version>
+    <InformationalVersion Condition="'$(Configuration)'=='Release'">1.0.101 -- Release Build</InformationalVersion>
+    <InformationalVersion Condition="'$(Configuration)'!='Release'">1.0.101 -- Debug Build</InformationalVersion>
+    <Configurations>Debug;Release;Development</Configurations>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <OutputPath>..\..\..\build\$(Configuration)</OutputPath>
+    <DocumentationFile>..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Development'">
+    <DebugType>Full</DebugType>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Gemstone.Common" Version="1.0.101" />
-    <PackageReference Include="Gemstone.Communication" Version="1.0.101" />
-    <PackageReference Include="Gemstone.Diagnostics" Version="1.0.101" />
+    <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" Condition="'$(Configuration)'=='Development'" />
+    <PackageReference Include="Gemstone.Common" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\communication\src\Gemstone.Communication\Gemstone.Communication.csproj" Condition="'$(Configuration)'=='Development'" />
+    <PackageReference Include="Gemstone.Communication" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\diagnostics\src\Gemstone.Diagnostics\Gemstone.Diagnostics.csproj" Condition="'$(Configuration)'=='Development'" />
+    <PackageReference Include="Gemstone.Diagnostics" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="SnapDB">
-      <HintPath>..\..\Dependencies\SnapDB\SnapDB.dll</HintPath>
+    <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'" />
+    <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'" >
+      <HintPath>..\..\..\Dependencies\SnapDB\SnapDB.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+
+  <PropertyGroup Condition="'$(SIGNTOOL)' != ''">
+    <PostBuildEvent>$(SIGNTOOL) $(TargetPath)</PostBuildEvent>
+  </PropertyGroup>
 
 </Project>
