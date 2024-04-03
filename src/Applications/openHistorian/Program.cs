@@ -11,13 +11,23 @@ internal class Program
 {
     private static void Main(string[] args)
     {
+        // Defines settings for the service. Note that the Gemstone defaults
+        // for handling INI and SQLite configuration are defined in a hierarchy
+        // where the configuration settings that are loaded are in the following
+        // priority order, from lowest to hightest:
+        // - INI file (defaults.ini) - Machine Level
+        // - INI file (settings.ini) - Machine Level
+        // - SQLite database (settings.db) - User Level
+        // - Environment variables - Machine Level
+        // - Environment variables - User Level
+        // - Command line arguments
         Settings settings = new()
         {
             INIFile = ConfigurationOperation.ReadWrite,
             SQLite = ConfigurationOperation.Disabled
         };
 
-        // Define settings for known components
+        // Define settings for service components
         ServiceHost.DefineSettings(settings);
 
         // Bind settings to configuration sources
