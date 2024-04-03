@@ -6,7 +6,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>openHistorian</RootNamespace>
-    <PackageId>openHistorian</PackageId>
+    <PackageId>openHistorian.Core</PackageId>
     <Authors>Grid Protection Alliance</Authors>
     <Company>Grid Protection Alliance</Company>
     <Product>openHistorian</Product>
@@ -35,6 +35,8 @@
 
   <PropertyGroup Condition="'$(Configuration)'=='Development'">
     <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,8 +51,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'" />
-    <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'" >
+    <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'">
       <HintPath>..\..\..\Dependencies\SnapDB\SnapDB.dll</HintPath>
     </Reference>
   </ItemGroup>

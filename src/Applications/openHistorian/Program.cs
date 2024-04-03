@@ -1,6 +1,9 @@
 using Gemstone.Configuration;
 using Microsoft.Extensions.Logging.Debug;
+
+#if RELEASE
 using Microsoft.Extensions.Logging.EventLog;
+#endif
 
 namespace openHistorian;
 
@@ -8,17 +11,19 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        //SQLitePCL.Batteries.Init();
+        Settings settings = new()
+        {
+            UseINIFile = true,
+            UseSQLite = true
+        };
 
-        Settings settings = new();
+        // Define settings for known components
+        ServiceHost.DefineSettings(settings);
 
-        IConfiguration configuration = new ConfigurationBuilder()
-            .ConfigureGemstoneDefaults(settings.ConfigureAppSettings, useINI: true)
-            .AddCommandLine(args)
-            .Build();
-
-        settings.Initialize(configuration);
-        configuration.Bind(settings);
+        // Bind settings to configuration sources
+        settings.Bind(new ConfigurationBuilder()
+            .ConfigureGemstoneDefaults(settings)
+            .AddCommandLine(args, settings.SwitchMappings));
 
         HostApplicationBuilder application = Host.CreateApplicationBuilder(args);
 
@@ -33,25 +38,29 @@ internal class Program
 
         IHost host = application.Build();
         host.Run();
+
+        Settings.Default.WebHosting.HostURLs = "http://localhost:8180; http://localhost:8181";
+        Settings.Save();
     }
 
-    private static void ConfigureLogging(ILoggingBuilder builder)
+    internal static void ConfigureLogging(ILoggingBuilder builder)
     {
         builder.ClearProviders();
         builder.SetMinimumLevel(LogLevel.Information);
+
         builder.AddFilter("Microsoft", LogLevel.Warning);
         builder.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Error);
         builder.AddFilter<DebugLoggerProvider>("", LogLevel.Debug);
-
-        if (OperatingSystem.IsWindows())
-            builder.AddFilter<EventLogLoggerProvider>("Application", LogLevel.Warning);
 
         builder.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Error);
         builder.AddDebug();
 
     #if RELEASE
         if (OperatingSystem.IsWindows())
+        {
+            builder.AddFilter<EventLogLoggerProvider>("Application", LogLevel.Warning);
             builder.AddEventLog();
+        }
     #endif
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System.Security.Cryptography.X509Certificates;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.FileProviders;
 
 namespace openHistorian.WebUI;
 
 public class WebServerConfiguration
 {
+    public WebHosting Hosting { get; set; } = default!;
+    
     //private class DefaultAuthenticator : IAuthenticator
     //{
     //    public Task<long?> AuthenticateAsync(string username, string password) => throw new NotImplementedException();
@@ -17,16 +18,13 @@ public class WebServerConfiguration
     //public IAuthenticator Authenticator { get; set; } = new DefaultAuthenticator();
 }
 
-public class WebServer
+public class WebServer(WebServerConfiguration configuration)
 {
     private Func<Task>? m_stopFunc;
 
-    public WebServer(WebServerConfiguration configuration) =>
-        Configuration = configuration;
+    private WebServerConfiguration Configuration { get; } = configuration;
 
-    private WebServerConfiguration Configuration { get; }
-
-    public async Task StartAsync(params string[] urls)
+    public async Task StartAsync()
     {
         using CancellationTokenSource tokenSource = new();
         TaskCompletionSource<bool> completionSource = new();
@@ -43,6 +41,8 @@ public class WebServer
             return;
 
         IHostBuilder hostBuilder = Host.CreateDefaultBuilder();
+
+        string[] urls = Configuration.Hosting.HostURLs.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         hostBuilder.ConfigureWebHostDefaults(webBuilder => ConfigureWebHost(webBuilder, urls));
 
         IHost host = hostBuilder.Build();
@@ -131,6 +131,8 @@ public class WebServer
 
         if (!TryUseStaticFiles(app, env))
             app.UseEmbeddedResources(routes => routes.MapWebRoot(""));
+
+        //app.UseHttpsRedirection();
 
         app.UseRouting();
         app.UseAuthorization();

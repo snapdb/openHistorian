@@ -37,8 +37,8 @@
 
   <ItemGroup>
     <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
-    <PackageReference Include="Gemstone.Common" Version="1.0.101" />
-    <PackageReference Include="Gemstone.Data" Version="1.0.101" />
+    <PackageReference Include="Gemstone.Common" Version="1.0.111" />
+    <PackageReference Include="Gemstone.Data" Version="1.0.110" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.13" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />

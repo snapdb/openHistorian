@@ -1,28 +1,30 @@
+using Gemstone.Configuration;
+using Gemstone.Data;
+using Gemstone.IO;
+using Gemstone.Security.Cryptography;
 using openHistorian.WebUI;
 
 namespace openHistorian;
 
-public sealed class ServiceHost : BackgroundService
+internal sealed class ServiceHost(ILogger<ServiceHost> logger) : BackgroundService
 {
-    private readonly ILogger<ServiceHost> m_logger;
-
-    public ServiceHost(ILogger<ServiceHost> logger)
-    {
-        m_logger = logger;
-
-        //m_logger.LogInformation("Example log information at: {time}", DateTimeOffset.Now);
-        //m_logger.LogWarning("Example log warning at: {time}", DateTimeOffset.Now);
-        //m_logger.LogError(ex, "{Message}", ex.Message);
-    }
+    //m_logger.LogInformation("Example log information at: {time}", DateTimeOffset.Now);
+    //m_logger.LogWarning("Example log warning at: {time}", DateTimeOffset.Now);
+    //m_logger.LogError(ex, "{Message}", ex.Message);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        using WebHosting hosting = new();
+        WebServer? server = null;
+
         try
         {
-            WebServer server = WebHosting.BuildServer();
+            hosting.Initialize();
+            server = hosting.BuildServer();
 
-            await server.StartAsync(Settings.Instance.HostURLs.Split(','))
-                .ContinueWith(task => m_logger.LogError(task.Exception, "Failed to run admin server."), TaskContinuationOptions.OnlyOnFaulted);
+            await server.StartAsync().ContinueWith(task => logger.LogError(task.Exception, "Failed to start web server."), TaskContinuationOptions.OnlyOnFaulted);
+
+            logger.LogInformation("Service started.");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -36,7 +38,7 @@ public sealed class ServiceHost : BackgroundService
         }
         catch (Exception ex)
         {
-            m_logger.LogError(ex, "{Message}", ex.Message);
+            logger.LogError(ex, "{Message}", ex.Message);
 
             // Terminates this process and returns an exit code to the operating system.
             // This is required to avoid the 'BackgroundServiceExceptionBehavior', which
@@ -49,5 +51,21 @@ public sealed class ServiceHost : BackgroundService
             // recovery options, we need to terminate the process with a non-zero exit code.
             Environment.Exit(1);
         }
+        finally
+        {
+            if (server is not null)
+                await server.StopAsync();
+        }
+    }
+
+    /// <summary>
+    /// Establishes default settings for the config file.
+    /// </summary>
+    public static void DefineSettings(Settings settings)
+    {
+        AdoDataConnection.DefineSettings(settings);
+        DataProtection.DefineSettings(settings);
+        WebHosting.DefineSettings(settings);
+        MultipleDestinationExporter.DefineSettings(settings, "HealthExporter");
     }
 }
