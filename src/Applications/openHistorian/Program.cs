@@ -13,7 +13,7 @@ internal class Program
     {
         // Defines settings for the service. Note that the Gemstone defaults
         // for handling INI and SQLite configuration are defined in a hierarchy
-        // where the configuration settings that are loaded are in the following
+        // where the configuration settings are loaded are in the following
         // priority order, from lowest to hightest:
         // - INI file (defaults.ini) - Machine Level
         // - INI file (settings.ini) - Machine Level
