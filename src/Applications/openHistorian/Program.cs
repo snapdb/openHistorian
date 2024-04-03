@@ -13,8 +13,8 @@ internal class Program
     {
         Settings settings = new()
         {
-            UseINIFile = true,
-            UseSQLite = true
+            INIFile = ConfigurationOperation.ReadWrite,
+            SQLite = ConfigurationOperation.Disabled
         };
 
         // Define settings for known components
@@ -39,8 +39,7 @@ internal class Program
         IHost host = application.Build();
         host.Run();
 
-        Settings.Default.WebHosting.HostURLs = "http://localhost:8180; http://localhost:8181";
-        Settings.Save();
+        settings.Save(true);
     }
 
     internal static void ConfigureLogging(ILoggingBuilder builder)
