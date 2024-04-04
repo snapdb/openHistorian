@@ -23,7 +23,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     /// <summary>
     /// Default value for <see cref="HostURLs"/> property.
     /// </summary>
-#if DEBUG || DEVELOPMENT
+#if DEBUG
     public const string DefaultHostURLs = "http://localhost:8180";
 #else
     public const string DefaultHostURLs = "http://*:8180";
@@ -48,10 +48,10 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     public string HostCertificate { get; set; } = DefaultHostCertificate;
 
     /// <inheritdoc />
-    public bool PersistSettings { get; set; } = DefaultPersistSettings;
+    public bool PersistSettings { get; init; } = DefaultPersistSettings;
 
     /// <inheritdoc />
-    public string SettingsCategory { get; set; } = DefaultSettingsCategory;
+    public string SettingsCategory { get; init; } = DefaultSettingsCategory;
 
     /// <inheritdoc />
     public bool Enabled { get; set; }
@@ -149,7 +149,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     {
         dynamic section = settings[settingsCategory];
 
-        section.HostURLs = (DefaultHostURLs, "Defines the URLs the hosted service will listen on.", "-u", "--HostURLs");
-        section.HostCertificate = (DefaultHostCertificate, "Defines the certificate used to host the service.", "-s", "--HostCertificate");
+        section.HostURLs = (DefaultHostURLs, "URLs the hosted service will listen on.", "-u", "--HostURLs");
+        section.HostCertificate = (DefaultHostCertificate, "Certificate used to host the service.", "-s", "--HostCertificate");
     }
 }
