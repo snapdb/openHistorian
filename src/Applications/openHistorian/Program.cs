@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Gemstone.Configuration;
 using Microsoft.Extensions.Logging.Debug;
 
@@ -11,13 +12,13 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        // Defines settings for the service. Note that the Gemstone defaults
+        // Define settings for the service. Note that the Gemstone defaults
         // for handling INI and SQLite configuration are defined in a hierarchy
         // where the configuration settings are loaded are in the following
         // priority order, from lowest to hightest:
-        // - INI file (defaults.ini) - Machine Level
-        // - INI file (settings.ini) - Machine Level
-        // - SQLite database (settings.db) - User Level
+        // - INI file (defaults.ini) - Machine Level, %programdata% folder
+        // - INI file (settings.ini) - Machine Level, %programdata% folder
+        // - SQLite database (settings.db) - User Level, %appdata% folder (not used by service)
         // - Environment variables - Machine Level
         // - Environment variables - User Level
         // - Command line arguments
