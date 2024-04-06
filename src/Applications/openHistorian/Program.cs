@@ -50,6 +50,8 @@ internal class Program
         IHost host = application.Build();
         host.Run();
 
+        settings["Alarming"]["ArrayValues"] = new[] { "1", "2", "3", "4" };
+
         settings.Save(true);
     }
 
