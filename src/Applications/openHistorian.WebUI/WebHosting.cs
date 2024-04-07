@@ -56,7 +56,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     /// <summary>
     /// Gets or sets the root directory for the web server.
     /// </summary>
-    public string WebRoot { get; set; } = "wwwroot";
+    public string WebRoot { get; set; } = DefaultWebRoot;
 
     /// <inheritdoc />
     public bool PersistSettings { get; init; } = DefaultPersistSettings;
@@ -126,7 +126,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
 
         HostURLs = settings.HostURLs ?? DefaultHostURLs;
         HostCertificate = settings.HostCertificate ?? DefaultHostCertificate;
-        WebRoot = settings.WebRoot ?? DefaultWebRoot;
+        WebRoot = settings.WebRoot ?? FilePath.GetAbsolutePath(DefaultWebRoot);
     }
 
     /// <summary>
@@ -166,9 +166,9 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
         section.HostCertificate = (DefaultHostCertificate, "Certificate used to host the service.", "-s", "--HostCertificate");
 
 #if DEBUG
-        section.WebRoot = (FilePath.GetAbsolutePath($@"..\..\..\src\Applications\{nameof(openHistorian)}.{nameof(WebUI)}\{DefaultWebRoot}\") , "Root directory for the web server.", "-r", "--WebRoot");
+        section.WebRoot = (FilePath.GetAbsolutePath($@"..\..\..\src\Applications\{nameof(openHistorian)}.{nameof(WebUI)}\{DefaultWebRoot}"), "Root directory for the web server.", "-r", "--WebRoot");
 #else
-        section.WebRoot = (DefaultWebRoot, "Root directory for the web server.", "-r", "--WebRoot");
+        section.WebRoot = (FilePath.GetAbsolutePath(DefaultWebRoot), "Root directory for the web server.", "-r", "--WebRoot");
 #endif
     }
 }
