@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography.X509Certificates;
+using Gemstone.Configuration;
 using Microsoft.Extensions.FileProviders;
 
 namespace openHistorian.WebUI;
@@ -43,7 +44,8 @@ public class WebServer(WebServerConfiguration configuration)
         IHostBuilder hostBuilder = Host.CreateDefaultBuilder();
 
         string[] urls = Configuration.Hosting.HostURLs.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        hostBuilder.ConfigureWebHostDefaults(webBuilder => ConfigureWebHost(webBuilder, urls));
+        string webRoot = Configuration.Hosting.WebRoot;
+        hostBuilder.ConfigureWebHostDefaults(webBuilder => ConfigureWebHost(webBuilder, urls, webRoot));
 
         IHost host = hostBuilder.Build();
         await host.RunAsync(tokenSource.Token);
@@ -57,13 +59,14 @@ public class WebServer(WebServerConfiguration configuration)
         await stopTask;
     }
 
-    private void ConfigureWebHost(IWebHostBuilder webBuilder, string[] urls)
+    private void ConfigureWebHost(IWebHostBuilder webBuilder, string[] urls, string webRoot)
     {
         webBuilder.ConfigureKestrel(
             options => options.ConfigureHttpsDefaults(
                 op => op.ServerCertificate = Configuration.CertificateSelector()));
 
         webBuilder.UseUrls(urls);
+        webBuilder.UseWebRoot(webRoot);
         webBuilder.ConfigureServices((_, serviceCollection) => ConfigureServices(serviceCollection));
         webBuilder.Configure((context, app) => Configure(app, context.HostingEnvironment));
     }
@@ -130,7 +133,10 @@ public class WebServer(WebServerConfiguration configuration)
         app.UseAuthentication();
 
         if (!TryUseStaticFiles(app, env))
-            app.UseEmbeddedResources(routes => routes.MapWebRoot(""));
+        {
+            string webRoot = Configuration.Hosting.WebRoot;
+            app.UseEmbeddedResources(routes => routes.MapWebRoot(webRoot));
+        }
 
         //app.UseHttpsRedirection();
 
@@ -144,25 +150,8 @@ public class WebServer(WebServerConfiguration configuration)
         if (!env.IsDevelopment())
             return false;
 
-        string currentPath = AppDomain.CurrentDomain.BaseDirectory ?? "";
-
-        while (true)
-        {
-            string slnPath = Path.Combine(currentPath, $"{nameof(openHistorian)}.sln");
-
-            if (File.Exists(slnPath))
-                break;
-
-            string parent = Path.GetFullPath(Path.Combine(currentPath, ".."));
-
-            if (parent == currentPath)
-                return false;
-
-            currentPath = parent;
-        }
-
         StaticFileOptions options = new();
-        string wwwroot = Path.Combine(currentPath, $"{nameof(openHistorian)}.{nameof(WebUI)}", "wwwroot");
+        string wwwroot = Settings.Default.WebHosting.WebRoot;
         options.FileProvider = new PhysicalFileProvider(wwwroot);
         app.UseStaticFiles(options);
         

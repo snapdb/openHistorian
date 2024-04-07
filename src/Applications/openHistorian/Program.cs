@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Gemstone.Configuration;
 using Gemstone.Diagnostics;
 using Microsoft.Extensions.Logging.Debug;
@@ -37,21 +36,26 @@ internal class Program
             .ConfigureGemstoneDefaults(settings)
             .AddCommandLine(args, settings.SwitchMappings));
 
-        HostApplicationBuilder application = Host.CreateApplicationBuilder(args);
+        HostApplicationBuilderSettings appSettings = new()
+        {
+            Args = args,
+            ApplicationName = nameof(openHistorian),
+            DisableDefaults = true,
+        };
 
-        ConfigureLogging(application.Logging);
+        HostApplicationBuilder application = new(appSettings);
 
         application.Services.AddWindowsService(options =>
         {
-            options.ServiceName = nameof(openHistorian);
+            options.ServiceName = appSettings.ApplicationName;
         });
 
         application.Services.AddHostedService<ServiceHost>();
 
+        ConfigureLogging(application.Logging);
+
         IHost host = application.Build();
         host.Run();
-
-        settings["Alarming"]["ArrayValues"] = new[] { "1", "2", "3", "4" };
 
         settings.Save(true);
     }

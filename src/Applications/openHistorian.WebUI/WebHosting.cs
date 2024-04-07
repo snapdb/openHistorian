@@ -2,6 +2,7 @@
 using Gemstone;
 using Gemstone.Configuration;
 using Gemstone.EventHandlerExtensions;
+using Gemstone.IO;
 
 namespace openHistorian.WebUI;
 
@@ -34,6 +35,11 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     /// </summary>
     public const string DefaultHostCertificate = "";
 
+    /// <summary>
+    /// Default value for <see cref="WebRoot"/> property.
+    /// </summary>
+    public const string DefaultWebRoot = "wwwroot";
+
     /// <inheritdoc />
     public event EventHandler? Disposed;
 
@@ -41,11 +47,16 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     /// Gets or sets the URLs the hosted service will listen on.
     /// </summary>
     public string HostURLs { get; set; } = DefaultHostURLs;
-
+    
     /// <summary>
     /// Gets or sets the certificate used to host the service.
     /// </summary>
     public string HostCertificate { get; set; } = DefaultHostCertificate;
+
+    /// <summary>
+    /// Gets or sets the root directory for the web server.
+    /// </summary>
+    public string WebRoot { get; set; } = "wwwroot";
 
     /// <inheritdoc />
     public bool PersistSettings { get; init; } = DefaultPersistSettings;
@@ -97,6 +108,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
 
         settings.HostURLs = HostURLs;
         settings.HostCertificate = HostCertificate;
+        settings.WebRoot = WebRoot;
     }
 
     /// <inheritdoc />
@@ -114,6 +126,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
 
         HostURLs = settings.HostURLs ?? DefaultHostURLs;
         HostCertificate = settings.HostCertificate ?? DefaultHostCertificate;
+        WebRoot = settings.WebRoot ?? DefaultWebRoot;
     }
 
     /// <summary>
@@ -125,7 +138,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
         WebServerConfiguration configuration = new()
         {
             Hosting = this,
-            CertificateSelector = CreateCertificateSelector(HostCertificate)
+            CertificateSelector = CreateCertificateSelector(HostCertificate),
         };
 
         return new WebServer(configuration);
@@ -151,5 +164,11 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
 
         section.HostURLs = (DefaultHostURLs, "URLs the hosted service will listen on.", "-u", "--HostURLs");
         section.HostCertificate = (DefaultHostCertificate, "Certificate used to host the service.", "-s", "--HostCertificate");
+
+#if DEBUG
+        section.WebRoot = (FilePath.GetAbsolutePath($@"..\..\..\src\Applications\{nameof(openHistorian)}.{nameof(WebUI)}\{DefaultWebRoot}\") , "Root directory for the web server.", "-r", "--WebRoot");
+#else
+        section.WebRoot = (DefaultWebRoot, "Root directory for the web server.", "-r", "--WebRoot");
+#endif
     }
 }

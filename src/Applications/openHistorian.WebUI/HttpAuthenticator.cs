@@ -21,11 +21,9 @@ namespace openHistorian.WebUI
             public long UserID { get; }
             public string FailureReason { get; }
 
-            internal static AuthenticationResult Succeed(long userID) =>
-                new AuthenticationResult(userID, string.Empty);
+            internal static AuthenticationResult Succeed(long userID) => new(userID, string.Empty);
 
-            internal static AuthenticationResult Fail(string reason) =>
-                new AuthenticationResult(0L, reason);
+            internal static AuthenticationResult Fail(string reason) => new(0L, reason);
         }
 
         // Constants

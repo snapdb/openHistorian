@@ -34,7 +34,7 @@ public class EmbeddedResourceMiddleware
             return;
         }
 
-        FileExtensionContentTypeProvider provider = new FileExtensionContentTypeProvider();
+        FileExtensionContentTypeProvider provider = new();
 
         if (provider.TryGetContentType(path, out string? contentType))
             httpContext.Response.ContentType = contentType;
@@ -61,7 +61,7 @@ public static class EmbeddedResourceMiddlewareExtensions
             public Assembly ResourceAssembly { get; }
         }
 
-        private List<Route> Routes { get; } = new List<Route>();
+        private List<Route> Routes { get; } = new();
 
         public EmbeddedResourceProvider Build()
         {
@@ -93,7 +93,7 @@ public static class EmbeddedResourceMiddlewareExtensions
 
     public static IApplicationBuilder UseEmbeddedResources(this IApplicationBuilder app, Action<IEmbeddedResourceRouteBuilder> configure)
     {
-        EmbeddedResourceRouteBuilder routeBuilder = new EmbeddedResourceRouteBuilder();
+        EmbeddedResourceRouteBuilder routeBuilder = new();
         configure(routeBuilder);
 
         EmbeddedResourceProvider resourceProvider = routeBuilder.Build();
