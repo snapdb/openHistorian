@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Gemstone.Configuration;
+using Gemstone.Diagnostics;
 using Microsoft.Extensions.Logging.Debug;
 
 #if RELEASE
@@ -66,6 +67,9 @@ internal class Program
 
         builder.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Error);
         builder.AddDebug();
+
+        // Add Gemstone diagnostics logging
+        builder.AddGemstoneDiagnostics();
 
     #if RELEASE
         if (OperatingSystem.IsWindows())

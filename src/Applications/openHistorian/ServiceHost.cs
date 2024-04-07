@@ -1,13 +1,35 @@
+using Gemstone;
 using Gemstone.Configuration;
 using Gemstone.Data;
+using Gemstone.Diagnostics;
 using Gemstone.IO;
 using Gemstone.Security.Cryptography;
 using openHistorian.WebUI;
 
 namespace openHistorian;
 
-internal sealed class ServiceHost(ILogger<ServiceHost> logger) : BackgroundService
+internal sealed class ServiceHost : BackgroundService
 {
+    private readonly ILogger<ServiceHost> m_logger;
+
+    public ServiceHost(ILogger<ServiceHost> logger)
+    {
+        m_logger = logger;
+
+        LibraryEvents.SuppressedException += (sender, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
+            {
+                string message = ex.Message;
+                m_logger.LogError(ex, "Suppressed Exception: {message}", message);
+            }
+            else
+            {
+                string message = args.ExceptionObject?.ToString() ?? "Unknown";
+                m_logger.LogError("Suppressed Exception: {message}", message);
+            }
+        };
+    }
     //m_logger.LogInformation("Example log information at: {time}", DateTimeOffset.Now);
     //m_logger.LogWarning("Example log warning at: {time}", DateTimeOffset.Now);
     //m_logger.LogError(ex, "{Message}", ex.Message);
@@ -22,9 +44,9 @@ internal sealed class ServiceHost(ILogger<ServiceHost> logger) : BackgroundServi
             hosting.Initialize();
             server = hosting.BuildServer();
 
-            await server.StartAsync().ContinueWith(task => logger.LogError(task.Exception, "Failed to start web server."), TaskContinuationOptions.OnlyOnFaulted);
+            await server.StartAsync().ContinueWith(task => m_logger.LogError(task.Exception, "Failed to start web server."), TaskContinuationOptions.OnlyOnFaulted);
 
-            logger.LogInformation("Service started.");
+            m_logger.LogInformation("Service started.");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -38,7 +60,7 @@ internal sealed class ServiceHost(ILogger<ServiceHost> logger) : BackgroundServi
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "{Message}", ex.Message);
+            m_logger.LogError(ex, "{Message}", ex.Message);
 
             // Terminates this process and returns an exit code to the operating system.
             // This is required to avoid the 'BackgroundServiceExceptionBehavior', which
@@ -63,6 +85,7 @@ internal sealed class ServiceHost(ILogger<ServiceHost> logger) : BackgroundServi
     /// </summary>
     public static void DefineSettings(Settings settings)
     {
+        DiagnosticsLogger.DefineSettings(settings);
         AdoDataConnection.DefineSettings(settings);
         DataProtection.DefineSettings(settings);
         WebHosting.DefineSettings(settings);
