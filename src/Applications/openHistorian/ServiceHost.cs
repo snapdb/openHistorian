@@ -30,9 +30,10 @@ internal sealed class ServiceHost : BackgroundService
             }
         };
     }
+
     //m_logger.LogInformation("Example log information at: {time}", DateTimeOffset.Now);
     //m_logger.LogWarning("Example log warning at: {time}", DateTimeOffset.Now);
-    //m_logger.LogError(ex, "{Message}", ex.Message);
+    //m_logger.LogError(ex, "{message}", ex.Message);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -44,7 +45,13 @@ internal sealed class ServiceHost : BackgroundService
             hosting.Initialize();
             server = hosting.BuildServer();
 
-            await server.StartAsync().ContinueWith(task => m_logger.LogError(task.Exception, "Failed to start web server."), TaskContinuationOptions.OnlyOnFaulted);
+            // Start the web server in a separate long-running task
+            await Task.Factory.StartNew(async () => 
+            {
+                await server.StartAsync()
+                    .ContinueWith(task => m_logger.LogError(task.Exception, "Failed to start web server."), TaskContinuationOptions.OnlyOnFaulted);
+            },
+            TaskCreationOptions.LongRunning);
 
             m_logger.LogInformation("Service started.");
 
@@ -60,7 +67,7 @@ internal sealed class ServiceHost : BackgroundService
         }
         catch (Exception ex)
         {
-            m_logger.LogError(ex, "{Message}", ex.Message);
+            m_logger.LogError(ex, "{message}", ex.Message);
 
             // Terminates this process and returns an exit code to the operating system.
             // This is required to avoid the 'BackgroundServiceExceptionBehavior', which
@@ -75,6 +82,8 @@ internal sealed class ServiceHost : BackgroundService
         }
         finally
         {
+            m_logger.LogInformation("Service stopped.");
+
             if (server is not null)
                 await server.StopAsync();
         }
@@ -85,10 +94,13 @@ internal sealed class ServiceHost : BackgroundService
     /// </summary>
     public static void DefineSettings(Settings settings)
     {
-        DiagnosticsLogger.DefineSettings(settings);
-        AdoDataConnection.DefineSettings(settings);
-        DataProtection.DefineSettings(settings);
-        WebHosting.DefineSettings(settings);
-        MultipleDestinationExporter.DefineSettings(settings, "HealthExporter");
+        using (Logger.SuppressFirstChanceExceptionLogMessages())
+        {
+            DiagnosticsLogger.DefineSettings(settings);
+            AdoDataConnection.DefineSettings(settings);
+            DataProtection.DefineSettings(settings);
+            WebHosting.DefineSettings(settings);
+            MultipleDestinationExporter.DefineSettings(settings, "HealthExporter");
+        }
     }
 }

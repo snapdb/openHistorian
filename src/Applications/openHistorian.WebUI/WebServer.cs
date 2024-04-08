@@ -32,7 +32,16 @@ public class WebServer(WebServerConfiguration configuration)
 
         Task stopFunc()
         {
-            tokenSource.Cancel();
+            try
+            {
+                // ReSharper disable once AccessToDisposedClosure
+                tokenSource.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Ignore object disposed
+            }
+
             return completionSource.Task;
         }
 

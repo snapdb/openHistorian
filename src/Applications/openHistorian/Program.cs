@@ -57,7 +57,7 @@ internal class Program
         IHost host = application.Build();
         host.Run();
 
-        settings.Save(true);
+        settings.Save(true, true);
     }
 
     internal static void ConfigureLogging(ILoggingBuilder builder)
@@ -68,6 +68,7 @@ internal class Program
         builder.AddFilter("Microsoft", LogLevel.Warning);
         builder.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Error);
         builder.AddFilter<DebugLoggerProvider>("", LogLevel.Debug);
+        builder.AddFilter<DiagnosticsLoggerProvider>("", LogLevel.Trace);
 
         builder.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Error);
         builder.AddDebug();
