@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Gemstone.Configuration;
 using Gemstone.Diagnostics;
 using Microsoft.Extensions.Logging.Debug;
@@ -36,39 +35,6 @@ internal class Program
         settings.Bind(new ConfigurationBuilder()
             .ConfigureGemstoneDefaults(settings)
             .AddCommandLine(args, settings.SwitchMappings));
-
-        dynamic alarmingSettings = settings["Alarming"];
-
-        string appName = alarmingSettings.ApplicationName;
-        double timeout = alarmingSettings.UserDataProtectionTimeout;
-        double timeout2 = alarmingSettings.UserDataProtectionTimeout2;
-        double timeout3 = alarmingSettings.Expression;
-        string username = alarmingSettings.UserName;
-        List<string> items = alarmingSettings.Items;
-        HashSet<int> hashSet = alarmingSettings.HashSet;
-
-        Debug.WriteLine(appName);
-        Debug.WriteLine(timeout);
-        Debug.WriteLine(timeout2);
-        Debug.WriteLine(timeout3);
-        Debug.WriteLine(username);
-        Debug.WriteLine(string.Join(",", items));
-        Debug.WriteLine(string.Join(",", hashSet.Select(item => item.ToString())));
-
-        dynamic cryptoSettings = settings["CryptographyServices"];
-
-        cryptoSettings.UserDataProtectionTimeout = 8.0D;
-
-        alarmingSettings.UserDataProtectionTimeout = Eval.Null;
-        timeout = alarmingSettings.UserDataProtectionTimeout;
-
-        alarmingSettings.UserDataProtectionTimeout2 = Eval.Null;
-        timeout2 = alarmingSettings.UserDataProtectionTimeout2;
-
-        Debug.WriteLine(timeout);
-        Debug.WriteLine(timeout2);
-
-        Debug.Assert(Environment.GetEnvironmentVariable("USERNAME")!.Equals(username, StringComparison.OrdinalIgnoreCase), "Environmental variables do not match!");
 
         HostApplicationBuilderSettings appSettings = new()
         {
