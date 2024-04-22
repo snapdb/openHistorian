@@ -1,12 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+  
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <Authors>Grid Protection Alliance</Authors>
+    <Company>Grid Protection Alliance</Company>
     <TargetFramework>net8.0</TargetFramework>
+    <Copyright>Copyright © 2024</Copyright>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+
+  <PropertyGroup>
+    <OutputPath>..\..\..\build\$(Configuration)</OutputPath>
+    <DocumentationFile>..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+
+  
   <ItemGroup>
     <None Remove="appsettings.json" />
   </ItemGroup>
