@@ -62,7 +62,7 @@ namespace SchemaDefinition
                 .ConfigureRunner(rb => rb
                     // Add SQLite support to FluentMigrator
                     .AddSQLite()
-                    //.AddSqlServer()
+                    .AddSqlServer()
                     // Set the connection string
                     .WithGlobalConnectionString(connectionString)
                     // Define the assembly containing the migrations
