@@ -9,7 +9,7 @@
     <Company>Grid Protection Alliance</Company>
     <PackageId>openHistorian.Core</PackageId>
     <Product>openHistorian</Product>
-    <Description>openHistorian Schema Library</Description>
+    <Description>openHistorian Schema Migration Utility</Description>
     <Copyright>Copyright © 2024</Copyright>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
