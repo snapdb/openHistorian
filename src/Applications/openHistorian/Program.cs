@@ -1,7 +1,3 @@
-using Gemstone.Configuration;
-using Gemstone.Diagnostics;
-using Microsoft.Extensions.Logging.Debug;
-
 #if RELEASE
 using Microsoft.Extensions.Logging.EventLog;
 #endif

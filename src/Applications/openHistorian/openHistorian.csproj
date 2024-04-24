@@ -1,7 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project>
+
+  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>openHistorian</RootNamespace>
     <Authors>Grid Protection Alliance</Authors>
@@ -73,4 +76,11 @@
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
     <ProjectReference Include="..\openHistorian.WebUI\openHistorian.WebUI.csproj" />
   </ItemGroup>
+
+  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+
+  <PropertyGroup Condition="'$(SIGNTOOL)' != ''">
+    <PostBuildEvent>$(SIGNTOOL) $(TargetPath)</PostBuildEvent>
+  </PropertyGroup>
+
 </Project>
