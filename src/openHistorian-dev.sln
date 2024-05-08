@@ -75,6 +75,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.WebUI", "Appl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchemaDefinition", "Applications\SchemaDefinition\SchemaDefinition.csproj", "{DA1B09B4-8776-45F3-AF8F-B95698415934}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gemstone.PhasorProtocols", "..\..\..\gemstone\phasor-protocols\src\Gemstone.PhasorProtocols\Gemstone.PhasorProtocols.csproj", "{29046651-E436-4A2F-9B6E-77ABEED53CD0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -193,6 +195,12 @@ Global
 		{DA1B09B4-8776-45F3-AF8F-B95698415934}.Development|Any CPU.Build.0 = Development|Any CPU
 		{DA1B09B4-8776-45F3-AF8F-B95698415934}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA1B09B4-8776-45F3-AF8F-B95698415934}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29046651-E436-4A2F-9B6E-77ABEED53CD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29046651-E436-4A2F-9B6E-77ABEED53CD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29046651-E436-4A2F-9B6E-77ABEED53CD0}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{29046651-E436-4A2F-9B6E-77ABEED53CD0}.Development|Any CPU.Build.0 = Development|Any CPU
+		{29046651-E436-4A2F-9B6E-77ABEED53CD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29046651-E436-4A2F-9B6E-77ABEED53CD0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -218,6 +226,7 @@ Global
 		{697F3644-8BB1-4137-A2C1-4EEC19A2E0B2} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
 		{A6F3A64A-8F68-4BBC-B325-86626A07DFC2} = {BC15EE70-1273-4C44-9395-914ADE50FBE1}
 		{DA1B09B4-8776-45F3-AF8F-B95698415934} = {BC15EE70-1273-4C44-9395-914ADE50FBE1}
+		{29046651-E436-4A2F-9B6E-77ABEED53CD0} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F524668-5FE5-406F-B1D4-177A413C9DD6}
