@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using Gemstone.Configuration;
 using Microsoft.Extensions.FileProviders;
+using ServiceInterface;
 
 namespace openHistorian.WebUI;
 
@@ -25,6 +26,8 @@ public class WebServer(WebServerConfiguration configuration)
 
     private WebServerConfiguration Configuration { get; } = configuration;
 
+    public static IServiceCommands ServiceCommands { get; internal set; } = default!;
+
     public async Task StartAsync()
     {
         using CancellationTokenSource tokenSource = new();
@@ -47,7 +50,7 @@ public class WebServer(WebServerConfiguration configuration)
 
         Func<Task>? memberFunc = Interlocked.CompareExchange(ref m_stopFunc, stopFunc, null);
 
-        if (memberFunc != null)
+        if (memberFunc is not null)
             return;
 
         IHostBuilder hostBuilder = Host.CreateDefaultBuilder();
@@ -73,6 +76,10 @@ public class WebServer(WebServerConfiguration configuration)
         webBuilder.ConfigureKestrel(
             options => options.ConfigureHttpsDefaults(
                 op => op.ServerCertificate = Configuration.CertificateSelector()));
+
+#if DEBUG
+        webBuilder.UseEnvironment("Development"); // Set the environment to Development
+#endif
 
         webBuilder.UseUrls(urls);
         webBuilder.UseWebRoot(webRoot);
@@ -111,11 +118,16 @@ public class WebServer(WebServerConfiguration configuration)
         //    options.FallbackPolicy = options.GetPolicy(Administrators);
         //});
 
+        services.AddMvc().AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+
         services.AddRazorPages(options =>
         {
             //options.Conventions.AuthorizePage("/Index");
             options.Conventions.AllowAnonymousToPage("/Index");
-
+			
+			// TODO: Add needed routes
+//          options.Conventions.AddPageRoute("/Index", "Overview");
+            
             //options.Conventions.AuthorizePage("/Devices", Viewers);
             //options.Conventions.AuthorizePage("/Device", Editors);
             //options.Conventions.AuthorizePage("/Users", Administrators);
@@ -150,8 +162,10 @@ public class WebServer(WebServerConfiguration configuration)
         //app.UseHttpsRedirection();
 
         app.UseRouting();
+
         app.UseAuthorization();
         app.UseEndpoints(endpoints => endpoints.MapRazorPages());
+        app.UseEndpoints(endpoints => endpoints.MapControllers());
     }
 
     private static bool TryUseStaticFiles(IApplicationBuilder app, IWebHostEnvironment env)
@@ -166,5 +180,4 @@ public class WebServer(WebServerConfiguration configuration)
         
         return true;
     }
-
 }

@@ -6,9 +6,18 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Configurations>Debug;Release;Development</Configurations>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>..\..\..\build\Output\Release\Applications\openHistorian.WebUI\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\..\..\build\Output\Debug\Applications\openHistorian.WebUI\</OutputPath>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Development'">
+    <OutputPath>..\..\..\build\Output\Debug\Applications\openHistorian.WebUI\</OutputPath>
     <DebugType>Full</DebugType>
     <Optimize>False</Optimize>
     <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
@@ -23,19 +32,31 @@
       <Private>True</Private>
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-    <PackageReference Include="Gemstone.Common" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+    <PackageReference Include="Gemstone.Common" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
 
     <ProjectReference Include="..\..\..\..\..\gemstone\configuration\src\Gemstone.Configuration\Gemstone.Configuration.csproj" Condition="'$(Configuration)'=='Development'">
       <Private>True</Private>
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-    <PackageReference Include="Gemstone.Configuration" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+    <PackageReference Include="Gemstone.Configuration" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
 
     <ProjectReference Include="..\..\..\..\..\gemstone\data\src\Gemstone.Data\Gemstone.Data.csproj" Condition="'$(Configuration)'=='Development'">
       <Private>True</Private>
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-    <PackageReference Include="Gemstone.Data" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+    <PackageReference Include="Gemstone.Data" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+    
+    <ProjectReference Include="..\..\..\..\..\gemstone\web\src\Gemstone.Web\Gemstone.Web.csproj" Condition="'$(Configuration)'=='Development'">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <PackageReference Include="Gemstone.Web" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\Images\" />
   </ItemGroup>
 
 </Project>

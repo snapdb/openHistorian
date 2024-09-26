@@ -3,6 +3,7 @@ using Gemstone;
 using Gemstone.Configuration;
 using Gemstone.EventHandlerExtensions;
 using Gemstone.IO;
+using ServiceInterface;
 
 namespace openHistorian.WebUI;
 
@@ -132,14 +133,18 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     /// <summary>
     /// Builds a new <see cref="WebServer"/> instance.
     /// </summary>
+    /// <param name="serviceCommands">Service commands interface for web server.</param>
     /// <returns>New <see cref="WebServer"/> instance.</returns>
-    public WebServer BuildServer()
+    public WebServer BuildServer(IServiceCommands serviceCommands)
     {
         WebServerConfiguration configuration = new()
         {
             Hosting = this,
             CertificateSelector = CreateCertificateSelector(HostCertificate),
         };
+
+        // Maintain a static reference to service commands interface for web server
+        WebServer.ServiceCommands = serviceCommands;
 
         return new WebServer(configuration);
     }
@@ -166,7 +171,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
         section.HostCertificate = (DefaultHostCertificate, "Certificate used to host the service.", "-s", "--HostCertificate");
 
 #if DEBUG
-        section.WebRoot = (FilePath.GetAbsolutePath($@"..\..\..\src\Applications\{nameof(openHistorian)}.{nameof(WebUI)}\{DefaultWebRoot}"), "Root directory for the web server.", "-r", "--WebRoot");
+        section.WebRoot = (FilePath.GetAbsolutePath($@"..\..\..\..\..\src\Applications\{nameof(openHistorian)}.{nameof(WebUI)}\{DefaultWebRoot}"), "Root directory for the web server.", "-r", "--WebRoot");
 #else
         section.WebRoot = (FilePath.GetAbsolutePath(DefaultWebRoot), "Root directory for the web server.", "-r", "--WebRoot");
 #endif

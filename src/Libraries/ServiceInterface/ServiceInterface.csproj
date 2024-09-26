@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ServiceInterface</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Configurations>Debug;Release;Development</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\..\..\build\Output\Debug\Libraries\</OutputPath>
+    <DocumentationFile>..\..\..\build\Output\Debug\Libraries\ServiceInterface.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|AnyCPU'">
+    <OutputPath>..\..\..\build\Output\Debug\Libraries\</OutputPath>
+    <DocumentationFile>..\..\..\build\Output\Debug\Libraries\ServiceInterface.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>..\..\..\build\Output\Release\Libraries\</OutputPath>
+    <DocumentationFile>..\..\..\build\Output\Release\Libraries\ServiceInterface.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" Condition="'$(Configuration)'=='Development'">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <PackageReference Include="Gemstone.Common" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\configuration\src\Gemstone.Configuration\Gemstone.Configuration.csproj" Condition="'$(Configuration)'=='Development'">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <PackageReference Include="Gemstone.Configuration" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\diagnostics\src\Gemstone.Diagnostics\Gemstone.Diagnostics.csproj" Condition="'$(Configuration)'=='Development'">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <PackageReference Include="Gemstone.Diagnostics" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\phasor-protocols\src\Gemstone.PhasorProtocols\Gemstone.PhasorProtocols.csproj" Condition="'$(Configuration)'=='Development'">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <PackageReference Include="Gemstone.PhasorProtocols" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -74,6 +74,7 @@
 
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
+    <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
     <ProjectReference Include="..\openHistorian.WebUI\openHistorian.WebUI.csproj" />
   </ItemGroup>
 

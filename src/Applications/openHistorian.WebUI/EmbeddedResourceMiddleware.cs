@@ -28,7 +28,7 @@ public class EmbeddedResourceMiddleware
 
         await using Stream? resourceStream = ResourceProvider(path);
 
-        if (resourceStream == null)
+        if (resourceStream is null)
         {
             await Next(httpContext);
             return;
@@ -76,7 +76,7 @@ public static class EmbeddedResourceMiddlewareExtensions
                     string resourceName = $"{route.ResourcePrefix}{resourcePath}";
                     Stream? resourceStream = route.ResourceAssembly.GetManifestResourceStream(resourceName);
 
-                    if (resourceStream != null)
+                    if (resourceStream is not null)
                         return resourceStream;
                 }
 

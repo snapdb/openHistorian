@@ -1,17 +1,19 @@
-using Gemstone.Security.Cryptography;
+using Gemstone.PhasorProtocols;
+using Gemstone.Timeseries;
 using openHistorian.WebUI;
+using ServiceInterface;
 
 namespace openHistorian;
 
-internal sealed class ServiceHost : BackgroundService
+internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
 {
     private readonly ILogger<ServiceHost> m_logger;
 
-    public ServiceHost(ILogger<ServiceHost> logger)
+    public ServiceHost(ILogger<ServiceHost> logger) : base(logger)
     {
         m_logger = logger;
 
-        LibraryEvents.SuppressedException += (sender, args) =>
+        LibraryEvents.SuppressedException += (_, args) =>
         {
             if (args.ExceptionObject is Exception ex)
             {
@@ -20,7 +22,7 @@ internal sealed class ServiceHost : BackgroundService
             }
             else
             {
-                string message = args.ExceptionObject?.ToString() ?? "Unknown";
+                string message = args.ExceptionObject.ToString() ?? "Unknown";
                 m_logger.LogError("Suppressed Exception: {message}", message);
             }
         };
@@ -32,23 +34,21 @@ internal sealed class ServiceHost : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using WebHosting hosting = new();
-        WebServer? server = null;
+        using WebHosting webHosting = new();
+        WebServer? webServer = null;
 
         try
         {
-            hosting.Initialize();
-            server = hosting.BuildServer();
+            webHosting.Initialize();
+            webServer = webHosting.BuildServer(this);
 
             // Start the web server in a separate long-running task
             await Task.Factory.StartNew(async () => 
             {
-                await server.StartAsync()
+                await webServer.StartAsync()
                     .ContinueWith(task => m_logger.LogError(task.Exception, "Failed to start web server."), TaskContinuationOptions.OnlyOnFaulted);
             },
             TaskCreationOptions.LongRunning);
-
-            m_logger.LogInformation("Service started.");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -77,11 +77,16 @@ internal sealed class ServiceHost : BackgroundService
         }
         finally
         {
-            m_logger.LogInformation("Service stopped.");
-
-            if (server is not null)
-                await server.StopAsync();
+            // Shut down the web server
+            if (webServer is not null)
+                await webServer.StopAsync();
         }
+    }
+
+    /// <inheritdoc />
+    public void SendCommand(Guid connectionID, DeviceCommand command)
+    {
+        // TODO: Implement phasor protocol command send
     }
 
     /// <summary>
@@ -92,10 +97,8 @@ internal sealed class ServiceHost : BackgroundService
         using (Logger.SuppressFirstChanceExceptionLogMessages())
         {
             DiagnosticsLogger.DefineSettings(settings);
-            AdoDataConnection.DefineSettings(settings);
-            DataProtection.DefineSettings(settings);
             WebHosting.DefineSettings(settings);
-            MultipleDestinationExporter.DefineSettings(settings, "HealthExporter");
+            ServiceHostBase.DefineSettings(settings);
         }
     }
 }

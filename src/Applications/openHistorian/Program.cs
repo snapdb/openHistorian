@@ -2,62 +2,73 @@
 using Microsoft.Extensions.Logging.EventLog;
 #endif
 
+using Gemstone.Timeseries;
+
 namespace openHistorian;
 
 internal class Program
 {
     private static void Main(string[] args)
     {
-        // Define settings for the service. Note that the Gemstone defaults
-        // for handling INI and SQLite configuration are defined in a hierarchy
-        // where the configuration settings are loaded are in the following
-        // priority order, from lowest to highest:
-        // - INI file (defaults.ini) - Machine Level, %programdata% folder
-        // - INI file (settings.ini) - Machine Level, %programdata% folder
-        // - SQLite database (settings.db) - User Level, %appdata% folder (not used by service)
-        // - Environment variables - Machine Level
-        // - Environment variables - User Level
-        // - Command line arguments
-        Settings settings = new()
+        try
         {
-            INIFile = ConfigurationOperation.ReadWrite,
-            SQLite = ConfigurationOperation.Disabled
-        };
+            // Define settings for the service. Note that the Gemstone defaults
+            // for handling INI and SQLite configuration are defined in a hierarchy
+            // where the configuration settings are loaded are in the following
+            // priority order, from lowest to highest:
+            // - INI file (defaults.ini) - Machine Level, %programdata% folder
+            // - INI file (settings.ini) - Machine Level, %programdata% folder
+            // - SQLite database (settings.db) - User Level, %appdata% folder (not used by service)
+            // - Environment variables - Machine Level
+            // - Environment variables - User Level
+            // - Command line arguments
+            Settings settings = new()
+            {
+                INIFile = ConfigurationOperation.ReadWrite,
+                SQLite = ConfigurationOperation.Disabled
+            };
 
-        // Define settings for service components
-        ServiceHost.DefineSettings(settings);
+            // Define settings for service components
+            ServiceHost.DefineSettings(settings);
 
-        // Bind settings to configuration sources
-        settings.Bind(new ConfigurationBuilder()
-            .ConfigureGemstoneDefaults(settings)
-            .AddCommandLine(args, settings.SwitchMappings));
+            // Bind settings to configuration sources
+            settings.Bind(new ConfigurationBuilder()
+                .ConfigureGemstoneDefaults(settings)
+                .AddCommandLine(args, settings.SwitchMappings));
 
-        HostApplicationBuilderSettings appSettings = new()
+            HostApplicationBuilderSettings appSettings = new()
+            {
+                Args = args,
+                ApplicationName = nameof(openHistorian),
+                DisableDefaults = true,
+            };
+
+            HostApplicationBuilder application = new(appSettings);
+
+            application.Services.AddWindowsService(options =>
+            {
+                options.ServiceName = appSettings.ApplicationName;
+            });
+
+            ServiceHostBase.ServiceName = appSettings.ApplicationName;
+
+            application.Services.AddHostedService<ServiceHost>();
+
+            ConfigureLogging(application.Logging);
+
+            IHost host = application.Build();
+            host.Run();
+
+        #if DEBUG
+            Settings.Save(forceSave: true);
+        #else
+            Settings.Save();
+        #endif
+        }
+        finally
         {
-            Args = args,
-            ApplicationName = nameof(openHistorian),
-            DisableDefaults = true,
-        };
-
-        HostApplicationBuilder application = new(appSettings);
-
-        application.Services.AddWindowsService(options =>
-        {
-            options.ServiceName = appSettings.ApplicationName;
-        });
-
-        application.Services.AddHostedService<ServiceHost>();
-
-        ConfigureLogging(application.Logging);
-
-        IHost host = application.Build();
-        host.Run();
-
-    #if DEBUG
-        Settings.Save(forceSave: true);
-    #else
-        Settings.Save();
-    #endif  
+            ShutdownHandler.InitiateSafeShutdown();
+        }
     }
 
     internal static void ConfigureLogging(ILoggingBuilder builder)
