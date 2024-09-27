@@ -1,5 +1,8 @@
-﻿
-// Example of a model controller for the Connection Model
+﻿// Example of a model controller
+
+// Existing models migrated to openHistorian.Model namespace (see openHistorian.Adapters project)
+
+// NOTE: These existing models still need to remove NodeID references, but using existing database schema for testing for now...
 
 //using System.Reflection;
 //using Gemstone.Web.APIController;
@@ -42,7 +45,7 @@
 //    public async Task<IActionResult> Get(string sort, bool ascending, int page, CancellationToken cancellationToken)
 //    {
 //        int start = (page - 1) * ConPerPage;
-        
+
 //        return Ok(ascending ? 
 //            (await GetConnections(cancellationToken)).OrderBy(GetKeySelector(sort)).Skip(start).Take(ConPerPage).ToList() : 
 //            (await GetConnections(cancellationToken)).OrderByDescending(GetKeySelector(sort)).Skip(start).Take(ConPerPage).ToList());
@@ -132,7 +135,7 @@
 //                .Where(c => postData.Searches.All(s => ApplyFilter(s, c)))
 //                .Skip(start).Take(ConPerPage).ToList());
 //        }
-        
+
 //        IOrderedEnumerable<Connection> connections = (await GetConnections(cancellationToken)).OrderBy(GetKeySelector(postData.OrderBy));
 //        IEnumerable<Connection> filteredConnections = connections.Where(c => postData.Searches.All(s => ApplyFilter(s, c)));
 //        List<Connection> pageOfConnections = filteredConnections.Skip(start).Take(ConPerPage).ToList();
@@ -321,7 +324,7 @@
 
 //        if (property is null)
 //            throw new Exception($"Invalid field: \"{field}\"");
-        
+
 //        return c => property.GetValue(c) ?? c.ID;
 //    }
 //}

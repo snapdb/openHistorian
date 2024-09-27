@@ -89,6 +89,21 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
         // TODO: Implement phasor protocol command send
     }
 
+    /// <inheritdoc />
+    public (string Status, string Type, string Description) GetCurrentStatus()
+    {
+        return ("Running", "Service", "openHistorian service is running.");
+    }
+
+    private void GetStatsForCurrentStatus()
+    {
+        // "SignalReference LIKE '%SYSTEM-ST16'" // [0] System CPU Usage
+        // "SignalReference LIKE '%SYSTEM-ST20'" // [1] System Memory Usage
+        // "SignalReference LIKE '%SYSTEM-ST24'" // [2] System Time Deviation
+        // "SignalReference LIKE '%SYSTEM-ST25'" // [3] Primary Disk Usage
+    }
+
+
     /// <summary>
     /// Establishes default settings for the config file.
     /// </summary>

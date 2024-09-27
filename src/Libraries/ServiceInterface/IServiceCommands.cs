@@ -21,7 +21,6 @@
 //
 //******************************************************************************************************
 
-using Gemstone.EnumExtensions;
 using Gemstone.PhasorProtocols;
 
 namespace ServiceInterface;
@@ -31,47 +30,15 @@ namespace ServiceInterface;
 /// </summary>
 public interface IServiceCommands
 {
-    // Example service command methods to service a model / controller
-
-    ///// <summary>
-    ///// Gets the current status of the stream proxies.
-    ///// </summary>
-    ///// <returns>Array of stream proxy instances.</returns>
-    //IEnumerable<IStreamProxyStatus> GetStreamProxyStatus();
-
-    ///// <summary>
-    ///// Gets map of connection state labels.
-    ///// </summary>
-    ///// <returns>Map of connection state labels.</returns>
-    ///// <remarks>
-    ///// This returns a map of connection states to a UI label that
-    ///// can be used to display connection state descriptions.
-    ///// </remarks>
-    //Dictionary<int, string> GetConnectionStateLabels()
-    //{
-    //    return Enum.GetValues(typeof(ConnectionState))
-    //        .Cast<ConnectionState>()
-    //        .ToDictionary(state => (int)state, state => state.GetDescription());
-    //}
-
-    ///// <summary>
-    ///// Gets the default connection parameters for a specific connection type.
-    ///// </summary>
-    ///// <param name="connection">Source connection.</param>
-    ///// <returns>Collection of connection parameters.</returns>
-    ///// <remarks>
-    ///// Should be triggered by a change in phasor protocol type.
-    ///// </remarks>
-    //ConnectionParameter[] GetDefaultConnectionParameters(Connection connection)
-    //{
-    //    IConnectionParameters? parameters = Connection.GenerateConnectionParameters(connection);
-    //    return parameters is null ? [] : Connection.ParseConnectionParameters(parameters);
-    //}
-
     /// <summary>
     /// Sends a command to a specific phasor connection instance.
     /// </summary>
     /// <param name="connectionID">ID of the connection for command operation.</param>
     /// <param name="command">Device command to send to the connection.</param>
     void SendCommand(Guid connectionID, DeviceCommand command);
+
+    /// <summary>
+    /// Gets the current status of the openHistorian.
+    /// </summary>
+    (string Status, string Type, string Description) GetCurrentStatus();
 }

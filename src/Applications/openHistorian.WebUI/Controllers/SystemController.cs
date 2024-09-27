@@ -1,5 +1,5 @@
 ﻿//******************************************************************************************************
-//  OverviewController.cs - Gbtc
+//  SystemController.cs - Gbtc
 //
 //  Copyright © 2024, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -16,34 +16,41 @@
 //
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
-//  07/27/2024 - J. Ritchie Carroll
+//  08/24/2024 - J. Ritchie Carroll
 //       Generated original version of source code.
 //
 //******************************************************************************************************
 
+using Gemstone.PhasorProtocols;
 using Microsoft.AspNetCore.Mvc;
+using openHistorian.WebUI.Controllers.Models;
 using ServiceInterface;
 
-namespace openHistorian.WebUI.Controllers
+namespace openHistorian.WebUI.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class SystemController : Controller
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class OverviewController : Controller
+    private readonly IServiceCommands m_serviceCommands = WebServer.ServiceCommands;
+
+
+    [HttpGet, Route("currentStatus")]
+    public SystemStatus GetCurrentStatus()
     {
-        private readonly IServiceCommands m_serviceCommands = WebServer.ServiceCommands;
-
-        [HttpGet, Route("enabled")]
-        public IActionResult GetEnabled()
+        (string status, string type, string description) = m_serviceCommands.GetCurrentStatus();
+        
+        return new SystemStatus
         {
-            //return Ok(m_serviceCommands.GetConnectionStateHistory(state => state != ConnectionState.Disabled));
-            return View();
-        }
+            status = status, 
+            type = type, 
+            description = description
+        };
+    }
 
-        [HttpGet, Route("connected")]
-        public IActionResult GetConnected()
-        {
-            //return Ok(m_serviceCommands.GetConnectionStateHistory(state => state == ConnectionState.Connected));
-            return View();
-        }
+    [HttpPost, Route("sendCommand")]
+    public void SendCommand(Guid connectionID, DeviceCommand command)
+    {
+        m_serviceCommands.SendCommand(connectionID, command);
     }
 }
