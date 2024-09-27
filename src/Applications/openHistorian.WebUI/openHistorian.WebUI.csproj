@@ -7,6 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Configurations>Debug;Release;Development</Configurations>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -51,10 +52,11 @@
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
     </ProjectReference>
     <PackageReference Include="Gemstone.Web" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+    
     <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" />
+    <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
     <ProjectReference Include="..\..\Libraries\GrafanaAdapters\GrafanaAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
-
     <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
   </ItemGroup>
 
