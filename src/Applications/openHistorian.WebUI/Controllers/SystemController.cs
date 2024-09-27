@@ -23,7 +23,7 @@
 
 using Gemstone.PhasorProtocols;
 using Microsoft.AspNetCore.Mvc;
-using openHistorian.WebUI.Controllers.Models;
+using openHistorian.WebUI.Controllers.JsonModels;
 using ServiceInterface;
 
 namespace openHistorian.WebUI.Controllers;

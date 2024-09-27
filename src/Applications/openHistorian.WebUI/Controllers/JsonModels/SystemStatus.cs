@@ -1,4 +1,4 @@
-﻿namespace openHistorian.WebUI.Controllers.Models;
+﻿namespace openHistorian.WebUI.Controllers.JsonModels;
 
 public class SystemStatus
 {
