@@ -24,9 +24,9 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap;
+using openHistorian.Snap;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data.Query;
 
 /// <summary>
 /// Represents a frame reader for querying historian data.

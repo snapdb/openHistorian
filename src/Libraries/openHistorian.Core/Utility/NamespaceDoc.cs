@@ -23,10 +23,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace openHistorian.Core.Utility;
+namespace openHistorian.Utility;
 
 /// <summary>
-/// The <see cref="openHistorian.Core.Utility"/> namespace contains the <see cref="ConvertArchiveFile"/> class.
+/// The <see cref="Utility"/> namespace contains the <see cref="ConvertArchiveFile"/> class.
 /// </summary>
 [CompilerGenerated]
 class NamespaceDoc

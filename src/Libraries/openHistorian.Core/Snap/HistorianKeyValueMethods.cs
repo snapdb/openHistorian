@@ -26,7 +26,7 @@
 
 using SnapDB.Snap.Tree;
 
-namespace openHistorian.Core.Snap;
+namespace openHistorian.Snap;
 
 /// <summary>
 /// Uses the standard key and value for the historian and contains a function that copies them from a source to a destination.

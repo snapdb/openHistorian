@@ -26,7 +26,7 @@
 
 using SnapDB.Snap.Collection;
 
-namespace openHistorian.Core.Snap;
+namespace openHistorian.Snap;
 
 /// <summary>
 /// Represents a sorted point buffer that can properly handle or remove duplicates.

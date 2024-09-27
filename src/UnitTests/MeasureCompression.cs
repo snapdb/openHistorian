@@ -24,7 +24,7 @@
 using System;
 using System.Text;
 using NUnit.Framework;
-using openHistorian.Core.Snap;
+using openHistorian.Snap;
 using SnapDB.Snap;
 
 namespace openHistorian.UnitTests;

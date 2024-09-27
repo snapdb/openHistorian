@@ -24,9 +24,9 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Data.Types;
+using openHistorian.Data.Types;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data;
 
 /// <summary>
 /// Contains a series of Times and Values for an individual signal.

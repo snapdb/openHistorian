@@ -24,9 +24,9 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Data.Types;
+using openHistorian.Data.Types;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data.Query;
 
 /// <summary>
 /// An interface that allows the results of DatabaseMethods.ExecuteQuery

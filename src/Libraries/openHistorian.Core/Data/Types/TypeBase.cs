@@ -24,7 +24,7 @@
 //
 //******************************************************************************************************
 
-namespace openHistorian.Core.Data.Types;
+namespace openHistorian.Data.Types;
 
 /// <summary>
 /// This base class supports proper conversion of

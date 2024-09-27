@@ -24,12 +24,13 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap.Definitions;
+using openHistorian.Snap;
+using openHistorian.Snap.Definitions;
 using SnapDB.IO;
 using SnapDB.Snap;
 using SnapDB.Snap.Encoding;
 
-namespace openHistorian.Core.Snap.Encoding;
+namespace openHistorian.Snap.Encoding;
 
 /// <summary>
 /// A class for encoding and decoding pairs of HistorianKey and HistorianValue.
@@ -92,7 +93,7 @@ public class HistorianStreamEncoding : PairEncodingBase<HistorianKey, HistorianV
             }
             else
             {
-                stream.Write((byte)((currentKey.PointID ^ prevKey.PointID) | 64));
+                stream.Write((byte)(currentKey.PointID ^ prevKey.PointID | 64));
                 stream.Write((uint)currentValue.Value1);
             }
 

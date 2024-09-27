@@ -24,10 +24,10 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap;
+using openHistorian.Snap;
 using SnapDB.Snap.Filters;
 
-namespace openHistorian.Core.Data;
+namespace openHistorian.Data;
 
 /// <summary>
 /// Scanner class that parses for queries.

@@ -33,7 +33,7 @@
 using System.Text;
 using Gemstone;
 
-namespace openHistorian.Core;
+namespace openHistorian;
 
 /// <summary>
 /// Version 1.0 openHistorian optimized file reader.

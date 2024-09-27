@@ -24,11 +24,11 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap;
+using openHistorian.Snap;
 using SnapDB.Collections;
 using SnapDB.Snap;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data.Query;
 
 /// <summary>
 /// Represents a container for frame data, including sorted points and values.

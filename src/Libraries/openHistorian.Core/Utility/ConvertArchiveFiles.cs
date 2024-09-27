@@ -28,12 +28,12 @@
 //******************************************************************************************************
 
 using Gemstone.IO;
-using openHistorian.Core.Snap;
+using openHistorian.Snap;
 using SnapDB;
 using SnapDB.Snap;
 using SnapDB.Snap.Storage;
 
-namespace openHistorian.Core.Utility;
+namespace openHistorian.Utility;
 
 /// <summary>
 /// openHistorian 1.0 Archive Conversion Functions.

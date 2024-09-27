@@ -23,10 +23,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace openHistorian.Core;
+namespace openHistorian;
 
 /// <summary>
-/// The <see cref="openHistorian.Core"/> namespace organizes all common SnapDB library functionality related to the open historian,
+/// The <see cref="openHistorian"/> namespace organizes all common SnapDB library functionality related to the open historian,
 /// e.g., the <see cref="OldHistorianReader"/> class.
 /// </summary>
 [CompilerGenerated]

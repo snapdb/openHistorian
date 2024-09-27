@@ -24,12 +24,12 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap;
+using openHistorian.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Reader;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data.Query;
 
 /// <summary>
 /// Represents a historian data query module.

@@ -22,12 +22,11 @@
 //******************************************************************************************************
 
 using System.Runtime.CompilerServices;
-using openHistorian.Core.Data.Query;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data.Query;
 
 /// <summary>
-/// The <see cref="openHistorian.Core.Data.Query"/> namespace organizes the functions related to seeking and retrieving specific query results, such as the <see cref="GetFrameReaderMethods"/> class.
+/// The <see cref="Data.Query"/> namespace organizes the functions related to seeking and retrieving specific query results, such as the <see cref="GetFrameReaderMethods"/> class.
 /// </summary>
 [CompilerGenerated]
 class NamespaceDoc

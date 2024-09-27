@@ -23,10 +23,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace openHistorian.Core.Queues;
+namespace openHistorian.Queues;
 
 /// <summary>
-/// The <see cref="openHistorian.Core.Queues"/> namespace contains the <see cref="HistorianInputQueue"/> class.
+/// The <see cref="Queues"/> namespace contains the <see cref="HistorianInputQueue"/> class.
 /// </summary>
 [CompilerGenerated]
 class NamespaceDoc

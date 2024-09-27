@@ -25,10 +25,11 @@
 //******************************************************************************************************
 
 using System.Data;
-using openHistorian.Core.Snap;
+using openHistorian.Data;
+using openHistorian.Snap;
 using SnapDB.Snap.Services;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data.Query;
 
 /// <summary>
 /// Represents a collection of signals that are delinearized for querying historian data.

@@ -23,10 +23,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace openHistorian.Core.Snap.Definitions;
+namespace openHistorian.Snap.Definitions;
 
 /// <summary>
-/// The <see cref="openHistorian.Core.Snap.Definitions"/> namespace organizes the functions related to defining encoding, such as the <see cref="HistorianFileEncodingDefinition"/> class.
+/// The <see cref="Snap.Definitions"/> namespace organizes the functions related to defining encoding, such as the <see cref="HistorianFileEncodingDefinition"/> class.
 /// </summary>
 [CompilerGenerated]
 class NamespaceDoc

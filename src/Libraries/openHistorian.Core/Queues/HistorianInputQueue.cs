@@ -26,12 +26,12 @@
 
 using Gemstone;
 using Gemstone.Threading;
-using openHistorian.Core.Snap;
+using openHistorian.Snap;
 using SnapDB;
 using SnapDB.Snap;
 using SnapDB.Snap.Services;
 
-namespace openHistorian.Core.Queues;
+namespace openHistorian.Queues;
 
 /// <summary>
 /// Serves as a local queue for getting data into a remote historian.

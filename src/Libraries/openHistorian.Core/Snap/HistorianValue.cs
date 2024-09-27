@@ -29,7 +29,7 @@ using SnapDB;
 using SnapDB.IO;
 using SnapDB.Snap;
 
-namespace openHistorian.Core.Snap;
+namespace openHistorian.Snap;
 
 /// <summary>
 /// The standard value used in the OpenHistorian.

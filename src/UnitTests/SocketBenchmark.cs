@@ -23,8 +23,8 @@
 
 using System;
 using NUnit.Framework;
-using openHistorian.Core.Snap;
-using openHistorian.Core.Snap.Definitions;
+using openHistorian.Snap;
+using openHistorian.Snap.Definitions;
 using SnapDB.Snap.Storage;
 
 namespace openHistorian.UnitTests;

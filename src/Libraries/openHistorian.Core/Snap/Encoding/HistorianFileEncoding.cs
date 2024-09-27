@@ -25,12 +25,12 @@
 //******************************************************************************************************
 
 using Gemstone;
-using openHistorian.Core.Snap.Definitions;
+using openHistorian.Snap.Definitions;
 using SnapDB.IO;
 using SnapDB.Snap;
 using SnapDB.Snap.Encoding;
 
-namespace openHistorian.Core.Snap.Encoding;
+namespace openHistorian.Snap.Encoding;
 
 /// <summary>
 /// Provides an encoding method for storing and retrieving pairs of HistorianKey and HistorianValue.
@@ -104,7 +104,7 @@ public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianVal
             if (value.Value1 == 0 && deltaPointID <= 16)
             {
                 //Stage 3: 28% of the time.
-                stream[0] = (byte)(0xC0 | (deltaPointID - 1));
+                stream[0] = (byte)(0xC0 | deltaPointID - 1);
                 return 1;
             }
 
@@ -116,7 +116,7 @@ public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianVal
 
                 //Must be stored big endian
                 //ByteCode is 0DDDVVVV
-                stream[0] = (byte)(((value.Value1 >> 24) & 0xF) | ((deltaPointID - 1) << 4));
+                stream[0] = (byte)(value.Value1 >> 24 & 0xF | deltaPointID - 1 << 4);
                 stream[1] = (byte)(value.Value1 >> 16);
                 stream[2] = (byte)(value.Value1 >> 8);
                 stream[3] = (byte)value.Value1;
@@ -128,7 +128,7 @@ public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianVal
             {
                 //Must be stored big endian
                 //ByteCode is 10DDVVVV
-                stream[0] = (byte)(0x80 | ((value.Value1 >> 24) & 0xF) | ((deltaPointID - 1) << 4));
+                stream[0] = (byte)(0x80 | value.Value1 >> 24 & 0xF | deltaPointID - 1 << 4);
                 stream[1] = (byte)(value.Value1 >> 16);
                 stream[2] = (byte)(value.Value1 >> 8);
                 stream[3] = (byte)value.Value1;
@@ -138,7 +138,7 @@ public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianVal
             //Check for stage 4
             //All conditions are in the logic statement that enters this block.
             //  deltaPointID <= 16
-            stream[0] = (byte)(0xD0 | (deltaPointID - 1));
+            stream[0] = (byte)(0xD0 | deltaPointID - 1);
             *(uint*)(stream + 1) = (uint)value.Value1;
             return 5;
         }
@@ -218,9 +218,9 @@ public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianVal
         {
             // If stage 1 (50% success)
             key.Timestamp = prevKey.Timestamp;
-            key.PointID = prevKey.PointID + 1 + ((code >> 4) & 0x7);
+            key.PointID = prevKey.PointID + 1 + (code >> 4 & 0x7);
             key.EntryNumber = 0;
-            value.Value1 = (4u << 28) | ((code & 0xF) << 24) | ((uint)stream[1] << 16) | ((uint)stream[2] << 8) | ((uint)stream[3] << 0);
+            value.Value1 = 4u << 28 | (code & 0xF) << 24 | (uint)stream[1] << 16 | (uint)stream[2] << 8 | (uint)stream[3] << 0;
             value.Value2 = 0;
             value.Value3 = 0;
             return 4;
@@ -230,9 +230,9 @@ public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianVal
         {
             //If stage 2 (16% success)
             key.Timestamp = prevKey.Timestamp;
-            key.PointID = prevKey.PointID + 1 + ((code >> 4) & 0x3);
+            key.PointID = prevKey.PointID + 1 + (code >> 4 & 0x3);
             key.EntryNumber = 0;
-            value.Value1 = (12u << 28) | ((code & 0xF) << 24) | ((uint)stream[1] << 16) | ((uint)stream[2] << 8) | ((uint)stream[3] << 0);
+            value.Value1 = 12u << 28 | (code & 0xF) << 24 | (uint)stream[1] << 16 | (uint)stream[2] << 8 | (uint)stream[3] << 0;
             value.Value2 = 0;
             value.Value3 = 0;
             return 4;
@@ -350,9 +350,9 @@ public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianVal
 
             //If stage 1 (50% success)
             key.Timestamp = prevKey.Timestamp;
-            key.PointID = prevKey.PointID + 1 + ((code >> 4) & 0x7);
+            key.PointID = prevKey.PointID + 1 + (code >> 4 & 0x7);
             key.EntryNumber = 0;
-            value.Value1 = (4u << 28) | ((code & 0xF) << 24) | ((uint)b1 << 16) | ((uint)b2 << 8) | ((uint)b3 << 0);
+            value.Value1 = 4u << 28 | (code & 0xF) << 24 | (uint)b1 << 16 | (uint)b2 << 8 | (uint)b3 << 0;
             value.Value2 = 0;
             value.Value3 = 0;
             return;
@@ -366,9 +366,9 @@ public class HistorianFileEncoding : PairEncodingBase<HistorianKey, HistorianVal
 
             //If stage 2 (16% success)
             key.Timestamp = prevKey.Timestamp;
-            key.PointID = prevKey.PointID + 1 + ((code >> 4) & 0x3);
+            key.PointID = prevKey.PointID + 1 + (code >> 4 & 0x3);
             key.EntryNumber = 0;
-            value.Value1 = (12u << 28) | ((code & 0xF) << 24) | ((uint)b1 << 16) | ((uint)b2 << 8) | ((uint)b3 << 0);
+            value.Value1 = 12u << 28 | (code & 0xF) << 24 | (uint)b1 << 16 | (uint)b2 << 8 | (uint)b3 << 0;
             value.Value2 = 0;
             value.Value3 = 0;
 

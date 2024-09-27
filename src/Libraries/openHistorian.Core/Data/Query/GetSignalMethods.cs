@@ -24,14 +24,14 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Data.Types;
-using openHistorian.Core.Snap;
+using openHistorian.Data.Types;
+using openHistorian.Snap;
 using SnapDB.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services.Reader;
 
 // ReSharper disable NotAccessedVariable
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data.Query;
 
 /// <summary>
 /// Queries a historian database for a set of signals.

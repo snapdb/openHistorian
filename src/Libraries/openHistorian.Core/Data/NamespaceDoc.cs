@@ -23,10 +23,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace openHistorian.Core.Data;
+namespace openHistorian.Data;
 
 /// <summary>
-/// The <see cref="openHistorian.Core.Data"/> namespace organizes the functions related to collection and storage of data, such as the <see cref="SignalData"/> class.
+/// The <see cref="Data"/> namespace organizes the functions related to collection and storage of data, such as the <see cref="SignalData"/> class.
 /// </summary>
 [CompilerGenerated]
 class NamespaceDoc

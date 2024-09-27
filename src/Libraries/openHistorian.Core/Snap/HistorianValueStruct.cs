@@ -26,7 +26,7 @@
 
 using SnapDB;
 
-namespace openHistorian.Core.Snap;
+namespace openHistorian.Snap;
 
 /// <summary>
 /// A struct that represents the standard historian value.

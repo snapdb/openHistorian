@@ -24,8 +24,8 @@
 using System;
 using System.Diagnostics;
 using NUnit.Framework;
-using openHistorian.Core.Net;
-using openHistorian.Core.Snap;
+using openHistorian.Net;
+using openHistorian.Snap;
 using SnapDB.Snap;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Reader;

@@ -24,10 +24,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace openHistorian.Core.Net;
+namespace openHistorian.Net;
 
 /// <summary>
-/// The <see cref="openHistorian.Core.Net"/> namespace organizes the functions related to NET functions, such as the <see cref="HistorianServer"/> class.
+/// The <see cref="Net"/> namespace organizes the functions related to NET functions, such as the <see cref="HistorianServer"/> class.
 /// </summary>
 [CompilerGenerated]
 class NamespaceDoc

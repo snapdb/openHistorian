@@ -23,10 +23,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace openHistorian.Core.Data.Types;
+namespace openHistorian.Data.Types;
 
 /// <summary>
-/// The <see cref="openHistorian.Core.Data.Types"/> namespace organizes the functions related to specifying the types of data, such as the <see cref="TypeBase"/> class.
+/// The <see cref="Data.Types"/> namespace organizes the functions related to specifying the types of data, such as the <see cref="TypeBase"/> class.
 /// </summary>
 [CompilerGenerated]
 class NamespaceDoc

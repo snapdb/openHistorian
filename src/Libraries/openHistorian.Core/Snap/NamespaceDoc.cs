@@ -23,10 +23,10 @@
 
 using System.Runtime.CompilerServices;
 
-namespace openHistorian.Core.Snap;
+namespace openHistorian.Snap;
 
 /// <summary>
-/// The <see cref="openHistorian.Core.Snap"/> namespace organizes all functions related to historian keys and values, such as the
+/// The <see cref="Snap"/> namespace organizes all functions related to historian keys and values, such as the
 /// <see cref="HistorianKey"/> and the <see cref="HistorianValue"/> classes.
 /// </summary>
 [CompilerGenerated]

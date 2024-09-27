@@ -24,12 +24,13 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap.Encoding;
+using openHistorian.Snap.Encoding;
+using openHistorian.Snap;
 using SnapDB.Snap;
 using SnapDB.Snap.Definitions;
 using SnapDB.Snap.Encoding;
 
-namespace openHistorian.Core.Snap.Definitions;
+namespace openHistorian.Snap.Definitions;
 
 /// <summary>
 /// Defines an encoding definition for historian stream data.

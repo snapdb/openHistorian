@@ -30,7 +30,7 @@
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Net;
 
-namespace openHistorian.Core.Net;
+namespace openHistorian.Net;
 
 /// <summary>
 /// Represents a historian server instance that can be used to read and write time-series data.

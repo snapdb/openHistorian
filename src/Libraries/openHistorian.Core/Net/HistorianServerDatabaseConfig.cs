@@ -29,13 +29,13 @@
 //******************************************************************************************************
 
 using Gemstone.Units;
-using openHistorian.Core.Snap;
-using openHistorian.Core.Snap.Definitions;
+using openHistorian.Snap;
+using openHistorian.Snap.Definitions;
 using SnapDB.Snap;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Configuration;
 
-namespace openHistorian.Core.Net;
+namespace openHistorian.Net;
 
 /// <summary>
 /// Creates a configuration for the database to utilize.

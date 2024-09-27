@@ -24,13 +24,13 @@
 //
 //******************************************************************************************************
 
-using openHistorian.Core.Snap;
+using openHistorian.Snap;
 using SnapDB.Collections;
 using SnapDB.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services.Reader;
 
-namespace openHistorian.Core.Data.Query;
+namespace openHistorian.Data.Query;
 
 /// <summary>
 /// Queries a historian database for a set of signals.

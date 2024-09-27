@@ -28,7 +28,7 @@ using Gemstone;
 using SnapDB.IO;
 using SnapDB.Snap.Types;
 
-namespace openHistorian.Core.Snap;
+namespace openHistorian.Snap;
 
 /// <summary>
 /// The standard key used for the historian.
@@ -83,8 +83,8 @@ public class HistorianKey : TimestampPointIDBase<HistorianKey>
         {
             ulong ticks = Timestamp;
 
-            return ticks > (ulong)DateTime.MaxValue.Ticks ? 
-                DateTime.MaxValue : 
+            return ticks > (ulong)DateTime.MaxValue.Ticks ?
+                DateTime.MaxValue :
                 new DateTime((long)ticks, DateTimeKind.Utc);
         }
         set => Timestamp = (ulong)value.Ticks;

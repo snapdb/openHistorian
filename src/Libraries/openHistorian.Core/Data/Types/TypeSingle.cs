@@ -24,7 +24,7 @@
 //
 //******************************************************************************************************
 
-namespace openHistorian.Core.Data.Types;
+namespace openHistorian.Data.Types;
 
 /// <summary>
 /// Method for converting data to and from a <see cref="float"/>.
