@@ -73,6 +73,8 @@
     <PackageReference Include="Gemstone.Timeseries" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
 
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
+
+    <ProjectReference Include="..\..\Libraries\Adapters\PhasorProtocolAdapters\PhasorProtocolAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
     <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
     <ProjectReference Include="..\openHistorian.WebUI\openHistorian.WebUI.csproj" />

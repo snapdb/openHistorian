@@ -11,6 +11,7 @@
     <Product>openHistorian</Product>
     <Description>Grafana Adapters</Description>
     <AssemblyTitle>GrafanaAdapters</AssemblyTitle>
+    <Configurations>Debug;Release;Development</Configurations>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>..\..\..\..\Build\Output\$(Configuration)\Libraries\</OutputPath>
@@ -25,12 +26,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Configuration>Debug Build</Configuration>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Mono|AnyCPU'">
-    <OutputPath>..\..\..\..\Build\Output\$(Configuration)\Libraries\</OutputPath>
-    <DefineConstants>TRACE;MONO</DefineConstants>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).XML</DocumentationFile>
-    <Optimize>true</Optimize>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  <PropertyGroup Condition="'$(Configuration)'=='Development'">
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
