@@ -306,11 +306,11 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
                 {
                     List<string> serverList = [];
                         
-                    string[] servers = setting.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    string[] servers = setting.Split((char[])[','], StringSplitOptions.RemoveEmptyEntries);
 
                     foreach (string server in servers)
                     {
-                        string[] parts = server.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] parts = server.Split((char[])['/'], StringSplitOptions.RemoveEmptyEntries);
 
                         if (parts.Length == 0)
                             continue;
