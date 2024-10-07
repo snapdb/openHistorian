@@ -171,7 +171,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
         section.HostCertificate = (DefaultHostCertificate, "Certificate used to host the service.", "-s", "--HostCertificate");
 
 #if DEBUG
-        section.WebRoot = (FilePath.GetAbsolutePath($@"..\..\..\..\..\src\Applications\{nameof(openHistorian)}.{nameof(WebUI)}\{DefaultWebRoot}"), "Root directory for the web server.", "-r", "--WebRoot");
+        section.WebRoot = (FilePath.GetAbsolutePath($@"..\..\..\src\Applications\{nameof(openHistorian)}.{nameof(WebUI)}\{DefaultWebRoot}"), "Root directory for the web server.", "-r", "--WebRoot");
 #else
         section.WebRoot = (FilePath.GetAbsolutePath(DefaultWebRoot), "Root directory for the web server.", "-r", "--WebRoot");
 #endif
