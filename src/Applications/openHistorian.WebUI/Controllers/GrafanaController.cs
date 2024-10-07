@@ -26,7 +26,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using System.Web.Http;
 using Gemstone;
 using Gemstone.Collections;
 using Gemstone.Collections.CollectionExtensions;
@@ -40,6 +39,8 @@ using GrafanaAdapters.Model.Common;
 using GrafanaAdapters.Model.Database;
 using GrafanaAdapters.Model.Functions;
 using GrafanaAdapters.Model.Metadata;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Mvc;
 using openHistorian.Adapters;
 using openHistorian.Snap;
 using SnapDB.Snap;
@@ -49,13 +50,16 @@ using SnapDB.Snap.Services.Reader;
 using AlarmState = GrafanaAdapters.Model.Database.AlarmState;
 using CancellationToken = System.Threading.CancellationToken;
 using Resolution = openHistorian.Adapters.Resolution;
+//using Route = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace openHistorian.WebUI.Controllers;
 
 /// <summary>
 /// Represents a REST based API for a simple JSON based Grafana data source.
 /// </summary>
-public class GrafanaController : ApiController
+[Route("api/[controller]/[action]")]
+[ApiController]
+public class GrafanaController : ControllerBase
 {
     #region [ Members ]
 
@@ -284,7 +288,7 @@ public class GrafanaController : ApiController
             if (m_dataSource is not null)
                 return m_dataSource;
 
-            string uriPath = Request.RequestUri!.PathAndQuery;
+            string uriPath = Request.GetEncodedPathAndQuery();
             string instanceName;
 
             if (uriPath.StartsWith(DefaultAPIPath, StringComparison.OrdinalIgnoreCase))
@@ -299,7 +303,7 @@ public class GrafanaController : ApiController
                 if (pathElements.Length > 2)
                     instanceName = pathElements[1].Trim();
                 else
-                    throw new InvalidOperationException($"Unexpected API URL route destination encountered: {Request.RequestUri}");
+                    throw new InvalidOperationException($"Unexpected API URL route destination encountered: {Request.GetEncodedPathAndQuery()}");
             }
 
             Debug.Assert(!string.IsNullOrWhiteSpace(instanceName));
@@ -346,7 +350,7 @@ public class GrafanaController : ApiController
     /// <summary>
     /// Validates that openHistorian Grafana data source is responding as expected.
     /// </summary>
-    [HttpGet]
+    [HttpGet, Route("/api/[controller]")]
     public HttpResponseMessage Index()
     {
         return new HttpResponseMessage(HttpStatusCode.OK);
@@ -358,12 +362,14 @@ public class GrafanaController : ApiController
     /// <param name="request">Query request.</param>
     /// <param name="cancellationToken">Propagates notification from client that operations should be canceled.</param>
     [HttpPost]
-    public virtual Task<IEnumerable<TimeSeriesValues>> Query(QueryRequest request, CancellationToken cancellationToken)
+    public virtual async Task<IEnumerable<TimeSeriesValues>> Query(QueryRequest request, CancellationToken cancellationToken)
     {
         if (request.targets.FirstOrDefault()?.target is null)
-            return Task.FromResult(Enumerable.Empty<TimeSeriesValues>());
+            return Enumerable.Empty<TimeSeriesValues>();
 
-        return DataSource?.Query(request, cancellationToken) ?? Task.FromResult(Enumerable.Empty<TimeSeriesValues>());
+        TimeSeriesValues[] values = (await DataSource?.Query(request, cancellationToken) ?? Enumerable.Empty<TimeSeriesValues>()).ToArray();
+
+        return values;
     }
 
     /// <summary>
