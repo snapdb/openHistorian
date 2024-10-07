@@ -118,7 +118,10 @@ public class WebServer(WebServerConfiguration configuration)
         //    options.FallbackPolicy = options.GetPolicy(Administrators);
         //});
 
-        services.AddMvc().AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+        services.AddMvc().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNamingPolicy = null;
+        });
 
         services.AddRazorPages(options =>
         {
@@ -135,6 +138,13 @@ public class WebServer(WebServerConfiguration configuration)
 
             //options.Conventions.AllowAnonymousToPage("/Forbidden");
         });
+
+        services.AddCors(corsOptions => corsOptions.AddPolicy("OHPolicy", builder =>
+        {
+            builder.WithOrigins("http://192.168.1.2:8180")
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        }));
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -150,6 +160,8 @@ public class WebServer(WebServerConfiguration configuration)
             // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
+
+        app.UseCors("OHPolicy");
 
         app.UseAuthentication();
 
