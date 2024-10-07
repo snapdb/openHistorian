@@ -24,7 +24,6 @@
 using Gemstone;
 using Gemstone.Identity;
 using NUnit.Framework;
-using openHistorian.Core.Net;
 using openHistorian.Net;
 using openHistorian.Snap;
 using SnapDB.Snap;

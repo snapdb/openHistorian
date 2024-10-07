@@ -46,6 +46,7 @@ using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
 using GrafanaAdapters.Model.Database;
+using ConfigSettings = Gemstone.Configuration.Settings;
 using AlarmStateRecord = GrafanaAdapters.Model.Database.AlarmState;
 using ConnectionStringParser = Gemstone.Configuration.ConnectionStringParser<Gemstone.Timeseries.Adapters.ConnectionStringParameterAttribute>;
 using Timer = System.Timers.Timer;
@@ -397,7 +398,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
     {
         const int DeviceGroupAccessID = -99999;
 
-        using AdoDataConnection connection = new(Gemstone.Configuration.Settings.Default.System);
+        using AdoDataConnection connection = new(ConfigSettings.Default.System);
 
         // Load alarm state map - this defines database state ID and custom color for each alarm state
         TableOperations<AlarmStateRecord> alarmStateTable = new(connection);
@@ -543,7 +544,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
 
             OnStatusMessage(MessageLevel.Info, "Updating device alarm states");
 
-            using (AdoDataConnection connection = new(Gemstone.Configuration.Settings.Default.System))
+            using (AdoDataConnection connection = new(ConfigSettings.Default.System))
             {
                 TableOperations<AlarmDevice> alarmDeviceTable = new(connection);
 
@@ -672,7 +673,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
                 foreach (KeyValuePair<AlarmState, int> stateCount in stateCounts)
                     substitutions[$"{{{stateCount.Key}StateCount}}"] = stateCount.Value.ToString();
 
-                using AdoDataConnection connection = string.IsNullOrWhiteSpace(ExternalDatabaseConnectionString) ? new AdoDataConnection(Gemstone.Configuration.Settings.Default.System) : new AdoDataConnection(ExternalDatabaseConnectionString, ExternalDatabaseProviderString);
+                using AdoDataConnection connection = string.IsNullOrWhiteSpace(ExternalDatabaseConnectionString) ? new AdoDataConnection(ConfigSettings.Default.System) : new AdoDataConnection(ExternalDatabaseConnectionString, ExternalDatabaseProviderString);
 
                 foreach (AlarmDevice alarmDevice in alarmDeviceUpdates)
                 {

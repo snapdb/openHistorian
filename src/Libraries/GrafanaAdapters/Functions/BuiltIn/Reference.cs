@@ -14,7 +14,7 @@ namespace GrafanaAdapters.Functions.BuiltIn;
 /// <remarks>
 /// Signature: <c>Reference(sliceTolerance, expression)</c><br/>
 /// Returns: Single value.<br/>
-/// Example: <c>Reference(ReferencePhasor; FILTER PhasorValues WHERE SignalType='IPHM')</c><br/>
+/// Example: <c>Reference(0.033, ReferencePhasor; FILTER PhasorValues WHERE SignalType='IPHM')</c><br/>
 /// Variants: Reference, Ref<br/>
 /// Execution: Immediate enumeration.
 /// </remarks>
@@ -52,6 +52,32 @@ public abstract class Reference<T> : GrafanaFunctionBase<T> where T : struct, ID
         // Force group operation to be Slice as Reference only supports slice operations. This ignores
         // any requested group operation instead of throwing an exception based on what is allowed.
         return GroupOperations.Slice;
+    }
+
+    public class ComputeMeasurementValue : Reference<MeasurementValue>
+    {
+        public override async IAsyncEnumerable<MeasurementValue> ComputeAsync(Parameters parameters, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await using IAsyncEnumerator<MeasurementValue> enumerator = GetDataSourceValues(parameters).GetAsyncEnumerator(cancellationToken);
+            
+            if (!await enumerator.MoveNextAsync().ConfigureAwait(false))
+                yield break;
+            
+            double reference = enumerator.Current.Value;
+            
+            yield return enumerator.Current with
+            {
+                Value = enumerator.Current.Value - reference
+            };
+
+            while (await enumerator.MoveNextAsync().ConfigureAwait(false))
+            {
+                yield return enumerator.Current with
+                {
+                    Value = enumerator.Current.Value - reference
+                };
+            }
+        }
     }
 
     /// <inheritdoc />
