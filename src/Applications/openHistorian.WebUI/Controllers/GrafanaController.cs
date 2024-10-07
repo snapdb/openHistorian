@@ -362,14 +362,12 @@ public class GrafanaController : ControllerBase
     /// <param name="request">Query request.</param>
     /// <param name="cancellationToken">Propagates notification from client that operations should be canceled.</param>
     [HttpPost]
-    public virtual async Task<IEnumerable<TimeSeriesValues>> Query(QueryRequest request, CancellationToken cancellationToken)
+    public virtual Task<IEnumerable<TimeSeriesValues>> Query(QueryRequest request, CancellationToken cancellationToken)
     {
         if (request.targets.FirstOrDefault()?.target is null)
-            return Enumerable.Empty<TimeSeriesValues>();
+            return Task.FromResult(Enumerable.Empty<TimeSeriesValues>());
 
-        TimeSeriesValues[] values = (await DataSource?.Query(request, cancellationToken) ?? Enumerable.Empty<TimeSeriesValues>()).ToArray();
-
-        return values;
+        return DataSource?.Query(request, cancellationToken) ?? Task.FromResult(Enumerable.Empty<TimeSeriesValues>());
     }
 
     /// <summary>
