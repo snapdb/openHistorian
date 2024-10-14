@@ -50,7 +50,6 @@ using SnapDB.Snap.Services.Reader;
 using AlarmState = GrafanaAdapters.Model.Database.AlarmState;
 using CancellationToken = System.Threading.CancellationToken;
 using Resolution = openHistorian.Adapters.Resolution;
-//using Route = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace openHistorian.WebUI.Controllers;
 

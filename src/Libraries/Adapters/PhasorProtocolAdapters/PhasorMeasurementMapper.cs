@@ -2914,8 +2914,9 @@ public class PhasorMeasurementMapper : InputAdapterBase
             // Make sure configuration cache path setting exists within system settings section of config file
             dynamic settings = ConfigSettings.Default.System;
 
+            // TODO: Fix this expression load
             // Retrieve configuration cache directory as defined in the config file
-            s_jsonConfigurationPath = settings["JsonConfigurationPath", new Eval($"{{{ConfigSettings.SystemSettingsCategory}.{nameof(ConfigurationFrame.ConfigurationCachePath)}}}"), "Defines the path used to store serialized JSON device configuration and state files which may need to be shared across multiple host instances. Defaults to same location as 'ConfigurationCachePath'"];
+            //s_jsonConfigurationPath = settings["JsonConfigurationPath", new Eval($"{ConfigSettings.SystemSettingsCategory}.{nameof(ConfigurationFrame.ConfigurationCachePath)}"), "Defines the path used to store serialized JSON device configuration and state files which may need to be shared across multiple host instances. Defaults to same location as 'ConfigurationCachePath'"];
 
             // If undefined, set default JSON configuration cache directory relative to path of host application
             if (string.IsNullOrWhiteSpace(s_jsonConfigurationPath))

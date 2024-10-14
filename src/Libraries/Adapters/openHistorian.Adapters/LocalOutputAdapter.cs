@@ -1146,6 +1146,9 @@ public class LocalOutputAdapter : OutputAdapterBase
     {
         foreach (IMeasurement measurement in measurements)
         {
+            if (measurement is null)
+                continue;
+
             // Validate timestamp reasonability as compared to local clock, when enabled
             if (EnableTimeReasonabilityCheck)
             {

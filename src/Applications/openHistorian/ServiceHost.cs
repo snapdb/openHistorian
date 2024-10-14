@@ -92,7 +92,9 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
     /// <inheritdoc />
     public (string Status, string Type, string Description) GetCurrentStatus()
     {
-        return ("Running", "Service", "openHistorian service is running.");
+        // WARNING / NORMAL / ERROR
+
+        return ("NORMAL", "Service", "openHistorian service is running.");
     }
 
     private void GetStatsForCurrentStatus()
