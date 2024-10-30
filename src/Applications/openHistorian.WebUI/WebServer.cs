@@ -1,5 +1,7 @@
 ﻿using System.Security.Cryptography.X509Certificates;
+using System.Web.Http;
 using Gemstone.Configuration;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using ServiceInterface;
 
@@ -8,7 +10,7 @@ namespace openHistorian.WebUI;
 public class WebServerConfiguration
 {
     public WebHosting Hosting { get; set; } = default!;
-    
+
     //private class DefaultAuthenticator : IAuthenticator
     //{
     //    public Task<long?> AuthenticateAsync(string username, string password) => throw new NotImplementedException();
@@ -16,7 +18,7 @@ public class WebServerConfiguration
     //}
 
     public Func<X509Certificate2?> CertificateSelector { get; set; } = () => null;
-    
+
     //public IAuthenticator Authenticator { get; set; } = new DefaultAuthenticator();
 }
 
@@ -118,19 +120,22 @@ public class WebServer(WebServerConfiguration configuration)
         //    options.FallbackPolicy = options.GetPolicy(Administrators);
         //});
 
-        services.AddMvc().AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.PropertyNamingPolicy = null;
-        });
+        services.AddMvc().AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 
         services.AddRazorPages(options =>
         {
             //options.Conventions.AuthorizePage("/Index");
             options.Conventions.AllowAnonymousToPage("/Index");
-			
-			// TODO: Add needed routes
-//          options.Conventions.AddPageRoute("/Index", "Overview");
-            
+            //Temp
+            options.Conventions.AddPageRoute("/Index", "System");
+            options.Conventions.AddPageRoute("/Index", "Devices/{id?}");
+            options.Conventions.AddPageRoute("/Index", "Phasors");
+            options.Conventions.AddPageRoute("/Index", "Measurements/{id?}");
+            options.Conventions.AddPageRoute("/Index", "Companies");
+
+            // TODO: Add needed routes
+            //          options.Conventions.AddPageRoute("/Index", "Overview");
+
             //options.Conventions.AuthorizePage("/Devices", Viewers);
             //options.Conventions.AuthorizePage("/Device", Editors);
             //options.Conventions.AuthorizePage("/Users", Administrators);
@@ -139,12 +144,11 @@ public class WebServer(WebServerConfiguration configuration)
             //options.Conventions.AllowAnonymousToPage("/Forbidden");
         });
 
-        services.AddCors(corsOptions => corsOptions.AddPolicy("OHPolicy", builder =>
+        services.Configure<ApiBehaviorOptions>(options =>
         {
-            builder.WithOrigins("http://192.168.1.2:8180")
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-        }));
+            options.SuppressModelStateInvalidFilter = true;
+        });
+
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -156,12 +160,10 @@ public class WebServer(WebServerConfiguration configuration)
         else
         {
             app.UseExceptionHandler("/Error");
-            
+
             // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
-
-        app.UseCors("OHPolicy");
 
         app.UseAuthentication();
 
@@ -176,8 +178,13 @@ public class WebServer(WebServerConfiguration configuration)
         app.UseRouting();
 
         app.UseAuthorization();
-        app.UseEndpoints(endpoints => endpoints.MapRazorPages());
-        app.UseEndpoints(endpoints => endpoints.MapControllers());
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapRazorPages();
+            endpoints.MapControllers();
+            endpoints.MapFallbackToPage("/Index");
+        });
+
     }
 
     private static bool TryUseStaticFiles(IApplicationBuilder app, IWebHostEnvironment env)
@@ -189,7 +196,7 @@ public class WebServer(WebServerConfiguration configuration)
         string wwwroot = Settings.Default.WebHosting.WebRoot;
         options.FileProvider = new PhysicalFileProvider(wwwroot);
         app.UseStaticFiles(options);
-        
+
         return true;
     }
 }
