@@ -1,17 +1,11 @@
-// ReSharper disable CheckNamespace
-
-#pragma warning disable 1591
-
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Data.Model;
 using Gemstone.Expressions.Model;
 
 namespace openHistorian.Model;
-
-[PrimaryLabel("Acronym")]
-public class Device
+public class DeviceDetail
 {
     // This magical attribute means you never have to lookup or provide
     // a NodeID for new Device records...
@@ -31,10 +25,10 @@ public class Device
     [Required]
     [StringLength(200)]
     [AcronymValidation]
-    public string Acronym { get; set; } = "";
+    public string Acronym { get; set; }
 
     [StringLength(200)]
-    public string Name { get; set; } = "";
+    public string Name { get; set; }
 
     [Label("Folder Name")]
     [StringLength(20)]
@@ -68,7 +62,6 @@ public class Device
     public int? InterconnectionID { get; set; }
 
     [Label("Connection String")]
-    [Required]
     public string ConnectionString { get; set; } = "";
 
     [StringLength(200)]
@@ -108,13 +101,37 @@ public class Device
     public bool ConnectOnDemand { get; set; }
 
     [Label("Contacts")]
-    public string? ContactList { get; set; }
+    public string ContactList { get; set; } = "";
 
     public int? MeasuredLines { get; set; }
 
     public int LoadOrder { get; set; }
 
     public bool Enabled { get; set; }
+
+    public string CompanyName { get; set; } = "";
+
+    public string CompanyAcronym { get; set; } = "";
+
+    public string CompanyMapAcronym { get; set; } = "";
+
+    public string HistorianAcronym { get; set; } = "";  
+
+    public string VendorAcronym { get; set; } = "";
+
+    public string VendorDeviceName { get; set; } = "";
+
+    public string ProtocolName { get; set; } = "";
+
+    public string ProtocolType { get; set; } = "";
+
+    public string Category { get; set; } = "";
+
+    public string InterconnectionName { get; set; } = "";
+
+    public string NodeName { get; set; } = "";
+
+    public string ParentAcronym { get; set; } = "";
 
     /// <summary>
     ///     Created on field.
@@ -128,13 +145,13 @@ public class Device
     [Required]
     [StringLength(50)]
     [DefaultValueExpression("UserInfo.CurrentUserID")]
-    public string CreatedBy { get; set; } = "";
+    public string CreatedBy { get; set; }
 
     /// <summary>
     ///     Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    [UpdateValueExpression("DateTime.UtcNow")]
+    //[UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -143,8 +160,6 @@ public class Device
     [Required]
     [StringLength(50)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    [UpdateValueExpression("UserInfo.CurrentUserID")]
-    public string UpdatedBy { get; set; } = "";
-
-    
+    //[UpdateValueExpression("UserInfo.CurrentUserID")]
+    public string UpdatedBy { get; set; }
 }

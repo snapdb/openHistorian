@@ -7,10 +7,8 @@ using Gemstone.Expressions.Model;
 
 namespace openHistorian.Model;
 
-public class Company
+public class VendorDeviceDetail
 {
-    private string m_mapAcronym;
-
     [PrimaryKey(true)]
     public int ID
     {
@@ -18,28 +16,10 @@ public class Company
         set;
     }
 
-    [Required]
-    [StringLength(200)]
-    [AcronymValidation]
-    public string Acronym
+    public int VendorID
     {
         get;
         set;
-    }
-
-    [Required]
-    [StringLength(10)]
-    [RegularExpression("^[A-Z0-9]+$", ErrorMessage = "Only three upper case letters or numbers are allowed.")]
-    public string MapAcronym
-    {
-        get
-        {
-            return m_mapAcronym;
-        }
-        set
-        {
-            m_mapAcronym = value?.Trim();
-        }
     }
 
     [Required]
@@ -50,18 +30,37 @@ public class Company
         set;
     }
 
-    public string? URL
+    public string Description
     {
         get;
         set;
     }
 
-    public int LoadOrder
+    [Label("Web Page")]
+    [UrlValidation]
+    public string URL
     {
         get;
         set;
     }
 
+    [Required]
+    [StringLength(200)]
+    [AcronymValidation]
+    public string VendorAcronym
+    {
+        get;
+        set;
+    }
+
+    [Required]
+    [StringLength(200)]
+    public string VendorName
+    {
+        get;
+        set;
+    }
+    /*
     /// <summary>
     /// Created on field.
     /// </summary>
@@ -80,7 +79,7 @@ public class Company
     /// Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    //[UpdateValueExpression("DateTime.UtcNow")]
+    [UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -89,6 +88,6 @@ public class Company
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    // [UpdateValueExpression("UserInfo.CurrentUserID")]
-    public string UpdatedBy { get; set; }
+    [UpdateValueExpression("UserInfo.CurrentUserID")]
+    public string UpdatedBy { get; set; }*/
 }
