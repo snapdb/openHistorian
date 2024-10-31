@@ -3,6 +3,7 @@ using Gemstone.Web.APIController;
 using Microsoft.AspNetCore.Mvc;
 using Gemstone.Data.Model;
 using Gemstone.Timeseries.Adapters;
+using System.Net;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -39,11 +40,13 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
             return Unauthorized();
 
         return await Task<IActionResult>.Run(() =>
-            Ok(AdapterCollectionHelper<IInputAdapter>.GetAdapters().Where((a) => String.Compare(a.Assembly,assemblyName,true) == 0)
+            Ok(AdapterCollectionHelper<IInputAdapter>.GetAdapters().Where((a) => String.Compare(a.Assembly, WebUtility.UrlDecode(assemblyName),true) == 0)
             .Select(adapter => new ValueLabel()
             {
                 Value = adapter.Type,
                 Label = adapter.Header
             }).DistinctBy((v) => v.Value).OrderBy(adapter => adapter.Label)));
     }
+
+
 } 
