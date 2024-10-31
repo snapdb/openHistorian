@@ -3,6 +3,7 @@ using Gemstone.Reflection.MemberInfoExtensions;
 using Gemstone.StringExtensions;
 using Gemstone.TypeExtensions;
 using System.ComponentModel;
+using System.Reflection;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -11,6 +12,7 @@ public static class AdapterCollectionHelper<T>
     public class AdapterTypeDescription
     {
         public string Assembly { get; set; } = String.Empty;
+        public string AssemblyLocation { get; set; } = String.Empty;
         public string Type { get; set; } = String.Empty;
         public string Header { get; set; } = String.Empty;
         public string Description { get; set; } = String.Empty;
@@ -58,10 +60,12 @@ public static class AdapterCollectionHelper<T>
     /// or else the <see cref="Type.FullName"/> of the parameter.
     /// </returns>
     private static AdapterTypeDescription GetDescription(Type type)
-    { 
+    {
+        
         AdapterTypeDescription adapterTypeDescription = new AdapterTypeDescription()
         {
-            Assembly = type.Assembly.FullName ?? String.Empty,
+            Assembly = AssemblyName.GetAssemblyName(type.Assembly.Location).Name ?? String.Empty,
+            AssemblyLocation = type.Assembly.Location,
             Type = type.FullName ?? String.Empty,
             Header = type.Name,
         };
