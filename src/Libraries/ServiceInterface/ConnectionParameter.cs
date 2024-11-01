@@ -21,6 +21,12 @@
 //
 //******************************************************************************************************
 
+using Gemstone.Expressions.Model;
+using Gemstone.Reflection.MemberInfoExtensions;
+using Gemstone.StringExtensions;
+using System.ComponentModel;
+using System.Reflection;
+
 namespace ServiceInterface;
 
 /// <summary>
@@ -69,4 +75,69 @@ public class ConnectionParameter
     /// Gets or sets the parameter value.
     /// </summary>
     public string Value { get; set; } = default!;
+
+    /// <summary>
+    /// Static Constructor that returns a <see cref="ConnectionParameter"/> based on the <see cref="PropertyInfo"/>
+    /// </summary>
+    public static ConnectionParameter GetConnectionParameter(PropertyInfo info, string connectionString)
+    {
+        Dictionary<string, string> settings = connectionString.ParseKeyValuePairs();
+
+        return new ConnectionParameter() 
+        {
+            Name = info.Name,
+            Category = getCategory(info),
+            Description = getDescription(info),
+            DataType = getDataType(info),
+            DefaultValue = getDefaultValue(info)?.ToString() ?? "",
+            AvailableValues = getAvailableValues(info),
+            Value = settings.TryGetValue(info.Name, out string? value) ? value : (getDefaultValue(info)?.ToString() ?? "")
+        };
+
+        static string getCategory(PropertyInfo value)
+        {
+            return value.TryGetAttribute(out CategoryAttribute? attribute) ? attribute.Category : "General";
+        }
+
+        static string getDescription(PropertyInfo value)
+        {
+            return value.TryGetAttribute(out DescriptionAttribute? attribute) ? attribute.Description : string.Empty;
+        }
+
+        static object? getDefaultValue(PropertyInfo value)
+        {
+            if (value.TryGetAttribute(out DefaultValueExpressionAttribute? expressionAttribute))
+            {
+                ValueExpressionParser parser = new(expressionAttribute?.Expression ?? "");
+                return parser.ExecuteFunction();
+            }
+            return value.TryGetAttribute(out DefaultValueAttribute? attribute) ? attribute.Value : null;
+        }
+
+        static DataType getDataType(PropertyInfo value)
+        {
+            return value.PropertyType switch
+            {
+                { } type when type == typeof(string) => DataType.String,
+                { } type when type == typeof(short) => DataType.Int16,
+                { } type when type == typeof(ushort) => DataType.UInt16,
+                { } type when type == typeof(int) => DataType.Int32,
+                { } type when type == typeof(uint) => DataType.UInt32,
+                { } type when type == typeof(long) => DataType.Int64,
+                { } type when type == typeof(ulong) => DataType.UInt64,
+                { } type when type == typeof(float) => DataType.Single,
+                { } type when type == typeof(double) => DataType.Double,
+                { } type when type == typeof(DateTime) => DataType.DateTime,
+                { } type when type == typeof(bool) => DataType.Boolean,
+                { IsEnum: true } => DataType.Enum,
+                _ => DataType.String
+            };
+        }
+
+        static string[] getAvailableValues(PropertyInfo value)
+        {
+            return value.PropertyType.IsEnum ? Enum.GetNames(value.PropertyType) : [];
+        }
+
+    }
 }
