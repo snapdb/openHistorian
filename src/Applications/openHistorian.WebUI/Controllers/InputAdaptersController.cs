@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Gemstone.Data.Model;
 using Gemstone.Timeseries.Adapters;
 using System.Net;
+using Gemstone.Data;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -43,10 +44,31 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
             Ok(AdapterCollectionHelper<IInputAdapter>.GetAdapters().Where((a) => String.Compare(a.Assembly, WebUtility.UrlDecode(assemblyName),true) == 0)
             .Select(adapter => new ValueLabel()
             {
-                Value = adapter.Type,
+                Value = adapter.TypeName,
                 Label = adapter.Header
             }).DistinctBy((v) => v.Value).OrderBy(adapter => adapter.Label)));
     }
 
+    /// <summary>
+    /// Gets all <see cref="ConnectionParameter"> from a specified Type and Assembly.
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing an <see cref="ConnectionParameter"/> for the specified Adapter.</returns>
+    [HttpGet, Route("/{typeName}/{assemblyName}/ConnectionParameters/{id:int?}")]
+    public async Task<IActionResult> GetConnectionStringParameters(string assemblyName, string typeName,CancellationToken cancellationToken, int? id = null)
+    {
+        if (!GetAuthCheck())
+            return Unauthorized();
 
+        string connectionString = "";
+
+        if (id is not null)
+        {
+            await using AdoDataConnection connection = CreateConnection();
+            TableOperations<CustomInputAdapter> tableOperations = new(connection);
+            CustomInputAdapter? result = await tableOperations.QueryRecordAsync(new RecordRestriction($"{PrimaryKeyField} = {{0}}", id), cancellationToken);
+            if (result is not null)
+                connectionString = result.ConnectionString;
+        }
+        return Ok(AdapterCollectionHelper< IInputAdapter>.GetConnectionParameters(assemblyName,typeName,connectionString));
+    }
 } 

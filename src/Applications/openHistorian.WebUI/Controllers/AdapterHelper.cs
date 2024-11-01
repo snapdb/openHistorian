@@ -1,7 +1,11 @@
 ﻿using Gemstone.IO;
 using Gemstone.Reflection.MemberInfoExtensions;
 using Gemstone.StringExtensions;
+using Gemstone.Timeseries.Adapters;
 using Gemstone.TypeExtensions;
+using openHistorian.Data.Types;
+using Org.BouncyCastle.Crypto.Parameters;
+using ServiceInterface;
 using System.ComponentModel;
 using System.Reflection;
 
@@ -13,10 +17,10 @@ public static class AdapterCollectionHelper<T>
     {
         public string Assembly { get; set; } = String.Empty;
         public string AssemblyLocation { get; set; } = String.Empty;
-        public string Type { get; set; } = String.Empty;
+        public string TypeName { get; set; } = String.Empty;
         public string Header { get; set; } = String.Empty;
         public string Description { get; set; } = String.Empty;
-
+        public Type? Type { get; set; } = null;
     }
 
     private static Type adapterType => typeof(T);
@@ -66,8 +70,9 @@ public static class AdapterCollectionHelper<T>
         {
             Assembly = AssemblyName.GetAssemblyName(type.Assembly.Location).Name ?? String.Empty,
             AssemblyLocation = type.Assembly.Location,
-            Type = type.FullName ?? String.Empty,
+            TypeName = type.FullName ?? String.Empty,
             Header = type.Name,
+            Type = type
         };
 
         string[] splitDescription = type.TryGetAttribute(out DescriptionAttribute descriptionAttribute) ?
@@ -87,4 +92,29 @@ public static class AdapterCollectionHelper<T>
         return adapterTypeDescription;
     }
 
+    private static Type? GetType(string assemblyName, string typeName) 
+    {
+        return GetAdapters()
+            .Where((a) => a.Assembly.Equals(assemblyName, StringComparison.OrdinalIgnoreCase))
+            .SingleOrDefault(a => a.TypeName.Equals(typeName, StringComparison.OrdinalIgnoreCase))?.Type;
+
+
+    }
+    
+    public static IEnumerable<ConnectionParameter> GetConnectionParameters(string assemblyName, string typeName, string connectionString) => 
+        GetConnectionParameters(GetType(assemblyName, typeName), connectionString);
+    
+    public static IEnumerable<ConnectionParameter> GetConnectionParameters(Type? type, string connectionString) 
+    {
+        if ( type is null)
+        {
+            return new List<ConnectionParameter>();
+        }
+     
+        // Get the list of properties with ConnectionStringParameterAttribute annotations.
+        IEnumerable<PropertyInfo> infoList = adapterType.GetProperties()
+            .Where(info => info.TryGetAttribute(typeof(ConnectionStringParameterAttribute)?.FullName ?? string.Empty, out Attribute? _));
+
+        return infoList.Select(info => ConnectionParameter.GetConnectionParameter(info, connectionString));
+    }
 }
