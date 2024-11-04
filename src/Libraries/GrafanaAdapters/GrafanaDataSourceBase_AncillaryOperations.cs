@@ -194,7 +194,7 @@ partial class GrafanaDataSourceBase
         if (!settings.TryGetValue("tolerance", out setting) || !double.TryParse(setting, out double tolerance) || tolerance <= double.Epsilon)
             tolerance = 0.000275;
 
-        Point translateRadial(Point point, int index, int count)
+        Point translate(Point point, int index, int count)
         {
             double interval = 2.0D * Math.PI / (count - 1);
             double theta = interval * index;
@@ -203,7 +203,7 @@ partial class GrafanaDataSourceBase
             return new Point(x, y);
         }
 
-        return ProcessDistribution(queryValueGroups, translateRadial, zoom, tolerance, cancellationToken);
+        return ProcessDistribution(queryValueGroups, translate, zoom, tolerance, cancellationToken);
     }
 
     private static Task ProcessSquareDistributionAsync<T>(List<DataSourceValueGroup<T>> queryValueGroups, QueryParameters queryParameters, CancellationToken cancellationToken) where T : struct, IDataSourceValueType<T>
@@ -251,7 +251,7 @@ partial class GrafanaDataSourceBase
             int ringDistance = (ringIndex + 1) / 2;
             int ringOffset = index - ringIndex * ringIndex;
 
-            int[] xySignSequence = { 1, -1, -1, 1, -1, 1, 1, -1 };
+            int[] xySignSequence = [1, -1, -1, 1, -1, 1, 1, -1];
             int xySign = xySignSequence[ringOffset % 8];
             int xyOffset = xySign * (ringOffset + 4) / 8;
 
