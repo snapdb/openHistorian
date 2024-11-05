@@ -100,7 +100,10 @@ public abstract class Reference<T> : GrafanaFunctionBase<T> where T : struct, ID
             yield break;
         
         double reference = enumerator.Current.Value;
-            
+
+        if (applyWrapOps)
+            reference = Angle.ConvertFrom(reference, units);
+
         Dictionary<string, MetadataMap> metadataMaps = parameters.MetadataMaps;
         MetadataMap refCoordinates = null;
         double refLongitude = default, refLatitude = default;
@@ -146,10 +149,7 @@ public abstract class Reference<T> : GrafanaFunctionBase<T> where T : struct, ID
             if (applyWrapOps)
             {
                 // Apply unwrap operations to angles converted to radians
-                Angle[] angles = new[] {
-                    Angle.ConvertFrom(enumerator.Current.Value, units), 
-                    Angle.ConvertFrom(reference, units)
-                }.Unwrap().ToArray();
+                Angle[] angles = new[] { Angle.ConvertFrom(enumerator.Current.Value, units), (Angle)reference }.Unwrap().ToArray();
 
                 yield return enumerator.Current with
                 {
