@@ -71,4 +71,19 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
         }
         return Ok(AdapterCollectionHelper< IInputAdapter>.GetConnectionParameters(assemblyName,typeName,connectionString));
     }
+
+    public async Task<IActionResult> ProxyToAdapter(string assemblyName, string typeName, string resourceName, CancellationToken cancellationToken)
+    {
+        if (!GetAuthCheck())
+            return Unauthorized();
+
+        return await Task<IActionResult>.Run(() =>
+        {
+            Func<ControllerBase,IActionResult> adapterMethod = AdapterCollectionHelper<IInputAdapter>.GetUIResources(assemblyName, typeName)[resourceName];
+            if (adapterMethod is null)
+                return NotFound();
+
+            return adapterMethod.Invoke(this);
+        });
+    }
 } 

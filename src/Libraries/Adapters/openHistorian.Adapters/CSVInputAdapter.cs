@@ -27,9 +27,14 @@ using Gemstone.Diagnostics;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
+using System.Net.Mime;
+using System.Reflection;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Timers;
 using Timer = System.Timers.Timer;
@@ -712,4 +717,43 @@ public class CsvInputAdapter : InputAdapterBase
 
     #endregion
 
+    #region [ Static ]
+
+    [UserInterfaceResource("main.js")]
+    public static IActionResult GetUIEntryFile(ControllerBase baseController)
+    {
+        Stream stream = GetEmbbededFileStream("CsvInputAdapterRemoteEntry");
+        return baseController.File(stream, "text/javascript");
+    }
+
+    [UserInterfaceResource("CsvInputAdapter.js")]
+    public static IActionResult GetUIBaseFile(ControllerBase baseController)
+    {
+        Stream stream = GetEmbbededFileStream("CsvInputAdapter");
+        return baseController.File(stream, "text/javascript");
+    }
+
+    [UserInterfaceResource("src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter.js")]
+    public static IActionResult GetUISrcFile(ControllerBase baseController)
+    {
+        Stream stream = GetEmbbededFileStream("src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter");
+        return baseController.File(stream, "text/javascript");
+    }
+
+    [UserInterfaceResource("vendors-node_modules_gpa-gemstone_react-graph_lib_index_js.CsvInputAdapter.js")]
+    public static IActionResult GetUIModuleFile(ControllerBase baseController)
+    {
+        Stream stream = GetEmbbededFileStream("vendors-node_modules_gpa-gemstone_react-graph_lib_index_js.CsvInputAdapter");
+        return baseController.File(stream, "text/javascript");
+    }
+    private static Stream GetEmbbededFileStream(string fileName)
+    {
+        Assembly asm = Assembly.GetExecutingAssembly();
+        string resource = string.Format("openHistorian.WebUI.{0}", fileName);
+
+        return asm.GetManifestResourceStream(resource);
+       
+    }
+
+    #endregion
 }

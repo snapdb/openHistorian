@@ -1,13 +1,17 @@
-﻿using Gemstone.IO;
+﻿using Gemstone.Diagnostics;
+using Gemstone.IO;
 using Gemstone.Reflection.MemberInfoExtensions;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.TypeExtensions;
+using Microsoft.AspNetCore.Mvc;
+using openHistorian.Adapters;
 using openHistorian.Data.Types;
 using Org.BouncyCastle.Crypto.Parameters;
 using ServiceInterface;
 using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -116,5 +120,13 @@ public static class AdapterCollectionHelper<T>
             .Where(info => info.TryGetAttribute(typeof(ConnectionStringParameterAttribute)?.FullName ?? string.Empty, out Attribute? _));
 
         return infoList.Select(info => ConnectionParameter.GetConnectionParameter(info, connectionString));
+    }
+
+    public static Dictionary<string,Func<ControllerBase, IActionResult>> GetUIResources(string typeName, string assemblyName)
+    {
+        return GetType(assemblyName,typeName).GetMethods()
+            .Where(method => method.TryGetAttribute(out UserInterfaceResourceAttribute? attribute))
+            .ToDictionary(method => method.GetCustomAttribute<UserInterfaceResourceAttribute>()!.ResourceIdentifier,
+                method => (Func<ControllerBase, IActionResult>)((controller) => method.Invoke(null,new object[] { controller }) as IActionResult ?? controller.NotFound()));
     }
 }
