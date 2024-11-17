@@ -5,6 +5,8 @@ using Gemstone.Data.Model;
 using Gemstone.Timeseries.Adapters;
 using System.Net;
 using Gemstone.Data;
+using Gemstone.StringExtensions;
+using ServiceInterface;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -85,5 +87,32 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
 
             return adapterMethod.Invoke(this);
         });
+    }
+
+    /// <summary>
+    /// Sets the Connectinstring of a <see cref="CustomInputAdapter"/> based on a <see cref="IEnumerable{ConnectionParameter}"/>
+    /// </summary>
+    [HttpPost, Route("{id:int}/SetConnectionString")]
+    public async Task<IActionResult> SetConnectionString(int id, [FromBody] IEnumerable<ConnectionParameter> parameters, CancellationToken cancellationToken)
+    {
+        if (!PatchAuthCheck())
+            return Unauthorized();
+
+        await using AdoDataConnection connection = CreateConnection();
+        TableOperations<CustomInputAdapter> tableOperations = new(connection);
+        CustomInputAdapter? result = await tableOperations.QueryRecordAsync(new RecordRestriction($"{PrimaryKeyField} = {{0}}", id), cancellationToken);
+            
+        if (result is null)
+            return NotFound();
+
+        Dictionary<string, string> settings = parameters.ToDictionary(p => p.Name, p => p.Value);
+
+        string connectionString = settings.JoinKeyValuePairs();
+
+        result.ConnectionString = result.ConnectionString;
+
+        await tableOperations.UpdateRecordAsync(result, cancellationToken);
+       
+        return Ok(result);
     }
 } 
