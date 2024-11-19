@@ -15,6 +15,7 @@ public class Phasor
     [PrimaryKey(true)]
     public int ID { get; set; }
 
+    [ParentKey(typeof (Device))]
     public int DeviceID { get; set; }
 
     [Required]
@@ -27,7 +28,9 @@ public class Phasor
 
     public int BaseKV { get; set; }
 
-    public int? DestinationPhasorID { get; set; }
+    public int? PrimaryVoltageID { get; set; }
+
+    public int? SecondaryVoltageID { get; set; }
 
     public int SourceIndex { get; set; }
 
@@ -49,7 +52,7 @@ public class Phasor
     ///     Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    [UpdateValueExpression("DateTime.UtcNow")]
+    //[UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -58,6 +61,6 @@ public class Phasor
     [Required]
     [StringLength(50)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    [UpdateValueExpression("UserInfo.CurrentUserID")]
+    //[UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 }

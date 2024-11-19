@@ -14,7 +14,7 @@ public class CustomActionAdapter
 {
     // TODO: This expression fails to evaluate, even when Global is defined
     //[DefaultValueExpression("Global.NodeID")]
-    public Guid NodeID { get; set; }
+    //public Guid NodeID { get; set; }
 
     [PrimaryKey(true)]
     public int ID { get; set; }
@@ -47,12 +47,12 @@ public class CustomActionAdapter
     public string CreatedBy { get; set; }
 
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    [UpdateValueExpression("DateTime.UtcNow")]
+    //[UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    [UpdateValueExpression("UserInfo.CurrentUserID")]
+    //[UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 }

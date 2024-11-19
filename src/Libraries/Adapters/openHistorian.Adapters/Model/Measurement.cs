@@ -13,108 +13,48 @@ public class Measurement
 {
     [Label("Point ID")]
     [PrimaryKey(true)]
-    public int PointID
-    {
-        get;
-        set;
-    }
+    public int PointID { get; set; }
 
     [Label("Unique Signal ID")]
     [DefaultValueExpression("Guid.NewGuid()")]
-    public Guid SignalID
-    {
-        get;
-        set;
-    }
+    public Guid SignalID { get; set; }
 
-    public int? HistorianID
-    {
-        get;
-        set;
-    }
+    public int? HistorianID { get; set; }
 
-    public int? DeviceID
-    {
-        get;
-        set;
-    }
+    [ParentKey(typeof (Device))]
+    public int? DeviceID { get; set; }
 
     [Label("Tag Name")]
     [Required]
     [StringLength(200)]
-    public string PointTag
-    {
-        get;
-        set;
-    }
+    public string PointTag { get; set; } = "";
 
     [Label("Alternate Tag Name")]
-    public string AlternateTag
-    {
-        get;
-        set;
-    }
+    public string AlternateTag { get; set; } = "";
 
     [Label("Signal Type")]
-    public int SignalTypeID
-    {
-        get;
-        set;
-    }
+    public int SignalTypeID { get; set; }
 
     [Label("Phasor Source Index")]
-    public int? PhasorSourceIndex
-    {
-        get;
-        set;
-    }
+    public int? PhasorSourceIndex { get; set; }
 
     [Label("Signal Reference")]
     [Required]
     [StringLength(200)]
-    public string SignalReference
-    {
-        get;
-        set;
-    }
+    public string SignalReference { get; set; } = "";
 
     [DefaultValue(0.0D)]
-    public double Adder
-    {
-        get;
-        set;
-    }
+    public double Adder { get; set; }
 
     [DefaultValue(1.0D)]
-    public double Multiplier
-    {
-        get;
-        set;
-    }
+    public double Multiplier { get; set; }
 
-    public string Description
-    {
-        get;
-        set;
-    }
+    public string Description { get; set; } = "";
 
-    public bool Internal
-    {
-        get;
-        set;
-    }
+    public bool Internal { get; set; }
+    public bool Subscribed { get; set; }
 
-    public bool Subscribed
-    {
-        get;
-        set;
-    }
-
-    public bool Enabled
-    {
-        get;
-        set;
-    }
+    public bool Enabled { get; set; }
 
     /// <summary>
     /// Created on field.
