@@ -4,7 +4,8 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>openHistorian EE</title>
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+	<link id="gpa-colors" rel="stylesheet" href="/css/gpa-colors.css" />
 
 </head>
 <body>
@@ -14,10 +15,11 @@
 
 	<script>
 		var homePath = '/';
+		var proxyPath = '/proxy/'
 		var controllerViewPath = '/' + 'index.html';
 		var version = '1.0.0';
 	</script>
-	<script type="text/javascript" src="~/js/openHistorian.js"></script>
+	<script type="text/javascript" src="~/js/openHistorian.js?_=@DateTime.Now.Ticks"></script>
 
 </body>
 </html>
