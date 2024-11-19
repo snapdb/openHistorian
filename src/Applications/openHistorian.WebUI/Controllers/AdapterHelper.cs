@@ -6,16 +6,13 @@ using Gemstone.Timeseries.Adapters;
 using Gemstone.TypeExtensions;
 using Microsoft.AspNetCore.Mvc;
 using openHistorian.Adapters;
-using openHistorian.Data.Types;
-using Org.BouncyCastle.Crypto.Parameters;
 using ServiceInterface;
 using System.ComponentModel;
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace openHistorian.WebUI.Controllers;
 
-public static class AdapterCollectionHelper<T> 
+public static class AdapterCollectionHelper<T>
 {
     public class AdapterTypeDescription
     {
@@ -35,11 +32,16 @@ public static class AdapterCollectionHelper<T>
     /// <returns> A <see cref="IEnumerable{AdapterTypeDescription}"/> describing all available adapters of type <see cref="{T}"/></returns>
     public static IEnumerable<AdapterTypeDescription> GetAdapters()
     {
-        return adapterType
-                   .LoadImplementations(FilePath.GetAbsolutePath("").EnsureEnd(Path.DirectorySeparatorChar))
-                   .Distinct()
-                   .Where(type => GetEditorBrowsableState(type) != EditorBrowsableState.Never)
-                   .Select(GetDescription);
+        string path = FilePath.GetAbsolutePath("").EnsureEnd(Path.DirectorySeparatorChar);
+        IEnumerable<Type> implementations = adapterType.LoadImplementations(path).Distinct();
+
+        IEnumerable<Type> browsableImplementations = implementations
+            .Where(type => GetEditorBrowsableState(type) != EditorBrowsableState.Never);
+
+        IEnumerable<AdapterTypeDescription> descriptions = browsableImplementations
+            .Select(GetDescription);
+
+        return descriptions;
     }
 
     /// <summary>
@@ -69,7 +71,7 @@ public static class AdapterCollectionHelper<T>
     /// </returns>
     private static AdapterTypeDescription GetDescription(Type type)
     {
-        
+
         AdapterTypeDescription adapterTypeDescription = new AdapterTypeDescription()
         {
             Assembly = AssemblyName.GetAssemblyName(type.Assembly.Location).Name ?? String.Empty,
@@ -96,37 +98,68 @@ public static class AdapterCollectionHelper<T>
         return adapterTypeDescription;
     }
 
-    private static Type? GetType(string assemblyName, string typeName) 
+    private static Type? GetType(string assemblyName, string typeName)
     {
-        return GetAdapters()
-            .Where((a) => a.Assembly.Equals(assemblyName, StringComparison.OrdinalIgnoreCase))
-            .SingleOrDefault(a => a.TypeName.Equals(typeName, StringComparison.OrdinalIgnoreCase))?.Type;
+        IEnumerable<AdapterTypeDescription> allAdapters = GetAdapters();
+        IEnumerable<AdapterTypeDescription> adapters = allAdapters.Where((a) => a.Assembly.Equals(assemblyName, StringComparison.OrdinalIgnoreCase));
 
+        Type? type = adapters.SingleOrDefault(a => a.TypeName.Equals(typeName, StringComparison.OrdinalIgnoreCase))?.Type;
 
+        return type;
     }
-    
-    public static IEnumerable<ConnectionParameter> GetConnectionParameters(string assemblyName, string typeName, string connectionString) => 
+
+    public static IEnumerable<ConnectionParameter> GetConnectionParameters(string assemblyName, string typeName, string connectionString) =>
         GetConnectionParameters(GetType(assemblyName, typeName), connectionString);
-    
-    public static IEnumerable<ConnectionParameter> GetConnectionParameters(Type? type, string connectionString) 
+
+    public static IEnumerable<ConnectionParameter> GetConnectionParameters(Type? type, string connectionString)
     {
-        if ( type is null)
+        if (type is null)
         {
             return new List<ConnectionParameter>();
         }
-     
+
         // Get the list of properties with ConnectionStringParameterAttribute annotations.
-        IEnumerable<PropertyInfo> infoList = adapterType.GetProperties()
-            .Where(info => info.TryGetAttribute(typeof(ConnectionStringParameterAttribute)?.FullName ?? string.Empty, out Attribute? _));
+        PropertyInfo[] propertyInfo = type.GetProperties();
 
-        return infoList.Select(info => ConnectionParameter.GetConnectionParameter(info, connectionString));
+        IEnumerable<PropertyInfo> infoList = propertyInfo.Where(info =>
+            { 
+                return info.TryGetAttribute(typeof(ConnectionStringParameterAttribute), out Attribute? _);
+            });
+
+        IEnumerable<ConnectionParameter> connectionParameters = infoList.Select(info => ConnectionParameter.GetConnectionParameter(info, connectionString));
+
+        return connectionParameters;
     }
 
-    public static Dictionary<string,Func<ControllerBase, IActionResult>> GetUIResources(string typeName, string assemblyName)
+    public static Dictionary<string, Func<ControllerBase, IActionResult>> GetUIResources(string typeName, string assemblyName)
     {
-        return GetType(assemblyName,typeName).GetMethods()
-            .Where(method => method.TryGetAttribute(out UserInterfaceResourceAttribute? attribute))
-            .ToDictionary(method => method.GetCustomAttribute<UserInterfaceResourceAttribute>()!.ResourceIdentifier,
-                method => (Func<ControllerBase, IActionResult>)((controller) => method.Invoke(null,new object[] { controller }) as IActionResult ?? controller.NotFound()));
+        Type? type = GetType(assemblyName, typeName);
+        if (type is null)
+            return new Dictionary<string, Func<ControllerBase, IActionResult>>();
+
+        MethodInfo[] methodInfo = type.GetMethods();
+        IEnumerable<MethodInfo> methods = methodInfo.Where(method => method.TryGetAttribute(out UserInterfaceResourceAttribute? attribute));
+
+        Dictionary<string, Func<ControllerBase, IActionResult>> resourceDictionary = new Dictionary<string, Func<ControllerBase, IActionResult>>();
+
+        foreach (MethodInfo method in methods)
+        {
+            UserInterfaceResourceAttribute? attribute = method.GetCustomAttribute<UserInterfaceResourceAttribute>();
+            if (attribute is null)
+                continue;
+
+            string resourceIdentifier = attribute.ResourceIdentifier;
+
+            Func<ControllerBase, IActionResult> action = (controller) =>
+            {
+                var result = method.Invoke(null, new object[] { controller }) as IActionResult;
+                return result ?? controller.NotFound();
+            };
+
+            resourceDictionary[resourceIdentifier] = action;
+        }
+
+        return resourceDictionary;
     }
+
 }
