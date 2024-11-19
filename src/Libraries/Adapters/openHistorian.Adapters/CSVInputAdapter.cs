@@ -31,10 +31,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
-using System.IO;
-using System.Net.Mime;
 using System.Reflection;
-using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Timers;
 using Timer = System.Timers.Timer;
@@ -98,8 +95,7 @@ public class CsvInputAdapter : InputAdapterBase
     /// </summary>
     [ConnectionStringParameter,
     Description("Define the name of the CSV file from which measurements will be read."),
-    DefaultValue("measurements.csv"),
-    CustomConfigurationEditor("GSF.TimeSeries.UI.WPF.dll", "GSF.TimeSeries.UI.Editors.FileDialogEditor", "type=open; checkFileExists=true; defaultExt=.csv; filter=CSV files|*.csv|AllFiles|*.*")]
+    DefaultValue("measurements.csv")]
     public string FileName
     {
         get
