@@ -6,6 +6,6 @@ namespace openHistorian.WebUI.Controllers;
 
 [Route("api/DeviceView")]
 [ApiController]
-public class DeviceDetailControlleer : ReadOnlyModelController<DeviceDetail>
+public class DeviceDetailController : ReadOnlyModelController<DeviceDetail>
 {
 }
