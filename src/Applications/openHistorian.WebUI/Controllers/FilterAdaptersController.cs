@@ -11,10 +11,10 @@ namespace openHistorian.WebUI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ActionAdaptersController : ModelController<CustomActionAdapter>
+public class FilterAdaptersController : ModelController<CustomFilterAdapter>
 {
     /// <summary>
-    /// Gets all Assemblies holding action adapters.
+    /// Gets all Assemblies holding filter adapters.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing an <see cref="IEnumerable{ValueLabel}"/> of the assemblies.</returns>
     [HttpGet, Route("AssemblyNames")]
@@ -24,7 +24,7 @@ public class ActionAdaptersController : ModelController<CustomActionAdapter>
             return Unauthorized();
 
         return await Task.Run(() =>
-            Ok(AdapterCollectionHelper<IActionAdapter>.GetAdapters().Select(adapter => new ValueLabel()
+            Ok(AdapterCollectionHelper<IFilterAdapter>.GetAdapters().Select(adapter => new ValueLabel()
             {
                 Value = adapter.Assembly,
                 Label = adapter.Assembly
@@ -32,7 +32,7 @@ public class ActionAdaptersController : ModelController<CustomActionAdapter>
     }
 
     /// <summary>
-    /// Gets all action Adapters from a specified Assembly.
+    /// Gets all filter Adapters from a specified Assembly.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing an <see cref="IEnumerable{ValueLabel}"/> of the Types.</returns>
     [HttpGet, Route("Types/{assemblyName}")]
@@ -42,7 +42,7 @@ public class ActionAdaptersController : ModelController<CustomActionAdapter>
             return Unauthorized();
 
         return await Task.Run(() =>
-            Ok(AdapterCollectionHelper<IActionAdapter>.GetAdapters().Where((a) => String.Compare(a.Assembly, WebUtility.UrlDecode(assemblyName), true) == 0)
+            Ok(AdapterCollectionHelper<IFilterAdapter>.GetAdapters().Where((a) => String.Compare(a.Assembly, WebUtility.UrlDecode(assemblyName), true) == 0)
             .Select(adapter => new ValueLabel()
             {
                 Value = adapter.TypeName,
@@ -65,20 +65,20 @@ public class ActionAdaptersController : ModelController<CustomActionAdapter>
         if (id is not null)
         {
             await using AdoDataConnection connection = CreateConnection();
-            TableOperations<CustomActionAdapter> tableOperations = new(connection);
-            CustomActionAdapter? result = await tableOperations.QueryRecordAsync(new RecordRestriction($"{PrimaryKeyField} = {{0}}", id), cancellationToken);
+            TableOperations<CustomFilterAdapter> tableOperations = new(connection);
+            CustomFilterAdapter? result = await tableOperations.QueryRecordAsync(new RecordRestriction($"{PrimaryKeyField} = {{0}}", id), cancellationToken);
             if (result is not null)
                 connectionString = result.ConnectionString;
         }
         string assemblyName = WebUtility.UrlDecode(encodedAssemblyName);
         string typeName = WebUtility.UrlDecode(encodedTypeName);
+        IEnumerable<ConnectionParameter> connectionParameters = AdapterCollectionHelper<IFilterAdapter>.GetConnectionParameters(assemblyName, typeName, connectionString);
 
-        IEnumerable<ConnectionParameter> connectionParameters = AdapterCollectionHelper<IActionAdapter>.GetConnectionParameters(assemblyName, typeName, connectionString);
         return Ok(connectionParameters);
     }
 
     /// <summary>
-    /// Sets the ConnectionString of a <see cref="CustomActionAdapter"/> based on a <see cref="IEnumerable{ConnectionParameter}"/>
+    /// Sets the ConnectionString of a <see cref="CustomFilterAdapter"/> based on a <see cref="IEnumerable{ConnectionParameter}"/>
     /// </summary>
     [HttpPost, Route("{id:int}/SetConnectionString")]
     public async Task<IActionResult> SetConnectionString(int id, [FromBody] IEnumerable<ConnectionParameter> parameters, CancellationToken cancellationToken)
@@ -87,8 +87,8 @@ public class ActionAdaptersController : ModelController<CustomActionAdapter>
             return Unauthorized();
 
         await using AdoDataConnection connection = CreateConnection();
-        TableOperations<CustomActionAdapter> tableOperations = new(connection);
-        CustomActionAdapter? result = await tableOperations.QueryRecordAsync(new RecordRestriction($"{PrimaryKeyField} = {{0}}", id), cancellationToken);
+        TableOperations<CustomFilterAdapter> tableOperations = new(connection);
+        CustomFilterAdapter? result = await tableOperations.QueryRecordAsync(new RecordRestriction($"{PrimaryKeyField} = {{0}}", id), cancellationToken);
 
         if (result is null)
             return NotFound();
@@ -105,7 +105,7 @@ public class ActionAdaptersController : ModelController<CustomActionAdapter>
     }
 
     /// <summary>
-    /// Retrieves the JavaScript module containing UI resources for the specified action adapter.
+    /// Retrieves the JavaScript module containing UI resources for the specified filter adapter.
     /// </summary>
     /// <returns> An <see cref="IActionResult"/> containing the JavaScript module required by the adapter's UI. </returns>
     [HttpGet, Route("Components/{encodedTypeName}/{encodedAssemblyName}/{encodedResourceName}")]
@@ -120,7 +120,7 @@ public class ActionAdaptersController : ModelController<CustomActionAdapter>
 
         return await Task.Run(() =>
         {
-            Dictionary<string, Func<ControllerBase, IActionResult>> adapterDictionary = AdapterCollectionHelper<IActionAdapter>.GetUIResources(typeName, assemblyName);
+            Dictionary<string, Func<ControllerBase, IActionResult>> adapterDictionary = AdapterCollectionHelper<IFilterAdapter>.GetUIResources(typeName, assemblyName);
             Func<ControllerBase, IActionResult>? adapterMethod = adapterDictionary.GetValueOrDefault(resourceName);
             if (adapterMethod is null)
                 return NotFound();

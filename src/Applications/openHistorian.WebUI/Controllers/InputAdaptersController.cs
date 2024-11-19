@@ -24,7 +24,7 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
         if (!GetAuthCheck())
             return Unauthorized();
 
-        return await Task<IActionResult>.Run(() =>
+        return await Task.Run(() =>
             Ok(AdapterCollectionHelper<IInputAdapter>.GetAdapters().Select(adapter => new ValueLabel()
             {
                 Value = adapter.Assembly,
@@ -42,7 +42,7 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
         if (!GetAuthCheck())
             return Unauthorized();
 
-        return await Task<IActionResult>.Run(() =>
+        return await Task.Run(() =>
             Ok(AdapterCollectionHelper<IInputAdapter>.GetAdapters().Where((a) => String.Compare(a.Assembly, WebUtility.UrlDecode(assemblyName),true) == 0)
             .Select(adapter => new ValueLabel()
             {
@@ -55,8 +55,8 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
     /// Gets all <see cref="ConnectionParameter"> from a specified Type and Assembly.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing an <see cref="ConnectionParameter"/> for the specified Adapter.</returns>
-    [HttpGet, Route("/{typeName}/{assemblyName}/ConnectionParameters/{id:int?}")]
-    public async Task<IActionResult> GetConnectionStringParameters(string assemblyName, string typeName,CancellationToken cancellationToken, int? id = null)
+    [HttpGet, Route("{encodedTypeName}/{encodedAssemblyName}/ConnectionParameters/{id:int?}")]
+    public async Task<IActionResult> GetConnectionStringParameters(string encodedAssemblyName, string encodedTypeName, CancellationToken cancellationToken, int? id = null)
     {
         if (!GetAuthCheck())
             return Unauthorized();
@@ -71,22 +71,11 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
             if (result is not null)
                 connectionString = result.ConnectionString;
         }
-        return Ok(AdapterCollectionHelper< IInputAdapter>.GetConnectionParameters(assemblyName,typeName,connectionString));
-    }
+        string assemblyName = WebUtility.UrlDecode(encodedAssemblyName);
+        string typeName = WebUtility.UrlDecode(encodedTypeName);
 
-    public async Task<IActionResult> ProxyToAdapter(string assemblyName, string typeName, string resourceName, CancellationToken cancellationToken)
-    {
-        if (!GetAuthCheck())
-            return Unauthorized();
-
-        return await Task<IActionResult>.Run(() =>
-        {
-            Func<ControllerBase,IActionResult> adapterMethod = AdapterCollectionHelper<IInputAdapter>.GetUIResources(assemblyName, typeName)[resourceName];
-            if (adapterMethod is null)
-                return NotFound();
-
-            return adapterMethod.Invoke(this);
-        });
+        IEnumerable<ConnectionParameter> connectionParameters = AdapterCollectionHelper<IInputAdapter>.GetConnectionParameters(assemblyName, typeName, connectionString);
+        return Ok(connectionParameters);
     }
 
     /// <summary>
@@ -101,7 +90,7 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
         await using AdoDataConnection connection = CreateConnection();
         TableOperations<CustomInputAdapter> tableOperations = new(connection);
         CustomInputAdapter? result = await tableOperations.QueryRecordAsync(new RecordRestriction($"{PrimaryKeyField} = {{0}}", id), cancellationToken);
-            
+
         if (result is null)
             return NotFound();
 
@@ -112,7 +101,32 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
         result.ConnectionString = result.ConnectionString;
 
         await tableOperations.UpdateRecordAsync(result, cancellationToken);
-       
+
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Retrieves the JavaScript module containing UI resources for the specified input adapter.
+    /// </summary>
+    /// <returns> An <see cref="IActionResult"/> containing the JavaScript module required by the adapter's UI. </returns>
+    [HttpGet, Route("Components/{encodedTypeName}/{encodedAssemblyName}/{encodedResourceName}")]
+    public async Task<IActionResult> ProxyToAdapter(string encodedAssemblyName, string encodedTypeName, string encodedResourceName, CancellationToken cancellationToken)
+    {
+        if (!GetAuthCheck())
+            return Unauthorized();
+
+        string assemblyName = WebUtility.UrlDecode(encodedAssemblyName);
+        string typeName = WebUtility.UrlDecode(encodedTypeName);
+        string resourceName = WebUtility.UrlDecode(encodedResourceName);
+
+        return await Task.Run(() =>
+        {
+            Dictionary<string, Func<ControllerBase, IActionResult>> adapterDictionary = AdapterCollectionHelper<IInputAdapter>.GetUIResources(typeName, assemblyName);
+            Func<ControllerBase,IActionResult>? adapterMethod = adapterDictionary.GetValueOrDefault(resourceName);
+            if (adapterMethod is null)
+                return NotFound();
+
+            return adapterMethod.Invoke(this);
+        });
     }
 } 
