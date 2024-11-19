@@ -13,7 +13,7 @@ public class DeviceController : ModelController<Device>
     /// </summary>
     /// <param name="detail">Device to get the connection parameters for.</param>
     /// <returns>Default Connection Parameters for a device.</returns>
-    [HttpPost, Route("ConnectionParameters")]
+    [HttpPost, Route("ConnectionParameters/{id:int?}")]
     public IActionResult GetConnectionParameters(Device detail)
     {
         return Ok(new List<object>());
