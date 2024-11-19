@@ -61,42 +61,11 @@ namespace openHistorian.WebUI.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
+        ///   Looks up a localized string similar to .
         /// </summary>
-        internal static byte[] CsvInputAdapter {
+        internal static string File1 {
             get {
-                object obj = ResourceManager.GetObject("CsvInputAdapter", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] CsvInputAdapterRemoteEntry {
-            get {
-                object obj = ResourceManager.GetObject("CsvInputAdapterRemoteEntry", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] src_CSVInputAdapter_CSVInputAdapter_tsx_CsvInputAdapter {
-            get {
-                object obj = ResourceManager.GetObject("src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] vendors_node_modules_gpa_gemstone_react_graph_lib_index_js_CsvInputAdapter {
-            get {
-                object obj = ResourceManager.GetObject("vendors-node_modules_gpa-gemstone_react-graph_lib_index_js.CsvInputAdapter", resourceCulture);
-                return ((byte[])(obj));
+                return ResourceManager.GetString("File1", resourceCulture);
             }
         }
     }

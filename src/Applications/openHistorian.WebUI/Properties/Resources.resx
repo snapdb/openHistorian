@@ -117,17 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="vendors-node_modules_gpa-gemstone_react-graph_lib_index_js.CsvInputAdapter" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\vendors-node_modules_gpa-gemstone_react-graph_lib_index_js.CsvInputAdapter.js;System.Byte[]</value>
-  </data>
-  <data name="src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter.js;System.Byte[]</value>
-  </data>
-  <data name="CsvInputAdapter" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\CsvInputAdapter.js;System.Byte[]</value>
-  </data>
-  <data name="CsvInputAdapterRemoteEntry" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\CsvInputAdapterRemoteEntry.js;System.Byte[]</value>
+  <data name="File1" xml:space="preserve">
+    <value />
   </data>
 </root>
