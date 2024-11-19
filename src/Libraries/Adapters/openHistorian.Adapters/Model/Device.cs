@@ -16,7 +16,7 @@ public class Device
     // This magical attribute means you never have to lookup or provide
     // a NodeID for new Device records...
     //[DefaultValueExpression("Global.NodeID")]
-    public Guid NodeID { get; set; }
+    //public Guid NodeID { get; set; }
 
     [Label("Local Device ID")]
     [PrimaryKey(true)]
@@ -134,7 +134,7 @@ public class Device
     ///     Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    [UpdateValueExpression("DateTime.UtcNow")]
+    //[UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -143,8 +143,6 @@ public class Device
     [Required]
     [StringLength(50)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    [UpdateValueExpression("UserInfo.CurrentUserID")]
+    //[UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; } = "";
-
-    
 }
