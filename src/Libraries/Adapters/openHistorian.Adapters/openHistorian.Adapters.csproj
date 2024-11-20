@@ -11,14 +11,17 @@
   <ItemGroup>
     <None Remove="Resources\CsvInputAdapter.js" />
     <None Remove="Resources\CsvInputAdapterRemoteEntry.js" />
+    <None Remove="Resources\CSVInput\chunk.js" />
+    <None Remove="Resources\CSVInput\main.js" />
+    <None Remove="Resources\CSVInput\openHistorian_Adapters_CsvInputAdapter.js" />
     <None Remove="Resources\openHistorian_Adapters_CsvInputAdapter.js" />
     <None Remove="Resources\src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter.js" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\CsvInput\CsvInputAdapter.js" />
-    <EmbeddedResource Include="Resources\CsvInput\openHistorian_Adapters_CsvInputAdapter.js" />
-    <EmbeddedResource Include="Resources\CsvInput\src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter.js" />
+    <EmbeddedResource Include="Resources\CSVInput\chunk.js" />
+    <EmbeddedResource Include="Resources\CSVInput\main.js" />
+    <EmbeddedResource Include="Resources\CSVInput\openHistorian_Adapters_CsvInputAdapter.js" />
   </ItemGroup>
 
   <ItemGroup>
