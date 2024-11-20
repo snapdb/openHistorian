@@ -715,40 +715,36 @@ public class CsvInputAdapter : InputAdapterBase
 
     #region [ Static ]
 
-    [UserInterfaceResource("main.js")]
+    [UserInterfaceResource("openHistorian.Adapters.CsvInputAdapter.js")]
     public static IActionResult GetUIEntryFile(ControllerBase baseController)
     {
-        Stream stream = GetEmbbededFileStream("CsvInputAdapterRemoteEntry");
+        Stream stream = GetEmbbededFileStream("openHistorian_Adapters_CsvInputAdapter.js");
         return baseController.File(stream, "text/javascript");
     }
 
-    [UserInterfaceResource("CsvInputAdapter.js")]
+    [UserInterfaceResource("main.js")]
     public static IActionResult GetUIBaseFile(ControllerBase baseController)
     {
-        Stream stream = GetEmbbededFileStream("CsvInputAdapter");
+        Stream stream = GetEmbbededFileStream("main.js");
         return baseController.File(stream, "text/javascript");
     }
 
-    [UserInterfaceResource("src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter.js")]
-    public static IActionResult GetUISrcFile(ControllerBase baseController)
+    [UserInterfaceResource("chunk.js")]
+    public static IActionResult GetUIChunkFile(ControllerBase baseController)
     {
-        Stream stream = GetEmbbededFileStream("src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter");
+        Stream stream = GetEmbbededFileStream("chunk.js");
         return baseController.File(stream, "text/javascript");
     }
 
-    [UserInterfaceResource("vendors-node_modules_gpa-gemstone_react-graph_lib_index_js.CsvInputAdapter.js")]
-    public static IActionResult GetUIModuleFile(ControllerBase baseController)
-    {
-        Stream stream = GetEmbbededFileStream("vendors-node_modules_gpa-gemstone_react-graph_lib_index_js.CsvInputAdapter");
-        return baseController.File(stream, "text/javascript");
-    }
     private static Stream GetEmbbededFileStream(string fileName)
     {
-        Assembly asm = Assembly.GetExecutingAssembly();
-        string resource = string.Format("openHistorian.WebUI.{0}", fileName);
+        string? namespaceName = typeof(CsvInputAdapter).Namespace;
+        string resource = string.Format("{0}.Resources.CSVInput.{1}", namespaceName, fileName);
 
-        return asm.GetManifestResourceStream(resource);
-       
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        Stream? stream = assembly.GetManifestResourceStream(resource);
+
+        return stream;
     }
 
     #endregion
