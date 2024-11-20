@@ -98,7 +98,7 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
 
         string connectionString = settings.JoinKeyValuePairs();
 
-        result.ConnectionString = result.ConnectionString;
+        result.ConnectionString = connectionString;
 
         await tableOperations.UpdateRecordAsync(result, cancellationToken);
 
@@ -122,7 +122,7 @@ public class InputAdaptersController : ModelController<CustomInputAdapter>
         return await Task.Run(() =>
         {
             Dictionary<string, Func<ControllerBase, IActionResult>> adapterDictionary = AdapterCollectionHelper<IInputAdapter>.GetUIResources(typeName, assemblyName);
-            Func<ControllerBase,IActionResult>? adapterMethod = adapterDictionary.GetValueOrDefault(resourceName);
+            Func<ControllerBase, IActionResult>? adapterMethod = adapterDictionary.GetValueOrDefault(resourceName);
             if (adapterMethod is null)
                 return NotFound();
 
