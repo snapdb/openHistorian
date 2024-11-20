@@ -182,7 +182,6 @@ public class WebServer(WebServerConfiguration configuration)
         {
             endpoints.MapRazorPages();
             endpoints.MapControllers();
-            endpoints.MapFallbackToPage("/Index");
         });
 
     }
