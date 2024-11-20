@@ -46,10 +46,13 @@ using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
 using GrafanaAdapters.Model.Database;
+using Microsoft.AspNetCore.Mvc;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using AlarmStateRecord = GrafanaAdapters.Model.Database.AlarmState;
 using ConnectionStringParser = Gemstone.Configuration.ConnectionStringParser<Gemstone.Timeseries.Adapters.ConnectionStringParameterAttribute>;
 using Timer = System.Timers.Timer;
+using System.IO;
+using System.Reflection;
 
 namespace GrafanaAdapters;
 
@@ -870,6 +873,38 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
             elapsedTimeString = elapsedTimeString.Substring(0, 10);
 
         return elapsedTimeString;
+    }
+
+    [UserInterfaceResource("GrafanaAdapters.DeviceAlarmStateAdapter.js")]
+    public static IActionResult GetUIEntryFile(ControllerBase baseController)
+    {
+        Stream stream = GetEmbbededFileStream("GrafanaAdapters_DeviceAlarmStateAdapter.js");
+        return baseController.File(stream, "text/javascript");
+    }
+
+    [UserInterfaceResource("main.js")]
+    public static IActionResult GetUIBaseFile(ControllerBase baseController)
+    {
+        Stream stream = GetEmbbededFileStream("main.js");
+        return baseController.File(stream, "text/javascript");
+    }
+
+    [UserInterfaceResource("chunk.js")]
+    public static IActionResult GetUIChunkFile(ControllerBase baseController)
+    {
+        Stream stream = GetEmbbededFileStream("chunk.js");
+        return baseController.File(stream, "text/javascript");
+    }
+
+    private static Stream GetEmbbededFileStream(string fileName)
+    {
+        string? namespaceName = typeof(DeviceAlarmStateAdapter).Namespace;
+        string resource = string.Format("{0}.Resources.DeviceAlarmState.{1}", namespaceName, fileName);
+
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        Stream? stream = assembly.GetManifestResourceStream(resource);
+
+        return stream;
     }
 
     #endregion
