@@ -97,7 +97,7 @@ public class FilterAdaptersController : ModelController<CustomFilterAdapter>
 
         string connectionString = settings.JoinKeyValuePairs();
 
-        result.ConnectionString = result.ConnectionString;
+        result.ConnectionString = connectionString;
 
         await tableOperations.UpdateRecordAsync(result, cancellationToken);
 

@@ -97,7 +97,7 @@ public class OutputAdaptersController : ModelController<CustomOutputAdapter>
 
         string connectionString = settings.JoinKeyValuePairs();
 
-        result.ConnectionString = result.ConnectionString;
+        result.ConnectionString = connectionString;
 
         await tableOperations.UpdateRecordAsync(result, cancellationToken);
 
