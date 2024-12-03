@@ -29,7 +29,9 @@
     <PackageReference Include="Gemstone.Common" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+    <PackageReference Include="System.Runtime" Version="4.3.0" />
 
     <ProjectReference Include="..\..\..\..\..\..\gemstone\data\src\Gemstone.Data\Gemstone.Data.csproj" Condition="'$(Configuration)'=='Development'" />
     <PackageReference Include="Gemstone.Data" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
