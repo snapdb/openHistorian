@@ -2,8 +2,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34024.191
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.Core", "Libraries\openHistorian.Core\openHistorian.Core.csproj", "{639E80DD-42F5-4A9B-9FF1-85C9A7597D71}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{069EBC5F-6863-431A-8576-D61EBE5B28FA}"
 	ProjectSection(SolutionItems) = preProject
 		..\docs\README.md = ..\docs\README.md
@@ -83,6 +81,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrafanaAdapters", "Libraries\GrafanaAdapters\GrafanaAdapters.csproj", "{3C8D8504-1880-4CC4-AB1A-8793F3625A31}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhasorProtocolAdapters", "Libraries\Adapters\PhasorProtocolAdapters\PhasorProtocolAdapters.csproj", "{DBAA1336-4597-4FA2-A51C-25D8213D95D9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.Core", "Libraries\openHistorian.Core\openHistorian.Core.csproj", "{F0F36A2C-BAEA-44C4-AD01-D61B81855E94}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataExtractionUtility", "Tools\DataExtractionUtility\DataExtractionUtility.csproj", "{8F477BB8-2277-43E3-BF0B-035B0F4F1B46}"
 EndProject
@@ -285,6 +285,12 @@ Global
 		{DBAA1336-4597-4FA2-A51C-25D8213D95D9}.Mono|Any CPU.Build.0 = Release|Any CPU
 		{DBAA1336-4597-4FA2-A51C-25D8213D95D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DBAA1336-4597-4FA2-A51C-25D8213D95D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0F36A2C-BAEA-44C4-AD01-D61B81855E94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0F36A2C-BAEA-44C4-AD01-D61B81855E94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0F36A2C-BAEA-44C4-AD01-D61B81855E94}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{F0F36A2C-BAEA-44C4-AD01-D61B81855E94}.Development|Any CPU.Build.0 = Development|Any CPU
+		{F0F36A2C-BAEA-44C4-AD01-D61B81855E94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0F36A2C-BAEA-44C4-AD01-D61B81855E94}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8F477BB8-2277-43E3-BF0B-035B0F4F1B46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8F477BB8-2277-43E3-BF0B-035B0F4F1B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F477BB8-2277-43E3-BF0B-035B0F4F1B46}.Development|Any CPU.ActiveCfg = Debug|Any CPU
@@ -305,7 +311,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{639E80DD-42F5-4A9B-9FF1-85C9A7597D71} = {00000000-0000-0000-0000-000000000000}
 		{AC8924A6-5141-4F21-B45D-016F5892027F} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
 		{E0CCFF2A-C2DF-436C-B34C-A20215DA227A} = {069EBC5F-6863-431A-8576-D61EBE5B28FA}
 		{554D6095-55C9-4986-B7D2-9C632F2A9037} = {A5961018-6CCE-489B-ADCA-43DC5C63480E}
