@@ -29,8 +29,6 @@ namespace openHistorian.Model;
 
 public interface IIaonAdapter
 {
-    Guid NodeID { get; set; }
-
     int ID { get; set; }
 
     string AdapterName { get; set; }
