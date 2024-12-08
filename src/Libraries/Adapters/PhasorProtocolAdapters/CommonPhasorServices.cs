@@ -945,7 +945,7 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     /// <param name="baseKV">Nominal kV of line associated with phasor.</param>
     /// <returns>A new point tag created using the configured point tag name expression.</returns>
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public static string CreatePointTag(string companyAcronym, string deviceAcronym, string vendorAcronym, string signalTypeAcronym, string label = null, int signalIndex = -1, char phase = '_', int baseKV = 0)
+    public static string CreatePointTag(string? companyAcronym, string? deviceAcronym, string? vendorAcronym, string? signalTypeAcronym, string? label = null, int signalIndex = -1, char phase = '_', int baseKV = 0)
     {
         // Initialize point tag expression parser
         s_pointTagExpressionParser ??= InitializePointTagExpressionParser();
