@@ -10,59 +10,27 @@ namespace openHistorian.Model;
 
 public class CustomFilterAdapter
 {
-    public Guid NodeID
-    {
-        get;
-        set;
-    }
+    //public Guid NodeID { get; set; }
 
     [PrimaryKey(true)]
-    public int ID
-    {
-        get;
-        set;
-    }
+    public int ID { get; set; }
 
     [Required]
     [StringLength(200)]
     [AcronymValidation]
-    public string AdapterName
-    {
-        get;
-        set;
-    }
+    public string AdapterName { get; set; }
+
+    [Required] 
+    public string AssemblyName { get; set; }
 
     [Required]
-    public string AssemblyName
-    {
-        get;
-        set;
-    }
+    public string TypeName { get; set; }
 
-    [Required]
-    public string TypeName
-    {
-        get;
-        set;
-    }
+    public string ConnectionString { get; set; }
 
-    public string ConnectionString
-    {
-        get;
-        set;
-    }
+    public int LoadOrder { get; set; }
 
-    public int LoadOrder
-    {
-        get;
-        set;
-    }
-
-    public bool Enabled
-    {
-        get;
-        set;
-    }
+    public bool Enabled { get; set; }
 
     /// <summary>
     /// Created on field.
@@ -82,7 +50,7 @@ public class CustomFilterAdapter
     /// Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    [UpdateValueExpression("DateTime.UtcNow")]
+    //[UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -91,6 +59,6 @@ public class CustomFilterAdapter
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    [UpdateValueExpression("UserInfo.CurrentUserID")]
+    //[UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 }
