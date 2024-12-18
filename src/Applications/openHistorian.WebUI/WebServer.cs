@@ -126,15 +126,27 @@ public class WebServer(WebServerConfiguration configuration)
         {
             //options.Conventions.AuthorizePage("/Index");
             options.Conventions.AllowAnonymousToPage("/Index");
-            //Temp
             options.Conventions.AddPageRoute("/Index", "System");
+            options.Conventions.AddPageRoute("/Index", "DeviceOverview");
             options.Conventions.AddPageRoute("/Index", "Devices/{id?}");
             options.Conventions.AddPageRoute("/Index", "Phasors");
             options.Conventions.AddPageRoute("/Index", "Measurements/{id?}");
+            options.Conventions.AddPageRoute("/Index", "AddDeviceWizard");
+            options.Conventions.AddPageRoute("/Index", "ActionAdapters");
+            options.Conventions.AddPageRoute("/Index", "InputAdapters");
+            options.Conventions.AddPageRoute("/Index", "OutputAdapters");
+            options.Conventions.AddPageRoute("/Index", "FilterAdapters");
             options.Conventions.AddPageRoute("/Index", "Companies");
+            options.Conventions.AddPageRoute("/Index", "Vendors");
+            options.Conventions.AddPageRoute("/Index", "VendorDevices");
+            options.Conventions.AddPageRoute("/Index", "Interconnections");
+            options.Conventions.AddPageRoute("/Index", "SignalType");
+            options.Conventions.AddPageRoute("/Index", "Export");
+            options.Conventions.AddPageRoute("/Index", "Trend");
+            options.Conventions.AddPageRoute("/Index", "Event");
+            options.Conventions.AddPageRoute("/Index", "Reports");
+            options.Conventions.AddPageRoute("/Index", "Themes");
 
-            // TODO: Add needed routes
-            //          options.Conventions.AddPageRoute("/Index", "Overview");
 
             //options.Conventions.AuthorizePage("/Devices", Viewers);
             //options.Conventions.AuthorizePage("/Device", Editors);
