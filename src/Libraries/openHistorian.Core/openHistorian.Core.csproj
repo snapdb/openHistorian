@@ -51,6 +51,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj" />
     <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'">
       <Private>True</Private>
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
