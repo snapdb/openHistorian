@@ -16,7 +16,7 @@ public class Device
     // This magical attribute means you never have to lookup or provide
     // a NodeID for new Device records...
     //[DefaultValueExpression("Global.NodeID")]
-    public Guid NodeID { get; set; }
+    //public Guid NodeID { get; set; }
 
     [Label("Local Device ID")]
     [PrimaryKey(true)]
@@ -25,20 +25,20 @@ public class Device
     public int? ParentID { get; set; }
 
     [Label("Unique Device ID")]
-    [DefaultValueExpression("Guid.NewGuid()")]
-    public Guid UniqueID { get; set; }
+    //[DefaultValueExpression("Guid.NewGuid()")]
+    public Guid UniqueID { get; set; } = Guid.NewGuid();
 
     [Required]
     [StringLength(200)]
     [AcronymValidation]
-    public string Acronym { get; set; }
+    public string Acronym { get; set; } = "";
 
     [StringLength(200)]
-    public string Name { get; set; }
+    public string Name { get; set; } = "";
 
     [Label("Folder Name")]
     [StringLength(20)]
-    public string OriginalSource { get; set; }
+    public string? OriginalSource { get; set; }
 
     [Label("Is Concentrator")]
     public bool IsConcentrator { get; set; }
@@ -68,10 +68,11 @@ public class Device
     public int? InterconnectionID { get; set; }
 
     [Label("Connection String")]
-    public string ConnectionString { get; set; }
+    [Required]
+    public string ConnectionString { get; set; } = "";
 
     [StringLength(200)]
-    public string TimeZone { get; set; }
+    public string TimeZone { get; set; } = "";
 
     [Label("Frames Per Second")]
     [DefaultValue(30)]
@@ -107,7 +108,7 @@ public class Device
     public bool ConnectOnDemand { get; set; }
 
     [Label("Contacts")]
-    public string ContactList { get; set; }
+    public string? ContactList { get; set; }
 
     public int? MeasuredLines { get; set; }
 
@@ -127,13 +128,13 @@ public class Device
     [Required]
     [StringLength(50)]
     [DefaultValueExpression("UserInfo.CurrentUserID")]
-    public string CreatedBy { get; set; }
+    public string CreatedBy { get; set; } = "";
 
     /// <summary>
     ///     Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    [UpdateValueExpression("DateTime.UtcNow")]
+    //[UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -142,6 +143,6 @@ public class Device
     [Required]
     [StringLength(50)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    [UpdateValueExpression("UserInfo.CurrentUserID")]
-    public string UpdatedBy { get; set; }
+    //[UpdateValueExpression("UserInfo.CurrentUserID")]
+    public string UpdatedBy { get; set; } = "";
 }

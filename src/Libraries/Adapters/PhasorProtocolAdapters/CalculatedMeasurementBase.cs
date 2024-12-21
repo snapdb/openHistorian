@@ -62,7 +62,6 @@ public abstract class CalculatedMeasurementBase : ActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(null)]
     [Description("Defines primary keys of input measurements the action adapter expects; can be one of a filter expression, measurement key, point tag or Guid.")]
-    [CustomConfigurationEditor("Gemstone.Timeseries.UI.WPF.dll", "Gemstone.Timeseries.UI.Editors.MeasurementEditor")]
     public override MeasurementKey[]? InputMeasurementKeys
     {
         get => base.InputMeasurementKeys;
@@ -79,7 +78,6 @@ public abstract class CalculatedMeasurementBase : ActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(null)]
     [Description("Defines primary keys of output measurements the action adapter expects; can be one of a filter expression, measurement key, point tag or Guid.")]
-    [CustomConfigurationEditor("Gemstone.Timeseries.UI.WPF.dll", "Gemstone.Timeseries.UI.Editors.MeasurementEditor")]
     public override IMeasurement[]? OutputMeasurements
     {
         get => base.OutputMeasurements;
