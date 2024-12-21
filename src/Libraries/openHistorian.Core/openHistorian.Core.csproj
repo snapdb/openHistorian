@@ -48,13 +48,15 @@
 
     <ProjectReference Include="..\..\..\..\..\gemstone\diagnostics\src\Gemstone.Diagnostics\Gemstone.Diagnostics.csproj" Condition="'$(Configuration)'=='Development'" />
     <PackageReference Include="Gemstone.Diagnostics" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
-  </ItemGroup>
 
-  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj" />
+    <PackageReference Include="Gemstone.Timeseries" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+
     <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'">
       <Private>True</Private>
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
     </ProjectReference>
+    
     <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'">
       <HintPath>..\..\..\Dependencies\SnapDB\SnapDB.dll</HintPath>
     </Reference>
