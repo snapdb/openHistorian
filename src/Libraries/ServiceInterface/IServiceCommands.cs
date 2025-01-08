@@ -22,6 +22,7 @@
 //******************************************************************************************************
 
 using Gemstone.PhasorProtocols;
+using Gemstone.Timeseries.Adapters;
 
 namespace ServiceInterface;
 
@@ -41,4 +42,10 @@ public interface IServiceCommands
     /// Gets the current status of the openHistorian.
     /// </summary>
     (string Status, string Type, string Description) GetCurrentStatus();
+
+    /// <summary>
+    /// Loads the available adapter protocols.
+    /// </summary>
+    /// <returns></returns>
+    (Type type, AdapterProtocolAttribute protocol)[] LoadAdapterProtocols();
 }

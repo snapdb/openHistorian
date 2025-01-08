@@ -1,6 +1,11 @@
+using System;
+using System.Reflection;
 using Gemstone.PhasorProtocols;
 using Gemstone.Timeseries;
+using Gemstone.Timeseries.Adapters;
+using Gemstone.TypeExtensions;
 using openHistorian.WebUI;
+using PhasorProtocolAdapters;
 using ServiceInterface;
 
 namespace openHistorian;
@@ -95,6 +100,28 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
         // WARNING / NORMAL / ERROR
 
         return ("NORMAL", "Service", "openHistorian service is running.");
+    }
+
+    /// <inheritdoc />
+    public (Type type, AdapterProtocolAttribute protocol)[] LoadAdapterProtocols()
+    {
+        List<Type> adapterTypes = [];
+
+        adapterTypes.AddRange(typeof(IInputAdapter).LoadImplementations());
+        adapterTypes.AddRange(typeof(IActionAdapter).LoadImplementations());
+
+        // Create a map of adapter types to their protocol attributes
+        Dictionary<Type, AdapterProtocolAttribute> adapterTypeMap = adapterTypes
+            .Select(type => (type, type.GetCustomAttribute<AdapterProtocolAttribute>()))
+            .Where(item => item.Item2 is not null)
+            .ToDictionary(tuple => tuple.type, tuple => tuple.Item2!);
+
+        // Filter adapter types to only include those with a protocol attribute
+        adapterTypes = adapterTypes
+            .Where(type => type.GetCustomAttribute<AdapterProtocolAttribute>() is not null)
+            .ToList();
+
+        return adapterTypes.Select(type => (type, type.GetCustomAttribute<AdapterProtocolAttribute>()!)).ToArray();
     }
 
     private void GetStatsForCurrentStatus()
