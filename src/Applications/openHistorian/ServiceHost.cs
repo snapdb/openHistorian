@@ -1,11 +1,29 @@
-using System;
-using System.Reflection;
+//******************************************************************************************************
+//  ServiceHost.cs - Gbtc
+//
+//  Copyright © 2025, Grid Protection Alliance.  All Rights Reserved.
+//
+//  Licensed to the Grid Protection Alliance (GPA) under one or more contributor license agreements. See
+//  the NOTICE file distributed with this work for additional information regarding copyright ownership.
+//  The GPA licenses this file to you under the MIT License (MIT), the "License"; you may not use this
+//  file except in compliance with the License. You may obtain a copy of the License at:
+//
+//      http://opensource.org/licenses/MIT
+//
+//  Unless agreed to in writing, the subject software distributed under the License is distributed on an
+//  "AS-IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. Refer to the
+//  License for the specific language governing permissions and limitations.
+//
+//  Code Modification History:
+//  ----------------------------------------------------------------------------------------------------
+//  03/13/2024 - J. Ritchie Carroll
+//       Generated original version of source code.
+//
+//******************************************************************************************************
+
 using Gemstone.PhasorProtocols;
 using Gemstone.Timeseries;
-using Gemstone.Timeseries.Adapters;
-using Gemstone.TypeExtensions;
 using openHistorian.WebUI;
-using PhasorProtocolAdapters;
 using ServiceInterface;
 
 namespace openHistorian;
@@ -100,28 +118,6 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
         // WARNING / NORMAL / ERROR
 
         return ("NORMAL", "Service", "openHistorian service is running.");
-    }
-
-    /// <inheritdoc />
-    public (Type type, AdapterProtocolAttribute protocol)[] LoadAdapterProtocols()
-    {
-        List<Type> adapterTypes = [];
-
-        adapterTypes.AddRange(typeof(IInputAdapter).LoadImplementations());
-        adapterTypes.AddRange(typeof(IActionAdapter).LoadImplementations());
-
-        // Create a map of adapter types to their protocol attributes
-        Dictionary<Type, AdapterProtocolAttribute> adapterTypeMap = adapterTypes
-            .Select(type => (type, type.GetCustomAttribute<AdapterProtocolAttribute>()))
-            .Where(item => item.Item2 is not null)
-            .ToDictionary(tuple => tuple.type, tuple => tuple.Item2!);
-
-        // Filter adapter types to only include those with a protocol attribute
-        adapterTypes = adapterTypes
-            .Where(type => type.GetCustomAttribute<AdapterProtocolAttribute>() is not null)
-            .ToList();
-
-        return adapterTypes.Select(type => (type, type.GetCustomAttribute<AdapterProtocolAttribute>()!)).ToArray();
     }
 
     private void GetStatsForCurrentStatus()

@@ -32,19 +32,9 @@
     <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Resources\DeviceAlarmState\chunk.js" />
-    <None Remove="Resources\DeviceAlarmState\GrafanaAdapters_DeviceAlarmStateAdapter.js" />
-    <None Remove="Resources\DeviceAlarmState\main.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\DeviceAlarmState\chunk.js" />
-    <EmbeddedResource Include="Resources\DeviceAlarmState\GrafanaAdapters_DeviceAlarmStateAdapter.js" />
-    <EmbeddedResource Include="Resources\DeviceAlarmState\main.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
-    <ProjectReference Include="..\..\..\..\..\gemstone\expressions\src\Gemstone.Expressions\Gemstone.Expressions.csproj" />
-    <ProjectReference Include="..\..\..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj" />
+    <ProjectReference Include="..\..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
+    <ProjectReference Include="..\..\..\..\..\..\gemstone\expressions\src\Gemstone.Expressions\Gemstone.Expressions.csproj" />
+    <ProjectReference Include="..\..\..\..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />

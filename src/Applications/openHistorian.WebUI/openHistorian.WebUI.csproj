@@ -55,7 +55,6 @@
     
     <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
-    <ProjectReference Include="..\..\Libraries\GrafanaAdapters\GrafanaAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
     <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
   </ItemGroup>

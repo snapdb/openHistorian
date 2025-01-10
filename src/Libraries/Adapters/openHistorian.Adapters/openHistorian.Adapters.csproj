@@ -9,24 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\CsvInputAdapter.js" />
-    <None Remove="Resources\CsvInputAdapterRemoteEntry.js" />
-    <None Remove="Resources\CSVInput\chunk.js" />
-    <None Remove="Resources\CSVInput\main.js" />
-    <None Remove="Resources\CSVInput\openHistorian_Adapters_CsvInputAdapter.js" />
-    <None Remove="Resources\openHistorian_Adapters_CsvInputAdapter.js" />
-    <None Remove="Resources\src_CSVInputAdapter_CSVInputAdapter_tsx.CsvInputAdapter.js" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\CSVInput\chunk.js" />
-    <EmbeddedResource Include="Resources\CSVInput\main.js" />
-    <EmbeddedResource Include="Resources\CSVInput\openHistorian_Adapters_CsvInputAdapter.js" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" Condition="'$(Configuration)'=='Development'" />
     <PackageReference Include="Gemstone.Common" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
     <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
@@ -40,8 +25,10 @@
     <PackageReference Include="Gemstone.Timeseries" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
 
     <ProjectReference Include="..\..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'" />
-    <ProjectReference Include="..\..\GrafanaAdapters\GrafanaAdapters.csproj" />
+    
     <ProjectReference Include="..\..\openHistorian.Core\openHistorian.Core.csproj" />
+    
+    <ProjectReference Include="..\GrafanaAdapters\GrafanaAdapters.csproj" />
   </ItemGroup>
 
   <ItemGroup>

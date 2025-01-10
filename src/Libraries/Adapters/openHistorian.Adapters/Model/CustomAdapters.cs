@@ -1,6 +1,8 @@
-// ReSharper disable CheckNamespace
+﻿// ReSharper disable CheckNamespace
+
 #pragma warning disable 1591
 
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Data.Model;
@@ -8,8 +10,18 @@ using Gemstone.Expressions.Model;
 
 namespace openHistorian.Model;
 
-public class CustomFilterAdapter
+public class CustomInputAdapter : CustomAdapterBase {}
+
+public class CustomFilterAdapter : CustomAdapterBase {}
+
+public class CustomActionAdapter : CustomAdapterBase {}
+
+public class CustomOutputAdapter : CustomAdapterBase { }
+
+public abstract class CustomAdapterBase
 {
+    // TODO: This expression fails to evaluate, even when Global is defined
+    //[DefaultValueExpression("Global.NodeID")]
     //public Guid NodeID { get; set; }
 
     [PrimaryKey(true)]
@@ -20,10 +32,12 @@ public class CustomFilterAdapter
     [AcronymValidation]
     public string AdapterName { get; set; }
 
-    [Required] 
+    [Required]
+    [DefaultValue("DynamicCalculator.dll")]
     public string AssemblyName { get; set; }
 
     [Required]
+    [DefaultValue("DynamicCalculator.DynamicCalculator")]
     public string TypeName { get; set; }
 
     public string ConnectionString { get; set; }
@@ -32,30 +46,18 @@ public class CustomFilterAdapter
 
     public bool Enabled { get; set; }
 
-    /// <summary>
-    /// Created on field.
-    /// </summary>
     [DefaultValueExpression("DateTime.UtcNow")]
     public DateTime CreatedOn { get; set; }
 
-    /// <summary>
-    /// Created by field.
-    /// </summary>
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("UserInfo.CurrentUserID")]
     public string CreatedBy { get; set; }
 
-    /// <summary>
-    /// Updated on field.
-    /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
     //[UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
-    /// <summary>
-    /// Updated by field.
-    /// </summary>
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]

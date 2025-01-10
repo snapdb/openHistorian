@@ -22,27 +22,26 @@
 //******************************************************************************************************
 
 using Gemstone;
-using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Diagnostics;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
-using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
-namespace openHistorian.Adapters;
+namespace CSVAdapters;
 
 /// <summary>
 /// Represents an input adapter that reads measurements from a CSV file.
 /// </summary>
 [Description("CSV: Reads measurements from a CSV file")]
-public class CsvInputAdapter : InputAdapterBase
+[UIResource("AdapterUI", $".{nameof(CSVInputAdapter)}.entry.js")]
+[UIResource("AdapterUI", $".{nameof(CSVInputAdapter)}.main.js")]
+[UIResource("AdapterUI", $".{nameof(CSVInputAdapter)}.chunk.js")]
+public class CSVInputAdapter : InputAdapterBase
 {
     #region [ Members ]
 
@@ -72,9 +71,9 @@ public class CsvInputAdapter : InputAdapterBase
     #region [ Constructors ]
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CsvInputAdapter"/> class.
+    /// Initializes a new instance of the <see cref="CSVInputAdapter"/> class.
     /// </summary>
-    public CsvInputAdapter()
+    public CSVInputAdapter()
     {
         m_fileName = "measurements.csv";
         m_columns = new Dictionary<string, int>(StringComparer.CurrentCultureIgnoreCase);
@@ -257,13 +256,13 @@ public class CsvInputAdapter : InputAdapterBase
     }
 
     /// <summary>
-    /// Gets a flag that determines if this <see cref="CsvInputAdapter"/>
+    /// Gets a flag that determines if this <see cref="CSVInputAdapter"/>
     /// uses an asynchronous connection.
     /// </summary>
     protected override bool UseAsyncConnect => false;
 
     /// <summary>
-    /// Returns the detailed status of this <see cref="CsvInputAdapter"/>.
+    /// Returns the detailed status of this <see cref="CSVInputAdapter"/>.
     /// </summary>
     public override string Status
     {
@@ -310,7 +309,7 @@ public class CsvInputAdapter : InputAdapterBase
     #region [ Methods ]
 
     /// <summary>
-    /// Releases the unmanaged resources used by the <see cref="CsvInputAdapter"/> object and optionally releases the managed resources.
+    /// Releases the unmanaged resources used by the <see cref="CSVInputAdapter"/> object and optionally releases the managed resources.
     /// </summary>
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
     protected override void Dispose(bool disposing)
@@ -353,7 +352,7 @@ public class CsvInputAdapter : InputAdapterBase
     }
 
     /// <summary>
-    /// Initializes this <see cref="CsvInputAdapter"/>.
+    /// Initializes this <see cref="CSVInputAdapter"/>.
     /// </summary>
     public override void Initialize()
     {
@@ -472,7 +471,7 @@ public class CsvInputAdapter : InputAdapterBase
     }
 
     /// <summary>
-    /// Attempts to connect to this <see cref="CsvInputAdapter"/>.
+    /// Attempts to connect to this <see cref="CSVInputAdapter"/>.
     /// </summary>
     protected override void AttemptConnection()
     {
@@ -504,7 +503,7 @@ public class CsvInputAdapter : InputAdapterBase
     }
 
     /// <summary>
-    /// Attempts to disconnect from this <see cref="CsvInputAdapter"/>.
+    /// Attempts to disconnect from this <see cref="CSVInputAdapter"/>.
     /// </summary>
     protected override void AttemptDisconnection()
     {
@@ -521,7 +520,7 @@ public class CsvInputAdapter : InputAdapterBase
     }
 
     /// <summary>
-    /// Gets a short one-line status of this <see cref="CsvInputAdapter"/>.
+    /// Gets a short one-line status of this <see cref="CSVInputAdapter"/>.
     /// </summary>
     /// <param name="maxLength">Maximum length of the status message.</param>
     /// <returns>Text of the status message.</returns>
@@ -709,42 +708,6 @@ public class CsvInputAdapter : InputAdapterBase
         }
 
         return true;
-    }
-
-    #endregion
-
-    #region [ Static ]
-
-    [UserInterfaceResource("openHistorian.Adapters.CsvInputAdapter.js")]
-    public static IActionResult GetUIEntryFile(ControllerBase baseController)
-    {
-        Stream stream = GetEmbbededFileStream("openHistorian_Adapters_CsvInputAdapter.js");
-        return baseController.File(stream, "text/javascript");
-    }
-
-    [UserInterfaceResource("main.js")]
-    public static IActionResult GetUIBaseFile(ControllerBase baseController)
-    {
-        Stream stream = GetEmbbededFileStream("main.js");
-        return baseController.File(stream, "text/javascript");
-    }
-
-    [UserInterfaceResource("chunk.js")]
-    public static IActionResult GetUIChunkFile(ControllerBase baseController)
-    {
-        Stream stream = GetEmbbededFileStream("chunk.js");
-        return baseController.File(stream, "text/javascript");
-    }
-
-    private static Stream GetEmbbededFileStream(string fileName)
-    {
-        string? namespaceName = typeof(CsvInputAdapter).Namespace;
-        string resource = string.Format("{0}.Resources.CSVInput.{1}", namespaceName, fileName);
-
-        Assembly assembly = Assembly.GetExecutingAssembly();
-        Stream? stream = assembly.GetManifestResourceStream(resource);
-
-        return stream;
     }
 
     #endregion

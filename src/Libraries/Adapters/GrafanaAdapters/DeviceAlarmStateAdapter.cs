@@ -23,14 +23,6 @@
 //
 //******************************************************************************************************
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Timers;
 using Gemstone;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Data;
@@ -46,13 +38,18 @@ using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
 using GrafanaAdapters.Model.Database;
-using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Timers;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using AlarmStateRecord = GrafanaAdapters.Model.Database.AlarmState;
 using ConnectionStringParser = Gemstone.Configuration.ConnectionStringParser<Gemstone.Timeseries.Adapters.ConnectionStringParameterAttribute>;
 using Timer = System.Timers.Timer;
-using System.IO;
-using System.Reflection;
 
 namespace GrafanaAdapters;
 
@@ -60,6 +57,9 @@ namespace GrafanaAdapters;
 /// Represents an adapter that will monitor and report device alarm states.
 /// </summary>
 [Description("Device Alarm State: Monitors and updates alarm states for devices")]
+[UIResource("AdapterUI", $".{nameof(DeviceAlarmStateAdapter)}.entry.js", "EntryFile")]
+[UIResource("AdapterUI", $".{nameof(DeviceAlarmStateAdapter)}.main.js", "BaseFile")]
+[UIResource("AdapterUI", $".{nameof(DeviceAlarmStateAdapter)}.chunk.js", "CHunkFile")]
 public class DeviceAlarmStateAdapter : FacileActionAdapterBase
 {
     #region [ Members ]
@@ -873,38 +873,6 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
             elapsedTimeString = elapsedTimeString.Substring(0, 10);
 
         return elapsedTimeString;
-    }
-
-    [UserInterfaceResource("GrafanaAdapters.DeviceAlarmStateAdapter.js")]
-    public static IActionResult GetUIEntryFile(ControllerBase baseController)
-    {
-        Stream stream = GetEmbbededFileStream("GrafanaAdapters_DeviceAlarmStateAdapter.js");
-        return baseController.File(stream, "text/javascript");
-    }
-
-    [UserInterfaceResource("main.js")]
-    public static IActionResult GetUIBaseFile(ControllerBase baseController)
-    {
-        Stream stream = GetEmbbededFileStream("main.js");
-        return baseController.File(stream, "text/javascript");
-    }
-
-    [UserInterfaceResource("chunk.js")]
-    public static IActionResult GetUIChunkFile(ControllerBase baseController)
-    {
-        Stream stream = GetEmbbededFileStream("chunk.js");
-        return baseController.File(stream, "text/javascript");
-    }
-
-    private static Stream GetEmbbededFileStream(string fileName)
-    {
-        string? namespaceName = typeof(DeviceAlarmStateAdapter).Namespace;
-        string resource = string.Format("{0}.Resources.DeviceAlarmState.{1}", namespaceName, fileName);
-
-        Assembly assembly = Assembly.GetExecutingAssembly();
-        Stream? stream = assembly.GetManifestResourceStream(resource);
-
-        return stream;
     }
 
     #endregion
