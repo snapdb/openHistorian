@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography.X509Certificates;
-using System.Web.Http;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Gemstone.Configuration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
@@ -61,6 +62,15 @@ public class WebServer(WebServerConfiguration configuration)
         string webRoot = Configuration.Hosting.WebRoot;
         hostBuilder.ConfigureWebHostDefaults(webBuilder => ConfigureWebHost(webBuilder, urls, webRoot));
 
+        //.AddJsonOptions(options =>
+        //{
+        //    options.JsonSerializerOptions.TypeInfoResolver =
+        //        new DefaultJsonTypeInfoResolver
+        //        {
+        //            // same code as above goes here
+        //        };
+        //});
+
         IHost host = hostBuilder.Build();
         await host.RunAsync(tokenSource.Token);
         completionSource.SetResult(true);
@@ -120,7 +130,31 @@ public class WebServer(WebServerConfiguration configuration)
         //    options.FallbackPolicy = options.GetPolicy(Administrators);
         //});
 
-        services.AddMvc().AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+        services.AddMvc().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNamingPolicy = null;
+
+            // Add option to only treat properties as required if they have a JsonRequired attribute,
+            // this allows 'record' types with 'required' properties to deserialize normally
+            options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
+            {
+                Modifiers =
+                {
+                    static typeInfo =>
+                    {
+                        foreach (JsonPropertyInfo info in typeInfo.Properties)
+                        {
+                            if (info.IsRequired)
+                            {
+                                info.IsRequired = info.AttributeProvider?
+                                    .IsDefined(typeof(JsonRequiredAttribute), inherit: false)
+                                    ?? false;
+                            }
+                        }
+                    }
+                }
+            };
+        });
 
         services.AddRazorPages(options =>
         {

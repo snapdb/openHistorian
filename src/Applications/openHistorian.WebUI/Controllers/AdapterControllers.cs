@@ -8,13 +8,29 @@ using System.Net;
 
 namespace openHistorian.WebUI.Controllers;
 
-public class InputAdaptersController : AdaptersControllerBase<IInputAdapter, CustomInputAdapter> { }
+public class InputAdaptersController : AdaptersControllerBase<IInputAdapter, CustomInputAdapter>;
 
-public class FilterAdaptersController : AdaptersControllerBase<IFilterAdapter, CustomFilterAdapter> {}
+public class FilterAdaptersController : AdaptersControllerBase<IFilterAdapter, CustomFilterAdapter>;
 
-public class ActionAdaptersController : AdaptersControllerBase<IActionAdapter, CustomActionAdapter> {}
+public class ActionAdaptersController : AdaptersControllerBase<IActionAdapter, CustomActionAdapter>;
 
-public class OutputAdaptersController : AdaptersControllerBase<IOutputAdapter, CustomOutputAdapter> {}
+public class OutputAdaptersController : AdaptersControllerBase<IOutputAdapter, CustomOutputAdapter>;
+
+[Route("api/[controller]")]
+[ApiController]
+public class AdapterAdminController : Controller
+{
+    /// <summary>
+    /// Reloads the adapter types.
+    /// </summary>
+    [HttpGet, Route("ReloadAdapterTypes")]
+    public IActionResult ReloadAdapterTypes()
+    {
+        // TODO: Force check for admin role only
+        AdapterCache.ReloadAdapterTypes();
+        return Ok();
+    }
+}
 
 [Route("api/[controller]")]
 [ApiController]
@@ -27,7 +43,7 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
     /// Gets a collection of all adapters and their associated information.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing an <see cref="IEnumerable{AdapterInfo}"/> of all adapters.</returns>
-    [HttpGet, Route("AllAdaptersDetail")]
+    [HttpGet, Route("All")]
     public IActionResult GetAllAdaptersDetail()
     {
         if (!GetAuthCheck())
