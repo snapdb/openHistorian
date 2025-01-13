@@ -1,5 +1,8 @@
 ﻿using System.Security.Cryptography.X509Certificates;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Gemstone.Configuration;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using ServiceInterface;
 
@@ -8,7 +11,7 @@ namespace openHistorian.WebUI;
 public class WebServerConfiguration
 {
     public WebHosting Hosting { get; set; } = default!;
-    
+
     //private class DefaultAuthenticator : IAuthenticator
     //{
     //    public Task<long?> AuthenticateAsync(string username, string password) => throw new NotImplementedException();
@@ -16,7 +19,7 @@ public class WebServerConfiguration
     //}
 
     public Func<X509Certificate2?> CertificateSelector { get; set; } = () => null;
-    
+
     //public IAuthenticator Authenticator { get; set; } = new DefaultAuthenticator();
 }
 
@@ -58,6 +61,15 @@ public class WebServer(WebServerConfiguration configuration)
         string[] urls = Configuration.Hosting.HostURLs.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         string webRoot = Configuration.Hosting.WebRoot;
         hostBuilder.ConfigureWebHostDefaults(webBuilder => ConfigureWebHost(webBuilder, urls, webRoot));
+
+        //.AddJsonOptions(options =>
+        //{
+        //    options.JsonSerializerOptions.TypeInfoResolver =
+        //        new DefaultJsonTypeInfoResolver
+        //        {
+        //            // same code as above goes here
+        //        };
+        //});
 
         IHost host = hostBuilder.Build();
         await host.RunAsync(tokenSource.Token);
@@ -121,16 +133,55 @@ public class WebServer(WebServerConfiguration configuration)
         services.AddMvc().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = null;
+
+            // Add option to only treat properties as required if they have a JsonRequired attribute,
+            // this allows 'record' types with 'required' properties to deserialize normally
+            options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
+            {
+                Modifiers =
+                {
+                    static typeInfo =>
+                    {
+                        foreach (JsonPropertyInfo info in typeInfo.Properties)
+                        {
+                            if (info.IsRequired)
+                            {
+                                info.IsRequired = info.AttributeProvider?
+                                    .IsDefined(typeof(JsonRequiredAttribute), inherit: false)
+                                    ?? false;
+                            }
+                        }
+                    }
+                }
+            };
         });
 
         services.AddRazorPages(options =>
         {
             //options.Conventions.AuthorizePage("/Index");
             options.Conventions.AllowAnonymousToPage("/Index");
-			
-			// TODO: Add needed routes
-//          options.Conventions.AddPageRoute("/Index", "Overview");
-            
+            options.Conventions.AddPageRoute("/Index", "System");
+            options.Conventions.AddPageRoute("/Index", "DeviceOverview");
+            options.Conventions.AddPageRoute("/Index", "Devices/{id?}");
+            options.Conventions.AddPageRoute("/Index", "Phasors");
+            options.Conventions.AddPageRoute("/Index", "Measurements/{id?}");
+            options.Conventions.AddPageRoute("/Index", "AddDeviceWizard");
+            options.Conventions.AddPageRoute("/Index", "ActionAdapters");
+            options.Conventions.AddPageRoute("/Index", "InputAdapters");
+            options.Conventions.AddPageRoute("/Index", "OutputAdapters");
+            options.Conventions.AddPageRoute("/Index", "FilterAdapters");
+            options.Conventions.AddPageRoute("/Index", "Companies");
+            options.Conventions.AddPageRoute("/Index", "Vendors");
+            options.Conventions.AddPageRoute("/Index", "VendorDevices");
+            options.Conventions.AddPageRoute("/Index", "Interconnections");
+            options.Conventions.AddPageRoute("/Index", "SignalType");
+            options.Conventions.AddPageRoute("/Index", "Export");
+            options.Conventions.AddPageRoute("/Index", "Trend");
+            options.Conventions.AddPageRoute("/Index", "Event");
+            options.Conventions.AddPageRoute("/Index", "Reports");
+            options.Conventions.AddPageRoute("/Index", "Themes");
+
+
             //options.Conventions.AuthorizePage("/Devices", Viewers);
             //options.Conventions.AuthorizePage("/Device", Editors);
             //options.Conventions.AuthorizePage("/Users", Administrators);
@@ -139,12 +190,11 @@ public class WebServer(WebServerConfiguration configuration)
             //options.Conventions.AllowAnonymousToPage("/Forbidden");
         });
 
-        services.AddCors(corsOptions => corsOptions.AddPolicy("OHPolicy", builder =>
+        services.Configure<ApiBehaviorOptions>(options =>
         {
-            builder.WithOrigins("http://192.168.1.2:8180")
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-        }));
+            options.SuppressModelStateInvalidFilter = true;
+        });
+
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -156,12 +206,10 @@ public class WebServer(WebServerConfiguration configuration)
         else
         {
             app.UseExceptionHandler("/Error");
-            
+
             // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
-
-        app.UseCors("OHPolicy");
 
         app.UseAuthentication();
 
@@ -176,8 +224,12 @@ public class WebServer(WebServerConfiguration configuration)
         app.UseRouting();
 
         app.UseAuthorization();
-        app.UseEndpoints(endpoints => endpoints.MapRazorPages());
-        app.UseEndpoints(endpoints => endpoints.MapControllers());
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapRazorPages();
+            endpoints.MapControllers();
+        });
+
     }
 
     private static bool TryUseStaticFiles(IApplicationBuilder app, IWebHostEnvironment env)
@@ -189,7 +241,7 @@ public class WebServer(WebServerConfiguration configuration)
         string wwwroot = Settings.Default.WebHosting.WebRoot;
         options.FileProvider = new PhysicalFileProvider(wwwroot);
         app.UseStaticFiles(options);
-        
+
         return true;
     }
 }

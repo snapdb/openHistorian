@@ -12,24 +12,16 @@ public class Company
     private string m_mapAcronym;
 
     [PrimaryKey(true)]
-    public int ID
-    {
-        get;
-        set;
-    }
+    public int ID { get; set; }
 
     [Required]
     [StringLength(200)]
     [AcronymValidation]
-    public string Acronym
-    {
-        get;
-        set;
-    }
+    public string Acronym { get; set; } = "";
 
     [Required]
     [StringLength(10)]
-    [RegularExpression("^[A-Z0-9]+$", ErrorMessage = "Only three upper case letters or numbers are allowed.")]
+    //[RegularExpression("^[A-Z0-9]+$", ErrorMessage = "Only three upper case letters or numbers are allowed.")]
     public string MapAcronym
     {
         get
@@ -44,23 +36,11 @@ public class Company
 
     [Required]
     [StringLength(200)]
-    public string Name
-    {
-        get;
-        set;
-    }
+    public string Name { get; set; } = "";
 
-    public string URL
-    {
-        get;
-        set;
-    }
+    public string? URL { get; set; }
 
-    public int LoadOrder
-    {
-        get;
-        set;
-    }
+    public int LoadOrder { get; set; }
 
     /// <summary>
     /// Created on field.
@@ -80,7 +60,7 @@ public class Company
     /// Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    [UpdateValueExpression("DateTime.UtcNow")]
+    //[UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -89,6 +69,6 @@ public class Company
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    [UpdateValueExpression("UserInfo.CurrentUserID")]
+    // [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 }
