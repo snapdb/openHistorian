@@ -36,7 +36,6 @@ using System.Text;
 using Gemstone;
 using Gemstone.ActionExtensions;
 using Gemstone.Communication;
-using Gemstone.Configuration;
 using Gemstone.Data;
 using Gemstone.Data.Model;
 using Gemstone.Diagnostics;
@@ -59,6 +58,7 @@ using ConfigurationCell = Gemstone.PhasorProtocols.Anonymous.ConfigurationCell;
 using DeviceRecord = Gemstone.Timeseries.Model.Device;
 using MeasurementRecord = Gemstone.Timeseries.Model.Measurement;
 using TcpClient = Gemstone.Communication.TcpClient;
+using ProtocolType = Gemstone.Timeseries.Adapters.ProtocolType;
 
 namespace PhasorProtocolAdapters;
 
@@ -67,6 +67,15 @@ namespace PhasorProtocolAdapters;
 /// to a phasor measurement device to new <see cref="IMeasurement"/> values.
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
+[AdapterProtocol(nameof(PhasorProtocol.IEEEC37_118V1), "IEEE C37.118-2005", ProtocolType.Frame, "Phasor", 1)]
+[AdapterProtocol(nameof(PhasorProtocol.IEEEC37_118V2), "IEEE C37.118.2-2011", ProtocolType.Frame, "Phasor", 2)]
+[AdapterProtocol(nameof(PhasorProtocol.IEEEC37_118D6), "IEEE C37.118 Draft 6", ProtocolType.Frame, "Phasor", 3)]
+[AdapterProtocol(nameof(PhasorProtocol.IEEE1344), "IEEE 1344-1995", ProtocolType.Frame, "Phasor", 4)]
+[AdapterProtocol(nameof(PhasorProtocol.BPAPDCstream), "BPA PDCstream", ProtocolType.Frame, "Phasor", 5)]
+[AdapterProtocol(nameof(PhasorProtocol.IEC61850_90_5), "IEC 61850-90-5", ProtocolType.Frame, "Phasor", 6)]
+[AdapterProtocol(nameof(PhasorProtocol.FNET), "UTK F-NET", ProtocolType.Frame, "Phasor", 7)]
+[AdapterProtocol(nameof(PhasorProtocol.SelFastMessage), "SEL Fast Message", ProtocolType.Frame, "Phasor", 8)]
+[AdapterProtocol(nameof(PhasorProtocol.Macrodyne), "Macrodyne", ProtocolType.Frame, "Phasor", 9)]
 public class PhasorMeasurementMapper : InputAdapterBase
 {
     #region [ Members ]

@@ -30,7 +30,6 @@ namespace openHistorian.Model;
 
 public class IaonInputAdapter : IIaonAdapter
 {
-    public Guid NodeID { get; set; }
 
     [PrimaryKey(true)]
     public int ID { get; set; }
