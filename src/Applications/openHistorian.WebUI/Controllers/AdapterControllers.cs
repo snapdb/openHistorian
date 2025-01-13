@@ -160,7 +160,7 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
     /// <summary>
     /// Retrieves the JavaScript module containing UI resources for the specified adapter.
     /// </summary>
-    /// <returns> An <see cref="IActionResult"/> containing the JavaScript module required by the adapter's UI. </returns>
+    /// <returns>An <see cref="IActionResult"/> containing the JavaScript module required by the adapter's UI.</returns>
     [HttpGet, Route("Components/{typeName}/{assemblyName}/{resourceID}")]
     public IActionResult GetAdapterResource(string assemblyName, string typeName, string resourceID)
     {
