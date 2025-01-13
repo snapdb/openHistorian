@@ -166,7 +166,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
     private object?[] GetMethodArguments(MethodInfo method, string? parameters = null)
     {
         // Parse URL parameters into method arguments
-        string[] parameterValues = parameters?.Split('/').Select(param => WebUtility.UrlDecode(param)!).ToArray()! ?? [];
+        string[] parameterValues = (parameters?.Split('/').Select(WebUtility.UrlDecode).ToArray() ?? [])!;
         ParameterInfo[] methodParameters = method.GetParameters();
 
         if (parameterValues.Length != methodParameters.Length - 1)
