@@ -54,14 +54,31 @@
     <PackageReference Include="Gemstone.Web" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
     
     <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" />
+    
+    <ProjectReference Include="..\..\Libraries\Adapters\AdaptersUI\AdaptersUI.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
-    <ProjectReference Include="..\..\Libraries\GrafanaAdapters\GrafanaAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
     <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="wwwroot\Images\" />
+    <Folder Include="wwwroot\Images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

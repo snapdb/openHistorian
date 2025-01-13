@@ -31,7 +31,7 @@ public class Interconnection
         set;
     }
 
-    public int? LoadOrder
+    public int LoadOrder
     {
         get;
         set;

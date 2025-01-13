@@ -24,7 +24,9 @@
 //
 //******************************************************************************************************
 
-
+using Gemstone;
+using Gemstone.Timeseries;
+using Gemstone.WordExtensions;
 using SnapDB;
 using SnapDB.IO;
 using SnapDB.Snap;
@@ -67,6 +69,25 @@ public class HistorianValue : SnapTypeBase<HistorianValue>
     }
 
     /// <summary>
+    /// Type casts all values as an alarmed flag, an associated signal ID and status flags representing an alarm.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Value1"/> and <see cref="Value2"/> are used to store the Guid-based signal ID.
+    /// <see cref="Value3"/> is used to store the alarmed flag and the status flags.
+    /// Alarmed flag is stored in the high 32-bits of <see cref="Value3"/> (bits 32-63) with a value of 0 or 1.
+    /// Status flags are stored in the low 32-bits of <see cref="Value3"/> (bits 0-31) - per normal location.
+    /// </remarks>
+    public (bool alarmed, Guid signalID, MeasurementStateFlags flags) AsAlarm
+    {
+        get => (Value3.HighDoubleWord() > 0, BitConvert.ToGuid(Value1, Value2), (MeasurementStateFlags)Value3.LowDoubleWord());
+        set
+        {
+            (Value1, Value2) = BitConvert.ToUInt64Pair(value.signalID);
+            Value3 = Word.MakeQuadWord(value.alarmed ? 1U : 0U, (uint)value.flags);
+        }
+    }
+
+    /// <summary>
     /// Type casts <see cref="Value1"/> and <see cref="Value2"/> into a 16 character string.
     /// </summary>
     public string AsString
@@ -82,6 +103,7 @@ public class HistorianValue : SnapTypeBase<HistorianValue>
         {
             if (value.Length > 16)
                 throw new OverflowException("String cannot be larger than 16 characters");
+
             byte[] data = new byte[16];
             System.Text.Encoding.ASCII.GetBytes(value).CopyTo(data, 0);
             Value1 = BitConverter.ToUInt64(data, 0);
@@ -121,18 +143,26 @@ public class HistorianValue : SnapTypeBase<HistorianValue>
     /// </summary>
     /// <param name="other">The HistorianValue to compare to.</param>
     /// <returns>A number that indicates the relationship between the two values being compared.</returns>
-    public override int CompareTo(HistorianValue other)
+    public override int CompareTo(HistorianValue? other)
     {
+        if (other is null)
+            return 1;
+
         if (Value1 < other.Value1)
             return -1;
+
         if (Value1 > other.Value1)
             return 1;
+        
         if (Value2 < other.Value2)
             return -1;
+        
         if (Value2 > other.Value2)
             return 1;
+        
         if (Value3 < other.Value3)
             return -1;
+        
         if (Value3 > other.Value3)
             return 1;
 
@@ -195,14 +225,14 @@ public class HistorianValue : SnapTypeBase<HistorianValue>
     /// Clones this instance of the class.
     /// </summary>
     /// <returns>A clone of the <see cref="HistorianValue"/> class.</returns>
-    public HistorianValue Clone()
+    public new HistorianValue Clone()
     {
-        HistorianValue value = new();
-        value.Value1 = Value1;
-        value.Value2 = Value2;
-        value.Value3 = Value3;
-
-        return value;
+        return new HistorianValue
+        { 
+            Value1 = Value1,
+            Value2 = Value2,
+            Value3 = Value3
+        };
     }
 
     /// <summary>

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="CSVInputAdapter\chunk.js" />
+    <EmbeddedResource Include="CSVInputAdapter\main.js" />
+    <EmbeddedResource Include="CSVInputAdapter\entry.js" />
+    <EmbeddedResource Include="DeviceAlarmStateAdapter\chunk.js" />
+    <EmbeddedResource Include="DeviceAlarmStateAdapter\entry.js" />
+    <EmbeddedResource Include="DeviceAlarmStateAdapter\main.js" />
+    <EmbeddedResource Include="Timeseries\StatisticsEngine\chunk.js" />
+    <EmbeddedResource Include="Timeseries\StatisticsEngine\entry.js" />
+    <EmbeddedResource Include="Timeseries\StatisticsEngine\main.js" />
+  </ItemGroup>
+
+</Project>

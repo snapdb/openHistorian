@@ -366,7 +366,10 @@ public class GrafanaController : ControllerBase
         if (request.targets.FirstOrDefault()?.target is null)
             return Task.FromResult(Enumerable.Empty<TimeSeriesValues>());
 
-        return DataSource?.Query(request, cancellationToken) ?? Task.FromResult(Enumerable.Empty<TimeSeriesValues>());
+        if(DataSource is null)
+            return Task.FromResult(Enumerable.Empty<TimeSeriesValues>());
+
+        return DataSource.Query(request, cancellationToken);
     }
 
     /// <summary>
