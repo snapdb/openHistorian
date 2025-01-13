@@ -45,7 +45,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
     /// Executes a static command on an adapter.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("Execute/{assemblyName}/{typeName}/{command}")]
+    [HttpPost, Route("Execute/{assemblyName}/{typeName}/{command}")]
     public IActionResult Execute(string assemblyName, string typeName, string command)
     {
         IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out _, out MethodInfo method);
@@ -63,7 +63,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
     /// Executes a static command on an adapter with parameters.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("Execute/{assemblyName}/{typeName}/{command}/{*parameters}")]
+    [HttpPost, Route("Execute/{assemblyName}/{typeName}/{command}/{*parameters}")]
     public IActionResult Execute(string assemblyName, string typeName, string command, string parameters)
     {
         IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out _, out MethodInfo method);
@@ -81,8 +81,8 @@ public class AdapterCommandControllerBase<TIAdapter> :
     /// Executes a command on an adapter instance, applying connection string values if provided.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("InstanceExecute/{assemblyName}/{typeName}/{connectionString}/{command}")]
-    public IActionResult InstanceExecute(string assemblyName, string typeName, string connectionString, string command)
+    [HttpPost, Route("InstanceExecute/{assemblyName}/{typeName}/{command}")]
+    public IActionResult InstanceExecute(string assemblyName, string typeName, string command, [FromBody] string connectionString)
     {
         IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out AdapterInfo info, out MethodInfo method);
 
@@ -106,8 +106,8 @@ public class AdapterCommandControllerBase<TIAdapter> :
     /// Executes a command on an adapter instance with parameters, applying connection string values if provided.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("InstanceExecute/{assemblyName}/{typeName}/{connectionString}/{command}/{*parameters}")]
-    public IActionResult InstanceExecute(string assemblyName, string typeName, string connectionString, string command, string parameters)
+    [HttpPost, Route("InstanceExecute/{assemblyName}/{typeName}/{command}/{*parameters}")]
+    public IActionResult InstanceExecute(string assemblyName, string typeName, string command, string parameters, [FromBody] string connectionString)
     {
         IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out AdapterInfo info, out MethodInfo method);
 
