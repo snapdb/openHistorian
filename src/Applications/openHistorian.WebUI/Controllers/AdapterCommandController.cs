@@ -56,7 +56,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
         if (!method.IsStatic)
             return BadRequest($"Command '{command}' is not a static method. Did you mean to call '{nameof(InstanceExecute)}' instead?");
 
-        return (IActionResult)method.Invoke(null, null)!;
+        return (IActionResult)method.Invoke(null, GetMethodArguments(method))!;
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
 
         ApplyConnectionString(connectionString, instance);
 
-        return (IActionResult)method.Invoke(instance, null)!;
+        return (IActionResult)method.Invoke(instance, GetMethodArguments(method))!;
     }
 
     /// <summary>
@@ -156,24 +156,31 @@ public class AdapterCommandControllerBase<TIAdapter> :
         if (method.ReturnType != typeof(IActionResult))
             return BadRequest("Command method must return IActionResult");
 
+        // Verify first parameter is of type ControllerBase
+        if (method.GetParameters().Length == 0 || method.GetParameters()[0].ParameterType != typeof(ControllerBase))
+            return BadRequest("First parameter of command method must be ControllerBase");
+
         return Ok();
     }
 
-    private static object?[] GetMethodArguments(MethodInfo method, string parameters)
+    private object?[] GetMethodArguments(MethodInfo method, string? parameters = null)
     {
         // Parse URL parameters into method arguments
-        string[] parameterValues = parameters.Split('/').Select(WebUtility.UrlDecode).ToArray()!;
+        string[] parameterValues = parameters?.Split('/').Select(param => WebUtility.UrlDecode(param)!).ToArray()! ?? [];
         ParameterInfo[] methodParameters = method.GetParameters();
 
-        if (parameterValues.Length != methodParameters.Length)
+        if (parameterValues.Length != methodParameters.Length - 1)
             throw new ArgumentException("Invalid number of parameters");
 
+        // First parameter is always the controller instance
         object?[] methodArguments = new object[methodParameters.Length];
 
-        for (int i = 0; i < methodParameters.Length; i++)
+        methodArguments[0] = this;
+
+        for (int i = 1; i < methodParameters.Length; i++)
         {
             ParameterInfo parameter = methodParameters[i];
-            methodArguments[i] = Convert.ChangeType(parameterValues[i], parameter.ParameterType);
+            methodArguments[i] = Convert.ChangeType(parameterValues[i - 1], parameter.ParameterType);
         }
 
         return methodArguments;
