@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Reflection;
+using ConnectionStringParser = Gemstone.Configuration.ConnectionStringParser<Gemstone.Timeseries.Adapters.ConnectionStringParameterAttribute>;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -41,55 +42,97 @@ public class AdapterCommandControllerBase<TIAdapter> :
     }
 
     /// <summary>
-    /// Executes a command on an adapter.
+    /// Executes a static command on an adapter.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("Execute/{typeName}/{assemblyName}/{command}")]
+    [HttpGet, Route("Execute/{assemblyName}/{typeName}/{command}")]
     public IActionResult Execute(string assemblyName, string typeName, string command)
     {
-        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out MethodInfo method);
+        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out _, out MethodInfo method);
 
         if (result is not OkResult)
             return result;
+
+        if (!method.IsStatic)
+            return BadRequest($"Command '{command}' is not a static method. Did you mean to call '{nameof(InstanceExecute)}' instead?");
 
         return (IActionResult)method.Invoke(null, null)!;
     }
 
     /// <summary>
-    /// Executes a command on an adapter with parameters.
+    /// Executes a static command on an adapter with parameters.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("Execute/{typeName}/{assemblyName}/{command}/{*parameters}")]
+    [HttpGet, Route("Execute/{assemblyName}/{typeName}/{command}/{*parameters}")]
     public IActionResult Execute(string assemblyName, string typeName, string command, string parameters)
     {
-        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out MethodInfo method);
+        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out _, out MethodInfo method);
 
         if (result is not OkResult)
             return result;
 
-        // Parse URL parameters into method arguments
-        string[] parameterValues = parameters.Split('/').Select(WebUtility.UrlDecode).ToArray()!;
-        ParameterInfo[] methodParameters = method.GetParameters();
+        if (!method.IsStatic)
+            return BadRequest($"Command '{command}' is not a static method. Did you mean to call '{nameof(InstanceExecute)}' instead?");
 
-        if (parameterValues.Length != methodParameters.Length)
-            return BadRequest("Invalid number of parameters");
-
-        object?[] methodArguments = new object[methodParameters.Length];
-
-        for (int i = 0; i < methodParameters.Length; i++)
-        {
-            ParameterInfo parameter = methodParameters[i];
-            methodArguments[i] = Convert.ChangeType(parameterValues[i], parameter.ParameterType);
-        }
-
-        return (IActionResult)method.Invoke(null, methodArguments)!;
+        return (IActionResult)method.Invoke(null, GetMethodArguments(method, parameters))!;
     }
 
-    private IActionResult TryGetCommandMethod(string assemblyName, string typeName, string command, out MethodInfo method)
+    /// <summary>
+    /// Executes a command on an adapter instance, applying connection string values if provided.
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
+    [HttpGet, Route("InstanceExecute/{assemblyName}/{typeName}/{connectionString}/{command}")]
+    public IActionResult InstanceExecute(string assemblyName, string typeName, string connectionString, string command)
+    {
+        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out AdapterInfo info, out MethodInfo method);
+
+        if (result is not OkResult)
+            return result;
+
+        if (method.IsStatic)
+            return BadRequest($"Command '{command}' is not an instance method. Did you mean to call '{nameof(Execute)}' instead?");
+
+        object? instance = Activator.CreateInstance(info.Type);
+
+        if (instance is null)
+            return BadRequest("Failed to create adapter instance");
+
+        ApplyConnectionString(connectionString, instance);
+
+        return (IActionResult)method.Invoke(instance, null)!;
+    }
+
+    /// <summary>
+    /// Executes a command on an adapter instance with parameters, applying connection string values if provided.
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
+    [HttpGet, Route("InstanceExecute/{assemblyName}/{typeName}/{connectionString}/{command}/{*parameters}")]
+    public IActionResult InstanceExecute(string assemblyName, string typeName, string connectionString, string command, string parameters)
+    {
+        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out AdapterInfo info, out MethodInfo method);
+
+        if (result is not OkResult)
+            return result;
+
+        if (!method.IsStatic)
+            return BadRequest($"Command '{command}' is not an instance method. Did you mean to call '{nameof(Execute)}' instead?");
+
+        object? instance = Activator.CreateInstance(info.Type);
+
+        if (instance is null)
+            return BadRequest("Failed to create adapter instance");
+
+        ApplyConnectionString(connectionString, instance);
+
+        return (IActionResult)method.Invoke(instance, GetMethodArguments(method, parameters))!;
+    }
+
+    private IActionResult TryGetCommandMethod(string assemblyName, string typeName, string command, out AdapterInfo info, out MethodInfo method)
     {
         assemblyName = WebUtility.UrlDecode(assemblyName);
         typeName = WebUtility.UrlDecode(typeName);
         command = WebUtility.UrlDecode(command);
+        info = default!;
         method = default!;
 
         if (!AdapterCache<TIAdapter>.AssemblyTypes.TryGetValue((assemblyName, typeName), out Type? adapterType))
@@ -97,6 +140,8 @@ public class AdapterCommandControllerBase<TIAdapter> :
         
         if (!AdapterCache<TIAdapter>.AdapterCommands.TryGetValue(adapterType, out AdapterCommandInfo? commandInfo))
             return NotFound();
+
+        info = commandInfo.Info;
 
         if (!commandInfo.MethodAttributeMap.TryGetValue(command, out (MethodInfo, AdapterCommandAttribute) methodAttribute))
             return NotFound();
@@ -112,5 +157,31 @@ public class AdapterCommandControllerBase<TIAdapter> :
             return BadRequest("Command method must return IActionResult");
 
         return Ok();
+    }
+
+    private static object?[] GetMethodArguments(MethodInfo method, string parameters)
+    {
+        // Parse URL parameters into method arguments
+        string[] parameterValues = parameters.Split('/').Select(WebUtility.UrlDecode).ToArray()!;
+        ParameterInfo[] methodParameters = method.GetParameters();
+
+        if (parameterValues.Length != methodParameters.Length)
+            throw new ArgumentException("Invalid number of parameters");
+
+        object?[] methodArguments = new object[methodParameters.Length];
+
+        for (int i = 0; i < methodParameters.Length; i++)
+        {
+            ParameterInfo parameter = methodParameters[i];
+            methodArguments[i] = Convert.ChangeType(parameterValues[i], parameter.ParameterType);
+        }
+
+        return methodArguments;
+    }
+
+    private static void ApplyConnectionString(string connectionString, object instance)
+    {
+        ConnectionStringParser parser = new();
+        parser.ParseConnectionString(connectionString, instance);
     }
 }
