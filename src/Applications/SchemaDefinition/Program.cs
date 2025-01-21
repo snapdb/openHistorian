@@ -74,7 +74,7 @@ internal class Program
             .AddFluentMigratorCore()
             .ConfigureRunner(rb => rb
                 // Add SQLite support to FluentMigrator
-                .AddSQLite()
+                //.AddSQLite()
                 .AddSqlServer()
                 // Set the connection string
                 .WithGlobalConnectionString(connectionString)
