@@ -23,6 +23,7 @@
 
 using FluentMigrator;
 using Gemstone.Data.SchemaMigration;
+using System.Data;
 
 namespace SchemaDefinition.Migrations;
 
@@ -85,6 +86,27 @@ public class InitialSchema : Migration
         Delete.Table("AlarmState");
         Delete.Table("AlarmDevice");
         Delete.Table("DataAvailability");
+
+        // Views
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeOutputStreamMeasurement;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeHistorian;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeDevice;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeCustomOutputAdapter;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeInputStreamDevice;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeCustomInputAdapter;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeCustomFilterAdapter;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeOutputStreamDevice;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeOutputStream;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeCustomActionAdapter;");
+        Execute.Sql("DROP VIEW IF EXISTS ActiveMeasurement;");
+        Execute.Sql("DROP VIEW IF EXISTS RuntimeStatistic;");
+        Execute.Sql("DROP VIEW IF EXISTS IaonOutputAdapter;");
+        Execute.Sql("DROP VIEW IF EXISTS IaonInputAdapter;");
+        Execute.Sql("DROP VIEW IF EXISTS IaonActionAdapter;");
+        Execute.Sql("DROP VIEW IF EXISTS IaonFilterAdapter;");
+        Execute.Sql("DROP VIEW IF EXISTS CurrentAlarmState;");
+        Execute.Sql("DROP VIEW IF EXISTS IaonTreeView;");
+        Execute.Sql("DROP VIEW IF EXISTS AlarmDeviceStateView;");
 
     }
 
@@ -178,13 +200,13 @@ public class InitialSchema : Migration
             .WithColumn("MeasuredLines").AsInt32().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
                  
-        Create.IndexForTable("Device").Column("UniqueID");
-        Create.UniqueConstraint("IX_Device_UniqueAcronym").OnTable("Device").Columns("Acronym");
+        Create.UniqueConstraint("IX_Device_UniqueID").OnTable("Device").Column("UniqueID");
+        Create.Index("IX_Device_Acronym").OnTable("Device").OnColumn("Acronym").Ascending();
 
          Create.Table("Measurement")
             .WithColumn("PointID").AsInt32().NotNullable().PrimaryKey().Identity()
@@ -202,9 +224,9 @@ public class InitialSchema : Migration
             .WithColumn("Subscribed").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
         Create.Table("Phasor")
@@ -217,15 +239,15 @@ public class InitialSchema : Migration
             .WithColumn("PrimaryVoltageID").AsInt32().Nullable().ForeignKey("Phasor", "ID")
             .WithColumn("SecondaryVoltageID").AsInt32().Nullable().ForeignKey("Phasor", "ID")
             .WithColumn("BaseKV").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
         Create.UniqueConstraint("IX_Phasor_DeviceID_SourceIndex").OnTable("Phasor").Columns("DeviceID","SourceIndex");
 
         Create.Table("OutputStream")
-            .WithColums("ID").AsInt32().NotNullable().PrimaryKey().Identity()
+            .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
             .WithColumn("Acronym").AsString(200).NotNullable()
             .WithColumn("Name").AsString(200).Nullable()
             .WithColumn("Type").AsInt32().NotNullable().WithDefaultValue(0)
@@ -246,7 +268,7 @@ public class InitialSchema : Migration
             .WithColumn("AllowPreemptivePublishing").AsBoolean().NotNullable().WithDefaultValue(1)
             .WithColumn("PerformTimeReasonabilityCheck").AsBoolean().NotNullable().WithDefaultValue(1)
             .WithColumn("DownsamplingMethod").AsString(15).NotNullable().WithDefaultValue("LastReceived")
-            .WithColumn("DataFormat".AsString(15).NotNullable().WithDefaultValue("FloatingPoint")
+            .WithColumn("DataFormat").AsString(15).NotNullable().WithDefaultValue("FloatingPoint")
             .WithColumn("CoordinateFormat").AsString(15).NotNullable().WithDefaultValue("Polar")
             .WithColumn("CurrentScalingValue").AsInt32().NotNullable().WithDefaultValue(2423)
             .WithColumn("VoltageScalingValue").AsInt32().NotNullable().WithDefaultValue(2725785)
@@ -254,15 +276,15 @@ public class InitialSchema : Migration
             .WithColumn("DigitalMaskValue").AsInt32().NotNullable().WithDefaultValue(-65536)
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue("")
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
         Create.UniqueConstraint("IX_OutputStream_Acronym").OnTable("OutputStream").Columns("Acronym");
 
         Create.Table("OutputStreamDevice")
-            .WithColumn("AdapterID").AsInt32().NotNullable()
+            .WithColumn("AdapterID").AsInt32().NotNullable().ForeignKey("OutputStream","ID").OnDelete(System.Data.Rule.Cascade)
             .WithColumn("ID").AsInt32().PrimaryKey().Identity().NotNullable()
             .WithColumn("IDCode").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Acronym").AsString(200).NotNullable()
@@ -274,33 +296,24 @@ public class InitialSchema : Migration
             .WithColumn("CoordinateFormat").AsString(15).Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue("")
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("")
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
-    CONSTRAINT FK_OutputStreamDevice_OutputStream FOREIGN KEY(AdapterID) REFERENCES OutputStream (ID) ON DELETE CASCADE
-
-
         Create.Table("OutputStreamMeasurement")
-            .WithColumn("AdapterID").AsInt32().NotNullable()
+            .WithColumn("AdapterID").AsInt32().NotNullable().ForeignKey("OutputStream", "ID").OnDelete(System.Data.Rule.Cascade)
             .WithColumn("ID").AsInt32().PrimaryKey().Identity().NotNullable()
-            .WithColumn("HistorianID").AsInt32().Nullable()
-            .WithColumn("PointID").AsInt32().NotNullable()
+            .WithColumn("HistorianID").AsInt32().Nullable().ForeignKey("Historian", "ID")
+            .WithColumn("PointID").AsInt32().NotNullable().ForeignKey("Measurement", "PointID").OnDelete(System.Data.Rule.Cascade)
             .WithColumn("SignalReference").AsString(200).NotNullable()
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue("")
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
-
-    CONSTRAINT FK_OutputStreamMeasurement_Historian FOREIGN KEY(HistorianID) REFERENCES Historian (ID),
-    CONSTRAINT FK_OutputStreamMeasurement_Measurement FOREIGN KEY(PointID) REFERENCES Measurement (PointID) ON DELETE CASCADE,
-    CONSTRAINT FK_OutputStreamMeasurement_OutputStream FOREIGN KEY(AdapterID) REFERENCES OutputStream (ID) ON DELETE CASCADE
-
-
         Create.Table("OutputStreamDeviceAnalog")
-            .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable()
+            .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable().ForeignKey("OutputStreamDevice", "ID").OnDelete(System.Data.Rule.Cascade)
             .WithColumn("ID").AsInt32().PrimaryKey().Identity().NotNullable()
             .WithColumn("Label").AsString(200).NotNullable()
             .WithColumn("Type").AsInt32().NotNullable().WithDefaultValue(0)
@@ -311,10 +324,8 @@ public class InitialSchema : Migration
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
-    CONSTRAINT FK_OutputStreamDeviceAnalog_OutputStreamDevice FOREIGN KEY(OutputStreamDeviceID) REFERENCES OutputStreamDevice (ID) ON DELETE CASCADE
-
         Create.Table("OutputStreamDeviceDigital")
-            .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable()
+            .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable().ForeignKey("OutputStreamDevice", "ID").OnDelete(System.Data.Rule.Cascade)
             .WithColumn("ID").AsInt32().PrimaryKey().Identity().NotNullable()
             .WithColumn("Label").AsString().NotNullable()
             .WithColumn("MaskValue").AsInt32().NotNullable().WithDefaultValue(0)
@@ -324,12 +335,8 @@ public class InitialSchema : Migration
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
-    CONSTRAINT FK_OutputStreamDeviceDigital_OutputStreamDevice FOREIGN KEY(OutputStreamDeviceID) REFERENCES OutputStreamDevice (ID) ON DELETE CASCADE
-
-
-
         Create.Table("OutputStreamDevicePhasor")
-            .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable()
+            .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable().ForeignKey("OutputStreamDevice", "ID").OnDelete(System.Data.Rule.Cascade)
             .WithColumn("ID").AsInt32().PrimaryKey().Identity().NotNullable()
             .WithColumn("Label").AsString(200).NotNullable()
             .WithColumn("Type").AsString(1).NotNullable().WithDefaultValue("V")
@@ -340,8 +347,6 @@ public class InitialSchema : Migration
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
-
-    CONSTRAINT FK_OutputStreamDevicePhasor_OutputStreamDevice FOREIGN KEY(OutputStreamDeviceID) REFERENCES OutputStreamDevice (ID) ON DELETE CASCADE
 
         Create.Table("Statistic")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity().NotNullable()
@@ -359,10 +364,10 @@ public class InitialSchema : Migration
             .WithColumn("IsConnectedState").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0);
 
-    CONSTRAINT IX_Statistic_Source_SignalIndex UNIQUE (Source ASC, SignalIndex ASC)
+        Create.UniqueConstraint("IX_Statistic_Source_SignalIndex").OnTable("Statistic").Columns("Source", "SignalIndex");
 
         Create.Table("Subscriber")
-            .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("")
+            .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("").PrimaryKey()
             .WithColumn("Acronym").AsString(200).NotNullable()
             .WithColumn("Name").AsString(200).Nullable()
             .WithColumn("SharedSecret").AsString(200).Nullable()
@@ -376,21 +381,18 @@ public class InitialSchema : Migration
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .PrimaryKey("PK_Subscriber").OnColumn("ID")
-            .Unique("IX_Subscriber_Acronym").OnColumn("Acronym");
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+
+        Create.UniqueConstraint("IX_Subscriber_Acronym").OnTable("Subscriber").Columns("Acronym");
 
         Create.Table("SubscriberMeasurement")
             .WithColumn("SubscriberID").AsString(36).NotNullable()
-            .WithColumn("SignalID").AsString(36).NotNullable()
+            .WithColumn("SignalID").AsString(36).NotNullable().ForeignKey("Measurement", "SignalID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade)
             .WithColumn("Allowed").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .PrimaryKey("PK_SubscriberMeasurement").OnColumns("SubscriberID", "SignalID")
-            .ForeignKey("FK_SubscriberMeasurement_Measurement", "SignalID").ReferencedTable("Measurement").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
-            .ForeignKey("FK_SubscriberMeasurement_Subscriber", "SubscriberID").ReferencedTable("Subscriber").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade);
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
         Create.Table("MeasurementGroup")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
@@ -403,27 +405,25 @@ public class InitialSchema : Migration
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
         Create.Table("SubscriberMeasurementGroup")
-            .WithColumn("SubscriberID").AsString(36).NotNullable()
-            .WithColumn("MeasurementGroupID").AsInt32().NotNullable()
+            .WithColumn("SubscriberID").AsString(36).NotNullable().ForeignKey("Subscriber", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
+            .WithColumn("MeasurementGroupID").AsInt32().NotNullable().ForeignKey("MeasurementGroup", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
             .WithColumn("Allowed").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .PrimaryKey("PK_SubscriberMeasurementGroup").OnColumns("SubscriberID", "MeasurementGroupID")
-            .ForeignKey("FK_SubscriberMeasurementGroup_Subscriber", "SubscriberID").ReferencedTable("Subscriber").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
-            .ForeignKey("FK_SubscriberMeasurementGroup_MeasurementGroup", "MeasurementGroupID").ReferencedTable("MeasurementGroup").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade);
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+
+        //Create.PrimaryKey().OnTable("SubscriberMeasurementGroup").Columns("SubscriberID", "MeasurementGroupID");
 
         Create.Table("MeasurementGroupMeasurement")
-            .WithColumn("MeasurementGroupID").AsInt32().NotNullable()
-            .WithColumn("SignalID").AsString(36).NotNullable()
+            .WithColumn("MeasurementGroupID").AsInt32().NotNullable().ForeignKey("MeasurementGroup", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
+            .WithColumn("SignalID").AsString(36).NotNullable().ForeignKey("Measurement", "SignalID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .PrimaryKey("PK_MeasurementGroupMeasurement").OnColumns("MeasurementGroupID", "SignalID")
-            .ForeignKey("FK_MeasurementGroupMeasurement_Measurement", "SignalID").ReferencedTable("Measurement").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
-            .ForeignKey("FK_MeasurementGroupMeasurement_MeasurementGroup", "MeasurementGroupID").ReferencedTable("MeasurementGroup").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade);
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+
+        //Create.PrimaryKey().OnTable("MeasurementGroupMeasurement").Columns("MeasurementGroupID", "SignalID");
     
         //Security related
         Create.Table("AccessLog")
@@ -433,8 +433,8 @@ public class InitialSchema : Migration
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime);
 
         Create.Table("UserAccount")
-            .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("")
-            .WithColumn("Name").AsString(200).NotNullable()
+            .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("").PrimaryKey()
+            .WithColumn("Name").AsString(200).NotNullable().Unique()
             .WithColumn("Password").AsString(200).Nullable()
             .WithColumn("FirstName").AsString(200).Nullable()
             .WithColumn("LastName").AsString(200).Nullable()
@@ -446,56 +446,39 @@ public class InitialSchema : Migration
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .PrimaryKey("PK_UserAccount").OnColumn("ID")
-            .Unique("IX_UserAccount").OnColumn("Name");
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
         Create.Table("SecurityGroup")
-            .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("")
-            .WithColumn("Name").AsString(200).NotNullable()
+            .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("").PrimaryKey()
+            .WithColumn("Name").AsString(200).NotNullable().Unique()
             .WithColumn("Description").AsString(int.MaxValue).Nullable()
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .PrimaryKey("PK_SecurityGroup").OnColumn("ID")
-            .Unique("IX_SecurityGroup").OnColumn("Name");
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
 
         Create.Table("ApplicationRole")
-            .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("")
-            .WithColumn("Name").AsString(200).NotNullable()
+            .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("").PrimaryKey()
+            .WithColumn("Name").AsString(200).NotNullable().Unique()
             .WithColumn("Description").AsString(int.MaxValue).Nullable()
             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("Admin")
             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("Admin")
-            .PrimaryKey("PK_ApplicationRole").OnColumn("ID")
-            .Unique("IX_ApplicationRole").OnColumn("Name");
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("Admin");
 
         Create.Table("ApplicationRoleSecurityGroup")
-            .WithColumn("ApplicationRoleID").AsString(36).NotNullable()
-            .WithColumn("SecurityGroupID").AsString(36).NotNullable()
-            .ForeignKey("FK_applicationrolesecuritygroup_applicationrole", "ApplicationRoleID").ReferencedTable("ApplicationRole").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
-            .ForeignKey("FK_applicationrolesecuritygroup_securitygroup", "SecurityGroupID").ReferencedTable("SecurityGroup").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade);
+            .WithColumn("ApplicationRoleID").AsString(36).NotNullable().ForeignKey("ApplicationRole", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade)
+            .WithColumn("SecurityGroupID").AsString(36).NotNullable().ForeignKey("SecurityGroup", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade);
 
         Create.Table("ApplicationRoleUserAccount")
-            .WithColumn("ApplicationRoleID").AsString(36).NotNullable()
-            .WithColumn("UserAccountID").AsString(36).NotNullable()
-            .ForeignKey("FK_applicationroleuseraccount_useraccount", "UserAccountID").ReferencedTable("UserAccount").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
-            .ForeignKey("FK_applicationroleuseraccount_applicationrole", "ApplicationRoleID").ReferencedTable("ApplicationRole").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade);
-
+            .WithColumn("ApplicationRoleID").AsString(36).NotNullable().ForeignKey("ApplicationRole", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade)
+            .WithColumn("UserAccountID").AsString(36).NotNullable().ForeignKey("UserAccount", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade);
+           
         Create.Table("SecurityGroupUserAccount")
-            .WithColumn("SecurityGroupID").AsString(36).NotNullable()
-            .WithColumn("UserAccountID").AsString(36).NotNullable()
-            .ForeignKey("FK_securitygroupuseraccount_useraccount", "UserAccountID").ReferencedTable("UserAccount").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
-            .ForeignKey("FK_securitygroupuseraccount_securitygroup", "SecurityGroupID").ReferencedTable("SecurityGroup").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade);
+            .WithColumn("SecurityGroupID").AsString(36).NotNullable().ForeignKey("SecurityGroup", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade)
+            .WithColumn("UserAccountID").AsString(36).NotNullable().ForeignKey("UserAccount", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade);
 
-
-
-
-        // Measurement
-       
-
+        // System related
         Create.Table("Historian")
             .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
             .WithColumn("Acronym").AsString(200).NotNullable()
@@ -507,9 +490,547 @@ public class InitialSchema : Migration
             .WithColumn("Description").AsString().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+
+        Create.Table("ErrorLog")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("Source").AsString(200).NotNullable()
+            .WithColumn("Type").AsString(200).Nullable()
+            .WithColumn("Message").AsString(int.MaxValue).NotNullable()
+            .WithColumn("Detail").AsString(int.MaxValue).Nullable()
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime);
+
+        Create.Table("Runtime")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("SourceID").AsInt32().NotNullable()
+            .WithColumn("SourceTable").AsString(200).NotNullable();
+
+        Create.Table("ConfigurationEntity")
+            .WithColumn("SourceName").AsString(200).NotNullable()
+            .WithColumn("RuntimeName").AsString(200).NotNullable()
+            .WithColumn("Description").AsString(int.MaxValue).Nullable()
+            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
+            .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false);
+
+        //Adapter related
+        Create.Table("CustomActionAdapter")
+             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+             .WithColumn("AdapterName").AsString(200).NotNullable()
+             .WithColumn("AssemblyName").AsString(int.MaxValue).NotNullable()
+             .WithColumn("TypeName").AsString(int.MaxValue).NotNullable()
+             .WithColumn("ConnectionString").AsString(int.MaxValue).Nullable()
+             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
+             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
+             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
+             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+
+        Create.Table("CustomInputAdapter")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("AdapterName").AsString(200).NotNullable()
+            .WithColumn("AssemblyName").AsString(int.MaxValue).NotNullable()
+            .WithColumn("TypeName").AsString(int.MaxValue).NotNullable()
+            .WithColumn("ConnectionString").AsString(int.MaxValue).Nullable()
+            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
+            .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+
+        Create.Table("CustomFilterAdapter")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("AdapterName").AsString(200).NotNullable()
+            .WithColumn("AssemblyName").AsString(int.MaxValue).NotNullable()
+            .WithColumn("TypeName").AsString(int.MaxValue).NotNullable()
+            .WithColumn("ConnectionString").AsString(int.MaxValue).Nullable()
+            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
+            .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+
+        Create.Table("CustomOutputAdapter")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("AdapterName").AsString(200).NotNullable()
+            .WithColumn("AssemblyName").AsString(int.MaxValue).NotNullable()
+            .WithColumn("TypeName").AsString(int.MaxValue).NotNullable()
+            .WithColumn("ConnectionString").AsString(int.MaxValue).Nullable()
+            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
+            .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
+            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
+            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
+            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+
+        // Related to Grafana Device Status
+        Create.Table("AlarmState")
+           .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+           .WithColumn("State").AsString(50).Nullable()
+           .WithColumn("Color").AsString(50).Nullable()
+           .WithColumn("RecommendedAction").AsString(500).Nullable();
+
+        Create.Table("AlarmDevice")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("DeviceID").AsInt32().Nullable().ForeignKey("Device", "ID").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
+            .WithColumn("StateID").AsInt32().Nullable().ForeignKey("AlarmState", "ID").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
+            .WithColumn("TimeStamp").AsDateTime().Nullable()
+            .WithColumn("DisplayData").AsString(10).Nullable();
+
+        Create.Table("DataAvailability")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("GoodAvailableData").AsDouble().NotNullable()
+            .WithColumn("BadAvailableData").AsDouble().NotNullable()
+            .WithColumn("TotalAvailableData").AsDouble().NotNullable();
+
+        // Views
+        Execute.Sql(@"
+            CREATE VIEW RuntimeOutputStreamMeasurement
+            AS
+            SELECT 
+                Runtime.ID AS AdapterID,
+                Historian.Acronym AS Historian,
+                OutputStreamMeasurement.PointID,
+                OutputStreamMeasurement.SignalReference
+            FROM 
+                OutputStreamMeasurement
+                LEFT OUTER JOIN Historian 
+                    ON OutputStreamMeasurement.HistorianID = Historian.ID
+                LEFT OUTER JOIN Runtime 
+                    ON OutputStreamMeasurement.AdapterID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'OutputStream'
+            ORDER BY 
+                OutputStreamMeasurement.HistorianID, 
+                OutputStreamMeasurement.PointID;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeHistorian
+            AS
+            SELECT 
+                Runtime.ID,
+                Historian.Acronym AS AdapterName,
+                COALESCE(NULLIF(TRIM(Historian.AssemblyName), ''), 'HistorianAdapters.dll') AS AssemblyName, 
+                COALESCE(
+                    NULLIF(TRIM(Historian.TypeName), ''), 
+                    CASE WHEN IsLocal = 1 THEN 'HistorianAdapters.LocalOutputAdapter' ELSE 'HistorianAdapters.RemoteOutputAdapter' END
+                ) AS TypeName, 
+                COALESCE(Historian.ConnectionString || ';', '') ||
+                COALESCE('instanceName=' || Historian.Acronym || ';', '') ||
+                COALESCE('sourceids=' || Historian.Acronym || ';', '') ||
+                COALESCE('measurementReportingInterval=' || Historian.MeasurementReportingInterval, '') AS ConnectionString
+            FROM 
+                Historian
+                LEFT OUTER JOIN Runtime 
+                    ON Historian.ID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'Historian'
+            WHERE 
+                (Historian.Enabled <> 0)
+            ORDER BY 
+                Historian.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeDevice
+            AS
+            SELECT 
+                Runtime.ID,
+                Device.Acronym AS AdapterName,
+                COALESCE(Device.ConnectionString || ';', '') ||
+                COALESCE('isConcentrator=' || Device.IsConcentrator || ';', '') ||
+                COALESCE('accessID=' || Device.AccessID || ';', '') ||
+                COALESCE('timeZone=' || Device.TimeZone || ';', '') ||
+                COALESCE('timeAdjustmentTicks=' || Device.TimeAdjustmentTicks || ';', '') ||
+                COALESCE('measurementReportingInterval=' || Device.MeasurementReportingInterval || ';', '') ||
+                COALESCE('connectOnDemand=' || Device.ConnectOnDemand, '') AS ConnectionString
+            FROM 
+                Device
+                LEFT OUTER JOIN Runtime 
+                    ON Device.ID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'Device'
+            WHERE 
+                (Device.Enabled <> 0 AND Device.ParentID IS NULL)
+            ORDER BY 
+                Device.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeCustomOutputAdapter
+            AS
+            SELECT 
+                Runtime.ID,
+                CustomOutputAdapter.AdapterName,
+                TRIM(CustomOutputAdapter.AssemblyName) AS AssemblyName,
+                TRIM(CustomOutputAdapter.TypeName) AS TypeName,
+                CustomOutputAdapter.ConnectionString
+            FROM 
+                CustomOutputAdapter
+                LEFT OUTER JOIN Runtime 
+                    ON CustomOutputAdapter.ID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'CustomOutputAdapter'
+            WHERE 
+                (CustomOutputAdapter.Enabled <> 0)
+            ORDER BY 
+                CustomOutputAdapter.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeInputStreamDevice
+            AS
+            SELECT 
+                Runtime_P.ID AS ParentID,
+                Runtime.ID,
+                Device.Acronym,
+                Device.Name,
+                Device.AccessID
+            FROM 
+                Device
+                LEFT OUTER JOIN Runtime 
+                    ON Device.ID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'Device'
+                LEFT OUTER JOIN Runtime AS Runtime_P 
+                    ON Device.ParentID = Runtime_P.SourceID 
+                    AND Runtime_P.SourceTable = 'Device'
+            WHERE 
+                (Device.IsConcentrator = 0) 
+                AND (Device.Enabled <> 0) 
+                AND (Device.ParentID IS NOT NULL)
+            ORDER BY 
+                Device.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeCustomInputAdapter
+            AS
+            SELECT 
+                Runtime.ID,
+                CustomInputAdapter.AdapterName,
+                TRIM(CustomInputAdapter.AssemblyName) AS AssemblyName,
+                TRIM(CustomInputAdapter.TypeName) AS TypeName,
+                CustomInputAdapter.ConnectionString
+            FROM 
+                CustomInputAdapter
+                LEFT OUTER JOIN Runtime 
+                    ON CustomInputAdapter.ID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'CustomInputAdapter'
+            WHERE 
+                (CustomInputAdapter.Enabled <> 0)
+            ORDER BY 
+                CustomInputAdapter.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeCustomFilterAdapter
+            AS
+            SELECT 
+                Runtime.ID,
+                CustomFilterAdapter.AdapterName,
+                TRIM(CustomFilterAdapter.AssemblyName) AS AssemblyName,
+                TRIM(CustomFilterAdapter.TypeName) AS TypeName,
+                CustomFilterAdapter.ConnectionString
+            FROM 
+                CustomFilterAdapter
+                LEFT OUTER JOIN Runtime 
+                    ON CustomFilterAdapter.ID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'CustomFilterAdapter'
+            WHERE 
+                (CustomFilterAdapter.Enabled <> 0)
+            ORDER BY 
+                CustomFilterAdapter.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeOutputStreamDevice
+            AS
+            SELECT 
+                Runtime.ID AS ParentID,
+                OutputStreamDevice.ID,
+                OutputStreamDevice.IDCode,
+                OutputStreamDevice.Acronym,
+                OutputStreamDevice.BpaAcronym,
+                OutputStreamDevice.Name,
+                NULLIF(OutputStreamDevice.PhasorDataFormat, '') AS PhasorDataFormat,
+                NULLIF(OutputStreamDevice.FrequencyDataFormat, '') AS FrequencyDataFormat,
+                NULLIF(OutputStreamDevice.AnalogDataFormat, '') AS AnalogDataFormat,
+                NULLIF(OutputStreamDevice.CoordinateFormat, '') AS CoordinateFormat,
+                OutputStreamDevice.LoadOrder
+            FROM 
+                OutputStreamDevice
+                LEFT OUTER JOIN Runtime 
+                    ON OutputStreamDevice.AdapterID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'OutputStream'
+            WHERE 
+                (OutputStreamDevice.Enabled <> 0)
+            ORDER BY 
+                OutputStreamDevice.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeOutputStream
+            AS
+            SELECT 
+                Runtime.ID,
+                OutputStream.Acronym AS AdapterName,
+                'PhasorProtocolAdapters.dll' AS AssemblyName,
+                CASE 
+                    Type 
+                    WHEN 1 THEN 'PhasorProtocolAdapters.BpaPdcStream.Concentrator'
+                    WHEN 2 THEN 'PhasorProtocolAdapters.Iec61850_90_5.Concentrator'
+                    ELSE 'PhasorProtocolAdapters.IeeeC37_118.Concentrator'
+                END AS TypeName,
+                COALESCE(OutputStream.ConnectionString || ';', '') ||
+                COALESCE('dataChannel={' || OutputStream.DataChannel || '};', '') ||
+                COALESCE('commandChannel={' || OutputStream.CommandChannel || '};', '') ||
+                COALESCE('idCode=' || OutputStream.IDCode || ';', '') ||
+                COALESCE('autoPublishConfigFrame=' || OutputStream.AutoPublishConfigFrame || ';', '') ||
+                COALESCE('autoStartDataChannel=' || OutputStream.AutoStartDataChannel || ';', '') ||
+                COALESCE('nominalFrequency=' || OutputStream.NominalFrequency || ';', '') ||
+                COALESCE('lagTime=' || OutputStream.LagTime || ';', '') ||
+                COALESCE('leadTime=' || OutputStream.LeadTime || ';', '') ||
+                COALESCE('framesPerSecond=' || OutputStream.FramesPerSecond || ';', '') ||
+                COALESCE('useLocalClockAsRealTime=' || OutputStream.UseLocalClockAsRealTime || ';', '') ||
+                COALESCE('allowSortsByArrival=' || OutputStream.AllowSortsByArrival || ';', '') ||
+                COALESCE('ignoreBadTimestamps=' || OutputStream.IgnoreBadTimeStamps || ';', '') ||
+                COALESCE('timeResolution=' || OutputStream.TimeResolution || ';', '') ||
+                COALESCE('allowPreemptivePublishing=' || OutputStream.AllowPreemptivePublishing || ';', '') ||
+                COALESCE('downsamplingMethod=' || OutputStream.DownsamplingMethod || ';', '') ||
+                COALESCE('dataFormat=' || OutputStream.DataFormat || ';', '') ||
+                COALESCE('coordinateFormat=' || OutputStream.CoordinateFormat || ';', '') ||
+                COALESCE('currentScalingValue=' || OutputStream.CurrentScalingValue || ';', '') ||
+                COALESCE('voltageScalingValue=' || OutputStream.VoltageScalingValue || ';', '') ||
+                COALESCE('analogScalingValue=' || OutputStream.AnalogScalingValue || ';', '') ||
+                COALESCE('performTimestampReasonabilityCheck=' || OutputStream.PerformTimeReasonabilityCheck || ';', '') ||
+                COALESCE('digitalMaskValue=' || OutputStream.DigitalMaskValue, '') AS ConnectionString
+            FROM 
+                OutputStream
+                LEFT OUTER JOIN Runtime 
+                    ON OutputStream.ID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'OutputStream'
+            WHERE 
+                (OutputStream.Enabled <> 0)
+            ORDER BY 
+                OutputStream.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeCustomActionAdapter
+            AS
+            SELECT 
+                Runtime.ID,
+                CustomActionAdapter.AdapterName,
+                TRIM(CustomActionAdapter.AssemblyName) AS AssemblyName,
+                TRIM(CustomActionAdapter.TypeName) AS TypeName,
+                CustomActionAdapter.ConnectionString
+            FROM 
+                CustomActionAdapter
+                LEFT OUTER JOIN Runtime 
+                    ON CustomActionAdapter.ID = Runtime.SourceID 
+                    AND Runtime.SourceTable = 'CustomActionAdapter'
+            WHERE 
+                (CustomActionAdapter.Enabled <> 0)
+            ORDER BY 
+                CustomActionAdapter.LoadOrder;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW ActiveMeasurement
+            AS
+            SELECT
+                COALESCE(Device.Acronym, '__') || ':' || Measurement.PointID AS ID,
+                Measurement.SignalID,
+                Measurement.PointTag,
+                Measurement.AlternateTag,
+                Measurement.SignalReference,
+                Measurement.Internal,
+                Measurement.Subscribed,
+                Device.Acronym AS Device,
+                CASE 
+                  WHEN Device.IsConcentrator = 0 AND Device.ParentID IS NOT NULL 
+                       THEN RuntimeP.ID 
+                       ELSE Runtime.ID 
+                END AS DeviceID,
+                COALESCE(Device.FramesPerSecond, 30) AS FramesPerSecond,
+                Measurement.SignalType,
+                Measurement.EngineeringUnits,
+                Phasor.ID AS PhasorID,
+                Phasor.Label AS PhasorLabel,
+                Phasor.Type AS PhasorType,
+                Phasor.Phase,
+                Phasor.BaseKV,
+                Measurement.Adder,
+                Measurement.Multiplier,
+                Device.CompanyAcronym AS Company, 
+                Device.Longitude,
+                Device.Latitude,
+                Measurement.Description,
+                Measurement.UpdatedOn
+            FROM 
+            (
+                SELECT 
+                    M.*,
+                    ST.Acronym AS SignalType,
+                    ST.EngineeringUnits
+                FROM 
+                    Measurement AS M
+                    LEFT OUTER JOIN SignalType AS ST 
+                        ON M.SignalTypeID = ST.ID
+            ) AS Measurement
+            LEFT OUTER JOIN
+            (
+                SELECT 
+                    D.*,
+                    C.Acronym AS CompanyAcronym
+                FROM 
+                    Device AS D
+                    LEFT OUTER JOIN Company AS C 
+                        ON D.CompanyID = C.ID
+            ) AS Device
+                ON Device.ID = Measurement.DeviceID
+            LEFT OUTER JOIN Phasor 
+                ON Measurement.DeviceID = Phasor.DeviceID 
+                AND Measurement.PhasorSourceIndex = Phasor.SourceIndex
+            LEFT OUTER JOIN Historian 
+                ON Measurement.HistorianID = Historian.ID
+            LEFT OUTER JOIN Runtime 
+                ON Device.ID = Runtime.SourceID 
+                AND Runtime.SourceTable = 'Device'
+            LEFT OUTER JOIN Runtime AS RuntimeP 
+                ON RuntimeP.SourceID = Device.ParentID 
+                AND RuntimeP.SourceTable = 'Device'
+            WHERE 
+                (Device.Enabled <> 0 OR Device.Enabled IS NULL)
+                AND (Measurement.Enabled <> 0);
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW RuntimeStatistic
+            AS
+            SELECT 
+                Statistic.ID,
+                Statistic.Source,
+                Statistic.SignalIndex,
+                Statistic.Name,
+                Statistic.Description,
+                Statistic.AssemblyName,
+                Statistic.TypeName,
+                Statistic.MethodName,
+                Statistic.Arguments,
+                Statistic.IsConnectedState,
+                Statistic.DataType,
+                Statistic.DisplayFormat,
+                Statistic.Enabled
+            FROM 
+                Statistic;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW IaonOutputAdapter
+            AS
+            SELECT
+                RH.ID,
+                RH.AdapterName,
+                RH.AssemblyName,
+                RH.TypeName,
+                RH.ConnectionString
+            FROM RuntimeHistorian AS RH
+            UNION
+            SELECT
+                RCOA.ID,
+                RCOA.AdapterName,
+                RCOA.AssemblyName,
+                RCOA.TypeName,
+                RCOA.ConnectionString
+            FROM RuntimeCustomOutputAdapter AS RCOA;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW IaonInputAdapter
+            AS
+            SELECT
+                RD.ID,
+                RD.AdapterName,
+                RD.AssemblyName,
+                RD.TypeName,
+                RD.ConnectionString
+            FROM RuntimeDevice AS RD
+            UNION
+            SELECT
+                RCIA.ID,
+                RCIA.AdapterName,
+                RCIA.AssemblyName,
+                RCIA.TypeName,
+                RCIA.ConnectionString
+            FROM RuntimeCustomInputAdapter AS RCIA;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW IaonActionAdapter
+            AS
+            SELECT
+                RCA.ID,
+                RCA.AdapterName,
+                RCA.AssemblyName,
+                RCA.TypeName,
+                RCA.ConnectionString
+            FROM RuntimeCustomActionAdapter AS RCA;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW IaonFilterAdapter
+            AS
+            SELECT
+                RCFA.ID,
+                RCFA.AdapterName,
+                RCFA.AssemblyName,
+                RCFA.TypeName,
+                RCFA.ConnectionString
+            FROM RuntimeCustomFilterAdapter AS RCFA;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW CurrentAlarmState
+            AS
+            SELECT
+                Alarm.ID,
+                Alarm.Acronym,
+                Alarm.Type,
+                Alarm.State,
+                Alarm.ActiveSince,
+                Alarm.ActiveUntil
+            FROM Alarm;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW IaonTreeView
+            AS
+            SELECT
+                Device.Acronym AS DeviceAcronym,
+                Device.Name AS DeviceName,
+                Device.ID AS DeviceID,
+                Device.Type AS DeviceType,
+                ParentDevice.Acronym AS ParentDeviceAcronym,
+                ParentDevice.Name AS ParentDeviceName,
+                ParentDevice.ID AS ParentDeviceID
+            FROM Device
+            LEFT OUTER JOIN Device AS ParentDevice 
+                ON Device.ParentID = ParentDevice.ID;
+        ");
+
+        Execute.Sql(@"
+            CREATE VIEW AlarmDeviceStateView
+            AS
+            SELECT 
+                Alarm.Acronym AS AlarmAcronym,
+                Alarm.DeviceID,
+                Alarm.DeviceState
+            FROM Alarm;
+        ");
+
+
     }
 }
