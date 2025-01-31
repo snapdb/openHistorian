@@ -44,7 +44,6 @@ namespace openHistorian.UnitTests;
 [TestFixture]
 public class BitGuidReadWrite
 {
-    private const string TestServer = "localhost";
     private const string InstanceName = "PPA";
     private const string WorkingDirectory = @"..\..\..\..\..\build\Development\net8.0\Archive\";
 
