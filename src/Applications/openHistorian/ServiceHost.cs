@@ -63,7 +63,7 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
         try
         {
             webHosting.Initialize();
-            webServer = webHosting.BuildServer(this);
+            webServer = webHosting.BuildServer(m_logger, this);
 
             // Start the web server in a separate long-running task
             await Task.Factory.StartNew(async () => 

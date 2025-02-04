@@ -31,6 +31,11 @@ public class WebServer(WebServerConfiguration configuration)
 
     public static IServiceCommands ServiceCommands { get; internal set; } = default!;
 
+    /// <summary>
+    /// Gets logger for the web server.
+    /// </summary>
+    public static ILogger Logger { get; internal set; } = default!;
+
     public async Task StartAsync()
     {
         using CancellationTokenSource tokenSource = new();
@@ -221,6 +226,7 @@ public class WebServer(WebServerConfiguration configuration)
 
         //app.UseHttpsRedirection();
 
+        app.UseWebSockets();
         app.UseRouting();
 
         app.UseAuthorization();
@@ -229,7 +235,6 @@ public class WebServer(WebServerConfiguration configuration)
             endpoints.MapRazorPages();
             endpoints.MapControllers();
         });
-
     }
 
     private static bool TryUseStaticFiles(IApplicationBuilder app, IWebHostEnvironment env)

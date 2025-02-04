@@ -133,15 +133,19 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     /// <summary>
     /// Builds a new <see cref="WebServer"/> instance.
     /// </summary>
+    /// <param name="logger">Logger for the web server.</param>
     /// <param name="serviceCommands">Service commands interface for web server.</param>
     /// <returns>New <see cref="WebServer"/> instance.</returns>
-    public WebServer BuildServer(IServiceCommands serviceCommands)
+    public WebServer BuildServer(ILogger logger, IServiceCommands serviceCommands)
     {
         WebServerConfiguration configuration = new()
         {
             Hosting = this,
             CertificateSelector = CreateCertificateSelector(HostCertificate),
         };
+
+        // Maintain a static reference to logger for web server and controllers
+        WebServer.Logger = logger;
 
         // Maintain a static reference to service commands interface for web server
         WebServer.ServiceCommands = serviceCommands;
@@ -170,10 +174,10 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
         section.HostURLs = (DefaultHostURLs, "URLs the hosted service will listen on.", "-u", "--HostURLs");
         section.HostCertificate = (DefaultHostCertificate, "Certificate used to host the service.", "-s", "--HostCertificate");
 
-#if DEBUG
+    #if DEBUG
         section.WebRoot = (FilePath.GetAbsolutePath($@"..\..\..\src\Applications\{nameof(openHistorian)}.{nameof(WebUI)}\{DefaultWebRoot}"), "Root directory for the web server.", "-r", "--WebRoot");
-#else
+    #else
         section.WebRoot = (FilePath.GetAbsolutePath(DefaultWebRoot), "Root directory for the web server.", "-r", "--WebRoot");
-#endif
+    #endif
     }
 }

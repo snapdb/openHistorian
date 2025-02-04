@@ -46,7 +46,19 @@
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
     </ProjectReference>
     <PackageReference Include="Gemstone.Data" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
-    
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj" Condition="'$(Configuration)'=='Development'">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <PackageReference Include="Gemstone.Timeseries" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+
+    <ProjectReference Include="..\..\..\..\..\gemstone\phasor-protocols\src\Gemstone.PhasorProtocols\Gemstone.PhasorProtocols.csproj" Condition="'$(Configuration)'=='Development'">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+    <PackageReference Include="Gemstone.PhasorProtocols" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+
     <ProjectReference Include="..\..\..\..\..\gemstone\web\src\Gemstone.Web\Gemstone.Web.csproj" Condition="'$(Configuration)'=='Development'">
       <Private>True</Private>
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
@@ -57,6 +69,7 @@
     
     <ProjectReference Include="..\..\Libraries\Adapters\AdaptersUI\AdaptersUI.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
+    <ProjectReference Include="..\..\Libraries\Adapters\PhasorProtocolAdapters\PhasorProtocolAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
     <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
   </ItemGroup>

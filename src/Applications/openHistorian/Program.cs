@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging.EventLog;
 #endif
 
+using Gemstone.Threading;
 using Gemstone.Timeseries;
 
 namespace openHistorian;
@@ -12,6 +13,8 @@ internal class Program
     {
         try
         {
+            ShutdownHandler.Initialize();
+
             // Define settings for the service. Note that the Gemstone defaults
             // for handling INI and SQLite configuration are defined in a hierarchy
             // where the configuration settings are loaded are in the following
