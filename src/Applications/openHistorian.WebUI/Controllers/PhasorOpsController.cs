@@ -176,7 +176,11 @@ public class PhasorOpsController : Controller
 
         public bool TryGetNextMessage(out string? message)
         {
-            return m_messageQueue.TryDequeue(out message);
+            if (!IsDisposed)
+                return m_messageQueue.TryDequeue(out message);
+            
+            message = null;
+            return false;
         }
 
         private void EnqueueMessage(string message, string source)
