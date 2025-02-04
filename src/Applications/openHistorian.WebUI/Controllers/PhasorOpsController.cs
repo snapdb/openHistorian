@@ -387,7 +387,7 @@ public class PhasorOpsController : Controller
     /// <param name="expiration">Expiration time for the connection, in minutes, if not accessed. Defaults to 1 minute if not provided.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>An <see cref="IActionResult"/> containing a token to be used for subsequent requests.</returns>
-    [HttpGet, Route("Connect/{connectionString}/{parameters}/{expiration:double?}")]
+    [HttpGet, Route("Connect/{connectionString}/{expiration:double?}")]
     public Task<IActionResult> Connect(string connectionString, double? expiration, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
