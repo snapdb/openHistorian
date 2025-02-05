@@ -22,10 +22,7 @@
 //******************************************************************************************************
 
 using FluentMigrator;
-using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Data.SchemaMigration;
-using System.Collections.Generic;
-using System.Data;
 
 namespace SchemaDefinition.Migrations;
 
@@ -33,7 +30,7 @@ namespace SchemaDefinition.Migrations;
 /// The initial Location based Dateset for Europe for the openHistorian database.
 /// </summary>
 [SchemaMigration(author: "C. Lackner", branchNumber: 0, year: 2025, month: 02, day: 05)]
-[Tags("Europe")]
+[Tags("Europe", "Dataset")]
 public class InitialDatsetEU : Migration
 {
     /// <inheritdoc/>

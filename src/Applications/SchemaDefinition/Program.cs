@@ -22,6 +22,7 @@
 //******************************************************************************************************
 
 using FluentMigrator.Runner;
+using FluentMigrator.Runner.Initialization;
 using Gemstone.Configuration;
 using Gemstone.Data;
 using Gemstone.Diagnostics;
@@ -41,22 +42,20 @@ internal class Program
     {
         Settings settings = new()
         {
-            INIFile = ConfigurationOperation.ReadWrite,
-            SQLite = ConfigurationOperation.Disabled
+            INIFile = ConfigurationOperation.ReadOnly,
+            SQLite = ConfigurationOperation.Disabled,
         };
 
-        // Define settings for referenced components
         DefineSettings(settings);
-
-
-        Gemstone.Interop.IniFile iniFile = new(GetOHIniFilePath());
+        
+        settings.Bind(new ConfigurationBuilder().AddIniFile(GetOHIniFilePath()).AddCommandLine(args));
 
 
         using ILoggerFactory loggerFactory = LoggerFactory.Create(ConfigureLogging);
         s_logger = loggerFactory.CreateLogger<Program>();
 
 
-        using ServiceProvider serviceProvider = CreateServices();
+        using ServiceProvider serviceProvider = CreateServices(settings);
         using IServiceScope scope = serviceProvider.CreateScope();
 
         UpdateDatabase(scope.ServiceProvider);
@@ -65,21 +64,22 @@ internal class Program
     /// <summary>
     /// Configure the dependency injection services
     /// </summary>
-    private static ServiceProvider CreateServices()
+    private static ServiceProvider CreateServices(Settings settings)
     {
         return new ServiceCollection()
             // Add common FluentMigrator services
             .AddFluentMigratorCore()
             .ConfigureRunner(rb => rb
-                // Add SQLite support to FluentMigrator
-                .UseAdoConnectionDatabase(new Gemstone.Interop.IniFile(GetOHIniFilePath()))
-                //.AddSqlServer()
-                // Set the connection string
-                
+                .UseAdoConnectionDatabase(settings)
                 // Define the assembly containing the migrations
                 .ScanIn(typeof(InitialSchema).Assembly).For.Migrations())
             // Enable logging to console in the FluentMigrator way
             .AddLogging(ConfigureLogging)
+            .Configure<RunnerOptions>(opt => {
+                dynamic x = settings;
+                if (x.Migration.IncludeDataset)
+                    opt.Tags = new string[] { "Dataset", x.Migration.Locale };
+            })
             // Build the service provider
             .BuildServiceProvider(false);
     }
@@ -111,6 +111,7 @@ internal class Program
         {
             DiagnosticsLogger.DefineSettings(settings);
             AdoDataConnection.DefineSettings(settings);
+            DefineMigrationSettings(settings);
         }
     }
 
@@ -142,5 +143,13 @@ internal class Program
 
         // Add Gemstone diagnostics logging
         builder.AddGemstoneDiagnostics();
+    }
+
+    internal static void DefineMigrationSettings(Settings settings)
+    {
+        dynamic migrationSettings = settings["Migration"];
+        migrationSettings.GenerateScript = (false, "Defines the path used to archive log files.");
+        migrationSettings.IncludeDataset = (true, "Determines whether the initial dataset should be added.");
+        migrationSettings.Locale = ("America", "Determines which set of default settings should be added.");
     }
 }

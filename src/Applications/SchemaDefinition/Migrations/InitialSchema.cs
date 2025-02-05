@@ -159,6 +159,7 @@ public class InitialSchema : Migration
            .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
            .WithColumn("Acronym").AsString(200).NotNullable()
            .WithColumn("Name").AsString(200).NotNullable()
+           .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
            .WithCreatedBy();
 
         //Device related

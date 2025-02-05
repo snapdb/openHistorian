@@ -45,13 +45,10 @@ namespace SchemaDefinition;
 /// </summary>
 public static class FluentExtension
 {
-    public static IMigrationRunnerBuilder UseAdoConnectionDatabase(this IMigrationRunnerBuilder migrationRunner, Gemstone.Interop.IniFile iniFile)
+    internal static IMigrationRunnerBuilder UseAdoConnectionDatabase(this IMigrationRunnerBuilder migrationRunner, dynamic settings)
     {
-        string connectionString = iniFile["System", "ConnectionString"];
-        string dataProviderString = iniFile["System", "DataProviderString"];
-
-        connectionString = "Data Source=openHistorian.db;";
-        dataProviderString = "AssemblyName=Microsoft.Data.Sqlite; ConnectionType=Microsoft.Data.Sqlite.SqliteConnection";
+        string connectionString = settings.System.ConnectionString;
+        string dataProviderString = settings.System.DataProviderString;
 
         using (AdoDataConnection connection = new(connectionString, dataProviderString))
         {

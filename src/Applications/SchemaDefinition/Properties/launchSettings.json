@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SchemaDefinition": {
+      "commandName": "Project",
+      "commandLineArgs": "System:ConnectionString=\"Data Source=openHistorian.db;\" System:DataProviderString=\"AssemblyName=Microsoft.Data.Sqlite; ConnectionType=Microsoft.Data.Sqlite.SqliteConnection\""
+    }
+  }
+}
