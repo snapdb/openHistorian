@@ -75,6 +75,7 @@ public class InitialSchema : Migration
         Delete.Table("ErrorLog");
         Delete.Table("Runtime");
         Delete.Table("ConfigurationEntity");
+        Delete.Table("DataOperation");
 
         //Adapter related
         Delete.Table("CustomActionAdapter");
@@ -88,25 +89,26 @@ public class InitialSchema : Migration
         Delete.Table("DataAvailability");
 
         // Views
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeOutputStreamMeasurement;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeHistorian;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeDevice;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeCustomOutputAdapter;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeInputStreamDevice;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeCustomInputAdapter;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeCustomFilterAdapter;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeOutputStreamDevice;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeOutputStream;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeCustomActionAdapter;");
-        Execute.Sql("DROP VIEW IF EXISTS ActiveMeasurement;");
-        Execute.Sql("DROP VIEW IF EXISTS RuntimeStatistic;");
-        Execute.Sql("DROP VIEW IF EXISTS IaonOutputAdapter;");
-        Execute.Sql("DROP VIEW IF EXISTS IaonInputAdapter;");
-        Execute.Sql("DROP VIEW IF EXISTS IaonActionAdapter;");
-        Execute.Sql("DROP VIEW IF EXISTS IaonFilterAdapter;");
-        Execute.Sql("DROP VIEW IF EXISTS CurrentAlarmState;");
-        Execute.Sql("DROP VIEW IF EXISTS IaonTreeView;");
-        Execute.Sql("DROP VIEW IF EXISTS AlarmDeviceStateView;");
+        Execute.DeleteView("RuntimeOutputStreamMeasurement");
+        Execute.DeleteView("RuntimeHistorian");
+        Execute.DeleteView("RuntimeDevice");
+        Execute.DeleteView("RuntimeCustomOutputAdapter");
+        Execute.DeleteView("RuntimeInputStreamDevice");
+        Execute.DeleteView("RuntimeCustomInputAdapter");
+        Execute.DeleteView("RuntimeCustomFilterAdapter");
+        Execute.DeleteView("RuntimeOutputStreamDevice");
+        Execute.DeleteView("RuntimeOutputStream");
+        Execute.DeleteView("RuntimeCustomActionAdapter");
+        Execute.DeleteView("ActiveMeasurement");
+        Execute.DeleteView("RuntimeStatistic");
+        Execute.DeleteView("IaonOutputAdapter");
+        Execute.DeleteView("IaonInputAdapter");
+        Execute.DeleteView("IaonActionAdapter");
+        Execute.DeleteView("IaonFilterAdapter");
+        Execute.DeleteView("CurrentAlarmState");
+        Execute.DeleteView("IaonTreeView");
+        Execute.DeleteView("AlarmDeviceStateView");
+        Execute.DeleteView("NEW_GUID");
 
     }
 
@@ -121,10 +123,7 @@ public class InitialSchema : Migration
             .WithColumn("Name").AsString(200).NotNullable()
             .WithColumn("URL").AsString().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("Vendor")
             .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
@@ -134,10 +133,7 @@ public class InitialSchema : Migration
             .WithColumn("Name").AsString(200).NotNullable()
             .WithColumn("URL").AsString().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("VendorDevice")
             .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
@@ -146,10 +142,7 @@ public class InitialSchema : Migration
             .WithColumn("Description").AsString().Nullable()
             .WithColumn("URL").AsString().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("SignalType")
             .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
@@ -160,21 +153,13 @@ public class InitialSchema : Migration
             .WithColumn("LongAcronym").AsString(200).NotNullable().WithDefaultValue("Undefined")
             .WithColumn("Source").AsString(10).NotNullable()
             .WithColumn("EngineeringUnits").AsString(10).Nullable()
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0);    
-        
+            .WithCreatedBy();
+
         Create.Table("Interconnection")
            .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
            .WithColumn("Acronym").AsString(200).NotNullable()
            .WithColumn("Name").AsString(200).NotNullable()
-           .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-           .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-           .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(DateTime.Now)
-           .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("")
-           .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0);
+           .WithCreatedBy();
 
         //Device related
         Create.Table("Device")
@@ -200,11 +185,8 @@ public class InitialSchema : Migration
             .WithColumn("MeasuredLines").AsInt32().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
-                 
+            .WithCreatedBy();
+
         Create.UniqueConstraint("IX_Device_UniqueID").OnTable("Device").Column("UniqueID");
         Create.Index("IX_Device_Acronym").OnTable("Device").OnColumn("Acronym").Ascending();
 
@@ -224,10 +206,7 @@ public class InitialSchema : Migration
             .WithColumn("Subscribed").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("Phasor")
             .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
@@ -239,10 +218,7 @@ public class InitialSchema : Migration
             .WithColumn("PrimaryVoltageID").AsInt32().Nullable().ForeignKey("Phasor", "ID")
             .WithColumn("SecondaryVoltageID").AsInt32().Nullable().ForeignKey("Phasor", "ID")
             .WithColumn("BaseKV").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.UniqueConstraint("IX_Phasor_DeviceID_SourceIndex").OnTable("Phasor").Columns("DeviceID","SourceIndex");
 
@@ -276,10 +252,7 @@ public class InitialSchema : Migration
             .WithColumn("DigitalMaskValue").AsInt32().NotNullable().WithDefaultValue(-65536)
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.UniqueConstraint("IX_OutputStream_Acronym").OnTable("OutputStream").Columns("Acronym");
 
@@ -296,10 +269,7 @@ public class InitialSchema : Migration
             .WithColumn("CoordinateFormat").AsString(15).Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("OutputStreamMeasurement")
             .WithColumn("AdapterID").AsInt32().NotNullable().ForeignKey("OutputStream", "ID").OnDelete(System.Data.Rule.Cascade)
@@ -307,10 +277,7 @@ public class InitialSchema : Migration
             .WithColumn("HistorianID").AsInt32().Nullable().ForeignKey("Historian", "ID")
             .WithColumn("PointID").AsInt32().NotNullable().ForeignKey("Measurement", "PointID").OnDelete(System.Data.Rule.Cascade)
             .WithColumn("SignalReference").AsString(200).NotNullable()
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue("")
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("OutputStreamDeviceAnalog")
             .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable().ForeignKey("OutputStreamDevice", "ID").OnDelete(System.Data.Rule.Cascade)
@@ -319,10 +286,7 @@ public class InitialSchema : Migration
             .WithColumn("Type").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("ScalingValue").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("OutputStreamDeviceDigital")
             .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable().ForeignKey("OutputStreamDevice", "ID").OnDelete(System.Data.Rule.Cascade)
@@ -330,10 +294,7 @@ public class InitialSchema : Migration
             .WithColumn("Label").AsString().NotNullable()
             .WithColumn("MaskValue").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("OutputStreamDevicePhasor")
             .WithColumn("OutputStreamDeviceID").AsInt32().NotNullable().ForeignKey("OutputStreamDevice", "ID").OnDelete(System.Data.Rule.Cascade)
@@ -343,10 +304,7 @@ public class InitialSchema : Migration
             .WithColumn("Phase").AsString(1).NotNullable().WithDefaultValue("+")
             .WithColumn("ScalingValue").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue("GETDATE()")
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("Statistic")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity().NotNullable()
@@ -378,53 +336,35 @@ public class InitialSchema : Migration
             .WithColumn("ValidChainFlags").AsString(500).Nullable()
             .WithColumn("AccessControlFilter").AsString(int.MaxValue).Nullable()
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.UniqueConstraint("IX_Subscriber_Acronym").OnTable("Subscriber").Columns("Acronym");
 
         Create.Table("SubscriberMeasurement")
-            .WithColumn("SubscriberID").AsString(36).NotNullable()
-            .WithColumn("SignalID").AsString(36).NotNullable().ForeignKey("Measurement", "SignalID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade)
+            .WithColumn("SubscriberID").AsString(36).NotNullable().PrimaryKey()
+            .WithColumn("SignalID").AsString(36).NotNullable().ForeignKey("Measurement", "SignalID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
             .WithColumn("Allowed").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("MeasurementGroup")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
             .WithColumn("Name").AsString(200).NotNullable()
             .WithColumn("Description").AsString(int.MaxValue).Nullable()
             .WithColumn("FilterExpression").AsString(int.MaxValue).Nullable()
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("SubscriberMeasurementGroup")
             .WithColumn("SubscriberID").AsString(36).NotNullable().ForeignKey("Subscriber", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
             .WithColumn("MeasurementGroupID").AsInt32().NotNullable().ForeignKey("MeasurementGroup", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
             .WithColumn("Allowed").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
-
-        //Create.PrimaryKey().OnTable("SubscriberMeasurementGroup").Columns("SubscriberID", "MeasurementGroupID");
+            .WithCreatedBy();
 
         Create.Table("MeasurementGroupMeasurement")
             .WithColumn("MeasurementGroupID").AsInt32().NotNullable().ForeignKey("MeasurementGroup", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
             .WithColumn("SignalID").AsString(36).NotNullable().ForeignKey("Measurement", "SignalID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade).PrimaryKey()
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
-        //Create.PrimaryKey().OnTable("MeasurementGroupMeasurement").Columns("MeasurementGroupID", "SignalID");
-    
+
         //Security related
         Create.Table("AccessLog")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
@@ -443,28 +383,19 @@ public class InitialSchema : Migration
             .WithColumn("LockedOut").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("UseADAuthentication").AsBoolean().NotNullable().WithDefaultValue(true)
             .WithColumn("ChangePasswordOn").AsDateTime().Nullable()
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("SecurityGroup")
             .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("").PrimaryKey()
             .WithColumn("Name").AsString(200).NotNullable().Unique()
             .WithColumn("Description").AsString(int.MaxValue).Nullable()
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("ApplicationRole")
             .WithColumn("ID").AsString(36).NotNullable().WithDefaultValue("").PrimaryKey()
             .WithColumn("Name").AsString(200).NotNullable().Unique()
             .WithColumn("Description").AsString(int.MaxValue).Nullable()
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("Admin")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("Admin");
+            .WithCreatedBy();
 
         Create.Table("ApplicationRoleSecurityGroup")
             .WithColumn("ApplicationRoleID").AsString(36).NotNullable().ForeignKey("ApplicationRole", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade)
@@ -490,10 +421,7 @@ public class InitialSchema : Migration
             .WithColumn("Description").AsString().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("ErrorLog")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
@@ -515,6 +443,16 @@ public class InitialSchema : Migration
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false);
 
+        Create.Table("DataOperation")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("Description").AsString().Nullable()
+            .WithColumn("AssemblyName").AsString().NotNullable()
+            .WithColumn("TypeName").AsString().NotNullable()
+            .WithColumn("MethodName").AsString(200).NotNullable()
+            .WithColumn("Arguments").AsString().Nullable()
+            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
+            .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false);
+
         //Adapter related
         Create.Table("CustomActionAdapter")
              .WithColumn("ID").AsInt32().PrimaryKey().Identity()
@@ -524,10 +462,7 @@ public class InitialSchema : Migration
              .WithColumn("ConnectionString").AsString(int.MaxValue).Nullable()
              .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
              .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-             .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-             .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-             .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+             .WithCreatedBy();
 
         Create.Table("CustomInputAdapter")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
@@ -537,10 +472,7 @@ public class InitialSchema : Migration
             .WithColumn("ConnectionString").AsString(int.MaxValue).Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("CustomFilterAdapter")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
@@ -550,10 +482,7 @@ public class InitialSchema : Migration
             .WithColumn("ConnectionString").AsString(int.MaxValue).Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         Create.Table("CustomOutputAdapter")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
@@ -563,10 +492,7 @@ public class InitialSchema : Migration
             .WithColumn("ConnectionString").AsString(int.MaxValue).Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("CreatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("CreatedBy").AsString(200).NotNullable().WithDefaultValue("")
-            .WithColumn("UpdatedOn").AsDateTime().NotNullable().WithDefaultValue(SystemMethods.CurrentUTCDateTime)
-            .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
+            .WithCreatedBy();
 
         // Related to Grafana Device Status
         Create.Table("AlarmState")
@@ -587,6 +513,14 @@ public class InitialSchema : Migration
             .WithColumn("GoodAvailableData").AsDouble().NotNullable()
             .WithColumn("BadAvailableData").AsDouble().NotNullable()
             .WithColumn("TotalAvailableData").AsDouble().NotNullable();
+
+        Execute.AddRunTimeSync("Historian");
+        Execute.AddRunTimeSync("OutputStream");
+        Execute.AddRunTimeSync("Device");
+        Execute.AddRunTimeSync("CustomOutputAdapter");
+        Execute.AddRunTimeSync("CustomInputAdapter");
+        Execute.AddRunTimeSync("CustomFilterAdapter");
+        Execute.AddRunTimeSync("CustomActionAdapter");
 
         // Views
         Execute.Sql(@"
@@ -1021,16 +955,18 @@ public class InitialSchema : Migration
                 ON Device.ParentID = ParentDevice.ID;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW AlarmDeviceStateView
-            AS
-            SELECT 
-                Alarm.Acronym AS AlarmAcronym,
-                Alarm.DeviceID,
-                Alarm.DeviceState
-            FROM Alarm;
+        IfDatabase(ProcessorId.SQLite).Execute.Sql(@"
+            CREATE VIEW NEW_GUID AS
+                SELECT lower(
+                    hex(randomblob(4)) || '-' ||
+                    hex(randomblob(2)) || '-' ||
+                    '4' || substr(hex(randomblob(2)), 2) || '-' ||
+                    substr('AB89', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-' ||
+                    hex(randomblob(6))
+                );
         ");
 
 
+        
     }
 }
