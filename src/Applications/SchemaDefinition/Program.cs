@@ -48,13 +48,13 @@ internal class Program
         // Define settings for referenced components
         DefineSettings(settings);
 
-        // Bind settings to configuration sources
-        settings.Bind(new ConfigurationBuilder()
-            .ConfigureGemstoneDefaults(settings)
-            .AddCommandLine(args, settings.SwitchMappings));
+
+        Gemstone.Interop.IniFile iniFile = new(GetOHIniFilePath());
+
 
         using ILoggerFactory loggerFactory = LoggerFactory.Create(ConfigureLogging);
         s_logger = loggerFactory.CreateLogger<Program>();
+
 
         using ServiceProvider serviceProvider = CreateServices();
         using IServiceScope scope = serviceProvider.CreateScope();
@@ -67,17 +67,15 @@ internal class Program
     /// </summary>
     private static ServiceProvider CreateServices()
     {
-        string connectionString = Settings.Default.System.ConnectionString;
-
         return new ServiceCollection()
             // Add common FluentMigrator services
             .AddFluentMigratorCore()
             .ConfigureRunner(rb => rb
                 // Add SQLite support to FluentMigrator
-                //.AddSQLite()
-                .AddSqlServer()
+                .UseAdoConnectionDatabase(new Gemstone.Interop.IniFile(GetOHIniFilePath()))
+                //.AddSqlServer()
                 // Set the connection string
-                .WithGlobalConnectionString(connectionString)
+                
                 // Define the assembly containing the migrations
                 .ScanIn(typeof(InitialSchema).Assembly).For.Migrations())
             // Enable logging to console in the FluentMigrator way
@@ -114,6 +112,16 @@ internal class Program
             DiagnosticsLogger.DefineSettings(settings);
             AdoDataConnection.DefineSettings(settings);
         }
+    }
+
+    /// <summary>
+    /// Gets the ini file path for openHistorian
+    /// </summary>
+    private static string GetOHIniFilePath()
+    {
+        Environment.SpecialFolder specialFolder = Environment.SpecialFolder.CommonApplicationData;
+        string appDataPath = Environment.GetFolderPath(specialFolder);
+        return Path.Combine(appDataPath, "openHistorian", "settings.ini");
     }
 
     /// <summary>
