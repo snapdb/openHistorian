@@ -93,7 +93,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         }
     }
 
-    public AdoDataConnection Connection => m_connection ??= new(ConfigSettings.Default.System);
+    public AdoDataConnection Connection => m_connection ??= new AdoDataConnection(ConfigSettings.Instance);
 
     private int IeeeC37_118ProtocolID => s_ieeeC37_118ProtocolID ??= Connection.ExecuteScalar<int>("SELECT ID FROM Protocol WHERE Acronym='IeeeC37_118V1'");
     
@@ -206,6 +206,10 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 return;
 
             IDataFrame phasorFrame = e.Argument;
+
+            // Validate data frame content
+            if (phasorFrame.Cells.Count == 0)
+                return;
 
             // Generate simple model of data frame
             DataFrame dataFrame = new()
@@ -371,8 +375,6 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     public Task<IActionResult> Connect(string connectionString, double? expiration, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
-        if (string.IsNullOrWhiteSpace(connectionString))
-            throw new ArgumentNullException(nameof(connectionString), "Connection string is required");
 
         ConnectionCache cache = ConnectionCache.Create(this, connectionString, expiration ?? 1.0D);
 
@@ -411,7 +413,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         // Continue streaming messages as long as the WebSocket is open.
         while (webSocket.State == WebSocketState.Open && !cache.IsDisposed)
         {
-            if (!cache.TryGetNextMessage(out string? message) || !string.IsNullOrWhiteSpace(message))
+            if (!cache.TryGetNextMessage(out string? message) || string.IsNullOrWhiteSpace(message))
             {
                 Thread.Sleep(500);
                 continue;

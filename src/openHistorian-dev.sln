@@ -87,7 +87,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerCalculations", "Libraries\Adapters\PowerCalculations\PowerCalculations.csproj", "{4F21DCCC-E8ED-49D3-9A24-1B4C82B7EA63}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceActions", "Tools\ServiceActions\ServiceActions.csproj", "{5B53A767-A2FB-4D54-8EA7-0D97E6CCD2FE}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileAdapters", "Libraries\Adapters\FileAdapters\FileAdapters.csproj", "{8A757E0D-A6B6-4339-8F48-4C000118DB9B}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptersUI", "Libraries\Adapters\AdaptersUI\AdaptersUI.csproj", "{771BCA52-E47F-4FD2-AC25-0D78C0901C16}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSVAdapters", "Libraries\Adapters\CSVAdapters\CSVAdapters.csproj", "{CDD699C4-5430-474A-A492-3E8641A66214}"

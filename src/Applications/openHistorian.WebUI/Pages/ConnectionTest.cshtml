@@ -1,0 +1,151 @@
+﻿@page  
+@{ Layout = null; }  
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+   <title>WebSocket Connection Tester</title>  
+   <style>  
+       /* Ensures the body fills the entire viewport */  
+       html, body {  
+           margin: 0;  
+           padding: 0;  
+           height: 100%;  
+           display: flex;  
+           flex-direction: column;  
+           font-family: Arial, sans-serif;  
+       }  
+
+       /* Main content above the log div */  
+       .content {  
+           flex: 1; /* Takes up available space above the log */  
+           padding: 20px;  
+       }  
+
+       /* Log output div */  
+       .log-output {  
+           width: 100%;  
+           height: 30vh; /* Default height, but gets adjusted dynamically */  
+           max-height: 40vh; /* Prevents it from taking too much space */  
+           background-color: black;  
+           color: white;  
+           font-family: "Courier New", monospace;  
+           font-size: 14px;  
+           overflow-y: auto; /* Enables vertical scrolling */  
+           padding: 10px;  
+           white-space: pre-wrap; /* Preserves line breaks */  
+           box-sizing: border-box;  
+       }  
+   </style>  
+</head>  
+<body>  
+   <div>  
+       <h3 style="text-align: center;">Device Connection Test</h3>
+       <button id="connectButton">Connect</button>  
+       <button id="disconnectButton">Disconnect</button>  
+   </div>  
+   <hr/>  
+   <div id="log" class="log-output"></div>  
+
+   <script>  
+       const logDiv = document.getElementById("log");  
+       let logContent = "";  
+
+       function addLogMessage(message) {  
+           const maxCapacity = 65536; // 64K limit  
+           const timestamp = new Date().toLocaleTimeString();  
+           const newMessage = `[${timestamp}] ${message}\n`;  
+
+           logContent += newMessage;  
+
+           // Trim if exceeding capacity  
+           if (logContent.length > maxCapacity) {  
+               logContent = logContent.slice(logContent.length - maxCapacity);  
+           }  
+
+           logDiv.textContent = logContent; // Update log div  
+           logDiv.scrollTop = logDiv.scrollHeight; // Auto-scroll to bottom  
+       }  
+
+       async function fetchHtml(url) {  
+           try {  
+               const response = await fetch(url);  
+
+               if (!response.ok) {  
+                   throw new Error(`HTTP error! Status: ${response.status}`);  
+               }  
+
+               const htmlString = await response.text();        
+               return htmlString;  
+           } catch (error) {  
+               console.error(`Fetch error: ${error.message}`);  
+               return null;  
+           }  
+       }  
+
+       var token;  
+       var socket;  
+
+       document.getElementById('disconnectButton').addEventListener('click', () => {
+           if (token) {
+               addLogMessage('Disconnect requested...');
+
+               fetchHtml(`http://localhost:8180/api/PhasorOps/Close/${token}`)
+                   .then(() => {
+                       addLogMessage('Connection closed');
+                   });
+
+               socket.close();
+
+               socket = null;
+               token = null;
+           } else {
+               addLogMessage('Connection is not active');
+           }
+       });  
+
+       const SourceFile = 'C:\\Users\\rcarroll\\Desktop\\Captures & Simulation Tools\\Test Captures\\DELL-DFR1.PmuCapture';  
+       const ConnectionString = encodeURIComponent(`phasorProtocol=IEEEC37_118V1; transportProtocol=file; file=${SourceFile}; definedFrameRate=30; simulateTimestamp=true; autoRepeatFile=true`);  
+
+       document.getElementById('connectButton').addEventListener('click', () => {  
+           addLogMessage('Connect requested...');  
+
+           // Call `api/PhasorOps/Connect` with URL encoded connection string to get token  
+           fetchHtml(`http://localhost:8180/api/PhasorOps/Connect/${ConnectionString}`)  
+               .then(html => {  
+                   if (html) {  
+                       token = html;  
+                   } else {  
+                       addLogMessage('Failed to retrieve API response.');  
+                   }  
+               })  
+               .then(() => {  
+                   if (token) {  
+                       addLogMessage(`Token: ${token}`);  
+
+                       socket = new WebSocket(`ws://localhost:8180/api/PhasorOps/DataStream/${token}`);  
+
+                       socket.onopen = () => {  
+                           addLogMessage("WebSocket connection established");  
+                       };  
+
+                       socket.onmessage = (event) => {  
+                           // Overload your browser here...  
+                           addLogMessage(event.data);  
+
+                           // Parse received data as JSON if needed  
+                           //const data = JSON.parse(event.data);  
+                       };  
+
+                       socket.onerror = (error) => {  
+                           addLogMessage(`WebSocket error: ${error}`);  
+                       };  
+
+                       socket.onclose = (event) => {  
+                           addLogMessage(`WebSocket connection closed [${event.code}]`);  
+                       }  
+                   }  
+               });  
+       });  
+   </script>  
+</body>  
+</html>
