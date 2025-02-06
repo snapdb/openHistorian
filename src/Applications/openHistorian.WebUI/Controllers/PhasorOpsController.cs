@@ -42,6 +42,7 @@ using Gemstone.StringExtensions;
 using Microsoft.AspNetCore.Mvc;
 using openHistorian.Model;
 using PhasorProtocolAdapters;
+using ServiceInterface;
 using DataFrame = openHistorian.Model.DataFrame;
 using DataCell = openHistorian.Model.DataCell;
 using AnalogDefinition = openHistorian.Model.AnalogDefinition;
@@ -54,11 +55,13 @@ using ConfigSettings = Gemstone.Configuration.Settings;
 
 namespace openHistorian.WebUI.Controllers;
 
+/// <summary>
+/// Controller for managing phasor operations.
+/// </summary>
 [Route("api/PhasorOps")]
 [ApiController]
-public class PhasorOpsController : Controller
+public class PhasorOpsController : Controller, ISupportConnectionTest
 {
-    private static string? s_companyAcronym;
     private static int? s_ieeeC37_118ProtocolID;
     private static int? s_analogSignalTypeID;
     private static int? s_digitalSignalTypeID;
@@ -66,25 +69,6 @@ public class PhasorOpsController : Controller
     private AdoDataConnection? m_connection;
     private bool m_disposed;
 
-    private static string GetCompanyAcronym()
-    {
-        try
-        {
-            dynamic section = ConfigSettings.Default[ConfigSettings.SystemSettingsCategory];
-
-            string companyAcronym = section["CompanyAcronym", "GPA", "The acronym representing the company who owns the host system."];
-
-            if (string.IsNullOrWhiteSpace(companyAcronym))
-                companyAcronym = "GPA";
-
-            return companyAcronym;
-        }
-        catch (Exception ex)
-        {
-            Logger.SwallowException(ex, "Failed to load company acronym from settings");
-            return "GPA";
-        }
-    }
 
     /// <summary>
     /// Releases the unmanaged resources used by the <see cref="PhasorOpsController"/> object and optionally releases the managed resources.
@@ -110,8 +94,6 @@ public class PhasorOpsController : Controller
     }
 
     public AdoDataConnection Connection => m_connection ??= new(ConfigSettings.Default.System);
-
-    public string CompanyAcronym => s_companyAcronym ??= GetCompanyAcronym();
 
     private int IeeeC37_118ProtocolID => s_ieeeC37_118ProtocolID ??= Connection.ExecuteScalar<int>("SELECT ID FROM Protocol WHERE Acronym='IeeeC37_118V1'");
     
@@ -384,16 +366,11 @@ public class PhasorOpsController : Controller
         }
     }
 
-    /// <summary>
-    /// Opens a connection to a synchrophasor device using a connection string.
-    /// </summary>
-    /// <param name="connectionString">Connection string used to connect to phasor device.</param>
-    /// <param name="expiration">Expiration time for the connection, in minutes, if not accessed. Defaults to 1 minute if not provided.</param>
-    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
-    /// <returns>An <see cref="IActionResult"/> containing a token to be used for subsequent requests.</returns>
+    /// <inheritdoc />
     [HttpGet, Route("Connect/{connectionString}/{expiration:double?}")]
     public Task<IActionResult> Connect(string connectionString, double? expiration, CancellationToken cancellationToken)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentNullException(nameof(connectionString), "Connection string is required");
 
@@ -402,22 +379,14 @@ public class PhasorOpsController : Controller
         return Task.FromResult<IActionResult>(Ok(cache.Token));
     }
 
-    /// <summary>
-    /// Closes the connection to synchrophasor device associated with the provided token.
-    /// </summary>
-    /// <param name="token">Token associated with the device connection.</param>
+    /// <inheritdoc />
     [HttpGet, Route("Close/{token}")]
     public IActionResult Close(string token)
     {
         return ConnectionCache.Close(token) ? Ok() : NotFound();
     }
 
-    /// <summary>
-    /// Gets a stream of data from the synchrophasor device associated with the provided token over a web socket.
-    /// </summary>
-    /// <param name="token">Token associated with the device connection.</param>
-    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
-    /// <returns>Stream of data from the synchrophasor device.</returns>
+    /// <inheritdoc />
     [HttpGet("DataStream/{token}")]
     public async Task GetDataStream(string token, CancellationToken cancellationToken)
     {
@@ -507,48 +476,6 @@ public class PhasorOpsController : Controller
             PhasorProtocol.IEC61850_90_5 => "Iec61850_90_5",
             _ => protocol.ToString()
         };
-    }
-
-    /// <summary>
-    /// Creates a new point tag name (based on defined tag naming expression) for a device.
-    /// </summary>
-    /// <param name="deviceAcronym">Device acronym name.</param>
-    /// <param name="signalTypeAcronym">Signal type acronym name.</param>
-    /// <returns>New point tag for device.</returns>
-    [HttpGet]
-    public string CreatePointTag(string deviceAcronym, string signalTypeAcronym)
-    {
-        return CommonPhasorServices.CreatePointTag(CompanyAcronym, deviceAcronym, null, signalTypeAcronym);
-    }
-
-    /// <summary>
-    /// Creates a new point tag name (based on defined tag naming expression) for a device that has an index.
-    /// </summary>
-    /// <param name="deviceAcronym">Device acronym name.</param>
-    /// <param name="signalTypeAcronym">Signal type acronym name.</param>
-    /// <param name="signalIndex">Signal index.</param>
-    /// <param name="label">Label for point tag.</param>
-    /// <returns>New point tag for device.</returns>
-    [HttpGet]
-    public string CreateIndexedPointTag(string deviceAcronym, string signalTypeAcronym, int signalIndex, string label)
-    {
-        return CommonPhasorServices.CreatePointTag(CompanyAcronym, deviceAcronym, null, signalTypeAcronym, label, signalIndex);
-    }
-
-    /// <summary>
-    /// Creates a new point tag name (based on defined tag naming expression) for a device that is for a phasor.
-    /// </summary>
-    /// <param name="deviceAcronym">Device acronym name.</param>
-    /// <param name="signalTypeAcronym">Signal type acronym name.</param>
-    /// <param name="phasorLabel">Phasor label.</param>
-    /// <param name="phase">Phase of phasor.</param>
-    /// <param name="signalIndex">Signal index.</param>
-    /// <param name="baseKV">Target kV for phasor.</param>
-    /// <returns>New point tag for device.</returns>
-    [HttpGet]
-    public string CreatePhasorPointTag(string deviceAcronym, string signalTypeAcronym, string phasorLabel, string phase, int signalIndex, int baseKV)
-    {
-        return CommonPhasorServices.CreatePointTag(CompanyAcronym, deviceAcronym, null, signalTypeAcronym, phasorLabel, signalIndex, string.IsNullOrWhiteSpace(phase) ? '_' : phase.Trim()[0], baseKV);
     }
 
     /// <summary>
