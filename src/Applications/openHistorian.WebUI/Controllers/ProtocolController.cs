@@ -28,6 +28,7 @@ public class ProtocolController : ReadOnlyModelController<Protocol>
                 attr.Name,
                 attr.Type,
                 attr.Category,
+                attr.SupportsConnectionTest,
                 attr.LoadOrder
             }
         )}));
