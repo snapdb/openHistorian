@@ -3,6 +3,13 @@
 
 namespace openHistorian.Model;
 
+public class PhasorValue
+{
+    public double Angle { get; set; }
+
+    public double Magnitude { get; set; }
+}
+
 public class DataCell
 {
     public ushort IDCode { get; set; }
@@ -13,7 +20,7 @@ public class DataCell
 
     public ushort StatusFlags { get; set; }
 
-    public (double angle, double magnitude)[] Phasors { get; set; } = [];
+    public PhasorValue[] Phasors { get; set; } = [];
 
     public double[] Analogs { get; set; } = [];
 

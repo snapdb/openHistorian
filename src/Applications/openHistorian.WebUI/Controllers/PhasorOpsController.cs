@@ -45,6 +45,7 @@ using PhasorProtocolAdapters;
 using ServiceInterface;
 using DataFrame = openHistorian.Model.DataFrame;
 using DataCell = openHistorian.Model.DataCell;
+using PhasorValue = openHistorian.Model.PhasorValue;
 using AnalogDefinition = openHistorian.Model.AnalogDefinition;
 using ConfigurationCell = openHistorian.Model.ConfigurationCell;
 using DigitalDefinition = openHistorian.Model.DigitalDefinition;
@@ -224,7 +225,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     Frequency = cell.FrequencyValue.Frequency,
                     DfDt = cell.FrequencyValue.DfDt,
                     StatusFlags = cell.StatusFlags,
-                    Phasors = cell.PhasorValues.Select(phasor => (phasor.Angle.ToDegrees(), phasor.Magnitude)).ToArray(),
+                    Phasors = cell.PhasorValues.Select(phasor => new PhasorValue{Angle = phasor.Angle.ToDegrees(), Magnitude = phasor.Magnitude}).ToArray(),
                     Analogs = cell.AnalogValues.Select(analog => analog.Value).ToArray(),
                     Digitals = cell.DigitalValues.Select(digital => digital.Value).ToArray()
                 }).ToList()
