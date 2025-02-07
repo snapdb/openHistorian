@@ -1,71 +1,117 @@
-﻿@page  
+﻿@page
 @{ Layout = null; }  
 <!DOCTYPE html>  
 <html lang="en">  
 <head>  
-   <title>WebSocket Connection Tester</title>  
-   <style>  
-       /* Ensures the body fills the entire viewport */  
-       html, body {  
-           margin: 0;  
-           padding: 0;  
-           height: 100%;  
-           display: flex;  
-           flex-direction: column;  
-           font-family: Arial, sans-serif;  
-       }  
+    <title>WebSocket Connection Tester</title>  
+    <style>  
+        /* Full-page layout */
+        html, body {  
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }  
 
-       /* Main content above the log div */  
-       .content {  
-           flex: 1; /* Takes up available space above the log */  
-           padding: 20px;  
-       }  
+        /* Main container to make sections fill available space */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Fill the full viewport height */
+        }
 
-       /* Log output div */  
-       .log-output {
-           width: 100%;
-           height: 100%;
-           background-color: black;
-           color: white;
-           font-family: "Courier New", monospace;
-           font-size: 14px;
-           overflow-y: auto; /* Keep vertical scrolling */
-           overflow-x: hidden; /* Prevent horizontal scrolling */
-           padding: 10px;
-           white-space: pre-wrap; /* Preserve line breaks AND wrap text */
-           word-wrap: break-word; /* Force wrapping long words */
-           box-sizing: border-box;
-       }
+        /* Section containing the header, buttons, and connection string */
+        .top-section {
+            flex-shrink: 0; /* Prevents shrinking */
+            padding: 10px;
+        }
 
-       h5 {
+        /* Graph container - set to a fixed height */
+        .graph-container {
+            flex-shrink: 0;
+            width: 100%;
+            height: 150px;
+            overflow-x: auto;
+            background-color: black;
+            border: 1px solid gray;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        /* Log should take up the rest of the space */
+        .log-output {
+            flex-grow: 1; /* Allow log to consume remaining space */
+            width: 100%;
+            background-color: black;
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 14px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            box-sizing: border-box;
+        }
+
+        h5 {
            margin-top: 0px;
            margin-bottom: 0px;
-       }
-       
-       .connection-input {
+        }
+
+        /* Connection string input */
+        .connection-input {
            width: 100%;
-           height: 6em; /* 4 lines high */
+           height: 6em;
            resize: vertical;
            font-family: "Courier New", monospace;
            font-size: 14px;
            padding: 5px;
            box-sizing: border-box;
-       }
-   </style>  
+        }
+
+        /* Graph container */
+        .graph-container {
+           width: 100%;
+           height: 150px;
+           overflow-x: auto;
+           background-color: black;
+           border: 1px solid gray;
+           position: relative;
+           white-space: nowrap;
+        }
+
+        /* Line container */
+        .line-container {
+           display: flex;
+           align-items: flex-end;
+           position: absolute;
+           left: 0;
+           bottom: 0;
+           height: 100%;
+           white-space: nowrap;
+        }
+    </style>  
 </head>  
-    <body>  
-    <div>  
-        <h3 style="text-align: center;">Device Connection Test</h3>
-        <button id="connectButton">Connect</button>  
-        <button id="disconnectButton">Disconnect</button>
+<body>  
+    <div class="main-container">
+        <div class="top-section">  
+            <h3 style="text-align: center;">Device Connection Test</h3>
+            <button id="connectButton">Connect</button>  
+            <button id="disconnectButton">Disconnect</button>
+
+            <h5>Connection String:</h5>
+            <textarea id="connectionString" class="connection-input"></textarea>
+        </div>
+
+        <div class="graph-container">
+            <div id="lineGraph" class="line-container"></div>
+        </div>
+
+        <div id="log" class="log-output"></div>  
     </div>
-    <br/>
-
-    <h5>Connection String:</h5>
-    <textarea id="connectionString" class="connection-input"></textarea>
-
-    <div id="log" class="log-output"></div>  
-
     <script>
        const SourceFile = 'C:\\Users\\rcarroll\\Desktop\\Captures & Simulation Tools\\Test Captures\\DELL-DFR1.PmuCapture';  
        const ExampleConnectionString = `phasorProtocol=IEEEC37_118V1; transportProtocol=file; file=${SourceFile}; definedFrameRate=30; simulateTimestamp=true; autoRepeatFile=true`;
@@ -75,10 +121,15 @@
        const logDiv = document.getElementById("log");  
        let logContent = "";  
 
-       function addLogMessage(message) {  
+       function addLogMessage(message, level) {  
            const maxCapacity = 65536; // 64K limit  
            const now = new Date();
            const timestamp = now.toISOString().split('T')[1].slice(0, 12); // Extracts HH:mm:ss.SSS
+
+           if (level) {
+                message = `${level}: ${message}`;
+           }
+
            const newMessage = `[${timestamp}] ${message}\n`;  
 
            logContent += newMessage;  
@@ -120,7 +171,8 @@
                        addLogMessage('Connection closed');
                    });
 
-               socket.close();
+               if (socket)
+                   socket.close();
 
                socket = null;
                token = null;
@@ -130,6 +182,11 @@
        });  
 
        document.getElementById('connectButton').addEventListener('click', () => {  
+           if (socket) {  
+               addLogMessage('Connection already active');  
+               return;  
+           }
+
            addLogMessage('Connect requested...');  
 
            const connectionString = encodeURIComponent(document.getElementById("connectionString").value.trim());
@@ -155,10 +212,16 @@
 
                        socket.onmessage = (event) => {  
                            // Overload your browser here...  
-                           addLogMessage(event.data);  
+                           const data = JSON.parse(event.data);
 
-                           // Parse received data as JSON if needed  
-                           //const data = JSON.parse(event.data);  
+                           if (data.hasOwnProperty('StatusMessage')) {
+                               addLogMessage(data.StatusMessage.message, data.statusMessage.level);
+                           } else if (data.hasOwnProperty('DataFrame')) {
+                               if (data.DataFrame.Cells.length > 0) 
+                                   addDataPoint(parseFloat(data.DataFrame.Cells[0].Frequency));
+                           } else {
+                               addLogMessage(event.data);
+                           }
                        };  
 
                        socket.onerror = (error) => {  
@@ -170,7 +233,70 @@
                        }  
                    }  
                });  
-       });
+        });
+
+        const maxPoints = 100;
+        const graphHeight = 150;
+        const graphDiv = document.getElementById("lineGraph");
+        let dataPoints = [];
+
+        function addDataPoint(value) {
+            dataPoints.push(value);
+
+            // Keep only the last maxPoints values
+            if (dataPoints.length > maxPoints) {
+                dataPoints.shift();
+            }
+
+            // Calculate min and max with some padding for better visualization
+            const minY = Math.min(...dataPoints);
+            const maxY = Math.max(...dataPoints);
+            const range = maxY - minY;
+            const padding = range * 0.1; // Add 10% padding
+
+            const effectiveMin = minY - padding;
+            const effectiveMax = maxY + padding;
+
+            // Clear existing graph
+            graphDiv.innerHTML = '';
+
+            // Calculate point spacing based on container width
+            const graphWidth = document.querySelector('.graph-container').clientWidth;
+            const pointWidth = graphWidth / maxPoints;
+            const totalWidth = (dataPoints.length - 1) * pointWidth;
+
+            // Create single canvas for all lines
+            const canvas = document.createElement('canvas');
+            canvas.style.position = 'absolute';
+            canvas.style.left = '0';
+            canvas.style.top = '0';
+            canvas.width = totalWidth;
+            canvas.height = graphHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.strokeStyle = 'lime';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            // Draw all line segments
+            dataPoints.forEach((point, index) => {
+                const x = index * pointWidth;
+                const y = graphHeight - ((point - effectiveMin) / (effectiveMax - effectiveMin) * graphHeight);
+
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+            graphDiv.appendChild(canvas);
+
+            // Auto-scroll to the latest data
+            const container = document.querySelector('.graph-container');
+            container.scrollLeft = totalWidth - container.clientWidth;
+        }
     </script>  
 </body>  
 </html>
