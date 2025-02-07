@@ -183,8 +183,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             m_messageQueue.Enqueue($"{{ \"{source}\": {message} }}");
         }
 
-        private void OnStatusMessage(MessageLevel level, string message)
+        private void OnStatusMessage(MessageLevel logLevel, string message)
         {
+            string level = logLevel.ToString();
             EnqueueMessage(JsonSerializer.Serialize(new { level, message }), "StatusMessage");
         }
 
@@ -419,7 +420,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 continue;
             }
 
-            byte[] messageBytes = Encoding.UTF8.GetBytes(message!);
+            byte[] messageBytes = Encoding.UTF8.GetBytes(message);
 
             // Send the message
             await webSocket.SendAsync(
