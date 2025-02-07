@@ -411,7 +411,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     private static async Task StreamMessages(ConnectionCache cache, WebSocket webSocket, CancellationToken cancellationToken)
     {
         // Continue streaming messages as long as the WebSocket is open.
-        while (webSocket.State == WebSocketState.Open && !cache.IsDisposed)
+        while (webSocket.State == WebSocketState.Open && !cache.IsDisposed && !cancellationToken.IsCancellationRequested)
         {
             if (!cache.TryGetNextMessage(out string? message) || string.IsNullOrWhiteSpace(message))
             {
