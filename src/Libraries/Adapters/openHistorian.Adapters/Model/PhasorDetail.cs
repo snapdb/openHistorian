@@ -9,11 +9,11 @@ namespace openHistorian.Model;
 
 public class PhasorDetail : Phasor
 {
+    public string PrimaryVoltageLabel { get; set; } = "";
+
+    public string SecondaryVoltageLabel { get; set; } = "";
+
     public string DeviceAcronym { get; set; } = "";
 
     public string DeviceName { get; set; } = "";
-
-    public string? PrimaryVoltageLabel { get; set; }
-
-    public string? SecondaryVoltageLabel { get; set; }
 }
