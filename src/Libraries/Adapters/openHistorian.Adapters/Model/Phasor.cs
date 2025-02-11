@@ -26,13 +26,11 @@ public class Phasor
 
     public char Phase { get; set; }
 
-    public int BaseKV { get; set; }
-
     public int? PrimaryVoltageID { get; set; }
 
-    public int? SecondaryVoltageID { get; set; }
-
     public int SourceIndex { get; set; }
+
+    public int BaseKV { get; set; }
 
     /// <summary>
     ///     Created on field.
@@ -63,4 +61,7 @@ public class Phasor
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
     //[UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
+
+    public int? SecondaryVoltageID { get; set; }
+
 }
