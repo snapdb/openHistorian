@@ -31,6 +31,25 @@ public class ProtocolController : ReadOnlyModelController<Protocol>
                 attr.SupportsConnectionTest,
                 attr.LoadOrder
             }
-        )}));
+        )
+        }));
+    }
+
+    [HttpGet, Route("Options")]
+    public IActionResult GetBasicProtocolInfo()
+    {
+        if (!GetAuthCheck())
+            return Unauthorized();
+
+        var result = AdapterCache.AdapterProtocols.Values
+            .SelectMany(protocol => protocol.Attributes)
+            .Select(attr => new
+            {
+                Label = attr.Name,
+                Value = attr.Acronym,
+                attr.SupportsConnectionTest,
+            });
+
+        return Ok(result);
     }
 }
