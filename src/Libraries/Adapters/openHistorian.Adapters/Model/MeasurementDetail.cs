@@ -37,20 +37,27 @@ public class MeasurementDetail : Measurement
 
     //public Guid? NodeID { get; set; }
 
+    public string? HistorianName { get; set; }
+
     public string? HistorianAcronym { get; set; }
 
-    public string HistorianConnectionString { get; set; } = "";
-
-    [StringLength(200)]
-    public string Source { get; set; } = "";
-
-    public string? DeviceName { get; set; }
+    public string? HistorianConnectionString { get; set; } = "";
 
     public string? DeviceAcronym { get; set; }
 
+    public string? DeviceName { get; set; }
+
     public bool? DeviceEnabled { get; set; }
 
+    public int? FramesPerSecond { get; set; }
+
     public string? ContactList { get; set; }
+
+    public int? ProtocolID { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public double? Latitude { get; set; }
 
     public int? VendorDeviceID { get; set; }
 
@@ -58,21 +65,12 @@ public class MeasurementDetail : Measurement
 
     public string? VendorDeviceDescription { get; set; }
 
-    [StringLength(4)]
-    public string SignalAcronym { get; set; }
-
-    public int? FramesPerSecond { get; set; }
-
-    public int? ProtocolID { get; set; }
+    [StringLength(200)]
+    public string? ProtocolAcronym { get; set; }
 
     public string? ProtocolName { get; set; }
 
     public string? PhasorLabel { get; set; }
-
-    public float? BaseKV { get; set; }
-
-    [StringLength(200)]
-    public string ProtocolAcronym { get; set; }
 
     [FieldDataType(DbType.String)]
     public char? PhasorType { get; set; }
@@ -80,16 +78,21 @@ public class MeasurementDetail : Measurement
     [FieldDataType(DbType.String)]
     public char? Phase { get; set; }
 
+    public float? BaseKV { get; set; }
+
+    public string? EngineeringUnits { get; set; }
+
     [StringLength(200)]
-    public string? CompanyAcronym { get; set; }
+    public string? Source { get; set; }
 
-    public double? Longitude { get; set; }
+    [StringLength(4)]
+    public string? SignalAcronym { get; set; }
 
-    public double? Latitude { get; set; }
+    public string? SignalName { get; set; }
 
-    public string EngineeringUnits { get; set; } = "";
+    public string? SignalTypeSuffix { get; set; }
 
-    public string SignalName { get; set; }
+    public string? ParentAcronym { get; set; }
 
-    public string SignalTypeSuffix { get; set; }
+    public string ID { get; set; }
 }
