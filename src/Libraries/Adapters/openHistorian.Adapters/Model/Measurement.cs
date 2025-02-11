@@ -52,6 +52,7 @@ public class Measurement
     public string Description { get; set; } = "";
 
     public bool Internal { get; set; }
+
     public bool Subscribed { get; set; }
 
     public bool Enabled { get; set; }
