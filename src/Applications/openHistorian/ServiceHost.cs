@@ -1,4 +1,3 @@
-//******************************************************************************************************
 //  ServiceHost.cs - Gbtc
 //
 //  Copyright © 2025, Grid Protection Alliance.  All Rights Reserved.
@@ -49,6 +48,11 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
                 m_logger.LogError("Suppressed Exception: {message}", message);
             }
         };
+
+    #if DEBUG
+        SettingsSection section = Settings.Instance[Settings.SystemSettingsCategory];
+        m_logger.LogInformation("Service host config source: {connectionString}", section["ConnectionString"]);
+    #endif
     }
 
     //m_logger.LogInformation("Example log information at: {time}", DateTimeOffset.Now);
