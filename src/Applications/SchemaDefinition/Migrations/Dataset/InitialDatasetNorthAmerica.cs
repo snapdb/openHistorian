@@ -1,5 +1,5 @@
 ﻿//******************************************************************************************************
-//  InitialDatasetAmerica.cs - Gbtc
+//  InitialDatasetNorthAmerica.cs - Gbtc
 //
 //  Copyright © 2025, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -27,10 +27,10 @@ using Gemstone.Data.SchemaMigration;
 namespace SchemaDefinition.Migrations;
 
 /// <summary>
-/// The initial Location based Dateset for America for the openHistorian database.
+/// The initial Location based Dateset for North America for the openHistorian database.
 /// </summary>
 [SchemaMigration(author: "C. Lackner", branchNumber: 0, year: 2025, month: 02, day: 05)]
-[Tags("America", "Dataset")]
+[Tags("NorthAmerica", "Dataset")]
 public class InitialDatsetUS : Migration
 {
     /// <inheritdoc/>
@@ -79,7 +79,6 @@ public class InitialDatsetUS : Migration
             .Row(new { Acronym = "NOJA", MapAcronym = "NOJA", Name = "NOJA Power Switchgear", LoadOrder = 34 })
             .Row(new { Acronym = "NYPA", MapAcronym = "NYP", Name = "New York Power Authority", LoadOrder = 35 })
             .Row(new { Acronym = "OGE", MapAcronym = "OGE", Name = "Oklahoma Gas & Electric", LoadOrder = 36 })
-            .Row(new { Acronym = "ONS", MapAcronym = "ONS", Name = "Operador Nacional do Sistema Elétrico", LoadOrder = 37 })
             .Row(new { Acronym = "PGE", MapAcronym = "PGE", Name = "Pacific Gas and Electric", LoadOrder = 38 })
             .Row(new { Acronym = "PJM", MapAcronym = "PJM", Name = "PJM Interconnection", LoadOrder = 39 })
             .Row(new { Acronym = "PPL", MapAcronym = "PPL", Name = "PPL Electric Utilities", LoadOrder = 40 })
@@ -101,6 +100,5 @@ public class InitialDatsetUS : Migration
             .Row(new { Acronym = "Quebec", Name = "Quebec Interconnection", LoadOrder = 3 })
             .Row(new { Acronym = "Alaskan", Name = "Alaskan Interconnection", LoadOrder = 4 })
             .Row(new { Acronym = "Hawaii", Name = "Islands of Hawaii", LoadOrder = 5 })
-            .Row(new { Acronym = "Brazil", Name = "Brazilian Interconnection", LoadOrder = 6 });
     }
 }
