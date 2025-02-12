@@ -8,11 +8,11 @@ namespace openHistorian.Model;
 
 public class Historian
 {
-    public Guid NodeID
-    {
-        get;
-        set;
-    }
+    //public Guid NodeID
+    //{
+    //    get;
+    //    set;
+    //}
 
     public int ID
     {

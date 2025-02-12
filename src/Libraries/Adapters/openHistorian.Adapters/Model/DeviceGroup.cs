@@ -20,7 +20,7 @@ public class DeviceGroup
     // This magical attribute means you never have to lookup or provide
     // a NodeID for new DeviceGroup records...
     //[DefaultValueExpression("Global.NodeID")]
-    public Guid NodeID { get; set; }
+    //public Guid NodeID { get; set; }
 
     [Label("Local Device ID")]
     [PrimaryKey(true)]

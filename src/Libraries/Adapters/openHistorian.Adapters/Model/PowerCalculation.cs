@@ -8,7 +8,7 @@ namespace openHistorian.Adapters;
 public class PowerCalculation
 {
     //[DefaultValueExpression("Global.NodeID")]
-    public Guid NodeID { get; set; }
+    //public Guid NodeID { get; set; }
 
     [PrimaryKey(true)]
     public int ID { get; set; }

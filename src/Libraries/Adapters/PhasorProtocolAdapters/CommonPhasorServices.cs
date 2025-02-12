@@ -1087,14 +1087,13 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     /// Associates independent measurements to a virtual device based on a lookup expression.
     /// </summary>
     /// <param name="connection">The database connection.</param>
-    /// <param name="nodeIDQueryString">Current node ID in proper query format.</param>
     /// <param name="trackingVersion">Latest version of the configuration to which data operations were previously applied.</param>
     /// <param name="arguments">Arguments, if any, to be used but the data source validation.</param>
     /// <param name="statusMessage">The delegate which will display a status message to the user.</param>
     /// <param name="processException">The delegate which will handle exception logging.</param>
     [SuppressMessage("Microsoft.Maintainability", "CA1502")]
     [SuppressMessage("Microsoft.Maintainability", "CA1505")]
-    private static void MeasurementDeviceAssociation(AdoDataConnection connection, string nodeIDQueryString, ulong trackingVersion, string arguments, Action<string> statusMessage, Action<Exception> processException)
+    private static void MeasurementDeviceAssociation(AdoDataConnection connection, ulong trackingVersion, string arguments, Action<string> statusMessage, Action<Exception> processException)
     {
         if (string.IsNullOrEmpty(arguments))
         {
@@ -1117,12 +1116,12 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
         }
 
         // Make sure device acronym exists
-        if (connection.ExecuteScalar<int>($"SELECT COUNT(*) FROM Device WHERE NodeID={nodeIDQueryString} AND Acronym={{0}}", deviceAcronym) == 0)
+        if (connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Device WHERE Acronym={{0}}", deviceAcronym) == 0)
         {
             // Lookup virtual device protocol
             if (connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Protocol WHERE Acronym='VirtualInput'") == 0)
             {
-                statusMessage("WARNING: No VirutalInput device protocol was found in source database configuration for MeasurementDeviceAssociation data operation - no action will be performed.");
+                statusMessage("WARNING: No VirtualInput device protocol was found in source database configuration for MeasurementDeviceAssociation data operation - no action will be performed.");
                 return;
             }
 
@@ -1131,13 +1130,13 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
             int virtualProtocolID = connection.ExecuteScalar<int>("SELECT ID FROM Protocol WHERE Acronym='VirtualInput'");
 
             // Create new virtual device record
-            connection.ExecuteNonQuery($"INSERT INTO Device(NodeID, Acronym, Name, ProtocolID, Enabled) VALUES({nodeIDQueryString}, {{0}}, {{1}}, {{2}}, 1)", deviceAcronym, deviceAcronym, virtualProtocolID);
+            connection.ExecuteNonQuery("INSERT INTO Device(Acronym, Name, ProtocolID, Enabled) VALUES({{0}}, {{1}}, {{2}}, 1)", deviceAcronym, deviceAcronym, virtualProtocolID);
         }
 
         statusMessage($"Validating \"{deviceAcronym}\" virtual device measurement associations...");
 
         // Get device ID
-        int deviceID = connection.ExecuteScalar<int>($"SELECT ID FROM Device WHERE NodeID={nodeIDQueryString} AND Acronym={{0}}", deviceAcronym);
+        int deviceID = connection.ExecuteScalar<int>("SELECT ID FROM Device WHERE Acronym={{0}}", deviceAcronym);
 
         // Get measurements that should be associated with device ID but are not currently
         IEnumerable<DataRow> measurements = connection.RetrieveData($"SELECT PointID FROM Measurement WHERE ({lookupExpression}) AND (DeviceID IS NULL OR DeviceID <> {{0}})", deviceID).AsEnumerable();
@@ -1158,12 +1157,11 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     /// Apply start-up phasor data source validations
     /// </summary>
     /// <param name="database">The database connection.</param>
-    /// <param name="nodeIDQueryString">Current node ID in proper query format.</param>
     /// <param name="trackingVersion">Latest version of the configuration to which data operations were previously applied.</param>
     /// <param name="arguments">Arguments, if any, to be used but the data source validation.</param>
     /// <param name="statusMessage">The delegate which will display a status message to the user.</param>
     /// <param name="processException">The delegate which will handle exception logging.</param>
-    private static void PhasorDataSourceValidation(AdoDataConnection database, string nodeIDQueryString, ulong trackingVersion, string arguments, Action<string> statusMessage, Action<Exception> processException)
+    private static void PhasorDataSourceValidation(AdoDataConnection database, ulong trackingVersion, string arguments, Action<string> statusMessage, Action<Exception> processException)
     {
         // TODO: Review this code, only enable features / functionality that is needed in new system
 
@@ -1699,23 +1697,6 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
         //    "AND MethodName = 'PhasorDataSourceValidation'";
 
         //database.Connection.ExecuteNonQuery(ClearParametersQuery);
-    }
-
-    /// <summary>
-    /// Creates the default node for the Node table.
-    /// </summary>
-    /// <param name="database">The database connection.</param>
-    /// <param name="nodeIDQueryString">The ID of the node in the proper database format.</param>
-    /// <param name="statusMessage">The delegate which will display a status message to the user.</param>
-    /// <param name="processException">The delegate which will handle exception logging.</param>
-    private static void CreateDefaultNode(AdoDataConnection database, string nodeIDQueryString, Action<string> statusMessage, Action<Exception> processException)
-    {
-        if (Convert.ToInt32(database.Connection.ExecuteScalar("SELECT COUNT(*) FROM Node")) == 0)
-        {
-            statusMessage("Creating default record for Node...");
-            database.Connection.ExecuteNonQuery("INSERT INTO Node(Name, CompanyID, Description, Settings, MenuType, MenuData, Master, LoadOrder, Enabled) VALUES('Default', NULL, 'Default node', 'RemoteStatusServerConnectionString={server=localhost:8500;integratedSecurity=true};datapublisherport=6165;AlarmServiceUrl=http://localhost:5018/alarmservices', 'File', 'Menu.xml', 1, 0, 1)");
-            database.Connection.ExecuteNonQuery("UPDATE Node SET ID=" + nodeIDQueryString);
-        }
     }
 
     /// <summary>

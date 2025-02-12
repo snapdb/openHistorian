@@ -14,11 +14,11 @@ public class Alarm
     }
 
     //[DefaultValueExpression("AdoSecurityProvider.DefaultNodeID", Cached = true)]
-    public Guid NodeID
-    {
-        get;
-        set;
-    }
+    //public Guid NodeID
+    //{
+    //    get;
+    //    set;
+    //}
 
     public int ID
     {

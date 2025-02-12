@@ -8,11 +8,11 @@ namespace openHistorian.Model;
 
 public class DataOperation
 {
-    public Guid? NodeID
-    {
-        get;
-        set;
-    }
+    //public Guid? NodeID
+    //{
+    //    get;
+    //    set;
+    //}
 
     public string Description
     {

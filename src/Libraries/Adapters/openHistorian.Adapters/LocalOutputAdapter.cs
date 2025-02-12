@@ -1325,7 +1325,7 @@ public class LocalOutputAdapter : OutputAdapterBase
 
     // ReSharper disable UnusedMember.Local
     // ReSharper disable UnusedParameter.Local
-    private static void OptimizeLocalHistorianSettings(AdoDataConnection connection, string nodeIDQueryString, ulong trackingVersion, string arguments, Action<string> statusMessage, Action<Exception> processException)
+    private static void OptimizeLocalHistorianSettings(AdoDataConnection connection, ulong trackingVersion, string arguments, Action<string> statusMessage, Action<Exception> processException)
     {
         // TODO: Review this code, only implement what is necessary in context of new system
 

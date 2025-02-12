@@ -35,7 +35,7 @@ public class MeasurementDetail : Measurement
 
     public string? CompanyName { get; set; }
 
-    public Guid? NodeID { get; set; }
+    //public Guid? NodeID { get; set; }
 
     public string? HistorianAcronym { get; set; }
 

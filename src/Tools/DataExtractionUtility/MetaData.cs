@@ -45,7 +45,7 @@ namespace DataExtractionUtility
             // as a result, not all fields in associated database views will be available. Below are the default SELECT filters the publisher
             // will apply to the "MeasurementDetail", "DeviceDetail" and "PhasorDetail" database views:
 
-            // SELECT NodeID, UniqueID, OriginalSource, IsConcentrator, Acronym, Name, ParentAcronym, ProtocolName, FramesPerSecond, Enabled FROM DeviceDetail WHERE IsConcentrator = 0
+            // SELECT UniqueID, OriginalSource, IsConcentrator, Acronym, Name, ParentAcronym, ProtocolName, FramesPerSecond, Enabled FROM DeviceDetail WHERE IsConcentrator = 0
             // SELECT Internal, DeviceAcronym, DeviceName, SignalAcronym, ID, SignalID, PointTag, SignalReference, Description, Enabled FROM MeasurementDetail
             // SELECT DeviceAcronym, Label, Type, Phase, SourceIndex FROM PhasorDetail
 

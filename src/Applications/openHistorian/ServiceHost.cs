@@ -120,7 +120,6 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
     public (string Status, string Type, string Description) GetCurrentStatus()
     {
         // WARNING / NORMAL / ERROR
-
         return ("NORMAL", "Service", "openHistorian service is running.");
     }
 

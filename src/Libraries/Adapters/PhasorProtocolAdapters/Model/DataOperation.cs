@@ -30,7 +30,7 @@ namespace PhasorProtocolAdapters.Model;
 
 public class DataOperation
 {
-    public Guid? NodeID { get; set; }
+    //public Guid? NodeID { get; set; }
 
     public string Description { get; set; }
 
