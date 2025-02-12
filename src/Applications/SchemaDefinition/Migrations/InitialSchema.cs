@@ -438,6 +438,7 @@ public class InitialSchema : Migration
             .WithColumn("SourceTable").AsString(200).NotNullable();
 
         Create.Table("ConfigurationEntity")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
             .WithColumn("SourceName").AsString(200).NotNullable()
             .WithColumn("RuntimeName").AsString(200).NotNullable()
             .WithColumn("Description").AsString(int.MaxValue).Nullable()
