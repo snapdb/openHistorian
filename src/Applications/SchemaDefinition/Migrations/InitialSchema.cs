@@ -175,7 +175,6 @@ public class InitialSchema : Migration
             .WithColumn("HistorianID").AsInt32().Nullable()
             .WithColumn("AccessID").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("VendorDeviceID").AsInt32().Nullable().ForeignKey("VendorDevice", "ID")
-            .WithColumn("ProtocolID").AsInt32().Nullable().ForeignKey("Protocol", "ID")
             .WithColumn("Longitude").AsDecimal(9, 6).Nullable()
             .WithColumn("Latitude").AsDecimal(9, 6).Nullable()
             .WithColumn("InterconnectionID").AsInt32().Nullable().ForeignKey("Interconnection", "ID")
