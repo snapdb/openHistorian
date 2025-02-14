@@ -31,7 +31,7 @@ namespace SchemaDefinition.Migrations;
 /// </summary>
 [SchemaMigration(author: "C. Lackner", branchNumber: 0, year: 2025, month: 02, day: 05)]
 [Tags("NorthAmerica", "Dataset")]
-public class InitialDatsetUS : Migration
+public class InitialDatsetNA : Migration
 {
     /// <inheritdoc/>
     public override void Down()
@@ -99,6 +99,6 @@ public class InitialDatsetUS : Migration
             .Row(new { Acronym = "ERCOT", Name = "Texas Interconnection", LoadOrder = 2 })
             .Row(new { Acronym = "Quebec", Name = "Quebec Interconnection", LoadOrder = 3 })
             .Row(new { Acronym = "Alaskan", Name = "Alaskan Interconnection", LoadOrder = 4 })
-            .Row(new { Acronym = "Hawaii", Name = "Islands of Hawaii", LoadOrder = 5 })
+            .Row(new { Acronym = "Hawaii", Name = "Islands of Hawaii", LoadOrder = 5 });
     }
 }
