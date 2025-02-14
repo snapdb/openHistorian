@@ -31,7 +31,7 @@ namespace SchemaDefinition.Migrations;
 /// </summary>
 [SchemaMigration(author: "C. Lackner", branchNumber: 0, year: 2025, month: 02, day: 12)]
 [Tags("SouthAmerica", "Dataset")]
-public class InitialDatsetUS : Migration
+public class InitialDatsetSA : Migration
 {
     /// <inheritdoc/>
     public override void Down()
@@ -43,7 +43,6 @@ public class InitialDatsetUS : Migration
     public override void Up()
     {
         Insert.IntoTable("Company")
-           
             .Row(new { Acronym = "ONS", MapAcronym = "ONS", Name = "Operador Nacional do Sistema Elétrico", LoadOrder = 1 })
             .Row(new { Acronym = "ELECTRONORTE", MapAcronym = "ELECTRONORTE", Name = "Centrais Elétricas Brasileiras S.A", LoadOrder = 2 })
             .Row(new { Acronym = "CELEO", MapAcronym = "CELEO", Name = "CELEO Brazilia", LoadOrder = 3 })
@@ -58,13 +57,12 @@ public class InitialDatsetUS : Migration
             .Row(new { Acronym = "TME", MapAcronym = "TME", Name = "TotalEnergies", LoadOrder = 12 })
             .Row(new { Acronym = "ENGIE", MapAcronym = "ENGIE", Name = "Engie Brasil", LoadOrder = 13 })
             .Row(new { Acronym = "FURNAS", MapAcronym = "FURNAS", Name = "Eletrobras Furnas", LoadOrder = 14 })
-            .Row(new { Acronym = "CPFL", MapAcronym = "CPFL", Name = "Companhia Paulista de Força e Luz", LoadOrder = 15 })
+            .Row(new { Acronym = "CPFL", MapAcronym = "CPFL", Name = "Companhia Paulista de Força e Luz", LoadOrder = 15 });
           
         Insert.IntoTable("Interconnection")
-            .Row(new { Acronym = "SIN", Name = "Brazilian Interconnection", LoadOrder = 1 });
-            .Row(new { Acronym = "Argentina", Name = "Argentine Interconnection System", LoadOrder = 2 });
-            .Row(new { Acronym = "Chile", Name = "Chile National Electrical System", LoadOrder = 3 });
+            .Row(new { Acronym = "SIN", Name = "Brazilian Interconnection", LoadOrder = 1 })
+            .Row(new { Acronym = "Argentina", Name = "Argentine Interconnection System", LoadOrder = 2 })
+            .Row(new { Acronym = "Chile", Name = "Chile National Electrical System", LoadOrder = 3 })
             .Row(new { Acronym = "SIEPAC", Name = "Central American Electrical Interconnection", LoadOrder = 4 });
-          
     }
 }
