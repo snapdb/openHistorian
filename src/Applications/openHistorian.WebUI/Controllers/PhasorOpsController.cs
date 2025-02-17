@@ -159,7 +159,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
         public bool TryGetNextMessage(out string? message)
         {
-            // So long as messages are being access, keep memory cache alive
+            // So long as messages are being accessed, keep memory cache alive
             if (!IsDisposed && KeepAlive(Token))
                 return m_messageQueue.TryDequeue(out message);
             
@@ -464,30 +464,6 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         return Table<Measurement>().QueryRecordsWhere("DeviceID = {0}", deviceID)!;
     }
 
-    private int GetProtocolID(string protocolAcronym)
-    {
-        if (Enum.TryParse(protocolAcronym, true, out PhasorProtocol protocol))
-            return Table<Protocol>().QueryRecordWhere("Acronym = {0}", protocol.ToString())?.ID ??
-                   Table<Protocol>().QueryRecordWhere("Acronym = {0}", getOldProtocolName(protocol))?.ID ?? 0;
-
-        return 0;
-
-        // Helps with older connection setting files where Acronym field may be case-sensitive
-        static string getOldProtocolName(PhasorProtocol protocol) => protocol switch
-        {
-            PhasorProtocol.IEEEC37_118V2 => "IeeeC37_118V2",
-            PhasorProtocol.IEEEC37_118V1 => "IeeeC37_118V1",
-            PhasorProtocol.IEEEC37_118D6 => "IeeeC37_118D6",
-            PhasorProtocol.IEEE1344 => "Ieee1344",
-            PhasorProtocol.BPAPDCstream => "BpaPdcStream",
-            PhasorProtocol.FNET => "FNet",
-            PhasorProtocol.SelFastMessage => "SelFastMessage",
-            PhasorProtocol.Macrodyne => "Macrodyne",
-            PhasorProtocol.IEC61850_90_5 => "Iec61850_90_5",
-            _ => protocol.ToString()
-        };
-    }
-
     /// <summary>
     /// Extracts a configuration frame from the database for a given device ID.
     /// </summary>
@@ -668,20 +644,13 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             return new ConfigurationFrame();
 
         // Create a new simple concrete configuration frame for JSON serialization converted from equivalent configuration information
-        int protocolID = 0, deviceID = 0, phasorID = -1; // Start phasor ID's at less than -1 since associated voltage == -1 is reserved as unselected
-
-        if (!string.IsNullOrWhiteSpace(connectionString))
-        {
-            Dictionary<string, string> settings = connectionString.ParseKeyValuePairs();
-            protocolID = GetProtocolID(settings["phasorProtocol"]);
-        }
+        int deviceID = 0, phasorID = -1; // Start phasor ID's at less than -1 since associated voltage == -1 is reserved as unselected
 
         ConfigurationFrame derivedFrame = new()
         {
             IDCode = sourceFrame.IDCode,
             FrameRate = sourceFrame.FrameRate,
             ConnectionString = connectionString,
-            ProtocolID = protocolID
         };
 
         foreach (IConfigurationCell sourceCell in sourceFrame.Cells)
