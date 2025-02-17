@@ -159,7 +159,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
         public bool TryGetNextMessage(out string? message)
         {
-            if (!IsDisposed)
+            // So long as messages are being access, keep memory cache alive
+            if (!IsDisposed && KeepAlive(Token))
                 return m_messageQueue.TryDequeue(out message);
             
             message = null;
@@ -360,6 +361,11 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             MemoryCache<ConnectionCache>.Remove(token);
 
             return true;
+        }
+
+        private static bool KeepAlive(string token)
+        {
+            return MemoryCache<ConnectionCache>.KeepAlive(token);
         }
 
         private static void Dispose(CacheEntryRemovedArguments arguments)
