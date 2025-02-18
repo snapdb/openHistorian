@@ -28,9 +28,9 @@ using Gemstone.Timeseries.Adapters;
 namespace TestingAdapters;
 
 /// <summary>
-/// Forces a set of flags to be turned on for a set of inputs.
+/// Forces a set of flags to be set for a set of inputs.
 /// </summary>
-[Description("Set Flags: Forces a set of flags to be turned on for a set of inputs.")]
+[Description("Set Flags: Forces a set of flags to be set for a set of inputs.")]
 public class SetFlagsFilterAdapter : FilterAdapterBase
 {
     #region [ Members ]

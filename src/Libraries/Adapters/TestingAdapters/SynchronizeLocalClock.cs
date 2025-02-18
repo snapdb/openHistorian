@@ -52,10 +52,9 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
     #region [ Members ]
 
     // Nested Types
-
-#pragma warning disable 169
-#pragma warning disable 414
-#pragma warning disable 649
+    #pragma warning disable 169
+    #pragma warning disable 414
+    #pragma warning disable 649
         
     [StructLayout(LayoutKind.Sequential)]
     private struct LUID
@@ -99,9 +98,9 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
         public ushort wMilliseconds;
     }
 
-#pragma warning restore 169
-#pragma warning restore 414
-#pragma warning restore 649
+    #pragma warning restore 169
+    #pragma warning restore 414
+    #pragma warning restore 649
 
     // Constants
     private const string SE_SYSTEMTIME_NAME = "SeSystemtimePrivilege";
@@ -376,9 +375,9 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
     }
 
     /// <summary>
-    /// Manually synchronizes local to specified date/time.
+    /// Manually synchronizes local clock to specified date/time.
     /// </summary>
-    [AdapterCommand("Manually synchronizes local to specified date/time.", "Administrator")]
+    [AdapterCommand("Manually synchronizes local clock to specified date/time.", "Administrator")]
     public void ManualSync(string dateTime)
     {
         if (!DateTime.TryParse(dateTime, out DateTime targetTime))

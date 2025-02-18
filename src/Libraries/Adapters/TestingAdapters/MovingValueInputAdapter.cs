@@ -22,6 +22,8 @@
 //******************************************************************************************************
 // ReSharper disable CompareOfFloatsByEqualityOperator
 // ReSharper disable InconsistentNaming
+
+// Repeatable random numbers desired for this testing adapter:
 #pragma warning disable SCS0005 // Weak random generator
 
 using System.ComponentModel;
@@ -31,8 +33,6 @@ using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Timer = System.Timers.Timer;
-
-// Repeatable random numbers desired for this testing adapter
 
 namespace TestingAdapters;
 
@@ -107,14 +107,14 @@ public class MovingValueInputAdapter : InputAdapterBase
     private int m_randomNumberSeed;
 
     private Timer? m_timer;
-    private double[] m_values;
-    private double[] m_countdowns;
-    private bool[] m_moveFlags;
+    private double[] m_values = default!;
+    private double[] m_countdowns = default!;
+    private bool[] m_moveFlags = default!;
     private long m_lastPublication;
 
-    private double[] m_totalMoveTimes;
-    private double[] m_accelerations;
-    private double[] m_lastHoldValues;
+    private double[] m_totalMoveTimes = default!;
+    private double[] m_accelerations = default!;
+    private double[] m_lastHoldValues = default!;
 
     private bool m_disposed;
 
@@ -388,26 +388,26 @@ public class MovingValueInputAdapter : InputAdapterBase
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
     protected override void Dispose(bool disposing)
     {
-        if (!m_disposed)
+        if (m_disposed)
+            return;
+        
+        try
         {
-            try
+            if (!disposing)
+                return;
+            
+            if (m_timer is not null)
             {
-                if (disposing)
-                {
-                    if (m_timer is not null)
-                    {
-                        m_timer.Elapsed -= Timer_Elapsed;
-                        m_timer.Stop();
-                        m_timer.Dispose();
-                        m_timer = null;
-                    }
-                }
+                m_timer.Elapsed -= Timer_Elapsed;
+                m_timer.Stop();
+                m_timer.Dispose();
+                m_timer = null;
             }
-            finally
-            {
-                m_disposed = true;          // Prevent duplicate dispose.
-                base.Dispose(disposing);    // Call base class Dispose().
-            }
+        }
+        finally
+        {
+            m_disposed = true;          // Prevent duplicate dispose.
+            base.Dispose(disposing);    // Call base class Dispose().
         }
     }
 
@@ -483,16 +483,16 @@ public class MovingValueInputAdapter : InputAdapterBase
 
         m_moveFlags[index] = !m_moveFlags[index];
 
-        if (!m_moveFlags[index])
+        if (m_moveFlags[index])
+        {
+            range = m_maxMoveTime - m_minMoveTime;
+            min = m_minMoveTime;
+        }
+        else
         {
             m_values[index] = GetWrappedValue(index);
             range = m_maxHoldTime - m_minHoldTime;
             min = m_minHoldTime;
-        }
-        else
-        {
-            range = m_maxMoveTime - m_minMoveTime;
-            min = m_minMoveTime;
         }
 
         m_countdowns[index] = Generator.NextDouble() * range + min;
@@ -551,6 +551,7 @@ public class MovingValueInputAdapter : InputAdapterBase
         double transform = value - minimum;
         double quotient = Math.Floor(transform / range);
         double remainder = transform - range * quotient;
+
         return remainder + minimum;
     }
 

@@ -164,8 +164,8 @@ public class RandomValueInputAdapter : InputAdapterBase
         {
             StringBuilder status = new();
 
-            status.AppendFormat("  Number of points to send: {0}\r\n", PointsToSend);
-            status.AppendFormat("         Inter-point delay: {0}ms\r\n", InterpointDelay);
+            status.AppendLine($"  Number of points to send: {PointsToSend:N0}");
+            status.AppendLine($"         Inter-point delay: {InterpointDelay:N0}ms");
             status.Append(base.Status);
 
             return status.ToString();
