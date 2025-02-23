@@ -59,26 +59,4 @@ public class SystemController : Controller
     {
         m_serviceCommands.SendCommand(connectionID, command);
     }
-
-    [HttpGet, Route("getEvents")]
-    public IEnumerable<Event> GetEvents(DateTime startTime, DateTime endTime)
-    {
-        return
-        [
-            new Event
-            {
-                StartTime = DateTime.UtcNow - TimeSpan.FromMinutes(5.0D),
-                EndTime = DateTime.UtcNow,
-                PointTag = "SHELBY-AL2",
-                Details = "Test Event",
-                Type = "Test",
-                ID = Guid.NewGuid()
-            }
-        ];
-    }
-
-    public void WriteEvent(Event evt)
-    {
-        // TODO: Write event to database with historian record
-    }
 }
