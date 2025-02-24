@@ -4,11 +4,19 @@ using Microsoft.Extensions.Logging.EventLog;
 
 using Gemstone.Threading;
 using Gemstone.Timeseries;
+using Microsoft.AspNetCore.Hosting;
+using openHistorian.WebUI.Controllers.JsonModels;
+using System.Net.Http;
+using System.Net;
+using openHistorian.Model;
+using openHistorian.WebUI;
+using openHistorian.Utility;
 
 namespace openHistorian;
 
 internal class Program
 {
+   
     private static void Main(string[] args)
     {
         try
@@ -33,11 +41,13 @@ internal class Program
 
             // Define settings for service components
             ServiceHost.DefineSettings(settings);
-
+           
             // Bind settings to configuration sources
             settings.Bind(new ConfigurationBuilder()
                 .ConfigureGemstoneDefaults(settings)
                 .AddCommandLine(args, settings.SwitchMappings));
+
+            FailoverModule.PreventStartup();
 
             HostApplicationBuilderSettings appSettings = new()
             {
