@@ -76,6 +76,7 @@ public class InitialSchema : Migration
         Delete.Table("Runtime");
         Delete.Table("ConfigurationEntity");
         Delete.Table("DataOperation");
+        Delete.Table("FailoverLog");
 
         //Adapter related
         Delete.Table("CustomActionAdapter");
@@ -543,6 +544,13 @@ public class InitialSchema : Migration
             .WithColumn("MeasurementID").AsString(36).NotNullable().ForeignKey("Measurement", "SignalID")
             .WithColumn("Details").AsString(int.MaxValue).NotNullable()
             .WIthColumn("Type").AsString(20).NotNullable();
+
+        Create.Table("FailoverLog")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("SystemName").AsString(50).NotNullable()
+            .WithColumn("Message").AsString(int.MaxValue).NotNullable()
+            .WithColumn("Timestamp").AsDateTime().Nullable()
+            .WithColumn("Priority").AsInt32().NotNullable();
 
         Execute.AddRunTimeSync("Historian");
         Execute.AddRunTimeSync("OutputStream");
