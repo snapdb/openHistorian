@@ -1,5 +1,5 @@
 ﻿//******************************************************************************************************
-//  FailOverModule.cs - Gbtc
+//  FailoverModule.cs - Gbtc
 //
 //  Copyright © 2025, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -19,54 +19,60 @@
 //  02/24/2025 - C. Lackner
 //       Generated original version of source code. 
 //
+//
 //******************************************************************************************************
 // ReSharper disable InconsistentNaming
 #pragma warning disable CS1591 // TODO: FIx missing XML comments
 
+
+using Gemstone.Configuration;
+using System.Net.Http;
 using System.Net;
+using SnapDB.Snap.Tree;
 using System.Net.Http.Json;
 using System.Text;
 using Gemstone.Configuration;
 using Gemstone.Data.Model;
 using Gemstone.Data;
+using static openHistorian.Utility.FailoverModule;
 
 namespace openHistorian.Utility;
 
 /// <summary>
-/// Defines openHistorian fail over Logic.
+/// openHistorian Failover Logic
 /// </summary>
-public static class FailOverModule
+public static class FailoverModule
 {
     #region [ Members ]
 
-    private const string FailOverSettingsCategory = "Failover";
+    private const string FailoverSettingsCategory = "Failover";
 
     private const int DefaultPriority = 0;
-    private const double DefaultFailOverLogRetention = 0.01666666;
-    private static readonly string[] DefaultNodes = ["localhost:8280", "localhost:8280"];
+    private const double DefaultFailoverLogRetention = 0.01666666;
+    private static readonly string[] DefaultNodes = new string[] { "localhost:8280", "localhost:8280" };
     private const string DefaultClusterSecret = "GPAClusterSecret";
     private const int DefaultRetryInterval = 1000;
 
-    public class FailOverResponse
+    public class FailoverResponse
     {
-        public string? SystemName { get; set; }
+        public string SystemName { get; set; }
         public int SystemPriority { get; set; }
         public bool PreventStartup { get; set; }
     }
 
-    public class FailOverRequest
+    public class FailoverRequest
     {
-        public string? SystemName { get; set; }
-        public int SystemPriority { get; set; }
-        public string? ClusterSecret { get; set; }
+        public string SystemName { get; set; }
+        public int SystemPriotity { get; set; }
+        public string ClusterSecret { get; set; }
     }
 
-    public class FailOverLog
+    public class FailoverLog
     {
         [PrimaryKey(true)]
         public int ID { get; set; }
-        public string? SystemName { get; set; }
-        public string? Message { get; set; }
+        public string SystemName { get; set; }
+        public string Message { get; set; }
         public DateTime Timestamp { get; set; }
         public int Priority { get; set; }
     }
@@ -75,18 +81,17 @@ public static class FailOverModule
 
     #region [ Static ]
 
-    private static readonly HttpClient s_httpClient = new();
-
+    private static HttpClient s_httpClient = new();
     public static string SystemName
     {
         get
         {
             try
             {
-                dynamic section = Settings.Default[Settings.SystemSettingsCategory];
+                dynamic section = Gemstone.Configuration.Settings.Default[Settings.SystemSettingsCategory];
                 return section.SystemName;
             }
-            catch
+            catch (Exception ex)
             {
                 return "openHistorian";
             }
@@ -99,10 +104,10 @@ public static class FailOverModule
         {
             try
             {
-                dynamic section = Settings.Default[FailOverSettingsCategory];
+                dynamic section = Gemstone.Configuration.Settings.Default[FailoverSettingsCategory];
                 return section.Priority;
             }
-            catch
+            catch (Exception ex)
             {
                 return DefaultPriority;
             }
@@ -115,10 +120,10 @@ public static class FailOverModule
         {
             try
             {
-                dynamic section = Settings.Default[FailOverSettingsCategory];
+                dynamic section = Gemstone.Configuration.Settings.Default[FailoverSettingsCategory];
                 return section.ClusterSecret;
             }
-            catch
+            catch (Exception ex)
             {
                 return DefaultClusterSecret;
             }
@@ -131,10 +136,10 @@ public static class FailOverModule
         {
             try
             {
-                dynamic section = Settings.Default[FailOverSettingsCategory];
+                dynamic section = Gemstone.Configuration.Settings.Default[FailoverSettingsCategory];
                 return section.LogRetention;
             }
-            catch
+            catch (Exception ex)
             {
                 return 0.01666666D;
             }
@@ -149,10 +154,10 @@ public static class FailOverModule
         {
             try
             {
-                dynamic section = Settings.Default[FailOverSettingsCategory];
+                dynamic section = Gemstone.Configuration.Settings.Default[FailoverSettingsCategory];
                 return section.Nodes;
             }
-            catch
+            catch (Exception ex)
             {
                 return DefaultNodes;
             }
@@ -165,10 +170,10 @@ public static class FailOverModule
         {
             try
             {
-                dynamic section = Settings.Default[FailOverSettingsCategory];
+                dynamic section = Gemstone.Configuration.Settings.Default[FailoverSettingsCategory];
                 return section.RetryInterval;
             }
-            catch
+            catch (Exception ex)
             {
                 return DefaultRetryInterval;
             }
@@ -176,27 +181,29 @@ public static class FailOverModule
     }
 
     /// <summary>
-    /// Defines settings section for fail over module
+    /// Defines settings section for Failover module
     /// </summary>
     /// <param name="settings"></param>
     public static void DefineSettings(Settings settings)
     {
-        dynamic failOverSettings = settings[FailOverSettingsCategory];
+        dynamic failoverSettings = settings[FailoverSettingsCategory];
 
-        failOverSettings.Priority = (DefaultPriority, "Defines the priority of this node. Nodes with lower priority take precedence over higher priority. a value of 0 means fail over mode is disabled");
-        failOverSettings.LogRetention = (DefaultFailOverLogRetention, "Defines the time in hours, during which logs from other fail over nodes are kept in the database.");
-        failOverSettings.Nodes = (DefaultNodes, "Defines the list of urls for other nodes in the cluster.");
-        failOverSettings.ClusterSecret = (DefaultClusterSecret, "Defines the cluster secret used to identify and validate other nodes.");
-        failOverSettings.RetryInterval = (DefaultRetryInterval, "Defines the interval in ms after which the system will try to startup again.");
+        failoverSettings.Priority = (DefaultPriority, "Defines the priority of this node. Nodes with lower priority take precendece over higher priority. a value of 0 means Failover mode is disabled");
+        failoverSettings.LogRetention = (DefaultFailoverLogRetention, "Defines the time in hours, during which logs from other failover nodes are kept in the database.");
+        failoverSettings.Nodes = (DefaultNodes, "Defines the list of urls for other nodes in the cluster.");
+        failoverSettings.ClusterSecret = (DefaultClusterSecret, "Defines the cluster secret used to identify and validate other nodes.");
+        failoverSettings.RetryInterval = (DefaultRetryInterval, "Defines the interval in ms after which the system will try to startup again.");
+
     }
 
     /// <summary>
-    /// Function that prevents startup if another node with higher priority is found.
+    /// Function that prevents startup if another node with Higher Priroity is found.
     /// </summary>
     public static void PreventStartup()
     {
-        bool checkNode(string endpoint)
+        Func<string, bool> CheckNode = (endpoint) =>
         {
+
             try
             {
                 using HttpRequestMessage request = new();
@@ -204,31 +211,40 @@ public static class FailOverModule
                 request.Method = HttpMethod.Post;
                 request.RequestUri = new Uri(endpoint);
 
-                request.Content = new StringContent(new FailOverRequest()
+                request.Content = new StringContent(new FailoverRequest()
                 {
                     ClusterSecret = ClusterSecret,
                     SystemName = SystemName,
-                    SystemPriority = SystemPriority
-                }.ToString()!, Encoding.UTF8, "application/json");
+                    SystemPriotity = SystemPriority
+                }.ToString(), Encoding.UTF8, "application/json");
 
-                using HttpResponseMessage response = s_httpClient.SendAsync(request).GetAwaiter().GetResult();
+
+                using HttpResponseMessage response = s_httpClient
+                    .SendAsync(request)
+                    .GetAwaiter()
+                    .GetResult();
+
+                if (response is null)
+                    return false;
 
                 FailOverResponse? failOverResponse = response.Content.ReadFromJsonAsync<FailOverResponse>().GetAwaiter().GetResult();
-
-                if (failOverResponse is not null)
+                
+                if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    LogMessage(new FailOverLog()
+                    FailoverResponse failoverResponse = response.Content.ReadFromJsonAsync<FailoverResponse>().GetAwaiter().GetResult();
+                    LogMessage(new FailoverLog()
                     {
-                        SystemName = failOverResponse.SystemName,
-                        Message = failOverResponse.PreventStartup ? $"Prevented startup of {SystemName} due to lower priority." : (failOverResponse.SystemPriority < SystemPriority ? $"Node with higher priority started. Shutting down {failOverResponse.SystemName}" : "Node with matching priority started"),
-                        Priority = failOverResponse.SystemPriority
+                        SystemName = failoverResponse.SystemName,
+                        Message = failoverResponse.PreventStartup ? $"Prevented startup of {SystemName} due to lower priority." : (
+                        failoverResponse.SystemPriority < SystemPriority? $"Node with higher priority started. Shutting down {failoverResponse.SystemName}" : "Node with matching priority started"),
+                        Priority = failoverResponse.SystemPriority
                     });
-                    return failOverResponse.PreventStartup;
+                    return failoverResponse.PreventStartup;
                 }
 
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    LogMessage(new FailOverLog()
+                    LogMessage(new FailoverLog()
                     {
                         SystemName = SystemName,
                         Message = $"Failed to reach {endpoint} due to authentication failure",
@@ -237,17 +253,18 @@ public static class FailOverModule
                     return false;
                 }
 
-                LogMessage(new FailOverLog()
+                LogMessage(new FailoverLog()
                 {
                     SystemName = SystemName,
                     Message = $"Failed to reach {endpoint} endpoint responded with status: {response.StatusCode}",
                     Priority = SystemPriority
                 });
                 return false;
+               
             }
             catch (Exception ex)
             {
-                LogMessage(new FailOverLog()
+                LogMessage(new FailoverLog()
                 {
                     SystemName = SystemName,
                     Message = $"Failed to reach {endpoint} with error message: {ex.Message}",
@@ -255,17 +272,18 @@ public static class FailOverModule
                 });
                 return false;
             }
-        }
+        };
 
-        // Prevent startup if fail over is on and priority active
+
+        // Prevent Startup if Failover is on AND Priority active
         if (SystemPriority <= 0)
             return;
 
-        Console.WriteLine("Fail over mode is active. Checking for other instances");
+        Console.WriteLine("Failover mode is active. Checking for other instances");
 
         if (Nodes.Length < 1)
         {
-            Console.WriteLine("No fail over nodes to check are specified");
+            Console.WriteLine("No Failover nodes to check are specified");
             return;
 
         }
@@ -276,36 +294,45 @@ public static class FailOverModule
             
             foreach (string node in Nodes)
             {
-                Console.WriteLine($"Fail over logic connecting to {node}");
+                Console.WriteLine($"Failover logic connecting to {node}");
 
-                string endpoint = $"http://{node}/api/System/checkFailOverState";
-                preventStartup = preventStartup || checkNode(endpoint);
+                string endpoint = $"http://{node}/api/System/checkFailoverState";
+                preventStartup = preventStartup || CheckNode(endpoint);
             }
 
             if (!preventStartup)
             {
-                Console.WriteLine("Fail over logic starting up this node");
+                Console.WriteLine($"Failover logic starting up this node");
                 return;
             }
 
-            Console.WriteLine("Fail over logic preventing startup");
+            Console.WriteLine($"Failover logic preventing startup");
             Thread.Sleep(RetryInterval);
         }
+
+
+
     }
 
     /// <summary>
-    /// Saves the <see cref="FailOverLog"/> to the Database and removes old records.
+    /// Saves the <see cref="FailoverLog"/> to the Database and removes old records.
     /// </summary>
-    /// <param name="log">The <see cref="FailOverLog"/> to be saved.</param>
-    public static void LogMessage(FailOverLog log)
+    /// <param name="log">The <see cref="FailoverLog"/> to be saved.</param>
+    public static void LogMessage(FailoverLog log)
     {
+        StringBuilder deleteQuery = new StringBuilder();
+        List<object> deleteParameters = new List<object>();
+
+        using (AdoDataConnection connection = new AdoDataConnection(Gemstone.Configuration.Settings.Instance))
+        {
         using AdoDataConnection connection = new(Settings.Instance);
-        log.Timestamp = DateTime.UtcNow;
-        new TableOperations<FailOverLog>(connection).AddNewOrUpdateRecord(log);
-        
-        connection.ExecuteNonQuery("DELETE FROM FailOverLog WHERE Timestamp < {0} AND SystemName = {1} ",
-            log.Timestamp.AddHours(-LogRetention), log.SystemName);
+            log.Timestamp = DateTime.UtcNow;
+            new TableOperations<FailoverLog>(connection).AddNewOrUpdateRecord(log);
+            connection.ExecuteNonQuery("DELETE FROM FailoverLog WHERE Timestamp < {0} AND SystemName = {1} ",
+                log.Timestamp.AddHours(-LogRetention), log.SystemName);
+        }
     }
 
     #endregion
+
 }

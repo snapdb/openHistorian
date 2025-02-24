@@ -21,13 +21,15 @@
 //
 //******************************************************************************************************
 
+using Gemstone.Configuration;
 using Gemstone.PhasorProtocols;
 using Microsoft.AspNetCore.Mvc;
+using openHistorian.Model;
 using openHistorian.Utility;
 using openHistorian.WebUI.Controllers.JsonModels;
 using ServiceInterface;
 using System.Diagnostics;
-using static openHistorian.Utility.FailOverModule;
+using static openHistorian.Utility.FailoverModule;
 
 namespace openHistorian.WebUI.Controllers;
 
