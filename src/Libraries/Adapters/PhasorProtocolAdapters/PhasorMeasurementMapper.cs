@@ -237,12 +237,12 @@ public class PhasorMeasurementMapper : InputAdapterBase
 
     /// <summary>
     /// Gets flag that determines if device being mapped is a concentrator (i.e., data from multiple
-    /// devices combined together from the connected device).
+    /// devices combined from the connected device).
     /// </summary>
     public bool IsConcentrator { get; private set; }
 
     /// <summary>
-    /// Gets the access ID (a.k.a, ID code) for this device connection. Value is often necessary in order to make a connection to some phasor protocols.
+    /// Gets the access ID (a.k.a., ID code) for this device connection. Value is often necessary in order to make a connection to some phasor protocols.
     /// </summary>
     /// <remarks>
     /// This value can mutate when configured with multiple values, i.e., where an alternate access ID code is specified for a target device connection, e.g.:
@@ -273,6 +273,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
         get { return StatisticsHelpers?.Select(statisticsHelper => statisticsHelper.Device); }
     }
 
+    // ReSharper disable once GrammarMistakeInComment
     /// <summary>
     /// Gets or sets flag that determines if use of cached configuration during initial connection is allowed when a configuration has not been received within the data loss interval.
     /// </summary>
@@ -1782,7 +1783,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
         if (TimeZone is not null && !TimeZone.Equals(TimeZoneInfo.Utc))
             frame.Timestamp = TimeZoneInfo.ConvertTimeToUtc(frame.Timestamp, TimeZone);
 
-        // We also allow "fine tuning" of time for fickle GPS clocks...
+        // We also allow "fine-tuning" of time for fickle GPS clocks...
         if (TimeAdjustmentTicks.Value != 0)
             frame.Timestamp += TimeAdjustmentTicks;
 
@@ -1870,7 +1871,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
                     for (int x = 0; x < count; x++)
                     {
                         // Get composite phasor measurements
-                        measurements = phasors[x]?.Measurements ?? Array.Empty<IMeasurement>();
+                        measurements = phasors![x].Measurements ?? [];
 
                         // Map angle
                         if (measurements.Length > AngleIndex)
@@ -1882,7 +1883,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
                     }
 
                     // Map frequency (FQ) and dF/dt (DF)
-                    measurements = parsedDevice.FrequencyValue?.Measurements ?? Array.Empty<IMeasurement>();
+                    measurements = parsedDevice.FrequencyValue?.Measurements ?? [];
 
                     // Map frequency
                     if (measurements.Length > FrequencyIndex)
@@ -1901,7 +1902,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
 
                     // Map analog values
                     for (int x = 0; x < count; x++)
-                        MapMeasurementAttributes(deviceMappedMeasurements, definedDevice.GetMetadata(m_definedMeasurements, SignalKind.Analog, x, count), analogs[x].Measurements[0]);
+                        MapMeasurementAttributes(deviceMappedMeasurements, definedDevice.GetMetadata(m_definedMeasurements, SignalKind.Analog, x, count), analogs![x].Measurements[0]);
 
                     // Map digital values (DVn)
                     DigitalValueCollection digitals = parsedDevice.DigitalValues;
@@ -1909,7 +1910,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
 
                     // Map digital values
                     for (int x = 0; x < count; x++)
-                        MapMeasurementAttributes(deviceMappedMeasurements, definedDevice.GetMetadata(m_definedMeasurements, SignalKind.Digital, x, count), digitals[x].Measurements[0]);
+                        MapMeasurementAttributes(deviceMappedMeasurements, definedDevice.GetMetadata(m_definedMeasurements, SignalKind.Digital, x, count), digitals![x].Measurements[0]);
 
                     // Track measurement count statistics for this device
                     if (m_countOnlyMappedMeasurements)
@@ -2051,7 +2052,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
         // We cache non-indexed signal reference strings so they don't need to be generated at each mapping call.
 
         // Look up synonym in dictionary based on signal type, if found return single element
-        if (m_generatedSignalReferenceCache.TryGetValue(type, out string[] references))
+        if (m_generatedSignalReferenceCache.TryGetValue(type, out string[]? references))
             return references[0];
 
         // Create and cache new non-indexed signal reference (for single element)
@@ -2868,11 +2869,11 @@ public class PhasorMeasurementMapper : InputAdapterBase
         if (Enabled && m_frameParser.IsConnected)
         {
             new Action(() =>
-                {
-                    if (m_clientBasedPublishChannel.CurrentState == ClientState.Disconnected)
-                        m_clientBasedPublishChannel.ConnectAsync();
-                })
-                .DelayAndExecute(1000);
+            {
+                if (m_clientBasedPublishChannel.CurrentState == ClientState.Disconnected)
+                    m_clientBasedPublishChannel.ConnectAsync();
+            })
+            .DelayAndExecute(1000);
         }
     }
 

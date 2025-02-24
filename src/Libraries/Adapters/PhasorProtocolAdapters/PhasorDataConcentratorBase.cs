@@ -1090,7 +1090,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
                             // If measurement key was still not found, then the output stream device name has been adjusted, so
                             // we have no choice but to fall back on the slower metadata search for the for the point ID value.
                             DataTable? activeMeasurements = DataSource.Tables["ActiveMeasurements"];
-                            DataRow[] activeMeasurementRows = Array.Empty<DataRow>();
+                            DataRow[] activeMeasurementRows = [];
 
                             object? activeMeasurementSignalID = null;
                             object? activeMeasurementID = null;
