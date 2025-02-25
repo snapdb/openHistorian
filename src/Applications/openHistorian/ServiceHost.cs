@@ -121,6 +121,7 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
     }
 
     /// <inheritdoc />
+    public (string Status, ServiceStatus Type, string Description) GetCurrentStatus()
     public IAdapter GetActiveAdapterInstance(uint runtimeID)
     {
         AllAdaptersCollection allAdapters = AllAdapters ?? throw new NullReferenceException("No adapters are currently defined");
@@ -132,10 +133,10 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
     }
 
     /// <inheritdoc />
-    public (string Status, string Type, string Description) GetCurrentStatus()
+    public (string Status, ServiceStatus Type, string Description) GetCurrentStatus()
     {
         // WARNING / NORMAL / ERROR
-        return ("NORMAL", "Service", "openHistorian service is running.");
+        return ("ONLINE", ServiceStatus.Normal, "openHistorian service is running normal.");
     }
 
     private void GetStatsForCurrentStatus()
