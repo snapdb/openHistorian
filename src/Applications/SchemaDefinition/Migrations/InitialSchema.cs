@@ -77,6 +77,7 @@ public class InitialSchema : Migration
         Delete.Table("ConfigurationEntity");
         Delete.Table("DataOperation");
         Delete.Table("FailoverLog");
+        Delete.Table("Theme");
 
         //Adapter related
         Delete.Table("CustomActionAdapter");
@@ -92,6 +93,7 @@ public class InitialSchema : Migration
         // Event Related
         Delete.Table("Alarm");
         Delete.Table("EventDetails");
+
         // Views
         Execute.DeleteView("RuntimeOutputStreamMeasurement");
         Execute.DeleteView("RuntimeHistorian");
@@ -113,6 +115,7 @@ public class InitialSchema : Migration
         Execute.DeleteView("IaonTreeView");
         Execute.DeleteView("AlarmDeviceStateView");
         Execute.DeleteView("NEW_GUID");
+        Execute.DeleteView("FailoverNodeView");
 
     }
 
@@ -457,6 +460,13 @@ public class InitialSchema : Migration
             .WithColumn("Arguments").AsString().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false);
+
+        Create.Table("Theme")
+            .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
+            .WithColumn("FileName").AsString(200).NotNullable()
+            .WithColumn("Name").AsString(200).NotNullable()
+            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
+            .WithCreatedBy();
 
         //Adapter related
         Create.Table("CustomActionAdapter")
@@ -991,6 +1001,18 @@ public class InitialSchema : Migration
             FROM Device
             LEFT OUTER JOIN Device AS ParentDevice 
                 ON Device.ParentID = ParentDevice.ID;
+        ");
+
+         Execute.Sql(@"
+            CREATE VIEW FailoverNodeView
+            AS SELECT 
+                FailoverLog.SystemName,
+				FailoverLog.Priority,
+				Max(FailoverLog.Timestamp) AS LastLog
+            FROM 
+                FailoverLog
+            GROUP BY 
+                FailoverLog.SystemName, FailoverLog.Priority;
         ");
 
         IfDatabase(ProcessorId.SQLite).Execute.Sql(@"
