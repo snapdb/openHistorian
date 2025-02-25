@@ -536,7 +536,7 @@ public class AlarmAdapter : FacileActionAdapterBase
 
                 deleteQuery.Append("(MeasurementID = {0} AND EndTime < {1})");
                 deleteParameters.Add(evt.MeasurementID);
-                deleteParameters.Add(evt.StartTime.AddHours(-m_alarmRetention).Ticks);
+                deleteParameters.Add(evt.StartTime.AddHours(-m_alarmRetention));
 
                 EventDetails? currentRecord = tableOperations.QueryRecordWhere("EventGuid = {0}", evt.Guid);
                 EventDetails updatedRecord = GenerateAlarmDetails(evt);
