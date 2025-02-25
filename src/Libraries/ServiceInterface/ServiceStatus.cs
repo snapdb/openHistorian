@@ -26,19 +26,12 @@ using Gemstone.PhasorProtocols;
 namespace ServiceInterface;
 
 /// <summary>
-/// Defines available service commands.
+/// Defines available service status.
 /// </summary>
-public interface IServiceCommands
-{
-    /// <summary>
-    /// Sends a command to a specific phasor connection instance.
-    /// </summary>
-    /// <param name="connectionID">ID of the connection for command operation.</param>
-    /// <param name="command">Device command to send to the connection.</param>
-    void SendCommand(Guid connectionID, DeviceCommand command);
-
-    /// <summary>
-    /// Gets the current status of the openHistorian.
-    /// </summary>
-    (string Status, ServiceStatus Type, string Description) GetCurrentStatus();
+/// 
+public enum  ServiceStatus
+{ 
+    Normal = 0,
+    Warning = 1,
+    Error = 2
 }
