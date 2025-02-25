@@ -50,7 +50,7 @@ public class SystemController : Controller
     [HttpGet, Route("currentStatus")]
     public SystemStatus GetCurrentStatus()
     {
-        (string status, string type, string description) = m_serviceCommands.GetCurrentStatus();
+        (string status, ServiceStatus type, string description) = m_serviceCommands.GetCurrentStatus();
         
         return new SystemStatus
         {

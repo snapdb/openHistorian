@@ -22,37 +22,16 @@
 //******************************************************************************************************
 
 using Gemstone.PhasorProtocols;
-using Gemstone.Timeseries.Adapters;
 
 namespace ServiceInterface;
 
 /// <summary>
-/// Defines available service commands.
+/// Defines available service status.
 /// </summary>
-public interface IServiceCommands
-{
-    /// <summary>
-    /// Reloads the configuration for the openHistorian service.
-    /// </summary>
-    void ReloadConfig();
-
-    /// <summary>
-    /// Sends a command to a specific phasor connection instance.
-    /// </summary>
-    /// <param name="connectionID">ID of the connection for command operation.</param>
-    /// <param name="command">Device command to send to the connection.</param>
-    void SendCommand(Guid connectionID, DeviceCommand command);
-
-    /// <summary>
-    /// Gets the current status of the openHistorian.
-    /// </summary>
-    (string Status, ServiceStatus Type, string Description) GetCurrentStatus();
-
-
-    /// <summary>
-    /// Gets an adapter instance from active Iaon session by its runtime ID.
-    /// </summary>
-    /// <param name="runtimeID">Runtime ID of adapter to retrieve.</param>
-    /// <returns>Adapter instance from Iaon session with specified <paramref name="runtimeID"/>.</returns>
-    IAdapter GetActiveAdapterInstance(uint runtimeID);
+/// 
+public enum  ServiceStatus
+{ 
+    Normal = 0,
+    Warning = 1,
+    Error = 2
 }
