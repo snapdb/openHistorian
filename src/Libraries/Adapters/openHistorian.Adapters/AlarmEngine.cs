@@ -630,6 +630,17 @@ public class AlarmAdapter : FacileActionAdapterBase
                         existingAlarmProcessor.ExpectedMeasurements = ParseInputMeasurementKeys(DataSource, true, definedAlarm.InputMeasurementKeys).Count();
                         return existingAlarmProcessor;
                     }
+
+                    AlarmState initialState = AlarmState.Cleared;
+                    // Any lingering alarms need to be reset to the raised state so they get closed out propoerly
+                    using (FileBackedDictionary<int, AlarmEvent> activeAlarms = new FileBackedDictionary<int, AlarmEvent>(FilebackedDictionartPath))
+                    {
+                        if (activeAlarms.ContainsKey(definedAlarm.ID))
+                            initialState = AlarmState.Raised;
+                    }
+
+                    definedAlarm.State = initialState;
+
                     return new AlarmProcessor()
                     {
                         Alarm = definedAlarm,
@@ -650,6 +661,8 @@ public class AlarmAdapter : FacileActionAdapterBase
                 .Select<MeasurementKey, Tuple<Guid, int>>((measurementKey) => new(measurementKey.SignalID, alarm.ID)))
                 .GroupBy(measurement => measurement.Item1)
                 .ToDictionary((grouping) => grouping.Key, (grouping) => grouping.Select(measurement => measurement.Item2).ToList());
+
+
 
             m_alarmLookup = newAlarmLookup;
             m_measurementAlarmMapping = newMeasurementMap;
