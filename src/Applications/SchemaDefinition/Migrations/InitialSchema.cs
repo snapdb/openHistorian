@@ -212,6 +212,7 @@ public class InitialSchema : Migration
             .WithColumn("Description").AsString().Nullable()
             .WithColumn("Subscribed").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
+            .WithColumn("Local").AsBoolean().NotNullable().WithDefaultValue(true)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithCreatedBy();
 
