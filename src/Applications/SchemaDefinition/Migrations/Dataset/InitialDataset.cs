@@ -184,6 +184,8 @@ public class InitialDataset : Migration
         Delete.FromTable("Statistic").Row(new { SignalIndex = 12, Source = "Publisher" });
         Delete.FromTable("Statistic").Row(new { SignalIndex = 13, Source = "Publisher" });
 
+        Delete.FromTable("Theme").Row(new { Name = "GPA Default" });
+
         Delete.FromTable("VendorDevice")
             .Row(new { VendorID = GetVendor("ARB"), Name = "Arbiter-1133A" })
             .Row(new { VendorID = GetVendor("ABB"), Name = "ABB-521" })
@@ -255,6 +257,9 @@ public class InitialDataset : Migration
             .Row(new { Description = "Time Series Startup Operations", AssemblyName = "Gemstone.Timeseries.dll", TypeName = "Gemstone.Timeseries.TimeSeriesStartupOperations", MethodName = "PerformTimeSeriesStartupOperations", Arguments = "", LoadOrder = 0, Enabled = 1 })
             .Row(new { Description = "Phasor Data Source Validation", AssemblyName = "PhasorProtocolAdapters.dll", TypeName = "PhasorProtocolAdapters.CommonPhasorServices", MethodName = "PhasorDataSourceValidation", Arguments = "", LoadOrder = 1, Enabled = 1 })
             .Row(new { Description = "Optimize Local Historian Settings", AssemblyName = "openHistorian.Adapters.dll", TypeName = "openHistorian.Adapters.LocalOutputAdapter", MethodName = "OptimizeLocalHistorianSettings", Arguments = "", LoadOrder = 2, Enabled = 1 });
+
+        Insert.IntoTable("Theme")
+            .Row( new { Name = "GPA Default" FileName = "/Styles/bootstrap.min.css" LoadOrder = 1});
 
         Insert.IntoTable("SignalType")
             .Row(new { Name = "Current Magnitude", Acronym = "IPHM", Suffix = "PM", Abbreviation = "I", LongAcronym = "CurrentMagnitude", Source = "Phasor", EngineeringUnits = "Amps" })
