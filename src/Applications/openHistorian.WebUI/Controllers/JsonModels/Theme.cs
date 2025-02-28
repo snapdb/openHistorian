@@ -7,10 +7,14 @@ namespace openHistorian.WebUI.Controllers.JsonModels;
 public class Theme
 {
     [PrimaryKey(true)]
+    [DefaultValueExpression("-1")]
     public int ID { get; set; }
 
     public string FileName { get; set; }
+
     public string Name { get; set; }
+
+    [DefaultValueExpression("0")]
     public int LoadOrder { get; set; }
 
     [DefaultValueExpression("DateTime.UtcNow")]
