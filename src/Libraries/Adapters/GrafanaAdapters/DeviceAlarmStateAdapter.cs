@@ -428,12 +428,12 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
             $"SELECT * FROM Device WHERE IsConcentrator = 0 AND AccessID <> {DeviceGroupAccessID} AND ID NOT IN (SELECT DeviceID FROM AlarmDevice)";
 
         // Load any newly defined devices into the alarm device table
-        TableOperations<AlarmDevice> alarmDeviceTable = new(connection);
+        TableOperations<DeviceState> alarmDeviceTable = new(connection);
         DataRow[] newDevices = connection.RetrieveData(deviceSQL).Select();
 
         foreach (DataRow newDevice in newDevices)
         {
-            AlarmDevice alarmDevice = alarmDeviceTable.NewRecord();
+            DeviceState alarmDevice = alarmDeviceTable.NewRecord();
 
             bool enabled = newDevice["Enabled"].ToString().ParseBoolean();
 
@@ -449,7 +449,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
         List<MeasurementKey> inputMeasurementKeys = [];
 
         // Load measurement signal ID to alarm device map
-        foreach (AlarmDevice alarmDevice in alarmDeviceTable.QueryRecords())
+        foreach (DeviceState alarmDevice in alarmDeviceTable.QueryRecords())
         {
             MeasurementKey[] keys = null;
             DataRow metadata = connection.RetrieveRow("SELECT * FROM Device WHERE ID = {0}", alarmDevice.DeviceID);
@@ -542,16 +542,16 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
         lock (m_alarmStates)
         {
             ImmediateMeasurements measurements = LatestMeasurements;
-            List<AlarmDevice> alarmDeviceUpdates = [];
+            List<DeviceState> alarmDeviceUpdates = [];
             Dictionary<AlarmState, int> stateCounts = CreateNewStateCountsMap();
 
             OnStatusMessage(MessageLevel.Info, "Updating device alarm states");
 
             using (AdoDataConnection connection = new(ConfigSettings.Default.System))
             {
-                TableOperations<AlarmDevice> alarmDeviceTable = new(connection);
+                TableOperations<DeviceState> alarmDeviceTable = new(connection);
 
-                foreach (AlarmDevice alarmDevice in alarmDeviceTable.QueryRecords())
+                foreach (DeviceState alarmDevice in alarmDeviceTable.QueryRecords())
                 {
                     if (!m_deviceMeasurementKeys.TryGetValue(alarmDevice.DeviceID, out MeasurementKey[] keys) ||
                         !m_deviceMetadata.TryGetValue(alarmDevice.DeviceID, out DataRow metadata))
@@ -678,7 +678,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
 
                 using AdoDataConnection connection = string.IsNullOrWhiteSpace(ExternalDatabaseConnectionString) ? new AdoDataConnection(ConfigSettings.Default.System) : new AdoDataConnection(ExternalDatabaseConnectionString, ExternalDatabaseProviderString);
 
-                foreach (AlarmDevice alarmDevice in alarmDeviceUpdates)
+                foreach (DeviceState alarmDevice in alarmDeviceUpdates)
                 {
                     if (!m_deviceMetadata.TryGetValue(alarmDevice.DeviceID, out DataRow metadata))
                         continue;

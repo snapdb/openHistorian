@@ -46,7 +46,7 @@ public class AlarmState
     public string State { get; set; }
 
     /// <summary>
-    /// Gets or sets recommended action for the user if a <see cref="AlarmDevice"/> is in this <see cref="AlarmState"/>.
+    /// Gets or sets recommended action for the user if a <see cref="DeviceState"/> is in this <see cref="AlarmState"/>.
     /// </summary>
     [StringLength(500)]
     public string RecommendedAction { get; set; }

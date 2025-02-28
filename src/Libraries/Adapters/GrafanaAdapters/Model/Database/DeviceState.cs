@@ -34,7 +34,7 @@ namespace GrafanaAdapters.Model.Database;
 /// <summary>
 /// Represents a connected device in an alarm state.
 /// </summary>
-public class AlarmDevice
+public class DeviceState
 {
     /// <summary>
     /// Gets or sets unique ID.
