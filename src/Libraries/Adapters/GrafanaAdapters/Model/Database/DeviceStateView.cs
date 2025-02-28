@@ -30,7 +30,7 @@ namespace GrafanaAdapters.Model.Database;
 /// <summary>
 /// Represents a Grafana alarm panel block.
 /// </summary>
-public class AlarmDeviceStateView
+public class DeviceStateView
 {
     /// <summary>
     /// Gets or sets unique ID.
@@ -41,7 +41,17 @@ public class AlarmDeviceStateView
     /// <summary>
     /// Gets or sets name of the device.
     /// </summary>
-    public string Name { get; set; }
+    public string DeviceName { get; set; }
+
+    /// <summary>
+    /// Gets or sets longitude of the device.
+    /// </summary>
+    public string DeviceLongitude { get; set; }
+
+    /// <summary>
+    /// Gets or sets name of the device.
+    /// </summary>
+    public string DeviceLatitude { get; set; }
 
     /// <summary>
     /// Gets or sets description of the device state.
