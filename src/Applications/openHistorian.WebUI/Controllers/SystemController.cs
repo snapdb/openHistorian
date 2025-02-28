@@ -29,7 +29,7 @@ using openHistorian.Utility;
 using openHistorian.WebUI.Controllers.JsonModels;
 using ServiceInterface;
 using System.Diagnostics;
-using static openHistorian.Utility.FailoverModule;
+using static openHistorian.Utility.FailOverModule;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -69,38 +69,36 @@ public class SystemController : Controller
     /// <summary>
     /// Returns a true if this node should prevent the requesting node from starting up
     /// </summary>
-    /// <returns> <see cref="true"/> if the other node should be prevented from starting up </returns>
-
-    [HttpPost, Route("checkFailoverState")]
-    public IActionResult checkFailoverStatus(FailoverRequest request)
+    /// <returns><c>true</c> if the other node should be prevented from starting up; otherwise <c>false</c>.</returns>
+    [HttpPost, Route("checkFailOverState")]
+    public IActionResult CheckFailOverStatus(FailOverRequest request)
     {
-
-        if (!string.Equals(request.ClusterSecret, FailoverModule.ClusterSecret, StringComparison.InvariantCultureIgnoreCase))
+        if (!string.Equals(request.ClusterSecret, FailOverModule.ClusterSecret, StringComparison.InvariantCultureIgnoreCase))
             return Unauthorized();
 
-        // Failover disablesS
-        if (FailoverModule.SystemPriority == 0)
-            return BadRequest("Failover is disabled on this System");
+        // Fail over disablesS
+        if (FailOverModule.SystemPriority == 0)
+            return BadRequest("Fail over is disabled on this System");
         
-        FailoverLog log = new()
+        FailOverLog log = new()
         {
             SystemName = request.SystemName,
             Priority = request.SystemPriotity,
             Timestamp = DateTime.UtcNow
         };
 
-        FailoverResponse response = new()
+        FailOverResponse response = new()
         {
-            SystemName = FailoverModule.SystemName,
-            SystemPriority = FailoverModule.SystemPriority
+            SystemName = FailOverModule.SystemName,
+            SystemPriority = FailOverModule.SystemPriority
         };
 
-        if (request.SystemPriotity < FailoverModule.SystemPriority)
+        if (request.SystemPriotity < FailOverModule.SystemPriority)
         {
             log.Message = $"Prevented startup of {log.SystemName} due to lower priority.";
             response.PreventStartup = true;
         }
-        else if (request.SystemPriotity == FailoverModule.SystemPriority)
+        else if (request.SystemPriotity == FailOverModule.SystemPriority)
         {
             log.Message = "Node with matching priority started.";
             response.PreventStartup = false;
@@ -109,11 +107,11 @@ public class SystemController : Controller
         {
             log.Message = $"Node with higher priority started. Shutting down {SystemName}";
             response.PreventStartup = false;
-            Process.Start("ServiceActions.exe", $"--restart --service={FailoverModule.ServiceName}");
+            Process.Start("ServiceActions.exe", $"--restart --service={FailOverModule.ServiceName}");
 
         }
 
-        FailoverModule.LogMessage(log);
+        FailOverModule.LogMessage(log);
 
         return Ok(response);
     }

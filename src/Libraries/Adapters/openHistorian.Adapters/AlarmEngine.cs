@@ -27,28 +27,29 @@
 //       Redesigned for .NET Core
 //
 //******************************************************************************************************
+// ReSharper disable CompareOfFloatsByEqualityOperator
+// ReSharper disable CheckNamespace
 
+using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Data;
+using System.Text;
 using Gemstone;
 using Gemstone.ActionExtensions;
-using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Data;
 using Gemstone.Data.DataExtensions;
 using Gemstone.Data.Model;
 using Gemstone.Diagnostics;
 using Gemstone.EnumExtensions;
 using Gemstone.IO.Collections;
+using Gemstone.IO.Parsing;
 using Gemstone.StringExtensions;
 using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto.Parameters;
-using System.Collections.Concurrent;
-using System.ComponentModel;
-using System.Data;
-using System.Text;
-
+using ConfigSettings = Gemstone.Configuration.Settings;
 
 namespace DataQualityMonitoring;
 
@@ -56,43 +57,41 @@ namespace DataQualityMonitoring;
 /// Action adapter that generates alarm measurements based on alarm definitions from the database.
 /// </summary>
 [Description("Alarm Engine: Manages Alarms defined in the database")]
-
 public class AlarmAdapter : FacileActionAdapterBase
 {
     #region [ Members ]
 
     // Nested Types
-    private class AlarmProcessor
+    private sealed class AlarmProcessor : IDisposable
     {
-        public FrameQueue frameQueue;
-        public Alarm Alarm;
-        public Gemstone.Ticks LastProcessed;
+        public required FrameQueue FrameQueue;
+        public required Alarm Alarm;
+        public required double LagTime;
+        public Ticks LastProcessed;
         public int ExpectedMeasurements;
-        public int LagTime = 10;
+        private bool m_disposed;
 
         public void AssignMeasurement(IMeasurement measurement)
         {
-            TrackingFrame? frame = frameQueue.GetFrame(measurement.Timestamp);
+            TrackingFrame? frame = FrameQueue.GetFrame(measurement.Timestamp);
+            
             if (frame is null)
-            {
-                // This means a measurement came in too late.
-                return;
-            }
+                return; // This means a measurement came in too late.
 
             IFrame sourceFrame = frame.SourceFrame;
 
             // Access published flag within critical section to ensure no updates will
             // be made to frame while it is being published
             frame.Lock.EnterReadLock();
+
             try
             {
-                if (!sourceFrame.Published)
-                {
-                    // Assign derived measurement to its source frame using user customizable function.
-                    sourceFrame.Measurements[measurement.Key] = measurement;
-                    sourceFrame.LastSortedMeasurement = measurement;
+                if (sourceFrame.Published)
+                    return;
 
-                }
+                // Assign derived measurement to its source frame using user customizable function.
+                sourceFrame.Measurements[measurement.Key] = measurement;
+                sourceFrame.LastSortedMeasurement = measurement;
             }
             finally
             {
@@ -100,10 +99,41 @@ public class AlarmAdapter : FacileActionAdapterBase
             }
         }
 
-        public bool Test(Ticks RealTime)
+        /// <summary>
+        /// Releases all the resources used by the <see cref="AlarmProcessor"/> object.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="AlarmProcessor"/> object and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        private void Dispose(bool disposing)
+        {
+            if (m_disposed)
+                return;
+
+            try
+            {
+                if (!disposing)
+                    return;
+
+                FrameQueue.Dispose();
+            }
+            finally
+            {
+                m_disposed = true;  // Prevent duplicate dispose.
+            }
+        }
+
+        public bool Test(Ticks realTime)
         {
             // Get top frame
-            TrackingFrame? frame = frameQueue!.Head;
+            TrackingFrame? frame = FrameQueue.Head;
+
             // If no frame is ready to publish, exit
             if (frame is null)
                 return false;
@@ -111,17 +141,15 @@ public class AlarmAdapter : FacileActionAdapterBase
             IFrame sourceFrame = frame.SourceFrame;
             Ticks timestamp = sourceFrame.Timestamp;
 
-            if ((long)(LagTime * Ticks.PerSecond) - (RealTime - timestamp) > 0)
+            if (LagTime * Ticks.PerSecond - (realTime - timestamp) > 0.0D)
             {
                 // It's not the scheduled time to publish this frame, however, if preemptive publishing is enabled,
-                // an expected number of measurements per-frame have been defined and the frame has received this
+                // an expected number of measurements per-frame have been defined and the frame has received its
                 // expected number of measurements, we can go ahead and publish the frame ahead of schedule. This
-                // is useful if the lag time is high to ensure no data is missed but it's desirable to publish the
-                // frame as soon as the expected data has arrived.
+                // is useful if the lag time is high to ensure no data is missed, but it's desirable to publish
+                // the frame as soon as the expected data has arrived.
                 if (ExpectedMeasurements < 1 || sourceFrame.SortedMeasurements < ExpectedMeasurements)
                     return false;
-
-
             }
 
             frame.Lock.EnterWriteLock();
@@ -136,6 +164,7 @@ public class AlarmAdapter : FacileActionAdapterBase
             }
 
             bool test;
+
             try
             {
                 test = Alarm.Test(sourceFrame);
@@ -143,24 +172,24 @@ public class AlarmAdapter : FacileActionAdapterBase
             finally
             {
                 // Remove the frame from the queue whether it is successfully published or not
-                frameQueue!.Pop();
+                FrameQueue.Pop();
             }
+
             return test;
         }
     }
 
-    private class AlarmEvent
+    private sealed class AlarmEvent : ISupportStreamSerialization<AlarmEvent>
     {
         public Guid Guid;
         public DateTime StartTime;
         public DateTime? EndTime;
-        public string SignalTag;
+        public string SignalTag = default!;
         public AlarmSeverity Severity;
         public AlarmOperation Operation;
-        public double Setpoint;
+        public double SetPoint;
         public int AlarmID;
         public Guid MeasurementID;
-
 
         /// <summary>
         /// Deserializes the <see cref="AlarmEvent"/> from a <see cref="Stream"/>.
@@ -174,12 +203,12 @@ public class AlarmAdapter : FacileActionAdapterBase
             return new AlarmEvent
             {
                 Guid = new Guid(reader.ReadBytes(16)),
-                StartTime = new DateTime(reader.ReadInt64()),
-                EndTime = reader.ReadBoolean() ? new DateTime(reader.ReadInt64()) : null,
+                StartTime = new DateTime(reader.ReadInt64(), DateTimeKind.Utc),
+                EndTime = reader.ReadBoolean() ? new DateTime(reader.ReadInt64(), DateTimeKind.Utc) : null,
                 SignalTag = reader.ReadString(),
                 Severity = (AlarmSeverity)reader.ReadInt32(),
                 Operation = (AlarmOperation)reader.ReadInt32(),
-                Setpoint = reader.ReadDouble(),
+                SetPoint = reader.ReadDouble(),
                 AlarmID = reader.ReadInt32(),
                 MeasurementID = new Guid(reader.ReadBytes(16))
             };
@@ -189,7 +218,7 @@ public class AlarmAdapter : FacileActionAdapterBase
         /// Serializes the <see cref="AlarmEvent"/> to a <see cref="Stream"/>.
         /// </summary>
         /// <param name="stream">Target stream.</param>
-        /// <param name="obj"><see cref="AlarmEvent"> to serialize.</param>
+        /// <param name="instance"><see cref="AlarmEvent"/> to serialize.</param>
         public static void WriteTo(Stream stream, AlarmEvent instance)
         {
             BinaryWriter writer = new(stream, Encoding.UTF8, true);
@@ -197,12 +226,14 @@ public class AlarmAdapter : FacileActionAdapterBase
             writer.Write(instance.Guid.ToByteArray());
             writer.Write(instance.StartTime.Ticks);
             writer.Write(instance.EndTime.HasValue);
+
             if (instance.EndTime.HasValue)
                 writer.Write(instance.EndTime.Value.Ticks);
+            
             writer.Write(instance.SignalTag);
             writer.Write((int)instance.Severity);
             writer.Write((int)instance.Operation);
-            writer.Write(instance.Setpoint);
+            writer.Write(instance.SetPoint);
             writer.Write(instance.AlarmID);
             writer.Write(instance.MeasurementID.ToByteArray());
         }
@@ -211,8 +242,7 @@ public class AlarmAdapter : FacileActionAdapterBase
     // Constants
     private const int UpToDate = 0;
     private const int Modified = 1;
-    private const int DefaultAlarmRetention = 24;
-
+    private const double DefaultAlarmRetention = 24.0D;
 
     // Fields
     private readonly object m_alarmLock;
@@ -222,22 +252,19 @@ public class AlarmAdapter : FacileActionAdapterBase
     private readonly TaskSynchronizedOperation m_eventDetailsOperation;
     private readonly TaskSynchronizedOperation m_processMeasurementsOperation;
 
-    private CancellationTokenSource m_timerCancelationTokenSource;
-
-    private DataSet m_alarmDataSet;
+    private DataSet? m_alarmDataSet;
     private int m_dataSourceState;
 
-    private Dictionary<Guid, List<int>> m_measurementAlarmMapping;
-    private Dictionary<int, AlarmProcessor> m_alarmLookup;
+    private Dictionary<Guid, List<int>> m_measurementAlarmMap;
+    private Dictionary<int, AlarmProcessor> m_alarmProcessors;
 
-    private const string FilebackedDictionartPath = "./ActiveAlarmEvents.bin";
+    private const string FileBackedDictionaryPath = "./ActiveAlarmEvents.bin";
 
     private long m_eventCount;
 
     private bool m_supportsTemporalProcessing;
     private bool m_disposed;
-    private int m_alarmRetention;
-
+    private bool m_disposing;
 
     #endregion
 
@@ -249,8 +276,8 @@ public class AlarmAdapter : FacileActionAdapterBase
     public AlarmAdapter()
     {
         m_alarmLock = new object();
-        m_alarmLookup = new Dictionary<int, AlarmProcessor>();
-        m_measurementAlarmMapping = new Dictionary<Guid, List<int>>();
+        m_alarmProcessors = new Dictionary<int, AlarmProcessor>();
+        m_measurementAlarmMap = new Dictionary<Guid, List<int>>();
 
         m_measurementQueue = new ConcurrentQueue<IMeasurement>();
         m_processMeasurementsOperation = new TaskSynchronizedOperation(ProcessMeasurements, ex => OnProcessException(MessageLevel.Warning, ex));
@@ -270,59 +297,46 @@ public class AlarmAdapter : FacileActionAdapterBase
     /// </summary>
     public override DataSet? DataSource
     {
-        get
-        {
-            return base.DataSource;
-        }
+        get => base.DataSource;
         set
         {
             base.DataSource = value;
 
             if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, UpToDate) == UpToDate && Initialized)
-            {
                 m_processMeasurementsOperation.RunAsync();
-            }
         }
     }
 
     /// <summary>
     /// Gets the flag indicating if this adapter supports temporal processing.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Define the flag indicating if this adapter supports temporal processing."),
-    DefaultValue(false)]
+    [ConnectionStringParameter]
+    [Description("Define the flag indicating if this adapter supports temporal processing.")]
+    [DefaultValue(false)]
     public override bool SupportsTemporalProcessing => m_supportsTemporalProcessing;
 
     /// <summary>
-    /// Returns the detailed status of the data input source.
+    /// Gets or sets the amount of time, in hours, an alarm change will be kept n the database.
     /// </summary>
+    [ConnectionStringParameter]
+    [Description("Define the amount of time, in hours, the alarms will be kept in the AlarmTable.")]
+    [DefaultValue(DefaultAlarmRetention)]
+    public double AlarmRetention { get; set; }
+
+    /// <inheritdoc/>
     public override string Status
     {
         get
         {
-            StringBuilder statusBuilder = new StringBuilder(base.Status);
+            StringBuilder status = new();
 
-            return statusBuilder.ToString();
+            status.Append(base.Status);
+            status.AppendLine($"           Alarm retention: {AlarmRetention:N0} hours");
+
+            return status.ToString();
         }
     }
 
-    /// <summary>
-    /// Gets or sets the amount of time, in hours, an Alarm change will be kept n the database.
-    /// </summary>
-    [ConnectionStringParameter,
-    Description("Define the amount of time, in hour, the alarms will be kept in the AlarmTable."),
-    DefaultValue(DefaultAlarmRetention)]
-    public int AlarmRetention
-    {
-        get
-        {
-            return m_alarmRetention;
-        }
-        set
-        {
-            m_alarmRetention = value;
-        }
-    }
     #endregion
 
     #region [ Methods ]
@@ -332,31 +346,55 @@ public class AlarmAdapter : FacileActionAdapterBase
     /// </summary>
     public override void Initialize()
     {
-        Dictionary<string, string> settings;
-        string setting;
-
         // Run base class initialization
         base.Initialize();
-        settings = Settings;
+
+        Dictionary<string, string> settings = Settings;
 
         // Load optional parameters
-        if (settings.TryGetValue("supportsTemporalProcessing", out setting))
-            m_supportsTemporalProcessing = setting.ParseBoolean();
+        m_supportsTemporalProcessing = settings.TryGetValue(nameof(SupportsTemporalProcessing), out string? setting) && setting.ParseBoolean();
+
+        if (settings.TryGetValue(nameof(AlarmRetention), out setting) && double.TryParse(setting, out double alarmRetention))
+            AlarmRetention = alarmRetention;
         else
-            m_supportsTemporalProcessing = false;
+            AlarmRetention = DefaultAlarmRetention;
 
-
-        if (!settings.TryGetValue("alarmRetention", out setting) || !int.TryParse(setting, out m_alarmRetention))
-            m_alarmRetention = DefaultAlarmRetention;
-
-        m_timerCancelationTokenSource = new CancellationTokenSource();
-
-        // Run the process measurements operation to ensure that the alarm configuration is up to date
+        // Run the process measurements operation to ensure that the alarm configuration is up-to-date
         if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified) == Modified)
-        {
             m_processMeasurementsOperation.RunAsync();
-        }
+    }
 
+    /// <summary>
+    /// Releases the unmanaged resources used by the <see cref="AlarmAdapter"/> object and optionally releases the managed resources.
+    /// </summary>
+    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+    protected override void Dispose(bool disposing)
+    {
+        if (m_disposed)
+            return;
+
+        m_disposing = disposing;
+
+        try
+        {
+            if (!disposing)
+                return;
+
+            // Force alarm database processing before shutdown, if not already running
+            if (!m_eventDetailsOperation.IsRunning)
+                ProcessAlarmEvents().Wait();
+
+            lock (m_alarmLock)
+            {
+                foreach (AlarmProcessor alarmProcessor in m_alarmProcessors.Values)
+                    alarmProcessor.Dispose();
+            }
+        }
+        finally
+        {
+            m_disposed = true;          // Prevent duplicate dispose.
+            base.Dispose(disposing);    // Call base class Dispose().
+        }
     }
 
     /// <summary>
@@ -375,10 +413,8 @@ public class AlarmAdapter : FacileActionAdapterBase
     public override void QueueMeasurementsForProcessing(IEnumerable<IMeasurement> measurements)
     {
         foreach (IMeasurement measurement in measurements)
-        {
-            if (measurement is not null)
-                m_measurementQueue.Enqueue(measurement);
-        }
+            m_measurementQueue.Enqueue(measurement);
+
         m_processMeasurementsOperation.RunAsync();
     }
 
@@ -389,7 +425,7 @@ public class AlarmAdapter : FacileActionAdapterBase
     /// <returns>A short one-line summary of the current status of this <see cref="AdapterBase"/>.</returns>
     public override string GetShortStatus(int maxLength)
     {
-        return $"{Interlocked.Read(ref m_eventCount)} events processed since last start".CenterText(maxLength);
+        return $"{Interlocked.Read(ref m_eventCount):N0} events processed since last start".CenterText(maxLength);
     }
 
     /// <summary>
@@ -400,240 +436,179 @@ public class AlarmAdapter : FacileActionAdapterBase
     public IActionResult GetRaisedAlarms(ControllerBase controller)
     {
         lock (m_alarmLock)
-            return controller.Ok(m_alarmLookup.Values.Where(alarm => alarm.Alarm.State == Gemstone.Timeseries.AlarmState.Raised)
-                .Select(alarm => alarm.Alarm.Clone()));
-    }
-
-
-    /// <summary>
-    /// Releases the unmanaged resources used by the <see cref="AlarmAdapter"/> object and optionally releases the managed resources.
-    /// </summary>
-    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
-    protected override void Dispose(bool disposing)
-    {
-        if (!m_disposed)
-        {
-            try
-            {
-                if (disposing)
-                {
-                    // #ToDO FIgure out how to dispose the FrameQueues
-                    lock (m_alarmLock)
-                    {
-                        //foreach (SingleSignalAlarm signalAlarms in m_singleSignalAlarmLookup.Values)
-                        //StatisticsEngine.Unregister(signalAlarms.Statistics);
-                    }
-                    m_eventDetailsOperation?.RunAsync();
-
-                }
-            }
-            finally
-            {
-                m_disposed = true;          // Prevent duplicate dispose.
-                base.Dispose(disposing);    // Call base class Dispose().
-            }
-        }
-    }
-
-
-    // Creates an alarm using data defined in the database.
-    private Alarm CreateAlarm(DataRow row)
-    {
-        object associatedMeasurementId = row.Field<object>("InputMeasurementKeys");
-
-        return new Alarm((AlarmOperation)row.ConvertField<int>("Operation"))
-        {
-            ID = row.ConvertField<int>("ID"),
-            TagName = row.Field<object>("TagName").ToString(),
-            SignalID = Guid.Parse(row.Field<object>("SignalID").ToString()),
-            InputMeasurementKeys = ((object)associatedMeasurementId != null) ? associatedMeasurementId.ToString() : "",
-            Description = row.Field<object>("Description").ToNonNullString(),
-            Severity = row.ConvertField<int>("Severity").GetEnumValueOrDefault<AlarmSeverity>(AlarmSeverity.None),
-            SetPoint = row.ConvertNullableField<double>("SetPoint"),
-            Tolerance = row.ConvertNullableField<double>("Tolerance"),
-            Delay = row.ConvertNullableField<double>("Delay"),
-            Hysteresis = row.ConvertNullableField<double>("Hysteresis"),
-            State = Gemstone.Timeseries.AlarmState.Cleared
-        };
+            return controller.Ok(m_alarmProcessors.Values.Where(alarm => alarm.Alarm.State == AlarmState.Raised).Select(alarm => alarm.Alarm.Clone()));
     }
 
     // Dequeues measurements from the measurement queue and processes them.
     private async Task ProcessMeasurements()
     {
-        m_timerCancelationTokenSource.Cancel();
-        IList<IMeasurement> measurements;
-        int dataSourceState;
-        Ticks measurementsRecieved = DateTime.UtcNow.Ticks;
+        if (m_disposing)
+            return;
+
+        Ticks measurementsReceived = DateTime.UtcNow.Ticks;
 
         // Get the current state of the data source
-        dataSourceState = Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified);
+        int dataSourceState = Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified);
 
         // If the data source has been modified, elevate the synchronized operation
         // to a dedicated thread and ensure that it runs at least one more time
         if (dataSourceState == Modified)
         {
             await UpdateAlarmDefinitions();
-
             Interlocked.Exchange(ref m_dataSourceState, UpToDate);
-
         }
 
         // Attempt to dequeue measurements from the measurement queue and,
         // if there are measurements left in the queue, ensure that the
         // process measurements operation runs again
-        measurements = new List<IMeasurement>();
+        IList<IMeasurement> measurements = new List<IMeasurement>();
 
-        while (m_measurementQueue.TryDequeue(out IMeasurement measurement))
+        while (m_measurementQueue.TryDequeue(out IMeasurement? measurement))
             measurements.Add(measurement);
 
-        ProcessSingleMeasurementAlarms(measurements, measurementsRecieved);
+        ProcessSingleMeasurementAlarms(measurements, measurementsReceived);
+
         // Increment total count of processed measurements
         IncrementProcessedMeasurements(measurements.Count);
 
         lock (m_alarmLock)
         {
             // Determine next time this Action needs to run to time out any alarms that timed out.
-            IEnumerable<Ticks> timeouts = m_alarmLookup.Values
-                .Where(a => a.Alarm.State == Gemstone.Timeseries.AlarmState.Raised && a.Alarm.Timeout > 0)
-                .Select(a => a.LastProcessed + (long)(a.Alarm.Timeout * Ticks.PerSecond));
+            Ticks[] timeouts = m_alarmProcessors.Values
+                .Where(alarmProcessor => alarmProcessor.Alarm is { State: AlarmState.Raised, Timeout: > 0 })
+                .Select(alarmProcessor => alarmProcessor.LastProcessed + (long)(alarmProcessor.Alarm.Timeout * Ticks.PerSecond))
+                .ToArray();
 
             if (timeouts.Any())
-            {
-                Ticks nextTimeout = timeouts.Min();
-                m_timerCancelationTokenSource = new CancellationTokenSource();
-                Action timerElapsed = () => { m_processMeasurementsOperation.RunAsync(); };
-                timerElapsed.DelayAndExecute((int)(nextTimeout - measurementsRecieved).ToMilliseconds(), m_timerCancelationTokenSource.Token);
-            }
+                new Action(m_processMeasurementsOperation.RunAsync)
+                    .DelayAndExecute((int)(timeouts.Min() - measurementsReceived).ToMilliseconds());
         }
     }
 
-    //Dequeue and write Alarm Events
+    // Dequeue and write alarm Events
     private async Task ProcessAlarmEvents()
     {
-        IList<AlarmEvent> events = new List<AlarmEvent>();
-        StringBuilder deleteQuery = new StringBuilder();
-        List<object> deleteParameters = new List<object>();
-        deleteQuery.Append("DELETE FROM EventDetails WHERE ");
-        bool includeOr = false;
+        IList<AlarmEvent> alarmEvents = new List<AlarmEvent>();
+        StringBuilder deleteQuery = new("DELETE FROM EventDetails WHERE ");
+        List<object> deleteParameters = [];
 
-        // Attempt to dequeue Alarm Events from the  queue and,
+        // Attempt to dequeue Alarm Events from the queue and,
         // if there are events left in the queue, ensure that the
         // process Alarm Events operation runs again
-        while (m_eventDetailsQueue.TryDequeue(out AlarmEvent evt))
-            events.Add(evt);
+        while (m_eventDetailsQueue.TryDequeue(out AlarmEvent? alarmEvent))
+            alarmEvents.Add(alarmEvent);
 
         // If items were successfully dequeued, process them;
-        using (AdoDataConnection connection = new AdoDataConnection(Gemstone.Configuration.Settings.Instance))
+        await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        TableOperations<EventDetails> tableOperations = new(connection);
+        int paramIndex = 0;
+
+        foreach (AlarmEvent alarmEvent in alarmEvents)
         {
-            TableOperations<EventDetails> tableOperations = new TableOperations<EventDetails>(connection);
-            foreach (AlarmEvent evt in events)
-            {
+            if (deleteParameters.Count > 0)
+                deleteQuery.Append(" OR ");
 
-                if (includeOr)
-                    deleteQuery.Append(" OR ");
-                else
-                    includeOr = true;
+            deleteQuery.Append($"(MeasurementID = {{{paramIndex++}}} AND EndTime < {{{paramIndex++}}})");
+            deleteParameters.Add(alarmEvent.MeasurementID);
+            deleteParameters.Add(alarmEvent.StartTime.AddHours(-AlarmRetention));
 
-                deleteQuery.Append("(MeasurementID = {0} AND EndTime < {1})");
-                deleteParameters.Add(evt.MeasurementID);
-                deleteParameters.Add(evt.StartTime.AddHours(-m_alarmRetention));
+            EventDetails? currentRecord = tableOperations.QueryRecordWhere("EventGuid = {0}", alarmEvent.Guid);
+            EventDetails updatedRecord = GenerateAlarmDetails(alarmEvent);
 
-                EventDetails? currentRecord = tableOperations.QueryRecordWhere("EventGuid = {0}", evt.Guid);
-                EventDetails updatedRecord = GenerateAlarmDetails(evt);
-                if (currentRecord is not null)
-                    updatedRecord.ID = currentRecord.ID;
+            if (currentRecord is not null)
+                updatedRecord.ID = currentRecord.ID;
 
-                tableOperations.AddNewOrUpdateRecord(updatedRecord);
-            }
-
-            if (events.Count > 0)
-            {
-                connection.ExecuteNonQuery(deleteQuery.ToString(), deleteParameters.ToArray());
-            }
+            tableOperations.AddNewOrUpdateRecord(updatedRecord);
         }
 
+        if (alarmEvents.Count > 0)
+            connection.ExecuteNonQuery(deleteQuery.ToString(), deleteParameters.ToArray());
     }
 
     // Updates alarm definitions when the data source has been updated.
-    private async Task UpdateAlarmDefinitions()
+    private Task UpdateAlarmDefinitions()
     {
-        DateTime now = DateTime.UtcNow; ;
-        DataSet alarmDataSet;
-
-        Dictionary<int, Alarm> definedAlarmsLookup;
-
-        Dictionary<int, AlarmProcessor> newAlarmLookup;
-        Dictionary<Guid, List<int>> newMeasurementMap;
-        List<IMeasurement> alarmEvents;
-
-        // Get the latest version of the table of defined alarms
-        alarmDataSet = new DataSet();
-        alarmDataSet.Tables.Add(DataSource.Tables["Alarms"].Copy());
-
-        // Compare the latest alarm table with the previous
-        // alarm table to determine if anything needs to be done
-        if (DataSetEqualityComparer.Default.Equals(m_alarmDataSet, alarmDataSet))
-            return;
-
-        m_alarmDataSet = alarmDataSet;
-
-        // Get list of alarms defined in the latest version of the alarm table
-        definedAlarmsLookup = alarmDataSet.Tables[0].Rows.Cast<DataRow>()
-            .Where(row => row.ConvertField<bool>("Enabled"))
-            .Select(CreateAlarm)
-            .ToDictionary(alarm => alarm.ID);
-
-        // Create a list to store alarm events generated by this process
-        alarmEvents = new List<IMeasurement>();
-
-        lock (m_alarmLock)
+        return Task.Factory.StartNew(() =>
         {
-            foreach (Alarm existingAlarm in m_alarmLookup.Values.Select(a => a.Alarm))
+            DataSet? dataSource = DataSource;
+
+            if (dataSource is null)
             {
-                Alarm definedAlarm;
-
-                // Attempt to locate the defined alarm corresponding to the existing alarm
-                definedAlarmsLookup.TryGetValue(existingAlarm.ID, out definedAlarm);
-
-                // Determine if a change to the alarm's
-                // configuration has changed the alarm's behavior
-                if (BehaviorChanged(existingAlarm, definedAlarm))
-                {
-                    if (existingAlarm.State == Gemstone.Timeseries.AlarmState.Raised)
-                    {
-                        existingAlarm.State = Gemstone.Timeseries.AlarmState.Cleared;
-                        // Remove the alarm from the active alarm list
-                        using (FileBackedDictionary<int, AlarmEvent> activeAlarms = new FileBackedDictionary<int, AlarmEvent>(FilebackedDictionartPath))
-                        {
-                            alarmEvents.Add(CreateAlarmEvent(now, existingAlarm, activeAlarms));
-                        }
-                    }
-
-                }
-                else if ((object)definedAlarm != null)
-                {
-                    // Update functionally irrelevant configuration info
-                    existingAlarm.TagName = definedAlarm.TagName;
-                    existingAlarm.Description = definedAlarm.Description;
-
-                    // Use the existing alarm since the alarm is functionally the same
-                    definedAlarmsLookup[definedAlarm.ID] = existingAlarm;
-                }
+                OnStatusMessage(MessageLevel.Warning, "Alarm definition update skipped, no data source is available.");
+                return;
             }
 
-            // Create the new alarm lookup to replace the old one
-            newAlarmLookup = definedAlarmsLookup.Values.ToDictionary(definedAlarm => definedAlarm.ID, definedAlarm =>
+            DateTime now = DateTime.UtcNow;
+
+            // Get the latest version of the table of defined alarms
+            DataSet alarmDataSet = new();
+            alarmDataSet.Tables.Add(dataSource.Tables["Alarms"]!.Copy());
+
+            // Compare the latest alarm table with the previous
+            // alarm table to determine if anything needs to be done
+            if (DataSetEqualityComparer.Default.Equals(m_alarmDataSet, alarmDataSet))
+                return;
+
+            m_alarmDataSet = alarmDataSet;
+
+            // Get list of alarms defined in the latest version of the alarm table
+            Dictionary<int, Alarm> alarms = alarmDataSet.Tables[0].Rows.Cast<DataRow>()
+                .Where(row => row.ConvertField<bool>("Enabled"))
+                .Select(CreateAlarm)
+                .ToDictionary(alarm => alarm.ID);
+
+            // TODO: This alarm list is added to, but nothing is done with added measurements
+            // Create a list to store alarm events generated by this process
+            List<IMeasurement> alarmEvents = [];
+
+            lock (m_alarmLock)
+            {
+                foreach (Alarm existingAlarm in m_alarmProcessors.Values.Select(alarmProcessor => alarmProcessor.Alarm))
                 {
-                    if (m_alarmLookup.TryGetValue(definedAlarm.ID, out AlarmProcessor existingAlarmProcessor))
+                    // Attempt to locate the defined alarm corresponding to the existing alarm
+                    alarms.TryGetValue(existingAlarm.ID, out Alarm? definedAlarm);
+
+                    // Determine if a change to the alarm's
+                    // configuration has changed the alarm's behavior
+                    if (BehaviorChanged(existingAlarm, definedAlarm))
+                    {
+                        if (existingAlarm.State != AlarmState.Raised)
+                            continue;
+
+                        existingAlarm.State = AlarmState.Cleared;
+
+                        // Remove the alarm from the active alarm list
+                        using FileBackedDictionary<int, AlarmEvent> activeAlarms = new(FileBackedDictionaryPath);
+
+                        // TODO: If alarm measurement is created here, should it not be published via OnNewMeasurements?
+                        alarmEvents.Add(CreateAlarmEvent(now, existingAlarm, activeAlarms));
+
+                    }
+                    else if (definedAlarm is not null)
+                    {
+                        // Update functionally irrelevant configuration info
+                        existingAlarm.TagName = definedAlarm.TagName;
+                        existingAlarm.Description = definedAlarm.Description;
+
+                        // Use the existing alarm since the alarm is functionally the same
+                        alarms[definedAlarm.ID] = existingAlarm;
+                    }
+                }
+
+                // Create the new alarm lookup to replace the old one
+                Dictionary<int, AlarmProcessor> alarmProcessors = alarms.Values.ToDictionary(definedAlarm => definedAlarm.ID, definedAlarm =>
+                {
+                    if (m_alarmProcessors.TryGetValue(definedAlarm.ID, out AlarmProcessor? existingAlarmProcessor))
                     {
                         existingAlarmProcessor.Alarm = definedAlarm;
-                        existingAlarmProcessor.ExpectedMeasurements = ParseInputMeasurementKeys(DataSource, true, definedAlarm.InputMeasurementKeys).Count();
+                        existingAlarmProcessor.ExpectedMeasurements = ParseInputMeasurementKeys(DataSource, true, definedAlarm.InputMeasurementKeys).Length;
                         return existingAlarmProcessor;
                     }
 
                     AlarmState initialState = AlarmState.Cleared;
-                    // Any lingering alarms need to be reset to the raised state so they get closed out propoerly
-                    using (FileBackedDictionary<int, AlarmEvent> activeAlarms = new FileBackedDictionary<int, AlarmEvent>(FilebackedDictionartPath))
+
+                    // Any lingering alarms need to be reset to the raised state, so they get closed out properly
+                    using (FileBackedDictionary<int, AlarmEvent> activeAlarms = new(FileBackedDictionaryPath))
                     {
                         if (activeAlarms.ContainsKey(definedAlarm.ID))
                             initialState = AlarmState.Raised;
@@ -641,10 +616,10 @@ public class AlarmAdapter : FacileActionAdapterBase
 
                     definedAlarm.State = initialState;
 
-                    return new AlarmProcessor()
+                    return new AlarmProcessor
                     {
                         Alarm = definedAlarm,
-                        frameQueue = new FrameQueue((Ticks timestamp) => new Frame(timestamp))
+                        FrameQueue = new FrameQueue(timestamp => new Frame(timestamp))
                         {
                             FramesPerSecond = FramesPerSecond > 0 ? FramesPerSecond : 30,
                             TimeResolution = 0,
@@ -652,61 +627,67 @@ public class AlarmAdapter : FacileActionAdapterBase
                             DownsamplingMethod = DownsamplingMethod.Closest
                         },
                         LastProcessed = now,
-                        ExpectedMeasurements = ParseInputMeasurementKeys(DataSource, true, definedAlarm.InputMeasurementKeys).Count()
+                        ExpectedMeasurements = definedAlarm.InputMeasurementKeys.Length,
+                        LagTime = LagTime
                     };
-
                 });
 
-            newMeasurementMap = definedAlarmsLookup.Values.SelectMany((alarm) => ParseInputMeasurementKeys(DataSource, true, alarm.InputMeasurementKeys)
-                .Select<MeasurementKey, Tuple<Guid, int>>((measurementKey) => new(measurementKey.SignalID, alarm.ID)))
-                .GroupBy(measurement => measurement.Item1)
-                .ToDictionary((grouping) => grouping.Key, (grouping) => grouping.Select(measurement => measurement.Item2).ToList());
+                Dictionary<Guid, List<int>> measurementAlarmMap = alarms.Values.SelectMany(alarm => ParseInputMeasurementKeys(DataSource, true, alarm.InputMeasurementKeys)
+                    .Select(measurementKey => (signalID: measurementKey.SignalID, alarmID: alarm.ID)))
+                    .GroupBy(measurement => measurement.signalID)
+                    .ToDictionary(grouping => grouping.Key, grouping => grouping.Select(measurement => measurement.alarmID).ToList());
 
+                // Since alarm processors are being reused, we do not dispose of them here
+                m_alarmProcessors = alarmProcessors;
+                m_measurementAlarmMap = measurementAlarmMap;
 
-
-            m_alarmLookup = newAlarmLookup;
-            m_measurementAlarmMapping = newMeasurementMap;
-
-            // Only automatically update input measurement keys if the setting is not explicitly defined
-            if (m_measurementAlarmMapping.Count > 0 && !Settings.ContainsKey("inputMeasurementKeys"))
-            {
+                // Only automatically update input measurement keys if the setting is not explicitly defined
+                if (m_measurementAlarmMap.Count <= 0 || Settings.ContainsKey("inputMeasurementKeys"))
+                    return;
+                
                 // Generate filter expression for input measurements
-                string filterExpression = string.Join(";", m_measurementAlarmMapping.Select(kvp => kvp.Key.ToString()));
+                string filterExpression = string.Join(";", m_measurementAlarmMap.Select(kvp => kvp.Key.ToString()));
+
                 // Set input measurement keys for measurement routing
                 InputMeasurementKeys = ParseInputMeasurementKeys(DataSource, true, filterExpression);
             }
-        }
+        });
     }
 
     /// <summary>
     /// Process any Alarms that rely on a single measurement only.
     /// </summary>
-    /// <param name="measurements"></param>
-    private void ProcessSingleMeasurementAlarms(IList<IMeasurement> measurements, Ticks measurementsRecieved)
+    /// <param name="measurements">Source measurements.</param>
+    /// <param name="measurementsReceived">Timestamp of when the measurements were received.</param>
+    private void ProcessSingleMeasurementAlarms(IEnumerable<IMeasurement> measurements, Ticks measurementsReceived)
     {
-        AlarmProcessor alarmProcessor;
+        List<IMeasurement> alarmMeasurements = [];
 
-        List<IMeasurement> alarmMeasurements = new List<IMeasurement>();
-
-        using (FileBackedDictionary<int, AlarmEvent> activeAlarms = new FileBackedDictionary<int, AlarmEvent>(FilebackedDictionartPath))
+        using (FileBackedDictionary<int, AlarmEvent> activeAlarms = new(FileBackedDictionaryPath))
         {
+            AlarmProcessor? alarmProcessor;
+
             // Change status on any alarms that timed out.
             foreach (KeyValuePair<int, AlarmEvent> evt in activeAlarms)
             {
                 lock (m_alarmLock)
                 {
-                    if (!m_alarmLookup.TryGetValue(evt.Key, out alarmProcessor))
+                    if (!m_alarmProcessors.TryGetValue(evt.Key, out alarmProcessor))
                     {
                         OnStatusMessage(MessageLevel.Error, $"Alarm ID {evt.Key} no longer exists but is still active. Throwing away active alarm details.");
                         continue;
                     }
 
-                    if (alarmProcessor.Alarm.Timeout > 0 && alarmProcessor.LastProcessed + (alarmProcessor.Alarm.Timeout * Ticks.PerSecond) < measurementsRecieved)
-                    {
-                        alarmProcessor.Alarm.State = Gemstone.Timeseries.AlarmState.Cleared;
-                        alarmMeasurements.Add(CreateAlarmEvent(measurementsRecieved, alarmProcessor.Alarm, activeAlarms));
-                    }
+                    if (alarmProcessor.Alarm.Timeout <= 0 || !(alarmProcessor.LastProcessed + alarmProcessor.Alarm.Timeout * Ticks.PerSecond < measurementsReceived))
+                        continue;
+                    
+                    alarmProcessor.Alarm.State = AlarmState.Cleared;
 
+                    // TODO: Determine if alarm measurement can be null here - code is CreateAlarmEvent allows this...
+                    IMeasurement? measurement = CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms);
+
+                    if (measurement is not null)
+                        alarmMeasurements.Add(measurement);
                 }
             }
 
@@ -716,17 +697,19 @@ public class AlarmAdapter : FacileActionAdapterBase
                 lock (m_alarmLock)
                 {
                     // Get alarms that apply to the measurement being processed
-                    if (!m_measurementAlarmMapping.TryGetValue(measurement.ID, out List<int> alarmIDs))
+                    if (!m_measurementAlarmMap.TryGetValue(measurement.ID, out List<int>? alarmIDs))
                         continue;
 
                     foreach (int alarmID in alarmIDs)
                     {
-                        if (!m_alarmLookup.TryGetValue(alarmID, out alarmProcessor))
+                        if (!m_alarmProcessors.TryGetValue(alarmID, out alarmProcessor))
                         {
-                            OnStatusMessage(MessageLevel.Error, $"Alarm ID {alarmID} no longer exists but is still recieving Measurements. Throwing away active alarm details.");
+                            OnStatusMessage(MessageLevel.Error, $"Alarm ID {alarmID:N0} no longer exists but is still receiving measurements. Discarding active alarm details.");
                             continue;
                         }
-                        alarmProcessor.LastProcessed = measurementsRecieved;
+
+                        alarmProcessor.LastProcessed = measurementsReceived;
+
                         // Test each alarm to determine whether their states have changed
 
                         // Build the Frame
@@ -735,52 +718,34 @@ public class AlarmAdapter : FacileActionAdapterBase
                         // Test the Alarm
                         if (alarmProcessor.Test(RealTime))
                         {
-                            AlarmEvent alarmEvent = new AlarmEvent();
-                            if (activeAlarms.TryGetValue(alarmProcessor.Alarm.ID, out alarmEvent))
-                                alarmMeasurements.Add(CreateAlarmEvent(measurementsRecieved, alarmProcessor.Alarm, activeAlarms));
+                            // TODO: I am confused by this conditional logic - alarm is added to alarmMeasurements regardless? Also, what about possible null measurement?
+                            if (activeAlarms.TryGetValue(alarmProcessor.Alarm.ID, out AlarmEvent _))
+                                alarmMeasurements.Add(CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms));
                             else
-                            {
-                                alarmMeasurements.Add(CreateAlarmEvent(measurementsRecieved, alarmProcessor.Alarm, activeAlarms));
-                            }
+                                alarmMeasurements.Add(CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms));
                         }
                     }
                 }
             }
         }
 
+        // Update alarm history by sending new alarm events into the system
         if (alarmMeasurements.Count > 0)
-        {
-            // Update alarm history by sending
-            // new alarm events into the system
             OnNewMeasurements(alarmMeasurements);
-        }
-
     }
 
-    // Returns true if a change to the alarm's configuration also changed the alarm's behavior.
-    private bool BehaviorChanged(Alarm existingAlarm, Alarm definedAlarm)
-    {
-        return (object)definedAlarm == null ||
-               (existingAlarm.SignalID != definedAlarm.SignalID) ||
-               (existingAlarm.InputMeasurementKeys != definedAlarm.InputMeasurementKeys) ||
-               (existingAlarm.Operation != definedAlarm.Operation) ||
-               (existingAlarm.SetPoint != definedAlarm.SetPoint) ||
-               (existingAlarm.Tolerance != definedAlarm.Tolerance) ||
-               (existingAlarm.Delay != definedAlarm.Delay) ||
-               (existingAlarm.Hysteresis != definedAlarm.Hysteresis);
-    }
-
+    // TODO: Is it OK that when exiting this function that a measurement is not created? Seems wrong...
     private IMeasurement? CreateAlarmEvent(Ticks timestamp, Alarm alarm, FileBackedDictionary<int, AlarmEvent> activeAlarms)
     {
-        IMeasurement measurement = null;
-        AlarmEvent alarmEvent = null;
+        IMeasurement? measurement = null;
+        AlarmEvent? alarmEvent = null;
 
-        if (alarm.State == Gemstone.Timeseries.AlarmState.Raised && !activeAlarms.TryGetValue(alarm.ID, out alarmEvent))
+        if (alarm.State == AlarmState.Raised && !activeAlarms.TryGetValue(alarm.ID, out alarmEvent))
         {
             measurement = CreateAlarmRaisedEvent(timestamp, alarm, out alarmEvent);
             activeAlarms.Add(alarm.ID, alarmEvent);
         }
-        else if (alarm.State == Gemstone.Timeseries.AlarmState.Cleared && activeAlarms.TryGetValue(alarm.ID, out alarmEvent))
+        else if (alarm.State == AlarmState.Cleared && activeAlarms.TryGetValue(alarm.ID, out alarmEvent))
         {
             measurement = CreateAlarmClearedEvent(timestamp, alarm, alarmEvent);
             activeAlarms.Remove(alarm.ID);
@@ -789,75 +754,13 @@ public class AlarmAdapter : FacileActionAdapterBase
         if (alarmEvent is not null)
         {
             m_eventDetailsQueue.Enqueue(alarmEvent);
-            m_eventDetailsOperation.RunAsync();
+
+            if (!m_disposing)
+                m_eventDetailsOperation.RunAsync();
         }
 
         return measurement;
 
-    }
-
-    // Creates an alarm event from the given alarm and measurement.
-    private IMeasurement CreateAlarmRaisedEvent(Ticks timestamp, Alarm alarm, out AlarmEvent alarmEvent)
-    {
-        alarmEvent = new AlarmEvent()
-        {
-            Guid = Guid.NewGuid(),
-            StartTime = timestamp,
-            EndTime = null,
-            AlarmID = alarm.ID,
-            MeasurementID = alarm.SignalID,
-            Operation = alarm.Operation,
-            Setpoint = alarm.SetPoint ?? 0,
-            Severity = alarm.Severity,
-            SignalTag = alarm.InputMeasurementKeys.ToString(),
-        };
-
-        IMeasurement measurement = new AlarmMeasurement()
-        {
-            Timestamp = timestamp,
-            Value = (int)alarm.State,
-            AlarmID = alarmEvent.Guid
-        };
-
-        measurement.Metadata = MeasurementKey.LookUpBySignalID(alarm.SignalID).Metadata;
-
-        return measurement;
-    }
-
-    private IMeasurement CreateAlarmClearedEvent(Ticks timestamp, Alarm alarm, AlarmEvent alarmEvent)
-    {
-        alarmEvent.EndTime = timestamp;
-
-        IMeasurement measurement = new AlarmMeasurement()
-        {
-            Timestamp = timestamp,
-            Value = (int)alarm.State,
-            AlarmID = alarmEvent.Guid
-        };
-
-        measurement.Metadata = MeasurementKey.LookUpBySignalID(alarm.SignalID).Metadata;
-
-        return measurement;
-    }
-
-    private EventDetails GenerateAlarmDetails(AlarmEvent alarmEvent)
-    {
-        return new EventDetails()
-        {
-            StartTime = alarmEvent.StartTime,
-            EndTime = alarmEvent.EndTime,
-            EventGuid = alarmEvent.Guid,
-            Type = "alarm",
-            MeasurementID = alarmEvent.MeasurementID,
-            Details = JsonConvert.SerializeObject(new
-            {
-                AlarmID = alarmEvent.AlarmID,
-                Setpoint = alarmEvent.Setpoint,
-                SignalTag = alarmEvent.SignalTag,
-                Severity = alarmEvent.Severity,
-                Operation = alarmEvent.Operation
-            })
-        };
     }
 
     #endregion
@@ -869,9 +772,107 @@ public class AlarmAdapter : FacileActionAdapterBase
     /// <summary>
     /// The default (most recently created) instance of the alarm adapter.
     /// </summary>
-    public static AlarmAdapter Default { get; private set; }
+    public static AlarmAdapter? Default { get; private set; }
 
+    // Returns true if a change to the alarm's configuration also changed the alarm's behavior.
+    private static bool BehaviorChanged(Alarm existingAlarm, Alarm? definedAlarm)
+    {
+        return definedAlarm is null ||
+               existingAlarm.SignalID != definedAlarm.SignalID ||
+               existingAlarm.InputMeasurementKeys != definedAlarm.InputMeasurementKeys ||
+               existingAlarm.Operation != definedAlarm.Operation ||
+               existingAlarm.SetPoint != definedAlarm.SetPoint ||
+               existingAlarm.Tolerance != definedAlarm.Tolerance ||
+               existingAlarm.Delay != definedAlarm.Delay ||
+               existingAlarm.Hysteresis != definedAlarm.Hysteresis;
+    }
 
+    // Static Methods
+
+    // Creates an alarm using data defined in the database.
+    private static Alarm CreateAlarm(DataRow row)
+    {
+        object? associatedMeasurementID = row.Field<object>("InputMeasurementKeys");
+
+        return new Alarm((AlarmOperation)row.ConvertField<int>("Operation"))
+        {
+            ID = row.ConvertField<int>("ID"),
+            TagName = row.Field<object>("TagName")?.ToString(),
+            SignalID = Guid.Parse(row.Field<object>("SignalID")?.ToString() ?? Guid.Empty.ToString()),
+            InputMeasurementKeys = associatedMeasurementID?.ToString() ?? string.Empty,
+            Description = row.Field<object>("Description").ToNonNullString(),
+            Severity = row.ConvertField<int>("Severity").GetEnumValueOrDefault<AlarmSeverity>(AlarmSeverity.None),
+            SetPoint = row.ConvertNullableField<double>("SetPoint"),
+            Tolerance = row.ConvertNullableField<double>("Tolerance"),
+            Delay = row.ConvertNullableField<double>("Delay"),
+            Hysteresis = row.ConvertNullableField<double>("Hysteresis"),
+            State = AlarmState.Cleared
+        };
+    }
+
+    // Creates an alarm event from the given alarm and measurement.
+    private static IMeasurement CreateAlarmRaisedEvent(Ticks timestamp, Alarm alarm, out AlarmEvent alarmEvent)
+    {
+        alarmEvent = new AlarmEvent
+        {
+            Guid = Guid.NewGuid(),
+            StartTime = timestamp,
+            EndTime = null,
+            AlarmID = alarm.ID,
+            MeasurementID = alarm.SignalID,
+            Operation = alarm.Operation,
+            SetPoint = alarm.SetPoint ?? 0,
+            Severity = alarm.Severity,
+            SignalTag = alarm.InputMeasurementKeys,
+        };
+
+        IMeasurement measurement = new AlarmMeasurement
+        {
+            Timestamp = timestamp,
+            Value = (int)alarm.State,
+            AlarmID = alarmEvent.Guid
+        };
+
+        measurement.Metadata = MeasurementKey.LookUpBySignalID(alarm.SignalID).Metadata;
+
+        return measurement;
+    }
+
+    private static IMeasurement CreateAlarmClearedEvent(Ticks timestamp, Alarm alarm, AlarmEvent alarmEvent)
+    {
+        alarmEvent.EndTime = timestamp;
+
+        IMeasurement measurement = new AlarmMeasurement
+        {
+            Timestamp = timestamp,
+            Value = (int)alarm.State,
+            AlarmID = alarmEvent.Guid
+        };
+
+        measurement.Metadata = MeasurementKey.LookUpBySignalID(alarm.SignalID).Metadata;
+
+        return measurement;
+    }
+
+    private static EventDetails GenerateAlarmDetails(AlarmEvent alarmEvent)
+    {
+        return new EventDetails
+        {
+            StartTime = alarmEvent.StartTime,
+            EndTime = alarmEvent.EndTime,
+            EventGuid = alarmEvent.Guid,
+            Type = "alarm",
+            MeasurementID = alarmEvent.MeasurementID,
+            Details = JsonConvert.SerializeObject(new
+            {
+                alarmEvent.AlarmID,
+                alarmEvent.SetPoint,
+                alarmEvent.SignalTag,
+                alarmEvent.Severity,
+                alarmEvent.Operation
+            })
+        };
+    }
 
     #endregion
 }
