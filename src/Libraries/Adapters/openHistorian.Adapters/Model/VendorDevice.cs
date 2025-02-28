@@ -24,13 +24,13 @@ public class VendorDevice
     [UrlValidation]
     public string URL { get; set; } = "";
 
-    [DefaultValueExpression("DateTime.UtcNow")]
-    public DateTime CreatedOn { get; set; }
-
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("UserInfo.CurrentUserID")]
     public string CreatedBy { get; set; } = "";
+
+    [DefaultValueExpression("DateTime.UtcNow")]
+    public DateTime CreatedOn { get; set; }
 
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
     [UpdateValueExpression("DateTime.UtcNow")]

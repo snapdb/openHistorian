@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.EventLog;
 
 using Gemstone.Threading;
 using Gemstone.Timeseries;
+using openHistorian.Utility;
 
 namespace openHistorian;
 
@@ -33,11 +34,13 @@ internal class Program
 
             // Define settings for service components
             ServiceHost.DefineSettings(settings);
-
+           
             // Bind settings to configuration sources
             settings.Bind(new ConfigurationBuilder()
                 .ConfigureGemstoneDefaults(settings)
                 .AddCommandLine(args, settings.SwitchMappings));
+
+            FailOverModule.PreventStartup();
 
             HostApplicationBuilderSettings appSettings = new()
             {

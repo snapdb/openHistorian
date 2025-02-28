@@ -168,7 +168,7 @@ public class WebServer(WebServerConfiguration configuration)
             options.Conventions.AddPageRoute("/Index", "System");
             options.Conventions.AddPageRoute("/Index", "DeviceOverview");
             options.Conventions.AddPageRoute("/Index", "Devices/{id?}");
-            options.Conventions.AddPageRoute("/Index", "Phasors");
+            options.Conventions.AddPageRoute("/Index", "Phasors/{id?}");
             options.Conventions.AddPageRoute("/Index", "Measurements/{id?}");
             options.Conventions.AddPageRoute("/Index", "AddDeviceWizard");
             options.Conventions.AddPageRoute("/Index", "ActionAdapters");
@@ -185,7 +185,8 @@ public class WebServer(WebServerConfiguration configuration)
             options.Conventions.AddPageRoute("/Index", "Event");
             options.Conventions.AddPageRoute("/Index", "Reports");
             options.Conventions.AddPageRoute("/Index", "Themes");
-
+            options.Conventions.AddPageRoute("/Index", "SignalTypes");
+            options.Conventions.AddPageRoute("/Index", "AlarmStates");
 
             //options.Conventions.AuthorizePage("/Devices", Viewers);
             //options.Conventions.AuthorizePage("/Device", Editors);
