@@ -21,10 +21,8 @@
 //
 //******************************************************************************************************
 
-using Gemstone.Configuration;
 using Gemstone.PhasorProtocols;
 using Microsoft.AspNetCore.Mvc;
-using openHistorian.Model;
 using openHistorian.Utility;
 using openHistorian.WebUI.Controllers.JsonModels;
 using ServiceInterface;
@@ -83,7 +81,7 @@ public class SystemController : Controller
         FailOverLog log = new()
         {
             SystemName = request.SystemName,
-            Priority = request.SystemPriotity,
+            Priority = request.SystemPriority,
             Timestamp = DateTime.UtcNow
         };
 
@@ -93,12 +91,12 @@ public class SystemController : Controller
             SystemPriority = FailOverModule.SystemPriority
         };
 
-        if (request.SystemPriotity < FailOverModule.SystemPriority)
+        if (request.SystemPriority < FailOverModule.SystemPriority)
         {
             log.Message = $"Prevented startup of {log.SystemName} due to lower priority.";
             response.PreventStartup = true;
         }
-        else if (request.SystemPriotity == FailOverModule.SystemPriority)
+        else if (request.SystemPriority == FailOverModule.SystemPriority)
         {
             log.Message = "Node with matching priority started.";
             response.PreventStartup = false;
