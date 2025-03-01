@@ -31,6 +31,7 @@ using Gemstone.Diagnostics;
 using Gemstone.Timeseries;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using openHistorian.Net;
 using openHistorian.Snap;
 using SnapDB.Snap;
@@ -142,8 +143,8 @@ public class BitGuidReadWrite
             int index = (int)(key.PointID - 1);
             (bool alarmed, Guid signalID, MeasurementStateFlags stateFlags) = value.AsAlarm;
 
-            Assert.AreEqual(SignalIDs[index], signalID);
-            Assert.AreEqual(alarmed, stateFlags == MeasurementStateFlags.AlarmLow);
+            ClassicAssert.AreEqual(SignalIDs[index], signalID);
+            ClassicAssert.AreEqual(alarmed, stateFlags == MeasurementStateFlags.AlarmLow);
         }
     }
 }

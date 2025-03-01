@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace openHistorian.UnitTests;
 
@@ -86,7 +87,7 @@ public class DebugStopwatch
     public void Stop(double maximumTime)
     {
         sw.Stop();
-        Assert.IsTrue(sw.Elapsed.TotalMilliseconds <= maximumTime);
+       ClassicAssert.IsTrue(sw.Elapsed.TotalMilliseconds <= maximumTime);
     }
 
     /// <summary>
@@ -97,8 +98,8 @@ public class DebugStopwatch
     public void Stop(double minimumTime, double maximumTime)
     {
         sw.Stop();
-        Assert.IsTrue(sw.Elapsed.TotalMilliseconds >= minimumTime);
-        Assert.IsTrue(sw.Elapsed.TotalMilliseconds <= maximumTime);
+        ClassicAssert.IsTrue(sw.Elapsed.TotalMilliseconds >= minimumTime);
+        ClassicAssert.IsTrue(sw.Elapsed.TotalMilliseconds <= maximumTime);
     }
 
     /// <summary>
