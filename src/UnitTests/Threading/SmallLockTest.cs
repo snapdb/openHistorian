@@ -44,6 +44,12 @@ public class SmallLockTest
 
     #region [ Methods ]
 
+    [TearDown]
+    public void TearDown()
+    {
+        m_event?.Dispose();
+    }
+
     /// <summary>
     /// Measures the performance of using the "lock" statement.
     /// </summary>

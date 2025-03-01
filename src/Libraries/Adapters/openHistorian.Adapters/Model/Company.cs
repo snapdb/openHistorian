@@ -60,7 +60,7 @@ public class Company
     /// Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    //[UpdateValueExpression("DateTime.UtcNow")]
+    [UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -69,6 +69,6 @@ public class Company
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    // [UpdateValueExpression("UserInfo.CurrentUserID")]
+     [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 }
