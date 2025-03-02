@@ -93,6 +93,12 @@ public class TinyLock_Test
     private long m_value;
     private const long max = 100000000;
 
+    [TearDown]
+    public void TearDown()
+    {
+        m_event?.Dispose();
+    }
+
     [Test]
     public void TestContention()
     {
