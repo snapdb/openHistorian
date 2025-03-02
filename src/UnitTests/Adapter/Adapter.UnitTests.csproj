@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Configurations>Debug;Release;Development</Configurations>
-    <PackageId>openHistorian.UnitTests</PackageId>
+    <PackageId>Adapter.UnitTests</PackageId>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -25,19 +25,33 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="CheckSHA1Guid.cs" />
-    <Compile Remove="Program.cs" />
-    <Compile Remove="SortedTreeStore\Engine\CompareTo1.0.cs" />
+    <Compile Remove="AccessControl\**" />
+    <Compile Remove="Diagnostics\**" />
+    <Compile Remove="IO\**" />
+    <Compile Remove="SortedTreeStore\**" />
+    <Compile Remove="Threading\**" />
+    <EmbeddedResource Remove="AccessControl\**" />
+    <EmbeddedResource Remove="Diagnostics\**" />
+    <EmbeddedResource Remove="IO\**" />
+    <EmbeddedResource Remove="SortedTreeStore\**" />
+    <EmbeddedResource Remove="Threading\**" />
+    <None Remove="AccessControl\**" />
+    <None Remove="Diagnostics\**" />
+    <None Remove="IO\**" />
+    <None Remove="SortedTreeStore\**" />
+    <None Remove="Threading\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="CheckSHA1Guid.cs" />
-    <None Include="SortedTreeStore\Engine\CompareTo1.0.cs" />
+    <Compile Remove="BenchmarkSockets.cs" />
+    <Compile Remove="BitGuidReadWrite.cs" />
+    <Compile Remove="CheckSHA1Guid.cs" />
+    <Compile Remove="ConcurrentReading.cs" />
+    <Compile Remove="Program.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
-    <PackageReference Include="Gemstone.Common" Version="1.0.129" />
     <PackageReference Include="Gemstone.Data" Version="1.0.129" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.13" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
@@ -52,11 +66,10 @@
     </PackageReference>  </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'" />
     <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'">
       <HintPath>..\Dependencies\SnapDB\SnapDB.dll</HintPath>
     </Reference>
