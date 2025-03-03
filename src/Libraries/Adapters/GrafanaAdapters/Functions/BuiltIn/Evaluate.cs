@@ -2,10 +2,18 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Dynamic;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading;
+using Gemstone.Collections.CollectionExtensions;
+using Gemstone.Expressions.Evaluator;
+using Gemstone.StringExtensions;
 using GrafanaAdapters.DataSourceValueTypes;
 using GrafanaAdapters.DataSourceValueTypes.BuiltIn;
+using GrafanaAdapters.Metadata;
 
 namespace GrafanaAdapters.Functions.BuiltIn;
 
@@ -41,7 +49,7 @@ namespace GrafanaAdapters.Functions.BuiltIn;
 /// <c>; imports={AssemblyName=mscorlib, TypeName=System.TimeSpan; AssemblyName=MyCode, TypeName=MyCode.MyClass}</c>
 /// </para>
 /// </remarks>
-public abstract class Evaluate<T> : GrafanaFunctionBase<T> where T : struct, IDataSourceValueType<T>
+public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : struct, IDataSourceValueType<T>
 {
     /// <inheritdoc />
     public override string Name => nameof(Evaluate<T>);
@@ -94,116 +102,140 @@ public abstract class Evaluate<T> : GrafanaFunctionBase<T> where T : struct, IDa
         return GroupOperations.Slice;
     }
 
+    /// <summary>
+    /// Represents a dynamic expression context for evaluating expressions.
+    /// </summary>
+    private class ExpressionContext() : DynamicObject
+    {
+        public TypeRegistry Imports { get; } = new TypeRegistry();
+        
+        public Dictionary<string, double> Variables { get; } = [];
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Method is called when a user accesses a property in the dynamic object; this allows the
+        /// dynamic object to expose variables by name that will be accessible in the expression by
+        /// referencing the variable name alone.
+        /// </remarks>
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            string key = binder.Name;
+            result = Variables.GetOrAdd(key, double.NaN);
+
+            return true;
+        }
+    }
+
     /// <inheritdoc />
     public override async IAsyncEnumerable<T> ComputeSliceAsync(Parameters parameters, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         string expression = parameters.Value<string>(0);
 
-        // TODO: Switch to using Gemstone.Expressions
-
         // Build and cache an expression context
-        //ExpressionContext context = TargetCache<ExpressionContext>.GetOrAdd(expression, () =>
-        //{
-        //    ExpressionContext expressionContext = new();
+        ExpressionContext context = TargetCache<ExpressionContext>.GetOrAdd(expression, () =>
+        {
+            ExpressionContext expressionContext = new();
 
-        //    // Add default imports
-        //    expressionContext.Imports.AddType(typeof(Math));
-        //    expressionContext.Imports.AddType(typeof(DateTime));
+            // Add default imports
+            expressionContext.Imports.RegisterType<Guid>();
+            expressionContext.Imports.RegisterType(typeof(Math));
+            expressionContext.Imports.RegisterType(typeof(DateTime));
 
-        //    // Load any custom imports
-        //    string imports = parameters.Value<string>(1);
+            // Load any custom imports
+            string imports = parameters.Value<string>(1);
 
-        //    if (string.IsNullOrWhiteSpace(imports))
-        //        return expressionContext;
+            if (string.IsNullOrWhiteSpace(imports))
+                return expressionContext;
 
-        //    foreach (string typeDef in imports.Split(';'))
-        //    {
-        //        try
-        //        {
-        //            Dictionary<string, string> parsedTypeDef = typeDef.ParseKeyValuePairs(',');
-        //            string assemblyName = parsedTypeDef["assemblyName"];
-        //            string typeName = parsedTypeDef["typeName"];
-        //            Assembly assembly = Assembly.Load(new AssemblyName(assemblyName));
-        //            Type type = assembly.GetType(typeName);
-        //            expressionContext.Imports.AddType(type);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            throw new SyntaxErrorException($"Unable to load import type from assembly for \"{typeDef}\": {ex.Message}", ex);
-        //        }
-        //    }
+            foreach (string typeDef in imports.Split(';'))
+            {
+                try
+                {
+                    Dictionary<string, string> parsedTypeDef = typeDef.ParseKeyValuePairs(',');
+                    string assemblyName = parsedTypeDef["assemblyName"];
+                    string typeName = parsedTypeDef["typeName"];
+                    Assembly assembly = Assembly.Load(new AssemblyName(assemblyName));
+                    Type type = assembly.GetType(typeName);
+                    expressionContext.Imports.RegisterType(type);
+                }
+                catch (Exception ex)
+                {
+                    throw new SyntaxErrorException($"Unable to load import type from assembly for \"{typeDef}\": {ex.Message}", ex);
+                }
+            }
 
-        //    return expressionContext;
-        //});
+            return expressionContext;
+        });
 
-        //static string getCleanIdentifier(string target) =>
-        //    Regex.Replace(target, @"[^A-Z0-9_]", "", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        static string getCleanIdentifier(string target)
+        {
+            return s_validVariableNameChars().Replace(target, "");
+        }
 
-        //// Data values in this array will be for current slice, one value for each target series
-        //T[] dataValues = await GetDataSourceValues(parameters).ToArrayAsync(cancellationToken).ConfigureAwait(false);
+        // Data values in this array will be for current slice, one value for each target series
+        T[] dataValues = await GetDataSourceValues(parameters).ToArrayAsync(cancellationToken).ConfigureAwait(false);
 
-        //if (dataValues.Length == 0)
-        //    yield break;
+        if (dataValues.Length == 0)
+            yield break;
 
-        //lock (context)
-        //{
-        //    // Clear existing variables - missing values will be exposed as NaN
-        //    foreach (string target in context.Variables.Keys)
-        //        context.Variables[target] = double.NaN;
+        lock (context)
+        {
+            // Clear existing variables - missing values will be exposed as NaN
+            foreach (string target in context.Variables.Keys)
+                context.Variables[target] = double.NaN;
 
-        //    List<string> targets = [];
-        //    T sourceValue = default;
-        //    int index = 0;
+            List<string> targets = [];
+            T sourceValue = default;
+            int index = 0;
 
-        //    // Load each target as variable name with its current slice value
-        //    foreach (T dataValue in dataValues)
-        //    {
-        //        // First non-zero time value will be used as time for the slice
-        //        if (sourceValue.Time == 0.0D && dataValue.Time > 0.0D)
-        //            sourceValue = dataValue;
+            // Load each target as variable name with its current slice value
+            foreach (T dataValue in dataValues)
+            {
+                // First non-zero time value will be used as time for the slice
+                if (sourceValue.Time == 0.0D && dataValue.Time > 0.0D)
+                    sourceValue = dataValue;
 
-        //        // Get alias or clean target name for use as expression variable name
-        //        string target = dataValue.Target.SplitAlias(out string alias);
+                // Get alias or clean target name for use as expression variable name
+                string target = dataValue.Target.SplitAlias(out string alias);
 
-        //        if (string.IsNullOrWhiteSpace(alias))
-        //        {
-        //            targets.Add(target);
-        //            target = getCleanIdentifier(target);
-        //        }
-        //        else
-        //        {
-        //            targets.Add($"{alias}={target}");
-        //            target = alias;
-        //        }
+                if (string.IsNullOrWhiteSpace(alias))
+                {
+                    targets.Add(target);
+                    target = getCleanIdentifier(target);
+                }
+                else
+                {
+                    targets.Add($"{alias}={target}");
+                    target = alias;
+                }
 
-        //        context.Variables[target] = dataValue.Value;
-        //        context.Variables[$"_v{index++}"] = dataValue.Value;
-        //    }
+                context.Variables[target] = dataValue.Value;
+                context.Variables[$"_v{index++}"] = dataValue.Value;
+            }
 
-        //    if (sourceValue.Time == 0.0D)
-        //        yield break;
+            if (sourceValue.Time == 0.0D)
+                yield break;
 
-        //    // Compile and cache the expression (only compiled once per expression)
-        //    IDynamicExpression dynamicExpression = TargetCache<IDynamicExpression>.GetOrAdd(expression, () =>
-        //    {
-        //        try
-        //        {
-        //            return context.CompileDynamic(expression);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            throw new SyntaxErrorException($"Failed to compile expression \"{expression}\" for evaluation: {ex.Message}", ex);
-        //        }
-        //    });
+            // Cache the expression complier for the expression (will only be compiled once per expression)
+            ExpressionCompiler<object, ExpressionContext> dynamicExpression = TargetCache<ExpressionCompiler<object, ExpressionContext>>.GetOrAdd(expression, () =>
+            {
+                try
+                {
+                    return new(expression) { TypeRegistry = context.Imports };
+                }
+                catch (Exception ex)
+                {
+                    throw new SyntaxErrorException($"Failed to compile expression \"{expression}\" for evaluation: {ex.Message}", ex);
+                }
+            });
 
-        //    // Return evaluated expression
-        //    yield return sourceValue with
-        //    {
-        //        Value = Convert.ToDouble(dynamicExpression.Evaluate()),
-        //        Target = $"{string.Join("; ", targets.Take(4))}{(targets.Count > 4 ? "; ..." : "")}"
-        //    };
-
-        yield break;
+            // Return evaluated expression
+            yield return sourceValue with
+            {
+                Value = Convert.ToDouble(dynamicExpression.CompiledFunction(context)),
+                Target = $"{string.Join("; ", targets.Take(4))}{(targets.Count > 4 ? "; ..." : "")}"
+            };
+        }
     }
 
     /// <inheritdoc />
@@ -303,4 +335,7 @@ public abstract class Evaluate<T> : GrafanaFunctionBase<T> where T : struct, IDa
     {
         // Operating on magnitude only
     }
+
+    [GeneratedRegex(@"[^A-Z0-9_]", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex s_validVariableNameChars();
 }

@@ -181,10 +181,7 @@ partial class GrafanaDataSourceBase
         if (!double.TryParse(setting, out double zoom) || zoom <= 0.0D)
             throw new SyntaxErrorException("Radial distribution \"zoom\" setting is negative, zero or not a valid number.");
 
-        if (!settings.TryGetValue("groupBy", out setting))
-            setting = "";
-
-        string groupBy = setting;
+        string groupBy = settings.GetValueOrDefault("groupBy", "");
 
         // For this use case, we consider coordinates to be the "same" if they are within 100 feet.
         //
