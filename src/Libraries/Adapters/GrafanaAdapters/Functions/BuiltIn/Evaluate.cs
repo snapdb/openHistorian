@@ -216,12 +216,17 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
             if (sourceValue.Time == 0.0D)
                 yield break;
 
-            // Cache the expression complier for the expression (will only be compiled once per expression)
+            // Compile and cache the expression (will only be compiled once per expression)
             ExpressionCompiler<object, ExpressionContext> dynamicExpression = TargetCache<ExpressionCompiler<object, ExpressionContext>>.GetOrAdd(expression, () =>
             {
                 try
                 {
-                    return new(expression) { TypeRegistry = context.Imports };
+                    ExpressionCompiler<object, ExpressionContext> expressionCompiler = new(expression) { TypeRegistry = context.Imports };
+
+                    // Compile expression - do this in advance for better syntax error reporting
+                    expressionCompiler.Compile();
+
+                    return expressionCompiler;
                 }
                 catch (Exception ex)
                 {
