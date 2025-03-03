@@ -52,7 +52,7 @@ public static class TargetCaches
             Action[] resetCacheFunctions;
 
             lock (ResetCacheFunctions)
-                resetCacheFunctions = ResetCacheFunctions.ToArray();
+                resetCacheFunctions = [.. ResetCacheFunctions];
 
             foreach (Action resetCache in resetCacheFunctions)
                 resetCache();

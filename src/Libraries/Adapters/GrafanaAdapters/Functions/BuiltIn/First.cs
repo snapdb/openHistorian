@@ -20,7 +20,8 @@ namespace GrafanaAdapters.Functions.BuiltIn;
 /// Returns: Series of values.<br/>
 /// Example: <c>First(5%, FILTER ActiveMeasurements WHERE SignalType='FREQ')</c><br/>
 /// Variants: First<br/>
-/// Execution: Immediate in-memory array load, when <c>N</c> is defined; otherwise, immediate enumeration of one, i.e., first value.
+/// Execution: Immediate in-memory array load, when <c>N</c> is defined; otherwise, immediate enumeration of one, i.e., first value.<br/>
+/// Group Operations: Slice, Set
 /// </remarks>
 public abstract class First<T> : GrafanaFunctionBase<T> where T : struct, IDataSourceValueType<T>
 {
@@ -55,7 +56,7 @@ public abstract class First<T> : GrafanaFunctionBase<T> where T : struct, IDataS
 
         if (parameters.ParsedCount == 0)
         {
-            // Short cut for only getting first value
+            // Shortcut for only getting first value
             await using IAsyncEnumerator<T> enumerator = source.GetAsyncEnumerator(cancellationToken);
 
             if (await enumerator.MoveNextAsync().ConfigureAwait(false))
@@ -70,7 +71,7 @@ public abstract class First<T> : GrafanaFunctionBase<T> where T : struct, IDataS
             if (length == 0)
                 yield break;
 
-            int valueN = ParseTotal(parameters.Value<string>(0), length);
+            int valueN = ParseTotal("N", parameters.Value<string>(0), length);
 
             if (valueN > length)
                 valueN = length;

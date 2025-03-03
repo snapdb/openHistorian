@@ -35,6 +35,7 @@
     <ProjectReference Include="..\..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\gemstone\expressions\src\Gemstone.Expressions\Gemstone.Expressions.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj" />
+    <ProjectReference Include="..\..\..\..\..\..\gemstone\numeric\src\Gemstone.Numeric\Gemstone.Numeric.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />

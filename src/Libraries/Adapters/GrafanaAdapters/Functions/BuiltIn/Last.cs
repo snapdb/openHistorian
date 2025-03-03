@@ -20,7 +20,8 @@ namespace GrafanaAdapters.Functions.BuiltIn;
 /// Returns: Series of values.<br/>
 /// Example: <c>Last(150, FILTER ActiveMeasurements WHERE SignalType='FREQ')</c><br/>
 /// Variants: Last<br/>
-/// Execution: Immediate in-memory array load.
+/// Execution: Immediate in-memory array load.<br/>
+/// Group Operations: Slice, Set
 /// </remarks>
 public abstract class Last<T> : GrafanaFunctionBase<T> where T : struct, IDataSourceValueType<T>
 {
@@ -58,7 +59,7 @@ public abstract class Last<T> : GrafanaFunctionBase<T> where T : struct, IDataSo
         if (length == 0)
             yield break;
 
-        int valueN = ParseTotal(parameters.Value<string>(0), length);
+        int valueN = ParseTotal("N", parameters.Value<string>(0), length);
 
         if (valueN > length)
             valueN = length;

@@ -86,14 +86,13 @@ public static class DataSourceValueTypeCache
                     List<Type> implementationTypes = typeof(IDataSourceValueType).LoadImplementations(dataSourceValueTypesPath, true, false);
 
                     // To maintain consistent order between runs, we sort the data source value types by load order and then by name
-                    IDataSourceValueType[] instances = implementationTypes
+                    IDataSourceValueType[] instances = [.. implementationTypes
                         .Select(type => (IDataSourceValueType)Activator.CreateInstance(type))
                         .OrderBy(dsv => dsv.LoadOrder)
-                        .ThenBy(dsv => dsv.GetType().Name)
-                        .ToArray();
+                        .ThenBy(dsv => dsv.GetType().Name)];
 
                     Interlocked.Exchange(ref s_loadedTypes, instances.Select(dsv => dsv.GetType()).ToArray());
-                    Interlocked.Exchange(ref s_defaultInstances, instances.ToArray());
+                    Interlocked.Exchange(ref s_defaultInstances, [.. instances]);
 
                     string elapsedTime = new TimeSpan(DateTime.UtcNow.Ticks - startTime).ToElapsedTimeString(3);
                     s_log.Publish(MessageLevel.Info, EventName, $"Completed loading {nameof(IDataSourceValueType)} types: loaded {s_loadedTypes.Length:N0} types in {elapsedTime}.");

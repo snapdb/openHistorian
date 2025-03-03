@@ -18,7 +18,8 @@ namespace GrafanaAdapters.Functions.BuiltIn;
 /// Returns: Single value.<br/>
 /// Example: <c>Percentile(10%, FILTER ActiveMeasurements WHERE SignalType='VPHM')</c><br/>
 /// Variants: Percentile, Pctl<br/>
-/// Execution: Immediate in-memory array load.
+/// Execution: Immediate in-memory array load.<br/>
+/// Group Operations: Slice, Set
 /// </remarks>
 public abstract class Percentile<T> : GrafanaFunctionBase<T> where T : struct, IDataSourceValueType<T>
 {
@@ -26,7 +27,7 @@ public abstract class Percentile<T> : GrafanaFunctionBase<T> where T : struct, I
     public override string Name => nameof(Percentile<T>);
 
     /// <inheritdoc />
-    public override string Description => "Returns a series of N, or N% of total, values from the start of the source series.";
+    public override string Description => "Returns a single value that represents the Nth order percentile for the sorted values in the source series.";
 
     /// <inheritdoc />
     public override string[] Aliases => ["Pctl"];
@@ -58,7 +59,7 @@ public abstract class Percentile<T> : GrafanaFunctionBase<T> where T : struct, I
 
         Array.Sort(values, (a, b) => a.Value < b.Value ? -1 : a.Value > b.Value ? 1 : 0);
 
-        double valueN = ParsePercentage(parameters.Value<string>(0));
+        double valueN = ParsePercentage("N", parameters.Value<string>(0));
 
         switch (valueN)
         {

@@ -464,7 +464,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
                 DataTable table = connection.RetrieveData(measurementSQL, metadata.ConvertField<string>("Acronym"));
 
                 // ReSharper disable once AccessToDisposedClosure
-                keys = table.AsEnumerable().Select(row => MeasurementKey.LookUpOrCreate(connection.Guid(row, "SignalID"), row["ID"].ToString())).ToArray();
+                keys = [.. table.AsEnumerable().Select(row => MeasurementKey.LookUpOrCreate(connection.Guid(row, "SignalID"), row["ID"].ToString()))];
             }
 
             if (keys?.Length > 0)
@@ -499,7 +499,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
         }
 
         // Load desired input measurements
-        InputMeasurementKeys = inputMeasurementKeys.ToArray();
+        InputMeasurementKeys = [.. inputMeasurementKeys];
         TrackLatestMeasurements = true;
     }
 
@@ -799,7 +799,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
                 parameters.Add(parameter);
         }
 
-        m_lastExternalDatabaseResult = connection.ExecuteScalar(ExternalDatabaseCommand, parameters.ToArray());
+        m_lastExternalDatabaseResult = connection.ExecuteScalar(ExternalDatabaseCommand, [.. parameters]);
         m_lastExternalDatabaseStateChange = DateTime.UtcNow.Ticks;
     }
 

@@ -17,7 +17,8 @@ namespace GrafanaAdapters.Functions.BuiltIn;
 /// Returns: Single value.<br/>
 /// Example: <c>Median(FILTER ActiveMeasurements WHERE SignalType='ALOG')</c><br/>
 /// Variants: Median, Med, Mid<br/>
-/// Execution: Immediate in-memory array load.
+/// Execution: Immediate in-memory array load.<br/>
+/// Group Operations: Slice, Set
 /// </remarks>
 public abstract class Median<T> : GrafanaFunctionBase<T> where T : struct, IDataSourceValueType<T>
 {
@@ -48,15 +49,14 @@ public abstract class Median<T> : GrafanaFunctionBase<T> where T : struct, IData
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
+            // Avoid multiple enumeration warnings; memory usage is small anyway
             List<MeasurementValue> median = values.Middle()!.ToList();
 
             if (median.Count == 0)
                 yield break;
 
-            // Median can return two values if there is an even number of values
             MeasurementValue result = median.Last();
             result.Value = median.Average(mv => mv.Value);
-
             yield return result;
         }
     }
