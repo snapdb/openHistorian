@@ -1,5 +1,5 @@
 ﻿//******************************************************************************************************
-//  AlarmDeviceStateView.cs - Gbtc
+//  AlarmDevice.cs - Gbtc
 //
 //  Copyright © 2018, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -24,13 +24,16 @@
 //******************************************************************************************************
 
 using Gemstone.Data.Model;
+using System;
+using System.ComponentModel.DataAnnotations;
+using Gemstone.Expressions.Model;
 
 namespace GrafanaAdapters.Model.Database;
 
 /// <summary>
-/// Represents a Grafana alarm panel block.
+/// Represents a connected device in an alarm state.
 /// </summary>
-public class DeviceStateView
+public class DeviceStatus
 {
     /// <summary>
     /// Gets or sets unique ID.
@@ -39,37 +42,25 @@ public class DeviceStateView
     public int ID { get; set; }
 
     /// <summary>
-    /// Gets or sets name of the device.
-    /// </summary>
-    public string DeviceName { get; set; }
-
-    /// <summary>
-    /// Gets or sets longitude of the device.
-    /// </summary>
-    public string DeviceLongitude { get; set; }
-
-    /// <summary>
-    /// Gets or sets name of the device.
-    /// </summary>
-    public string DeviceLatitude { get; set; }
-
-    /// <summary>
-    /// Gets or sets description of the device state.
-    /// </summary>
-    public string State { get; set; }
-
-    /// <summary>
-    /// Gets or sets color of the device state.
-    /// </summary>
-    public string Color { get; set; }
-
-    /// <summary>
-    /// Gets or sets additional data to be displayed.
-    /// </summary>
-    public string DisplayData { get; set; }
-
-    /// <summary>
-    /// Gets or sets device ID of the alarmed device.
+    /// Gets or sets device ID of the Alarmed Device.
     /// </summary>
     public int DeviceID { get; set; }
+
+    /// <summary>
+    /// Gets or sets ID of the <see cref="AlarmState"/>.
+    /// </summary>
+    public int StateID { get; set; }
+
+    /// <summary>
+    /// Gets or sets time of the last update.
+    /// </summary>
+    [DefaultValueExpression("DateTime.UtcNow")]
+    [UpdateValueExpression("DateTime.UtcNow")]
+    public DateTime TimeStamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets string to display on the Grafana Alarm Dashboard.
+    /// </summary>
+    [StringLength(10)]
+    public string DisplayData { get; set; }
 }

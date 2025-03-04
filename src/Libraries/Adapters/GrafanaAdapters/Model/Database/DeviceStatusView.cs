@@ -1,5 +1,5 @@
 ﻿//******************************************************************************************************
-//  AlarmState.cs - Gbtc
+//  AlarmDeviceStateView.cs - Gbtc
 //
 //  Copyright © 2018, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -24,14 +24,13 @@
 //******************************************************************************************************
 
 using Gemstone.Data.Model;
-using System.ComponentModel.DataAnnotations;
 
 namespace GrafanaAdapters.Model.Database;
 
 /// <summary>
-/// Represents the alarm state of a connected device.
+/// Represents a Grafana alarm panel block.
 /// </summary>
-public class AlarmState
+public class DeviceStatusView
 {
     /// <summary>
     /// Gets or sets unique ID.
@@ -40,20 +39,37 @@ public class AlarmState
     public int ID { get; set; }
 
     /// <summary>
-    /// Gets or sets description of the <see cref="AlarmState"/>.
+    /// Gets or sets name of the device.
     /// </summary>
-    [StringLength(50)]
+    public string DeviceName { get; set; }
+
+    /// <summary>
+    /// Gets or sets longitude of the device.
+    /// </summary>
+    public string DeviceLongitude { get; set; }
+
+    /// <summary>
+    /// Gets or sets name of the device.
+    /// </summary>
+    public string DeviceLatitude { get; set; }
+
+    /// <summary>
+    /// Gets or sets description of the device state.
+    /// </summary>
     public string State { get; set; }
 
     /// <summary>
-    /// Gets or sets recommended action for the user if a <see cref="DeviceState"/> is in this <see cref="AlarmState"/>.
+    /// Gets or sets color of the device state.
     /// </summary>
-    [StringLength(500)]
-    public string RecommendedAction { get; set; }
+    public string Color { get; set; }
 
     /// <summary>
-    /// Gets or sets color associated with the <see cref="AlarmState"/>.
+    /// Gets or sets additional data to be displayed.
     /// </summary>
-    [StringLength(50)]
-    public string Color { get; set; }
+    public string DisplayData { get; set; }
+
+    /// <summary>
+    /// Gets or sets device ID of the alarmed device.
+    /// </summary>
+    public int DeviceID { get; set; }
 }

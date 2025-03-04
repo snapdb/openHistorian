@@ -1,5 +1,5 @@
 ﻿//******************************************************************************************************
-//  AlarmDevice.cs - Gbtc
+//  AlarmState.cs - Gbtc
 //
 //  Copyright © 2018, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -23,16 +23,13 @@
 //
 //******************************************************************************************************
 
-using Gemstone.ComponentModel;
 using Gemstone.Data.Model;
-using System;
 using System.ComponentModel.DataAnnotations;
-using Gemstone.Expressions.Model;
 
 namespace GrafanaAdapters.Model.Database;
 
 /// <summary>
-/// Represents a connected device in an alarm state.
+/// Represents the alarm state of a connected device.
 /// </summary>
 public class DeviceState
 {
@@ -40,28 +37,28 @@ public class DeviceState
     /// Gets or sets unique ID.
     /// </summary>
     [PrimaryKey(true)]
-    public int ID { get; set; }
+    public int ID { get; set; } = -1;
 
     /// <summary>
-    /// Gets or sets device ID of the Alarmed Device.
+    /// Gets or sets description of the <see cref="AlarmState"/>.
     /// </summary>
-    public int DeviceID { get; set; }
+    [StringLength(50)]
+    public string State { get; set; }
 
     /// <summary>
-    /// Gets or sets ID of the <see cref="AlarmState"/>.
+    /// Gets or sets recommended action for the user if a <see cref="DeviceState"/> is in this <see cref="AlarmState"/>.
     /// </summary>
-    public int StateID { get; set; }
+    [StringLength(500)]
+    public string RecommendedAction { get; set; }
 
     /// <summary>
-    /// Gets or sets time of the last update.
+    /// Gets or sets color associated with the <see cref="AlarmState"/>.
     /// </summary>
-    [DefaultValueExpression("DateTime.UtcNow")]
-    [UpdateValueExpression("DateTime.UtcNow")]
-    public DateTime TimeStamp { get; set; }
+    [StringLength(50)]
+    public string Color { get; set; } = "red";
 
     /// <summary>
-    /// Gets or sets string to display on the Grafana Alarm Dashboard.
+    /// Gets or sets rules.
     /// </summary>
-    [StringLength(10)]
-    public string DisplayData { get; set; }
+    public string Rules { get; set; }
 }

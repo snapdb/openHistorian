@@ -4,10 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace openHistorian.WebUI.Controllers;
 
-//rename models and routes to drop alarm
-
-[Route("api/DeviceStateView")]
+[Route("api/[controller]")]
 [ApiController]
-public class DeviceStateDetailController : ReadOnlyModelController<DeviceStateView>
+public class DeviceStateController : ModelController<DeviceState>
 {
 }
