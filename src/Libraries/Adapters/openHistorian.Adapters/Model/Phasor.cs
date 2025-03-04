@@ -50,7 +50,7 @@ public class Phasor
     ///     Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    //[UpdateValueExpression("DateTime.UtcNow")]
+    [UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -59,7 +59,7 @@ public class Phasor
     [Required]
     [StringLength(50)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    //[UpdateValueExpression("UserInfo.CurrentUserID")]
+    [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 
     public int? SecondaryVoltageID { get; set; }

@@ -12,7 +12,7 @@ public class Company
     private string m_mapAcronym;
 
     [PrimaryKey(true)]
-    public int ID { get; set; }
+    public int ID { get; set; } = -1;
 
     [Required]
     [StringLength(200)]
@@ -69,6 +69,6 @@ public class Company
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-     [UpdateValueExpression("UserInfo.CurrentUserID")]
+    [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 }

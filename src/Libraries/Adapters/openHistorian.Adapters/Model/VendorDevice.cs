@@ -10,7 +10,7 @@ namespace openHistorian.Model;
 public class VendorDevice
 {
     [PrimaryKey(true)]
-    public int ID { get; set; }
+    public int ID { get; set; } = -1;
 
     public int VendorID { get; set; }
 
@@ -39,6 +39,6 @@ public class VendorDevice
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    //[UpdateValueExpression("UserInfo.CurrentUserID")]
+    [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; } = "";
 }
