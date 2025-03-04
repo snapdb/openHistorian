@@ -458,12 +458,12 @@ partial class GrafanaDataSourceBase
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns> Queried device alarm states.</returns>
-    public virtual Task<IEnumerable<DeviceStateView>> GetAlarmState(CancellationToken cancellationToken)
+    public virtual Task<IEnumerable<DeviceStatusView>> GetAlarmState(CancellationToken cancellationToken)
     {
         return Task.Factory.StartNew(() =>
         {
             using AdoDataConnection connection = new(Settings.Default.System);
-            return new TableOperations<DeviceStateView>(connection).QueryRecords("Name");
+            return new TableOperations<DeviceStatusView>(connection).QueryRecords("Name");
         },
         cancellationToken);
     }
@@ -473,12 +473,12 @@ partial class GrafanaDataSourceBase
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns> Queried device alarm states.</returns>
-    public virtual Task<IEnumerable<AlarmState>> GetDeviceAlarms(CancellationToken cancellationToken)
+    public virtual Task<IEnumerable<DeviceState>> GetDeviceAlarms(CancellationToken cancellationToken)
     {
         return Task.Factory.StartNew(() =>
         {
             using AdoDataConnection connection = new(Settings.Default.System);
-            return new TableOperations<AlarmState>(connection).QueryRecords("ID");
+            return new TableOperations<DeviceState>(connection).QueryRecords("ID");
         },
         cancellationToken);
     }
