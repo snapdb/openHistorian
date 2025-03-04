@@ -1,12 +1,13 @@
 ﻿using Gemstone.Web.APIController;
 using GrafanaAdapters.Model.Database;
 using Microsoft.AspNetCore.Mvc;
-using openHistorian.Model;
 
 namespace openHistorian.WebUI.Controllers;
 
-[Route("api/[controller]")]
+//rename models and routes to drop alarm
+
+[Route("api/DeviceStatusView")]
 [ApiController]
-public class AlarmStateController : ModelController<AlarmState>
+public class DeviceStatusDetailController : ReadOnlyModelController<DeviceStatusView>
 {
 }

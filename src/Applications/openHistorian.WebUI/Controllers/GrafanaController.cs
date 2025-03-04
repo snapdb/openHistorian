@@ -47,7 +47,7 @@ using SnapDB.Snap;
 using SnapDB.Snap.Filters;
 using SnapDB.Snap.Services;
 using SnapDB.Snap.Services.Reader;
-using AlarmState = GrafanaAdapters.Model.Database.AlarmState;
+using DeviceState = GrafanaAdapters.Model.Database.DeviceState;
 using CancellationToken = System.Threading.CancellationToken;
 using Resolution = openHistorian.Adapters.Resolution;
 
@@ -468,9 +468,9 @@ public class GrafanaController : ControllerBase
     /// </summary>
     /// <param name="cancellationToken">Propagates notification from client that operations should be canceled.</param>
     [HttpPost]
-    public virtual Task<IEnumerable<DeviceStateView>> GetAlarmState(CancellationToken cancellationToken)
+    public virtual Task<IEnumerable<DeviceStatusView>> GetAlarmState(CancellationToken cancellationToken)
     {
-        return DataSource?.GetAlarmState(cancellationToken) ?? Task.FromResult(Enumerable.Empty<DeviceStateView>());
+        return DataSource?.GetAlarmState(cancellationToken) ?? Task.FromResult(Enumerable.Empty<DeviceStatusView>());
     }
 
     /// <summary>
@@ -478,9 +478,9 @@ public class GrafanaController : ControllerBase
     /// </summary>
     /// <param name="cancellationToken">Propagates notification from client that operations should be canceled.</param>
     [HttpPost]
-    public virtual Task<IEnumerable<AlarmState>> GetDeviceAlarms(CancellationToken cancellationToken)
+    public virtual Task<IEnumerable<DeviceState>> GetDeviceAlarms(CancellationToken cancellationToken)
     {
-        return DataSource?.GetDeviceAlarms(cancellationToken) ?? Task.FromResult(Enumerable.Empty<AlarmState>());
+        return DataSource?.GetDeviceAlarms(cancellationToken) ?? Task.FromResult(Enumerable.Empty<DeviceState>());
     }
 
     /// <summary>
