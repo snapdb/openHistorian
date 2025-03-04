@@ -86,8 +86,8 @@ public class InitialSchema : Migration
         Delete.Table("CustomOutputAdapter");
 
         /// Related to Grafana Device Status
-        Delete.Table("AlarmState");
-        Delete.Table("AlarmDevice");
+        Delete.Table("DeviceState");
+        Delete.Table("DeviceStatus");
         Delete.Table("DataAvailability");
 
         // Event Related
@@ -113,7 +113,7 @@ public class InitialSchema : Migration
         Execute.DeleteView("IaonFilterAdapter");
         Execute.DeleteView("CurrentAlarmState");
         Execute.DeleteView("IaonTreeView");
-        Execute.DeleteView("AlarmDeviceStateView");
+        Execute.DeleteView("DeviceStatusView");
         Execute.DeleteView("NEW_GUID");
         Execute.DeleteView("FailoverNodeView");
 
@@ -511,16 +511,17 @@ public class InitialSchema : Migration
             .WithCreatedBy();
 
         // Related to Grafana Device Status
-        Create.Table("AlarmState")
+        Create.Table("DeviceState")
            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
            .WithColumn("State").AsString(50).Nullable()
            .WithColumn("Color").AsString(50).Nullable()
-           .WithColumn("RecommendedAction").AsString(500).Nullable();
+           .WithColumn("RecommendedAction").AsString(500).Nullable()
+           .WithColumn("Rules").AsString(int.MaxValue).Nullable();
 
-        Create.Table("AlarmDevice")
+        Create.Table("DeviceStatus")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
             .WithColumn("DeviceID").AsInt32().Nullable().ForeignKey("Device", "ID").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
-            .WithColumn("StateID").AsInt32().Nullable().ForeignKey("AlarmState", "ID").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
+            .WithColumn("StateID").AsInt32().Nullable().ForeignKey("DeviceState", "ID").OnDelete(Rule.Cascade).OnUpdate(Rule.Cascade)
             .WithColumn("TimeStamp").AsDateTime().Nullable()
             .WithColumn("DisplayData").AsString(10).Nullable();
 
