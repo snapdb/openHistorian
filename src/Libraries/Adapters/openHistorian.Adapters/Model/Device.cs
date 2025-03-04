@@ -20,12 +20,12 @@ public class Device
 
     [Label("Local Device ID")]
     [PrimaryKey(true)]
-    public int ID { get; set; }
+    public int ID { get; set; } = -1;
 
     public int? ParentID { get; set; }
 
     [Label("Unique Device ID")]
-    //[DefaultValueExpression("Guid.NewGuid()")]
+    [DefaultValueExpression("Guid.NewGuid()")]
     public Guid UniqueID { get; set; } = Guid.NewGuid();
 
     [Required]
@@ -44,7 +44,7 @@ public class Device
     public bool IsConcentrator { get; set; }
 
     [Label("Company")]
-    [DefaultValueExpression("Connection.ExecuteScalar(typeof(int), (object)null, 'SELECT ID FROM Company WHERE Acronym = {0}', Global.CompanyAcronym)", Cached = true)]
+    [DefaultValueExpression("Connection.ExecuteScalar(typeof(int), (object)null, \"SELECT ID FROM Company WHERE Acronym = {0}\", Global.CompanyAcronym)", Cached = true)]
     public int? CompanyID { get; set; }
 
     [Label("Historian")]
@@ -134,7 +134,7 @@ public class Device
     ///     Updated on field.
     /// </summary>
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    //[UpdateValueExpression("DateTime.UtcNow")]
+    [UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     /// <summary>
@@ -143,6 +143,6 @@ public class Device
     [Required]
     [StringLength(50)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    //[UpdateValueExpression("UserInfo.CurrentUserID")]
+    [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; } = "";
 }

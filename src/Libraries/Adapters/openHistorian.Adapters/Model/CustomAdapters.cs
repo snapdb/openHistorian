@@ -25,7 +25,7 @@ public abstract class CustomAdapterBase
     //public Guid NodeID { get; set; }
 
     [PrimaryKey(true)]
-    public int ID { get; set; }
+    public int ID { get; set; } = -1;
 
     [Required]
     [StringLength(200)]
@@ -55,12 +55,12 @@ public abstract class CustomAdapterBase
     public string CreatedBy { get; set; }
 
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    //[UpdateValueExpression("DateTime.UtcNow")]
+    [UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    //[UpdateValueExpression("UserInfo.CurrentUserID")]
+    [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 }

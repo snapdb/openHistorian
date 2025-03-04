@@ -14,7 +14,7 @@ public class Vendor
     {
         get;
         set;
-    }
+    } = -1;
 
     [Required]
     [StringLength(200)]
@@ -53,6 +53,12 @@ public class Vendor
     [Label("Web Page")]
     [UrlValidation]
     public string URL
+    {
+        get;
+        set;
+    }
+
+    public int LoadOrder
     {
         get;
         set;
