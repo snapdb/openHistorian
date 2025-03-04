@@ -1,6 +1,7 @@
 // ReSharper disable CheckNamespace
 #pragma warning disable 1591
 
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Gemstone.Data.Model;
 
@@ -13,7 +14,7 @@ public class Interconnection
     {
         get;
         set;
-    }
+    } = -1;
 
     [Required]
     [StringLength(50)]

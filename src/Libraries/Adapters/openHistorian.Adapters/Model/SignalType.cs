@@ -13,7 +13,7 @@ public class SignalType
     {
         get;
         set;
-    }
+    } = -1;
 
     [Required]
     [StringLength(200)]
