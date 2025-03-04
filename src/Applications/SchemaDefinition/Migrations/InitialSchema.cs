@@ -540,11 +540,11 @@ public class InitialSchema : Migration
             .WithColumn("Severity").AsInt32().NotNullable()
             .WithColumn("Operation").AsInt32().NotNullable()
             .WithColumn("Combination").AsInt32().NotNullable()
-            .WithColumn("SetPoint").AsDouble().Nullable();
-            .WithColumn("Tolerance").AsDouble().Nullable();
-            .WithColumn("Delay").AsDouble().Nullable();
-            .WithColumn("Hysteresis").AsDouble().Nullable();
-            .WithColumn("Timeout").AsDouble().Nullable();
+            .WithColumn("SetPoint").AsDouble().Nullable()
+            .WithColumn("Tolerance").AsDouble().Nullable()
+            .WithColumn("Delay").AsDouble().Nullable()
+            .WithColumn("Hysteresis").AsDouble().Nullable()
+            .WithColumn("Timeout").AsDouble().Nullable()
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false);
 
         Create.Table("EventDetails")
@@ -554,7 +554,7 @@ public class InitialSchema : Migration
             .WithColumn("EndTime").AsDateTime().Nullable()
             .WithColumn("MeasurementID").AsString(36).NotNullable().ForeignKey("Measurement", "SignalID")
             .WithColumn("Details").AsString(int.MaxValue).NotNullable()
-            .WIthColumn("Type").AsString(20).NotNullable();
+            .WithColumn("Type").AsString(20).NotNullable();
 
         Create.Table("FailoverLog")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
