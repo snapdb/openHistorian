@@ -136,6 +136,12 @@ public class ActiveMeasurement
         set;
     }
 
+    public int SourceIndex
+    {
+        get;
+        set;
+    }
+
     public char? Phase
     {
         get;
