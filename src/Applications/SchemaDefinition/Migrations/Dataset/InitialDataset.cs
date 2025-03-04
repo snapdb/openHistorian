@@ -259,7 +259,7 @@ public class InitialDataset : Migration
             .Row(new { Description = "Optimize Local Historian Settings", AssemblyName = "openHistorian.Adapters.dll", TypeName = "openHistorian.Adapters.LocalOutputAdapter", MethodName = "OptimizeLocalHistorianSettings", Arguments = "", LoadOrder = 2, Enabled = 1 });
 
         Insert.IntoTable("Theme")
-            .Row( new { Name = "GPA Default" FileName = "/Styles/bootstrap.min.css" LoadOrder = 1});
+            .Row( new { Name = "GPA Default", FileName = "/Styles/bootstrap.min.css", LoadOrder = 1});
 
         Insert.IntoTable("SignalType")
             .Row(new { Name = "Current Magnitude", Acronym = "IPHM", Suffix = "PM", Abbreviation = "I", LongAcronym = "CurrentMagnitude", Source = "Phasor", EngineeringUnits = "Amps" })
