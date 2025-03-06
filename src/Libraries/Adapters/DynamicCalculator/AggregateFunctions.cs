@@ -90,7 +90,7 @@ public static class AggregateFunctions
     /// </remarks>
     public static bool Any(double[] array, string comparisonExpr)
     {
-        (ExpressionContext<double>, ExpressionCompiler<bool>) compiledExpr = GetCompiledExpression(comparisonExpr);
+        ExpressionContextCompiler<bool, double> compiledExpr = GetCompiledExpression(comparisonExpr);
         return array.Any(value => EvaluateExpression(compiledExpr, value));
     }
 
@@ -110,13 +110,13 @@ public static class AggregateFunctions
     /// </remarks>
     public static bool All(double[] array, string comparisonExpr)
     {
-        (ExpressionContext<double>, ExpressionCompiler<bool>) compiledExpr = GetCompiledExpression(comparisonExpr);
-        return array.All(value => EvaluateExpression(compiledExpr, value));
+        ExpressionContextCompiler<bool, double> expression = GetCompiledExpression(comparisonExpr);
+        return array.All(value => EvaluateExpression(expression, value));
     }
 
-    private static bool EvaluateExpression((ExpressionContext<double>, ExpressionCompiler<bool>) compiledExpr, double value)
+    private static bool EvaluateExpression(ExpressionContextCompiler<bool, double> expression, double value)
     {
-        (ExpressionContext<double> context, ExpressionCompiler<bool> expression) = compiledExpr;
+        ExpressionContext<double> context = expression.VariableContext;
 
         lock (context)
         {
@@ -125,7 +125,7 @@ public static class AggregateFunctions
         }
     }
 
-    private static (ExpressionContext<double>, ExpressionCompiler<bool>) GetCompiledExpression(string comparisonExpr)
+    private static ExpressionContextCompiler<bool, double> GetCompiledExpression(string comparisonExpr)
     {
         return s_comparisonExpressions.GetOrAdd(comparisonExpr, _ =>
         {
@@ -137,15 +137,11 @@ public static class AggregateFunctions
 
             // Create expression compiler that will handle aggregate expressions like, "value > 0", where
             // user provides an expression like "> 0" that will be compiled into a function
-            ExpressionCompiler<bool> expression = new($"value {comparisonExpr}")
-            {
-                TypeRegistry = context.Imports,
-                VariableContext = context
-            };
+            ExpressionContextCompiler<bool, double> expression = new($"value {comparisonExpr}", context);
 
-            return (context, expression);
+            return expression;
         });
     }
 
-    private static readonly ConcurrentDictionary<string, (ExpressionContext<double>, ExpressionCompiler<bool>)> s_comparisonExpressions = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, ExpressionContextCompiler<bool, double>> s_comparisonExpressions = new(StringComparer.OrdinalIgnoreCase);
 }

@@ -215,11 +215,6 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
                 }
             });
 
-            Func<ExpressionContext<double>, double> compiledFunction = dynamicExpression.CompiledFunction;
-
-            if (compiledFunction is null)
-                throw new SyntaxErrorException($"Failed to get compiled expression \"{expression}\" for evaluation");
-
             // Return evaluated expression
             yield return sourceValue with
             {
