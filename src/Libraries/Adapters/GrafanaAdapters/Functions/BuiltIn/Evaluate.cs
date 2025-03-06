@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Expressions.Evaluator;
 using Gemstone.StringExtensions;
 using GrafanaAdapters.DataSourceValueTypes;
@@ -102,39 +100,23 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
         return GroupOperations.Slice;
     }
 
-    /// <summary>
-    /// Represents a dynamic expression context for evaluating expressions.
-    /// </summary>
-    private class ExpressionContext() : DynamicObject
-    {
-        public TypeRegistry Imports { get; } = new TypeRegistry();
-        
-        public Dictionary<string, double> Variables { get; } = [];
-
-        /// <inheritdoc/>
-        /// <remarks>
-        /// Method is called when a user accesses a property in the dynamic object; this allows the
-        /// dynamic object to expose variables by name that will be accessible in the expression by
-        /// referencing the variable name alone.
-        /// </remarks>
-        public override bool TryGetMember(GetMemberBinder binder, out object result)
-        {
-            string key = binder.Name;
-            result = Variables.GetOrAdd(key, double.NaN);
-
-            return true;
-        }
-    }
-
     /// <inheritdoc />
     public override async IAsyncEnumerable<T> ComputeSliceAsync(Parameters parameters, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         string expression = parameters.Value<string>(0);
 
         // Build and cache an expression context
-        ExpressionContext context = TargetCache<ExpressionContext>.GetOrAdd(expression, () =>
+        ExpressionContext<double> context = TargetCache<ExpressionContext<double>>.GetOrAdd(expression, () =>
         {
-            ExpressionContext expressionContext = new();
+            ExpressionContext<double> expressionContext = new() { DefaultValue = double.NaN };
+
+            // TODO: Add defined expression variables to context before parsing expression
+            // This will allow for cases when data is not available for all targets. Currently,
+            // variables are only added to context after data is loaded. Note that when the
+            // expression is compiled, all needed variables need to be defined. The list of
+            // variable names would basically be the target map created from metadata and the
+            // original query expression in the 'GrafanaDataSourceBase.QueryTargetAsync' method.
+            // The trick would be exposing this map to the function classes.
 
             // Add default imports
             expressionContext.Imports.RegisterType<Guid>();
@@ -156,6 +138,10 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
                     string typeName = parsedTypeDef["typeName"];
                     Assembly assembly = Assembly.Load(new AssemblyName(assemblyName));
                     Type type = assembly.GetType(typeName);
+
+                    if (type is null)
+                        throw new InvalidOperationException($"Type not found in \"{assemblyName}\"");
+
                     expressionContext.Imports.RegisterType(type);
                 }
                 catch (Exception ex)
@@ -217,11 +203,15 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
                 yield break;
 
             // Compile and cache the expression (will only be compiled once per expression)
-            ExpressionCompiler<object, ExpressionContext> dynamicExpression = TargetCache<ExpressionCompiler<object, ExpressionContext>>.GetOrAdd(expression, () =>
+            ExpressionCompiler<double, ExpressionContext<double>> dynamicExpression = TargetCache<ExpressionCompiler<double, ExpressionContext<double>>>.GetOrAdd(expression, () =>
             {
                 try
                 {
-                    ExpressionCompiler<object, ExpressionContext> expressionCompiler = new(expression) { TypeRegistry = context.Imports };
+                    ExpressionCompiler<double, ExpressionContext<double>> expressionCompiler = new(expression)
+                    {
+                        TypeRegistry = context.Imports,
+                        VariableContext = context
+                    };
 
                     // Compile expression - do this in advance for better syntax error reporting
                     expressionCompiler.Compile();
@@ -234,10 +224,15 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
                 }
             });
 
+            Func<ExpressionContext<double>, double> compiledFunction = dynamicExpression.CompiledFunction;
+
+            if (compiledFunction is null)
+                throw new SyntaxErrorException($"Failed to get compiled expression \"{expression}\" for evaluation");
+
             // Return evaluated expression
             yield return sourceValue with
             {
-                Value = Convert.ToDouble(dynamicExpression.CompiledFunction(context)),
+                Value = compiledFunction(context),
                 Target = $"{string.Join("; ", targets.Take(4))}{(targets.Count > 4 ? "; ..." : "")}"
             };
         }
@@ -302,7 +297,7 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
         if (parsedParameters.Count == 2)
         {
             // Separate remaining query expression from required parameters, in this case, this is the filter expression
-            queryExpression = queryExpression.Substring(lastIndex).Trim();
+            queryExpression = queryExpression[lastIndex..].Trim();
         }
         else
         {
@@ -341,6 +336,6 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
         // Operating on magnitude only
     }
 
-    [GeneratedRegex(@"[^A-Z0-9_]", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    [GeneratedRegex("[^A-Z0-9_]", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
     private static partial Regex s_validVariableNameChars();
 }
