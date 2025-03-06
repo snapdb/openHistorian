@@ -662,7 +662,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 ParentID = null,
                 IDCode = sourceCell.IDCode,
                 StationName = sourceCell.StationName,
-                IDLabel = sourceCell.IDLabel
+                IDLabel = sourceCell.IDLabel,
+                NominalFrequency = (double)sourceCell.NominalFrequency
             };
 
             if (sourceCell is ConfigurationCell3 configCell3)

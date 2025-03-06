@@ -4,13 +4,26 @@ using Gemstone.Timeseries.Adapters;
 using Gemstone.Web.APIController;
 using Microsoft.AspNetCore.Mvc;
 using openHistorian.Model;
+using System.ComponentModel;
 using System.Net;
 
 namespace openHistorian.WebUI.Controllers;
 
 public class InputAdaptersController : AdaptersControllerBase<IInputAdapter, CustomInputAdapter>;
 
-public class FilterAdaptersController : AdaptersControllerBase<IFilterAdapter, CustomFilterAdapter>;
+public class FilterAdaptersController : AdaptersControllerBase<IFilterAdapter, CustomFilterAdapter>
+{
+    /// <inheritdoc />
+    protected override IEnumerable<AdapterInfo> GetAdapters(Func<EditorBrowsableState, bool>? _ = null)
+    {
+        // DynamicFilter adapter is derived from an ActionAdapter but implements IFilterAdapter. Normally
+        // this would cause adapter to be shown in both action adapter and filter adapter UI screens. So,
+        // adapter type filtering is modified here such that a filter adapter marked with browsable state
+        // of Advanced will be allowed, this causes adapter to be hidden from action adapter UI but shown
+        // on filter adapters UI:
+        return base.GetAdapters(state => state is not EditorBrowsableState.Never);
+    }
+}
 
 public class ActionAdaptersController : AdaptersControllerBase<IActionAdapter, CustomActionAdapter>;
 
@@ -40,6 +53,19 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
     where TAdapterModel : CustomAdapterBase, new()
 {
     /// <summary>
+    /// Returns all adapters of type <typeparamref name="TIAdapter"/> in the application directory.
+    /// </summary>
+    /// <param name="stateFilter">Filter for <see cref="EditorBrowsableState"/>. Defaults to exclude hidden adapters.</param>
+    /// <returns>An <see cref="IEnumerable{AdapterTypeDescription}"/> describing all available adapters of type <typeparamref name="TIAdapter"/>.</returns>
+    /// <remarks>
+    /// By default, adapters are filtered to any marked with <see cref="EditorBrowsableState.Always"/> or are otherwise unmarked.
+    /// </remarks>
+    protected virtual IEnumerable<AdapterInfo> GetAdapters(Func<EditorBrowsableState, bool>? stateFilter = null)
+    {
+        return AdapterCache<TIAdapter>.GetAdapters(stateFilter);
+    }
+
+    /// <summary>
     /// Gets a collection of all adapters and their associated information.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing an <see cref="IEnumerable{AdapterInfo}"/> of all adapters.</returns>
@@ -49,7 +75,7 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
         if (!GetAuthCheck())
             return Unauthorized();
 
-        return Ok(AdapterCache<TIAdapter>.GetAdapters());
+        return Ok(GetAdapters());
     }
 
     /// <summary>
@@ -62,8 +88,8 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
         if (!GetAuthCheck())
             return Unauthorized();
 
-        return Ok(AdapterCache<TIAdapter>
-            .GetAdapters().Select(adapter => new ValueLabel
+        return Ok(GetAdapters()
+            .Select(adapter => new ValueLabel
             {
                 Value = adapter.AssemblyName,
                 Label = adapter.AssemblyName
@@ -84,7 +110,7 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
 
         assemblyName = WebUtility.UrlDecode(assemblyName);
 
-        return Ok(AdapterCache<TIAdapter>.GetAdapters()
+        return Ok(GetAdapters()
             .Where(adapter => string.Equals(adapter.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
             .Select(adapter => new ValueLabel
             {

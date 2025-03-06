@@ -3,6 +3,7 @@
 
 using System.ComponentModel;
 using Gemstone.Expressions.Model;
+using Gemstone.Numeric.EE;
 
 namespace openHistorian.Model;
 
@@ -61,6 +62,8 @@ public class ConfigurationCell
     public string StationName { get; set; }
 
     public string IDLabel { get; set; }
+
+    public double NominalFrequency { get; set; }
 
     public FrequencyDefinition FrequencyDefinition { get; set; }
 
