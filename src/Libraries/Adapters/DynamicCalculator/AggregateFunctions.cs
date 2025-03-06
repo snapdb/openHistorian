@@ -85,12 +85,12 @@ public static class AggregateFunctions
     /// provided comparison expression.
     /// </returns>
     /// <remarks>
-    /// Expression is compiled with static support for <see cref="Math"/> and <see cref="DateTime"/>
-    /// types so related functions and constants can be used in expressions, e.g., <c>">= 2 * PI"</c>.
+    /// Expression is compiled with support for <see cref="Math"/> and <see cref="DateTime"/> types so
+    /// related static functions and constants can be used in expressions, e.g., <c>">= 2 * PI"</c>.
     /// </remarks>
     public static bool Any(double[] array, string comparisonExpr)
     {
-        ExpressionContextCompiler<bool, double> compiledExpr = GetCompiledExpression(comparisonExpr);
+        (ExpressionContext<double>, ExpressionCompiler<bool>) compiledExpr = GetCompiledExpression(comparisonExpr);
         return array.Any(value => EvaluateExpression(compiledExpr, value));
     }
 
@@ -105,18 +105,18 @@ public static class AggregateFunctions
     /// provided comparison expression.
     /// </returns>
     /// <remarks>
-    /// Expression is compiled with static support for <see cref="Math"/> and <see cref="DateTime"/>
-    /// types so related functions and constants can be used in expressions, e.g., <c>">= 2 * PI"</c>.
+    /// Expression is compiled with support for <see cref="Math"/> and <see cref="DateTime"/> types so
+    /// related static functions and constants can be used in expressions, e.g., <c>">= 2 * PI"</c>.
     /// </remarks>
     public static bool All(double[] array, string comparisonExpr)
     {
-        ExpressionContextCompiler<bool, double> expression = GetCompiledExpression(comparisonExpr);
-        return array.All(value => EvaluateExpression(expression, value));
+        (ExpressionContext<double>, ExpressionCompiler<bool>) compiledExpr = GetCompiledExpression(comparisonExpr);
+        return array.All(value => EvaluateExpression(compiledExpr, value));
     }
 
-    private static bool EvaluateExpression(ExpressionContextCompiler<bool, double> expression, double value)
+    private static bool EvaluateExpression((ExpressionContext<double>, ExpressionCompiler<bool>) compiledExpr, double value)
     {
-        ExpressionContext<double> context = expression.VariableContext;
+        (ExpressionContext<double> context, ExpressionCompiler<bool> expression) = compiledExpr;
 
         lock (context)
         {
@@ -125,23 +125,27 @@ public static class AggregateFunctions
         }
     }
 
-    private static ExpressionContextCompiler<bool, double> GetCompiledExpression(string comparisonExpr)
+    private static (ExpressionContext<double>, ExpressionCompiler<bool>) GetCompiledExpression(string comparisonExpr)
     {
         return s_comparisonExpressions.GetOrAdd(comparisonExpr, _ =>
         {
             ExpressionContext<double> context = new() { DefaultValue = double.NaN };
             
-            context.Imports.RegisterStaticType(typeof(Math));
-            context.Imports.RegisterStaticType(typeof(DateTime));
+            context.Imports.RegisterType(typeof(Math));
+            context.Imports.RegisterType(typeof(DateTime));
             context.Variables.Add("value", double.NaN);
 
             // Create expression compiler that will handle aggregate expressions like, "value > 0", where
             // user provides an expression like "> 0" that will be compiled into a function
-            ExpressionContextCompiler<bool, double> expression = new($"value {comparisonExpr}", context);
+            ExpressionCompiler<bool> expression = new($"value {comparisonExpr}")
+            {
+                TypeRegistry = context.Imports,
+                VariableContext = context
+            };
 
-            return expression;
+            return (context, expression);
         });
     }
 
-    private static readonly ConcurrentDictionary<string, ExpressionContextCompiler<bool, double>> s_comparisonExpressions = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, (ExpressionContext<double>, ExpressionCompiler<bool>)> s_comparisonExpressions = new(StringComparer.OrdinalIgnoreCase);
 }

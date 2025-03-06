@@ -632,7 +632,7 @@ public class DynamicCalculator : ActionAdapterBase
         return;
 
         ExpressionContextCompiler newExpressionCompiler()
-        {
+            {
             if (!string.IsNullOrWhiteSpace(m_aliasedExpressionText))
                 return new ExpressionContextCompiler(m_aliasedExpressionText, m_expressionContext);
 
