@@ -636,8 +636,19 @@ public class DynamicCalculator : ActionAdapterBase
             if (!string.IsNullOrWhiteSpace(m_aliasedExpressionText))
                 return new ExpressionContextCompiler(m_aliasedExpressionText, m_expressionContext);
 
-            Enabled = false;
-            throw new InvalidOperationException($"No expression defined, {GetType().Name} execution terminated.");
+                Enabled = false;
+                throw new InvalidOperationException($"No expression defined, {GetType().Name} execution terminated.");
+            }
+
+            ExpressionCompiler expression = new(m_aliasedExpressionText)
+            {
+                TypeRegistry = m_expressionContext.Imports,
+                VariableContext = m_expressionContext
+            };
+
+            expression.Compile();
+
+            return expression;
         }
     }
 
