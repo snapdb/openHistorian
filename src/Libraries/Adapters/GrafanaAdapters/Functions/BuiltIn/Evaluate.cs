@@ -203,17 +203,13 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
                 yield break;
 
             // Compile and cache the expression (will only be compiled once per expression)
-            ExpressionCompiler<double, ExpressionContext<double>> dynamicExpression = TargetCache<ExpressionCompiler<double, ExpressionContext<double>>>.GetOrAdd(expression, () =>
+            ExpressionContextCompiler<double, double> dynamicExpression = TargetCache<ExpressionContextCompiler<double, double>>.GetOrAdd(expression, () =>
             {
                 try
                 {
-                    ExpressionCompiler<double, ExpressionContext<double>> expressionCompiler = new(expression)
-                    {
-                        TypeRegistry = context.Imports,
-                        VariableContext = context
-                    };
+                    ExpressionContextCompiler<double, double> expressionCompiler = new(expression, context);
 
-                    // Compile expression - do this in advance for better syntax error reporting
+                    // Compile expression - doing this in advance for better syntax error reporting
                     expressionCompiler.Compile();
 
                     return expressionCompiler;
@@ -224,15 +220,10 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
                 }
             });
 
-            Func<ExpressionContext<double>, double> compiledFunction = dynamicExpression.CompiledFunction;
-
-            if (compiledFunction is null)
-                throw new SyntaxErrorException($"Failed to get compiled expression \"{expression}\" for evaluation");
-
             // Return evaluated expression
             yield return sourceValue with
             {
-                Value = compiledFunction(context),
+                Value = dynamicExpression.ExecuteFunction(),
                 Target = $"{string.Join("; ", targets.Take(4))}{(targets.Count > 4 ? "; ..." : "")}"
             };
         }

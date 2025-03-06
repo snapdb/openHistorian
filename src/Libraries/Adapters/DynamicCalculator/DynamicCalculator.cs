@@ -112,7 +112,7 @@ public class DynamicCalculator : ActionAdapterBase
 
     private string? m_aliasedExpressionText;
     private readonly ExpressionContext m_expressionContext;
-    private ExpressionCompiler? m_expression;
+    private ExpressionContextCompiler? m_expression;
 
     private readonly DelayedSynchronizedOperation m_timerOperation;
 
@@ -624,30 +624,20 @@ public class DynamicCalculator : ActionAdapterBase
         // Assign special values, e.g., constants, to the expression
         HandleSpecialVariables(m_expressionContext.Variables);
 
-        // Create and compile the expression
+        // Create expression context compiler if it does not exist
         m_expression ??= newExpressionCompiler();
 
         // Evaluate the expression and generate the measurement
-        HandleCalculatedValue(m_expression.CompiledFunction());
+        HandleCalculatedValue(m_expression.ExecuteFunction());
         return;
 
-        ExpressionCompiler newExpressionCompiler()
+        ExpressionContextCompiler newExpressionCompiler()
         {
-            if (string.IsNullOrWhiteSpace(m_aliasedExpressionText))
-            {
-                Enabled = false;
-                throw new InvalidOperationException($"No expression defined, {GetType().Name} execution terminated.");
-            }
+            if (!string.IsNullOrWhiteSpace(m_aliasedExpressionText))
+                return new ExpressionContextCompiler(m_aliasedExpressionText, m_expressionContext);
 
-            ExpressionCompiler expression = new(m_aliasedExpressionText)
-            {
-                TypeRegistry = m_expressionContext.Imports,
-                VariableContext = m_expressionContext
-            };
-
-            expression.Compile();
-
-            return expression;
+            Enabled = false;
+            throw new InvalidOperationException($"No expression defined, {GetType().Name} execution terminated.");
         }
     }
 
