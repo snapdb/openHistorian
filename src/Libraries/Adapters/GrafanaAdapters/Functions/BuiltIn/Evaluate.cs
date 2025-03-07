@@ -120,8 +120,8 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
 
             // Add default imports
             expressionContext.Imports.RegisterType<Guid>();
-            expressionContext.Imports.RegisterType(typeof(Math));
-            expressionContext.Imports.RegisterType(typeof(DateTime));
+            expressionContext.Imports.RegisterStaticType(typeof(Math));
+            expressionContext.Imports.RegisterStaticType(typeof(DateTime));
 
             // Load any custom imports
             string imports = parameters.Value<string>(1);
