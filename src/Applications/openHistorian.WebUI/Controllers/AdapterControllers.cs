@@ -206,7 +206,7 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
         if (!resourceInfo.AttributeMap.TryGetValue(resourceID, out UIResourceAttribute? resourceAttribute))
             return NotFound();
 
-        using Stream? stream = resourceAttribute.GetResourceStream();
+        Stream? stream = resourceAttribute.GetResourceStream();
 
         if (stream is null)
             return NotFound();
