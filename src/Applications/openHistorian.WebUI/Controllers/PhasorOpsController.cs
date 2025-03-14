@@ -388,12 +388,12 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     }
 
     /// <inheritdoc />
-    [HttpGet, Route("Connect/{connectionString}/{expiration:double?}")]
-    public Task<IActionResult> Connect(string connectionString, double? expiration, CancellationToken cancellationToken)
+    [HttpGet, Route("Connect/{expiration:double?}")]
+    public Task<IActionResult> Connect([FromBody] ConnectionRequest request, double? expiration, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.ConnectionString);
 
-        ConnectionCache cache = ConnectionCache.Create(this, connectionString, expiration ?? 1.0D);
+        ConnectionCache cache = ConnectionCache.Create(this, request.ConnectionString, expiration ?? 1.0D);
 
         return Task.FromResult<IActionResult>(Ok(cache.Token));
     }
