@@ -82,33 +82,25 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.Core", "Libra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataExtractionUtility", "Tools\DataExtractionUtility\DataExtractionUtility.csproj", "{8F477BB8-2277-43E3-BF0B-035B0F4F1B46}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerCalculations", "Libraries\Adapters\PowerCalculations\PowerCalculations.csproj", "{4F21DCCC-E8ED-49D3-9A24-1B4C82B7EA63}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerCalculations", "Libraries\Adapters\PowerCalculations\PowerCalculations.csproj", "{4F21DCCC-E8ED-49D3-9A24-1B4C82B7EA63}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceActions", "Tools\ServiceActions\ServiceActions.csproj", "{5B53A767-A2FB-4D54-8EA7-0D97E6CCD2FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceActions", "Tools\ServiceActions\ServiceActions.csproj", "{5B53A767-A2FB-4D54-8EA7-0D97E6CCD2FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileAdapters", "Libraries\Adapters\FileAdapters\FileAdapters.csproj", "{8A757E0D-A6B6-4339-8F48-4C000118DB9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileAdapters", "Libraries\Adapters\FileAdapters\FileAdapters.csproj", "{8A757E0D-A6B6-4339-8F48-4C000118DB9B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptersUI", "Libraries\Adapters\AdaptersUI\AdaptersUI.csproj", "{771BCA52-E47F-4FD2-AC25-0D78C0901C16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptersUI", "Libraries\Adapters\AdaptersUI\AdaptersUI.csproj", "{771BCA52-E47F-4FD2-AC25-0D78C0901C16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSVAdapters", "Libraries\Adapters\CSVAdapters\CSVAdapters.csproj", "{CDD699C4-5430-474A-A492-3E8641A66214}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSVAdapters", "Libraries\Adapters\CSVAdapters\CSVAdapters.csproj", "{CDD699C4-5430-474A-A492-3E8641A66214}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrafanaAdapters", "Libraries\Adapters\GrafanaAdapters\GrafanaAdapters.csproj", "{C0EEB959-6101-4527-862A-1835BF3A328A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrafanaAdapters", "Libraries\Adapters\GrafanaAdapters\GrafanaAdapters.csproj", "{C0EEB959-6101-4527-862A-1835BF3A328A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestingAdapters", "Libraries\Adapters\TestingAdapters\TestingAdapters.csproj", "{6A0B55FB-E72A-4A83-96E8-F84B50310535}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OpenHistorian", "OpenHistorian", "{8EE8DB49-5475-4030-B49A-8D3FF6E56CFE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openHistorian.UnitTests", "UnitTests\OpenHistorian\openHistorian.UnitTests.csproj", "{5DF1040E-282E-42E0-842A-8B5E4BCDC97C}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Adapter", "Adapter", "{73DCFB38-A031-441A-8120-9461DB3466FF}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adapter.UnitTests", "UnitTests\Adapter\Adapter.UnitTests.csproj", "{B8973A26-7294-430F-8146-9DE15AE4E52A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestingAdapters", "Libraries\Adapters\TestingAdapters\TestingAdapters.csproj", "{6A0B55FB-E72A-4A83-96E8-F84B50310535}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicCalculator", "Libraries\Adapters\DynamicCalculator\DynamicCalculator.csproj", "{48BF942A-800E-4818-8874-EE9F0B461F60}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OpenHistorian", "OpenHistorian", "{8EE8DB49-5475-4030-B49A-8D3FF6E56CFE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openHistorian.UnitTests", "UnitTests\OpenHistorian\openHistorian.UnitTests.csproj", "{5DF1040E-282E-42E0-842A-8B5E4BCDC97C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openHistorian.UnitTests", "UnitTests\OpenHistorian\openHistorian.UnitTests.csproj", "{5DF1040E-282E-42E0-842A-8B5E4BCDC97C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Adapter", "Adapter", "{73DCFB38-A031-441A-8120-9461DB3466FF}"
 EndProject
@@ -356,6 +348,14 @@ Global
 		{6A0B55FB-E72A-4A83-96E8-F84B50310535}.Mono|Any CPU.Build.0 = Debug|Any CPU
 		{6A0B55FB-E72A-4A83-96E8-F84B50310535}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A0B55FB-E72A-4A83-96E8-F84B50310535}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48BF942A-800E-4818-8874-EE9F0B461F60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48BF942A-800E-4818-8874-EE9F0B461F60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48BF942A-800E-4818-8874-EE9F0B461F60}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{48BF942A-800E-4818-8874-EE9F0B461F60}.Development|Any CPU.Build.0 = Development|Any CPU
+		{48BF942A-800E-4818-8874-EE9F0B461F60}.Mono|Any CPU.ActiveCfg = Release|Any CPU
+		{48BF942A-800E-4818-8874-EE9F0B461F60}.Mono|Any CPU.Build.0 = Release|Any CPU
+		{48BF942A-800E-4818-8874-EE9F0B461F60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48BF942A-800E-4818-8874-EE9F0B461F60}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5DF1040E-282E-42E0-842A-8B5E4BCDC97C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5DF1040E-282E-42E0-842A-8B5E4BCDC97C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DF1040E-282E-42E0-842A-8B5E4BCDC97C}.Development|Any CPU.ActiveCfg = Development|Any CPU
@@ -424,6 +424,7 @@ Global
 		{CDD699C4-5430-474A-A492-3E8641A66214} = {6EC94694-B06C-4395-B73E-31647F988FBB}
 		{C0EEB959-6101-4527-862A-1835BF3A328A} = {6EC94694-B06C-4395-B73E-31647F988FBB}
 		{6A0B55FB-E72A-4A83-96E8-F84B50310535} = {6EC94694-B06C-4395-B73E-31647F988FBB}
+		{48BF942A-800E-4818-8874-EE9F0B461F60} = {6EC94694-B06C-4395-B73E-31647F988FBB}
 		{8EE8DB49-5475-4030-B49A-8D3FF6E56CFE} = {A5961018-6CCE-489B-ADCA-43DC5C63480E}
 		{5DF1040E-282E-42E0-842A-8B5E4BCDC97C} = {8EE8DB49-5475-4030-B49A-8D3FF6E56CFE}
 		{73DCFB38-A031-441A-8120-9461DB3466FF} = {A5961018-6CCE-489B-ADCA-43DC5C63480E}

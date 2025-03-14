@@ -55,6 +55,12 @@ namespace openHistorian.Adapters;
 /// Represents an output adapter that archives measurements to a local archive.
 /// </summary>
 [Description("openHistorian 3.0: Archives measurements to a local openHistorian instance.")]
+[UIResource(
+    "AdaptersUI",
+    $".{nameof(openHistorian)}.{nameof(Adapters)}.{nameof(LocalOutputAdapter)}.{nameof(openHistorian)}.{nameof(Adapters)}.{nameof(LocalOutputAdapter)}.js",
+    $"{nameof(openHistorian)}.{nameof(Adapters)}.{nameof(LocalOutputAdapter)}.js"
+)]
+[UIResource("AdaptersUI", $".{nameof(openHistorian)}.{nameof(Adapters)}.{nameof(LocalOutputAdapter)}.chunk.js")]
 public class LocalOutputAdapter : OutputAdapterBase
 {
     #region [ Members ]
@@ -742,8 +748,8 @@ public class LocalOutputAdapter : OutputAdapterBase
             m_archiveInfo.ImportPaths.AddRange(m_attachedPaths);
 
         m_archiveInfo.ImportAttachedPathsAtStartup = false;
-        m_archiveInfo.TargetFileSize = (long)(targetFileSize * SI.Giga);
-        m_archiveInfo.DesiredRemainingSpace = (long)(desiredRemainingSpace * SI.Giga);
+        m_archiveInfo.TargetFileSize = (long)(targetFileSize * SI2.Giga);
+        m_archiveInfo.DesiredRemainingSpace = (long)(desiredRemainingSpace * SI2.Giga);
         m_archiveInfo.DirectoryMethod = DirectoryNamingMode;
         m_archiveInfo.StagingCount = stagingCount;
         m_archiveInfo.DiskFlushInterval = diskFlushInterval;

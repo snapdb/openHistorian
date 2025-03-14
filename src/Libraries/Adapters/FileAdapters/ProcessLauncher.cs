@@ -48,6 +48,8 @@ namespace FileAdapters;
 /// any launched executable will be limited to those available to time-series host.
 /// </remarks>
 [Description("Process Launcher: Launches a configured executable process on initialization")]
+[UIResource("AdaptersUI", $".{nameof(FileAdapters)}.{nameof(ProcessLauncher)}.{nameof(FileAdapters)}.{nameof(ProcessLauncher)}.js", $"{nameof(FileAdapters)}.{nameof(ProcessLauncher)}.js")]
+[UIResource("AdaptersUI", $".{nameof(FileAdapters)}.{nameof(ProcessLauncher)}.chunk.js")]
 public class ProcessLauncher : FacileActionAdapterBase
 {
     #region [ Members ]
