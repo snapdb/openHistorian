@@ -296,6 +296,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                 phasorValues.Columns.Add("PointTag", typeof(string));   // Unique point tag for phasor
                 phasorValues.Columns.Add("ID", typeof(string));         // Mapped to magnitude ID
                 phasorValues.Columns.Add("SignalID", typeof(Guid));     // Mapped to magnitude SignalID
+                phasorValues.Columns.Add("PhasorID", typeof(int));
 
                 phasorValues.Columns.Add("MagnitudePointTag", typeof(string));
                 phasorValues.Columns.Add("AnglePointTag", typeof(string));
@@ -347,6 +348,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                         phasorRow["AnglePointTag"] = anglePointTag;
                         phasorRow["MagnitudeID"] = magnitude["ID"];
                         phasorRow["AngleID"] = angle["ID"];
+                        phasorRow["PhasorID"] = magnitude["PhasorID"];
                         phasorRow["MagnitudeSignalID"] = magnitude.ConvertGuidField("SignalID");
                         phasorRow["AngleSignalID"] = angle.ConvertGuidField("SignalID");
                         phasorRow["MagnitudeSignalReference"] = magnitude["SignalReference"];
