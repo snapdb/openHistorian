@@ -160,6 +160,7 @@ public class InitialSchema : Migration
             .WithColumn("LongAcronym").AsString(200).NotNullable().WithDefaultValue("Undefined")
             .WithColumn("Source").AsString(10).NotNullable()
             .WithColumn("EngineeringUnits").AsString(10).Nullable()
+            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithCreatedBy();
 
         Create.Table("Interconnection")
