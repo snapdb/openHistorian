@@ -38,6 +38,8 @@ namespace PowerCalculations;
 /// Represents an algorithm that calculates power and stability from a synchrophasor device.
 /// </summary>
 [Description("Impedance Calculator: Calculates impedance from phasors on two ends of a line - specify Vs/Is phasors followed by Vr/Ir phasors.")]
+[UIResource("AdaptersUI", $".{nameof(PowerCalculations)}.{nameof(ImpedanceCalculator)}.{nameof(PowerCalculations)}.{nameof(ImpedanceCalculator)}.js", $"{nameof(PowerCalculations)}.{nameof(ImpedanceCalculator)}.js")]
+[UIResource("AdaptersUI", $".{nameof(PowerCalculations)}.{nameof(ImpedanceCalculator)}.chunk.js")]
 public class ImpedanceCalculator : CalculatedMeasurementBase
 {
     #region [ Members ]

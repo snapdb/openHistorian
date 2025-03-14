@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk=self.webpackChunk||[]).push([[229],{229:(e,t,n)=>{n.r(t),n.d(t,{default:()=>l});var a=n(751);const l={Settings:()=>a.createElement("div",{className:"alert alert-info"},"The Statistics Engine is controlled via Systemwide Configuration"),Input:()=>a.createElement(a.Fragment,null),Output:()=>a.createElement(a.Fragment,null)}}}]);
