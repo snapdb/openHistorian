@@ -41,8 +41,8 @@ public interface ISupportConnectionTest
     /// <param name="expiration">Expiration time for the connection, in minutes, if not accessed. Defaults to 1 minute if not provided.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>An <see cref="IActionResult"/> containing a token to be used for subsequent requests.</returns>
-    [HttpGet, Route("Connect/{connectionString}/{expiration:double?}")]
-    Task<IActionResult> Connect(string connectionString, double? expiration, CancellationToken cancellationToken);
+    [HttpGet, Route("Connect/{expiration:double?}")]
+    Task<IActionResult> Connect(ConnectionRequest request, double? expiration, CancellationToken cancellationToken);
 
     /// <summary>
     /// Closes the connection to device associated with the provided token.
@@ -59,4 +59,9 @@ public interface ISupportConnectionTest
     /// <returns>Stream of data from the device.</returns>
     [HttpGet("DataStream/{token}")]
     Task GetDataStream(string token, CancellationToken cancellationToken);
+}
+
+public class ConnectionRequest
+{
+    public string ConnectionString { get; set; }
 }
