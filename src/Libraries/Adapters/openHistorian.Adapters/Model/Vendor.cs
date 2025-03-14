@@ -14,7 +14,7 @@ public class Vendor
     {
         get;
         set;
-    } = -1;
+    }
 
     [Required]
     [StringLength(200)]

@@ -13,7 +13,7 @@ public class SignalType
     {
         get;
         set;
-    } = -1;
+    }
 
     [Required]
     [StringLength(200)]
@@ -69,4 +69,6 @@ public class SignalType
         get;
         set;
     }
+
+    public int LoadOrder { get; set; }
 }
