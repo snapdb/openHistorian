@@ -72,6 +72,8 @@ public enum TimestampSource
 /// to generate its own calculated measurement.
 /// </summary>
 [Description("Dynamic Calculator: Performs arithmetic operations on multiple input signals")]
+[UIResource("AdaptersUI", $".{nameof(DynamicCalculator)}.{nameof(DynamicCalculator)}.{nameof(DynamicCalculator)}.{nameof(DynamicCalculator)}.js", $"{nameof(DynamicCalculator)}.{nameof(DynamicCalculator)}.js")]
+[UIResource("AdaptersUI", $".{nameof(DynamicCalculator)}.{nameof(DynamicCalculator)}.chunk.js")]
 public class DynamicCalculator : ActionAdapterBase
 {
     #region [ Members ]
