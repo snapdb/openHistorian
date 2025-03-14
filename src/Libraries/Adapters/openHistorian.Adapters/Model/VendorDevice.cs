@@ -10,7 +10,7 @@ namespace openHistorian.Model;
 public class VendorDevice
 {
     [PrimaryKey(true)]
-    public int ID { get; set; } = -1;
+    public int ID { get; set; }
 
     public int VendorID { get; set; }
 
@@ -23,6 +23,8 @@ public class VendorDevice
     [Label("Web Page")]
     [UrlValidation]
     public string URL { get; set; } = "";
+
+    public int LoadOrder { get; set; }
 
     [Required]
     [StringLength(200)]
