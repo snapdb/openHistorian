@@ -25,7 +25,7 @@ public abstract class CustomAdapterBase
     //public Guid NodeID { get; set; }
 
     [PrimaryKey(true)]
-    public int ID { get; set; } = -1;
+    public int ID { get; set; }
 
     [Required]
     [StringLength(200)]
@@ -40,7 +40,7 @@ public abstract class CustomAdapterBase
     [DefaultValue("DynamicCalculator.DynamicCalculator")]
     public string TypeName { get; set; }
 
-    public string ConnectionString { get; set; }
+    public string ConnectionString { get; set; } = "";
 
     public int LoadOrder { get; set; }
 

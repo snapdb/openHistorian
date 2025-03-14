@@ -14,7 +14,7 @@ public class Interconnection
     {
         get;
         set;
-    } = -1;
+    }
 
     [Required]
     [StringLength(50)]
