@@ -388,7 +388,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     }
 
     /// <inheritdoc />
-    [HttpGet, Route("Connect/{expiration:double?}")]
+    [HttpPost, Route("Connect/{expiration:double?}")]
     public Task<IActionResult> Connect([FromBody] ConnectionRequest request, double? expiration, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ConnectionString);
