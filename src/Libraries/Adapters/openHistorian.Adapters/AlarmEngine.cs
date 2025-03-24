@@ -824,14 +824,25 @@ public class AlarmEngine : FacileActionAdapterBase
     /// </summary>
     /// <param name="controller">The controller from which to generate the IActionResult.</param>
     /// <returns>An IActionResult containing the raised alarms</returns>
-    public static IActionResult GetRaisedAlarmsStatic(ControllerBase controller, IEnumerable<AlarmSeverity>? severities = null)
+    [AdapterCommand("Gets the Raised Alarms of the Default instance.", "Viewer", "Adminastrator", "Editor")]
+    public static IActionResult GetRaisedAlarmsStatic(ControllerBase controller, string? severities = null)
     {
+        IEnumerable<AlarmSeverity>? parsedSeverities = null;
+
+        // If the severities string is provided, split it into parts and parse each value.
+        if (!string.IsNullOrWhiteSpace(severities))
+        {
+            parsedSeverities = severities.Split(',')
+                                         .Select(s => s.Trim())
+                                         .Select(s => (AlarmSeverity)Enum.Parse(typeof(AlarmSeverity), s, true))
+                                         .ToList();
+        }
+
         if (Default is null)
             return controller.Ok(new List<Alarm>());
 
-        return controller.Ok(Default.GetRaisedAlarms(controller, severities));
+        return controller.Ok(Default.GetRaisedAlarms(controller, parsedSeverities));
     }
-
 
     // Creates an alarm using data defined in the database.
     private static Alarm CreateAlarm(DataRow row)
