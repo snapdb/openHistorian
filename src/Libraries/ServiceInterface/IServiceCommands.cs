@@ -22,6 +22,7 @@
 //******************************************************************************************************
 
 using Gemstone.PhasorProtocols;
+using Gemstone.Timeseries.Adapters;
 
 namespace ServiceInterface;
 
@@ -41,4 +42,12 @@ public interface IServiceCommands
     /// Gets the current status of the openHistorian.
     /// </summary>
     (string Status, string Type, string Description) GetCurrentStatus();
+
+
+    /// <summary>
+    /// Gets an adapter instance from active Iaon session by its runtime ID.
+    /// </summary>
+    /// <param name="runtimeID">Runtime ID of adapter to retrieve.</param>
+    /// <returns>Adapter instance from Iaon session with specified <paramref name="runtimeID"/>.</returns>
+    IAdapter GetActiveAdapterInstance(uint runtimeID);
 }

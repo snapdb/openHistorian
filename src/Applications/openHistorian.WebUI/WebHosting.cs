@@ -60,10 +60,10 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     public string WebRoot { get; set; } = DefaultWebRoot;
 
     /// <inheritdoc />
-    public bool PersistSettings { get; init; } = DefaultPersistSettings;
+    public bool PersistSettings { get; set; } = DefaultPersistSettings;
 
     /// <inheritdoc />
-    public string SettingsCategory { get; init; } = DefaultSettingsCategory;
+    public string SettingsCategory { get; set; } = DefaultSettingsCategory;
 
     /// <inheritdoc />
     public bool Enabled { get; set; }

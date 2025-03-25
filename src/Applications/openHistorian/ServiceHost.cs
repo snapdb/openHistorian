@@ -20,8 +20,11 @@
 //
 //******************************************************************************************************
 
+using System.Data;
 using Gemstone.PhasorProtocols;
 using Gemstone.Timeseries;
+using Gemstone.Timeseries.Adapters;
+using Gemstone.Timeseries.Data;
 using openHistorian.WebUI;
 using ServiceInterface;
 
@@ -114,6 +117,17 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
     public void SendCommand(Guid connectionID, DeviceCommand command)
     {
         // TODO: Implement phasor protocol command send
+    }
+
+    /// <inheritdoc />
+    public IAdapter GetActiveAdapterInstance(uint runtimeID)
+    {
+        AllAdaptersCollection allAdapters = AllAdapters ?? throw new NullReferenceException("No adapters are currently defined");
+
+        if (!allAdapters.TryGetAnyAdapterByID(runtimeID, out IAdapter? adapter, out _))
+            throw new InvalidOperationException($"Failed to find adapter with runtime ID {runtimeID}");
+
+        return adapter ?? throw new NullReferenceException("Adapter instance is not initialized");
     }
 
     /// <inheritdoc />
