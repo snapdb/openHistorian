@@ -20,8 +20,11 @@
 //
 //******************************************************************************************************
 
+using System.Data;
 using Gemstone.PhasorProtocols;
 using Gemstone.Timeseries;
+using Gemstone.Timeseries.Adapters;
+using Gemstone.Timeseries.Data;
 using openHistorian.Utility;
 using Gemstone.Timeseries.Adapters;
 using openHistorian.WebUI;
