@@ -1,6 +1,5 @@
 ﻿using Gemstone.Timeseries.Adapters;
 using Microsoft.AspNetCore.Mvc;
-using openHistorian.Data.Types;
 using ServiceInterface;
 using System.Net;
 using System.Reflection;
