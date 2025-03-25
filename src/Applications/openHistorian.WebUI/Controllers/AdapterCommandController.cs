@@ -1,5 +1,6 @@
 ﻿using Gemstone.Timeseries.Adapters;
 using Microsoft.AspNetCore.Mvc;
+using openHistorian.Data.Types;
 using ServiceInterface;
 using System.Net;
 using System.Reflection;
@@ -79,6 +80,50 @@ public class AdapterCommandControllerBase<TIAdapter> :
 
         return (IActionResult)method.Invoke(null, GetMethodArguments(method, parameters))!;
     }
+
+    /// <summary>
+    /// Executes a parameterless command on an active adapter instance in the Iaon session.
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
+    [HttpPost, Route("InstanceExecute/{runtimeID}/{command}")]
+    public IActionResult SessionExecute(uint runtimeID, string command)
+    {
+        IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(runtimeID);
+
+        IActionResult result = TryGetCommandMethod(adapter.GetType(), command, out MethodInfo method);
+
+        if (result is not OkResult)
+            return result;
+
+        if (method.IsStatic)
+            return BadRequest($"Command '{command}' is not an instance method. Did you mean to call '{nameof(Execute)}' instead?");
+
+        return (IActionResult)method.Invoke(adapter, GetMethodArguments(method))!;
+    }
+
+    /// <summary>
+    /// Executes a command on an active adapter instance in the Iaon session with parameters.
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
+    [HttpPost, Route("InstanceExecute/{runtimeID}/{command}/{*parameters}")]
+    public IActionResult SessionExecute(uint runtimeID, string command, string parameters)
+    {
+        IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(runtimeID);
+
+        IActionResult result = TryGetCommandMethod(adapter.GetType(), command, out MethodInfo method);
+
+        if (result is not OkResult)
+            return result;
+
+        if (method.IsStatic)
+            return BadRequest($"Command '{command}' is not an instance method. Did you mean to call '{nameof(Execute)}' instead?");
+
+        return (IActionResult)method.Invoke(adapter, GetMethodArguments(method, parameters))!;
+    }
+
+    /*
+
+    -- Instance based commands that operate independently of Iaon session using a connection string for context are disabled for now
 
     /// <summary>
     /// Executes a parameterless command on an active adapter instance in the Iaon session.

@@ -20,6 +20,7 @@
 //
 //******************************************************************************************************
 
+using System.Data;
 using Gemstone.PhasorProtocols;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
