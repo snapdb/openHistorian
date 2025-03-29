@@ -58,7 +58,7 @@ namespace GrafanaAdapters;
 /// <summary>
 /// Represents an adapter that will monitor and report device states.
 /// </summary>
-[Description("Device Alarm State: Monitors and updates alarm states for devices")]
+[Description("Device State: Monitors and updates states for devices")]
 [UIResource("AdaptersUI", $".{nameof(GrafanaAdapters)}.{nameof(DeviceStateAdapter)}.main.js")]
 [UIResource("AdaptersUI", $".{nameof(GrafanaAdapters)}.{nameof(DeviceStateAdapter)}.chunk.js")]
 public class DeviceStateAdapter : FacileActionAdapterBase
