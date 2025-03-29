@@ -59,6 +59,7 @@ using Phasor = Gemstone.Timeseries.Model.Phasor;
 using Measurement = Gemstone.Timeseries.Model.Measurement;
 using SignalType = Gemstone.Timeseries.Model.SignalType;
 using ConfigSettings = Gemstone.Configuration.Settings;
+using Gemstone.Timeseries.Model;
 
 namespace openHistorian.WebUI.Controllers;
 
