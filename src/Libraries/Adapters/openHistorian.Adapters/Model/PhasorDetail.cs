@@ -4,6 +4,7 @@
 using System.ComponentModel.DataAnnotations;
 using Gemstone.Data.Model;
 using Gemstone.Expressions.Model;
+using Gemstone.Timeseries.Model;
 
 namespace openHistorian.Model;
 

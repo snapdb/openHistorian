@@ -53,6 +53,7 @@ using FrequencyDefinition = openHistorian.Model.FrequencyDefinition;
 using PhasorDefinition = openHistorian.Model.PhasorDefinition;
 using Phasor = Gemstone.Timeseries.Model.Phasor;
 using ConfigSettings = Gemstone.Configuration.Settings;
+using Gemstone.Timeseries.Model;
 
 namespace openHistorian.WebUI.Controllers;
 

@@ -1,6 +1,6 @@
-﻿using Gemstone.Web.APIController;
+﻿using Gemstone.Timeseries.Model;
+using Gemstone.Web.APIController;
 using Microsoft.AspNetCore.Mvc;
-using openHistorian.Model;
 
 namespace openHistorian.WebUI.Controllers;
 

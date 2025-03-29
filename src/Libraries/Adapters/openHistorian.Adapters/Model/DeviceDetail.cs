@@ -1,4 +1,6 @@
-﻿namespace openHistorian.Model;
+﻿using Gemstone.Timeseries.Model;
+
+namespace openHistorian.Model;
 public class DeviceDetail : Device
 {
     public string CompanyName { get; set; } = "";
