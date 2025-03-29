@@ -122,7 +122,6 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
     }
 
     /// <inheritdoc />
-    public (string Status, ServiceStatus Type, string Description) GetCurrentStatus()
     public IAdapter GetActiveAdapterInstance(uint runtimeID)
     {
         AllAdaptersCollection allAdapters = AllAdapters ?? throw new NullReferenceException("No adapters are currently defined");
