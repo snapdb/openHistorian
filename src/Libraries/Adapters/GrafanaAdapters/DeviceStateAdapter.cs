@@ -1,5 +1,5 @@
 ﻿//******************************************************************************************************
-//  DeviceAlarmStateAdapter.cs - Gbtc
+//  DeviceStateAdapter.cs - Gbtc
 //
 //  Copyright © 2018, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -55,16 +55,16 @@ using Microsoft.AspNetCore.Mvc;
 namespace GrafanaAdapters;
 
 /// <summary>
-/// Represents an adapter that will monitor and report device alarm states.
+/// Represents an adapter that will monitor and report device states.
 /// </summary>
-[Description("Device Alarm State: Monitors and updates alarm states for devices")]
+[Description("Device State: Monitors and updates current states for devices")]
 [UIResource(
     "AdaptersUI",
-    $".{nameof(GrafanaAdapters)}.{nameof(DeviceAlarmStateAdapter)}.{nameof(GrafanaAdapters)}.{nameof(DeviceAlarmStateAdapter)}.js",
-    $"{nameof(GrafanaAdapters)}.{nameof(DeviceAlarmStateAdapter)}.js"
+    $".{nameof(GrafanaAdapters)}.{nameof(DeviceStateAdapter)}.{nameof(GrafanaAdapters)}.{nameof(DeviceStateAdapter)}.js",
+    $"{nameof(GrafanaAdapters)}.{nameof(DeviceStateAdapter)}.js"
 )]
-[UIResource("AdaptersUI", $".{nameof(GrafanaAdapters)}.{nameof(DeviceAlarmStateAdapter)}.chunk.js")]
-public class DeviceAlarmStateAdapter : FacileActionAdapterBase
+[UIResource("AdaptersUI", $".{nameof(GrafanaAdapters)}.{nameof(DeviceStateAdapter)}.chunk.js")]
+public class DeviceStateAdapter : FacileActionAdapterBase
 {
     #region [ Members ]
 
@@ -127,9 +127,9 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
     #region [ Constructors ]
 
     /// <summary>
-    /// Creates a new <see cref="DeviceAlarmStateAdapter"/>.
+    /// Creates a new <see cref="DeviceStateAdapter"/>.
     /// </summary>
-    public DeviceAlarmStateAdapter()
+    public DeviceStateAdapter()
     {
         m_alarmTime = TimeSpan.FromMinutes(DefaultAlarmMinutes).Ticks;
     }
@@ -320,7 +320,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
     #region [ Methods ]
 
     /// <summary>
-    /// Releases the unmanaged resources used by the <see cref="DeviceAlarmStateAdapter"/> object and optionally releases the managed resources.
+    /// Releases the unmanaged resources used by the <see cref="DeviceStateAdapter"/> object and optionally releases the managed resources.
     /// </summary>
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
     protected override void Dispose(bool disposing)
@@ -350,7 +350,7 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
     }
 
     /// <summary>
-    /// Initializes <see cref="DeviceAlarmStateAdapter" />.
+    /// Initializes <see cref="DeviceStateAdapter" />.
     /// </summary>
     public override void Initialize()
     {
