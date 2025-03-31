@@ -50,6 +50,7 @@ using ConfigSettings = Gemstone.Configuration.Settings;
 using DeviceStateRecord = GrafanaAdapters.Model.Database.DeviceState;
 using ConnectionStringParser = Gemstone.Configuration.ConnectionStringParser<Gemstone.Timeseries.Adapters.ConnectionStringParameterAttribute>;
 using Timer = System.Timers.Timer;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GrafanaAdapters;
 
@@ -526,6 +527,15 @@ public class DeviceAlarmStateAdapter : FacileActionAdapterBase
 
         lock (m_alarmStates)
             LoadAlarmStates(true);
+    }
+
+    /// <summary>
+    ///  Get measurements for the provided query and device ID.
+    /// </summary>
+    [AdapterCommand("Gets measurements for provided query and device ID.", "Administrator", "Editor", "Viewer")]
+    public static IActionResult GetMeasurements(ControllerBase controller, string query, int deviceID)
+    {
+        return controller.Ok(new List<string>());
     }
 
     /// <summary>
