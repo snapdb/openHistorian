@@ -120,6 +120,44 @@ public class AdapterCommandControllerBase<TIAdapter> :
         return (IActionResult)method.Invoke(adapter, GetMethodArguments(method, parameters))!;
     }
 
+    /// <summary>
+    /// Gets status of the active adapter instance
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
+    [HttpGet, Route("GetStatus/{runtimeID}")]
+    public IActionResult SessionGetStatus(uint runtimeID)
+    {
+        try
+        {
+            IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(runtimeID);
+
+            return Ok(adapter.Status);
+        }
+        catch
+        {
+            return new JsonResult(null) { StatusCode = 200 };
+        }
+    }
+
+    /// <summary>
+    /// Gets status of the active adapter instance
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
+    [HttpGet, Route("GetIsEnabled/{runtimeID}")]
+    public IActionResult SessionGetEnabled(uint runtimeID)
+    {
+        try
+        {
+            IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(runtimeID);
+
+            return Ok(adapter.Enabled);
+        }
+        catch
+        {
+            return Ok(false);
+        }
+    }
+
     /*
 
     -- Instance based commands that operate independently of Iaon session using a connection string for context are disabled for now
