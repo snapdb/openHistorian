@@ -2,6 +2,7 @@
 #pragma warning disable 1591
 
 using System.ComponentModel.DataAnnotations;
+using Gemstone.Data.Model;
 using Gemstone.Expressions.Model;
 
 namespace openHistorian.Model;
@@ -14,6 +15,7 @@ public class Historian
     //    set;
     //}
 
+    [PrimaryKey]
     public int ID
     {
         get;
