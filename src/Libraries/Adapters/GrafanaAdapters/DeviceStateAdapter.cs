@@ -155,6 +155,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
         m_processDeviceStatus = new TaskSynchronizedOperation(MonitoringOperation, ex => OnProcessException(MessageLevel.Warning, ex));
 
+        Default = this;
     }
 
     #endregion
@@ -912,6 +913,11 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
         return elapsedTimeString;
     }
+
+    /// <summary>
+    /// The default (most recently created) instance of the Device State adapter.
+    /// </summary>
+    public static DeviceStateAdapter? Default { get; private set; }
 
     #endregion
 }
