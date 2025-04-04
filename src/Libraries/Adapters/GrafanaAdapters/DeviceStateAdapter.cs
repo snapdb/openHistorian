@@ -51,6 +51,9 @@ using DeviceStateRecord = GrafanaAdapters.Model.Database.DeviceState;
 using ConnectionStringParser = Gemstone.Configuration.ConnectionStringParser<Gemstone.Timeseries.Adapters.ConnectionStringParameterAttribute>;
 using Timer = System.Timers.Timer;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
+using Gemstone.ActionExtensions;
+using System.Threading.Tasks;
 
 namespace GrafanaAdapters;
 
@@ -64,6 +67,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 {
     #region [ Members ]
 
+    // Required AlarmStates
     private enum AlarmState
     {
         Good,           // Everything is kosher
@@ -76,6 +80,23 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     }
 
     // Constants
+
+    /// <summary>
+    /// The <see cref="DeviceState"/> that are required by the Adapter. If these are deleted or changed, the system will automatically add them back in.
+    /// </summary>
+    private static readonly Dictionary<AlarmState, DeviceState> s_baseStates = new ()
+    {
+        { AlarmState.Good, new DeviceStateRecord() { Color="green", State=nameof(AlarmState.Good), Rules="" }  },
+        { AlarmState.Alarm, new DeviceStateRecord() { Color="red", State=nameof(AlarmState.Alarm), Rules="" }  },
+        { AlarmState.NotAvailable, new DeviceStateRecord() { Color="orange", State=nameof(AlarmState.NotAvailable), Rules="" }  },
+        { AlarmState.BadData, new DeviceStateRecord() { Color="blue", State=nameof(AlarmState.BadData), Rules="" }  },
+        { AlarmState.BadTime, new DeviceStateRecord() { Color="purple", State=nameof(AlarmState.BadTime), Rules="" }  },
+        { AlarmState.OutOfService, new DeviceStateRecord() { Color="grey", State=nameof(AlarmState.OutOfService), Rules="" }  },
+        { AlarmState.Acknowledged, new DeviceStateRecord() { Color="rosybrown", State=nameof(AlarmState.Acknowledged), Rules="" }  }
+    };
+
+    private const int UpToDate = 0;
+    private const int Modified = 1;
 
     /// <summary>
     /// Defines the default value for the <see cref="MonitoringRate"/>.
@@ -98,8 +119,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     public const double DefaultExternalDatabaseHysteresisDelay = 5.0D;
 
     // Fields
-    private Timer m_monitoringTimer;
-    private ShortSynchronizedOperation m_monitoringOperation;
     private Dictionary<AlarmState, DeviceStateRecord> m_alarmStates;
     private Dictionary<int, AlarmState> m_alarmStateIDs;
     private Dictionary<int, MeasurementKey[]> m_deviceMeasurementKeys;
@@ -116,7 +135,12 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private long m_alarmStateUpdates;
     private long m_externalDatabaseUpdates;
     private object m_lastExternalDatabaseResult;
+    private int m_dataSourceState;
+
     private bool m_disposed;
+    private bool m_disposing;
+
+    private readonly TaskSynchronizedOperation m_processDeviceStatus;
 
     #endregion
 
@@ -128,6 +152,9 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     public DeviceStateAdapter()
     {
         m_alarmTime = TimeSpan.FromMinutes(DefaultAlarmMinutes).Ticks;
+
+        m_processDeviceStatus = new TaskSynchronizedOperation(MonitoringOperation, ex => OnProcessException(MessageLevel.Warning, ex));
+
     }
 
     #endregion
@@ -309,8 +336,22 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         }
     }
 
-    private bool MonitoringEnabled => Enabled && (m_monitoringTimer?.Enabled ?? false);
+    private bool MonitoringEnabled => Enabled;
 
+    /// <summary>
+    /// Gets or sets <see cref="DataSet"/> based data source available to this <see cref="AdapterBase"/>.
+    /// </summary>
+    public override DataSet? DataSource
+    {
+        get => base.DataSource;
+        set
+        {
+            base.DataSource = value;
+
+            if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, UpToDate) == UpToDate && Initialized)
+                m_processDeviceStatus.RunAsync();
+        }
+    }
     #endregion
 
     #region [ Methods ]
@@ -324,17 +365,12 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         if (m_disposed)
             return;
 
+        m_disposing = disposing;
+
         try
         {
             if (!disposing)
                 return;
-
-            if (m_monitoringTimer is not null)
-            {
-                m_monitoringTimer.Enabled = false;
-                m_monitoringTimer.Elapsed -= MonitoringTimer_Elapsed;
-                m_monitoringTimer.Dispose();
-            }
 
             m_lastDeviceStateChange?.Dispose();
         }
@@ -383,18 +419,11 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                     m_mappedAlarmStates[state] = parts[1].Trim();
             }
         }
+       
+        if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified) == Modified)
+            m_processDeviceStatus.RunAsync();
 
-        // Define synchronized monitoring operation
-        m_monitoringOperation = new ShortSynchronizedOperation(MonitoringOperation, exception => OnProcessException(MessageLevel.Warning, exception));
-
-        // Define monitoring timer
-        m_monitoringTimer = new Timer(MonitoringRate)
-        {
-            AutoReset = true
-        };
-
-        m_monitoringTimer.Elapsed += MonitoringTimer_Elapsed;
-        m_monitoringTimer.Enabled = true;
+        new Action(m_processDeviceStatus.RunAsync).DelayAndExecute(MonitoringRate);
     }
 
     private void LoadAlarmStates(bool reload = false)
@@ -509,7 +538,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     [AdapterCommand("Queues monitoring operation to update alarm state for immediate execution.", "Administrator", "Editor")]
     public void QueueStateUpdate()
     {
-        m_monitoringOperation?.RunAsync();
+        m_processDeviceStatus?.RunAsync();
     }
 
     /// <summary>
@@ -546,8 +575,11 @@ public class DeviceStateAdapter : FacileActionAdapterBase
             : "Monitoring is disabled...".CenterText(maxLength);
     }
 
-    private void MonitoringOperation()
+    private async Task MonitoringOperation()
     {
+        if (m_disposing)
+            return;
+
         lock (m_alarmStates)
         {
             ImmediateMeasurements measurements = LatestMeasurements;
@@ -761,6 +793,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                 }
             }
         }
+        new Action(m_processDeviceStatus.RunAsync).DelayAndExecute(MonitoringRate);
     }
 
     private void ExternalDatabaseReportState(TemplatedExpressionParser parameterTemplate, AdoDataConnection connection, AlarmState state, DataRow metadata, Dictionary<string, string> initialSubstitutions)
@@ -812,10 +845,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         m_lastExternalDatabaseStateChange = DateTime.UtcNow.Ticks;
     }
 
-    private void MonitoringTimer_Elapsed(object sender, ElapsedEventArgs e)
-    {
-        m_monitoringOperation?.Run();
-    }
 
     #endregion
 
