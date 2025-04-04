@@ -32,6 +32,11 @@ namespace ServiceInterface;
 public interface IServiceCommands
 {
     /// <summary>
+    /// Reloads the configuration for the openHistorian service.
+    /// </summary>
+    void ReloadConfig();
+
+    /// <summary>
     /// Sends a command to a specific phasor connection instance.
     /// </summary>
     /// <param name="connectionID">ID of the connection for command operation.</param>

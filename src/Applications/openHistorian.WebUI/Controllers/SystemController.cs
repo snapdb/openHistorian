@@ -34,6 +34,12 @@ public class SystemController : Controller
 {
     private readonly IServiceCommands m_serviceCommands = WebServer.ServiceCommands;
 
+    [HttpGet, Route("reloadConfig")]
+    public void ReloadConfig()
+    {
+        m_serviceCommands.ReloadConfig();
+    }
+
 
     [HttpGet, Route("currentStatus")]
     public SystemStatus GetCurrentStatus()
