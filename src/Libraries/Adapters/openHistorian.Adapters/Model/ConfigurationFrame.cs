@@ -2,8 +2,7 @@
 #pragma warning disable 1591
 
 using System.ComponentModel;
-using Gemstone.Expressions.Model;
-using Gemstone.Numeric.EE;
+using System.Text.RegularExpressions;
 
 namespace openHistorian.Model;
 
@@ -22,7 +21,9 @@ public class PhasorDefinition
 
     public string Phase { get; set; }
 
-    public int? DestinationPhasorID { get; set; }
+    public int? PrimaryVoltageID { get; set; }
+
+    public int? SecondaryVoltageID { get; set; }
 
     public int? NominalVoltage { get; set; }
 
@@ -31,6 +32,23 @@ public class PhasorDefinition
     public DateTime CreatedOn { get; set; }
 
     public DateTime UpdatedOn { get; set; }
+
+    public bool TaggedForDelete { get; set; }
+
+    public bool Enabled { get; set; } = true;
+
+    public bool IsVoltage => string.Compare(PhasorType, "Voltage", StringComparison.OrdinalIgnoreCase) == 0;
+
+    public bool IsCurrent => !IsVoltage;
+
+    public PhasorDefinition? GetAssociatedVoltage(ConfigurationCell cell)
+    {
+        if (IsVoltage)
+            return null;
+
+        int voltageID = PrimaryVoltageID ?? SecondaryVoltageID.GetValueOrDefault();
+        return voltageID == 0 ? null : cell.PhasorDefinitions.FirstOrDefault(phasor => phasor.ID == voltageID);
+    }
 }
 
 public class AnalogDefinition
@@ -72,6 +90,29 @@ public class ConfigurationCell
     public List<AnalogDefinition> AnalogDefinitions { get; } = [];
 
     public List<DigitalDefinition> DigitalDefinitions { get; } = [];
+
+    // Device record field proxies
+    public string Acronym
+    {
+        get => ConfigurationFrame.GetCleanAcronym(IDLabel);
+        set => IDLabel = value;
+    }
+
+    // If user is changing the Acronym, UI should set the OriginalAcronym field
+    // to the original value so updates can be applied to the correct record.
+    public string OriginalAcronym { get; set; }
+
+    public string TimeZone { get; set; }
+
+    public int? HistorianID { get; set; }
+
+    public int? InterconnectionID { get; set; }
+
+    public int? VendorDeviceID { get; set; }
+
+    public int? CompanyID { get; set; }
+
+    public string ContactList { get; set; }
 }
 
 public class ConfigurationFrame
@@ -93,4 +134,31 @@ public class ConfigurationFrame
     public int ProtocolID { get; set; }
 
     public bool IsConcentrator { get; set; }
+
+    public string Acronym
+    {
+        get => ConfigurationFrame.GetCleanAcronym(IDLabel);
+        set => IDLabel = value;
+    }
+
+    /// <summary>
+    /// Gets a clean acronym.
+    /// </summary>
+    /// <param name="acronym">Acronym.</param>
+    /// <returns>Clean acronym.</returns>
+    public static string GetCleanAcronym(string acronym)
+    {
+        return Regex.Replace(acronym.ToUpperInvariant().Replace(" ", "_"), @"[^A-Z0-9\-!_\.@#\$]", "", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    }
+
+    /// <summary>
+    /// Gets a clean point tag.
+    /// </summary>
+    /// <param name="pointTag">Point tag.</param>
+    /// <returns>Clean point tag.</returns>
+    public static string GetCleanPointTag(string pointTag)
+    {
+        // Remove any invalid characters from point tag - @@ is Razor escaped single "at" symbol:
+        return Regex.Replace(pointTag, @"[^A-Z0-9\-\+!\:_\.@@#\$]", "", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    }
 }
