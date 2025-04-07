@@ -52,11 +52,11 @@
     </PackageReference>  </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" />
-    <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
+    <ProjectReference Include="..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'" />
     <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'">
       <HintPath>..\Dependencies\SnapDB\SnapDB.dll</HintPath>
     </Reference>
