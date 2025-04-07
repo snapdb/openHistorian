@@ -104,8 +104,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Adapter", "Adapter", "{73DC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicCalculator", "Libraries\Adapters\DynamicCalculator\DynamicCalculator.csproj", "{48BF942A-800E-4818-8874-EE9F0B461F60}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adapter.UnitTests", "UnitTests\Adapter\Adapter.UnitTests.csproj", "{B8973A26-7294-430F-8146-9DE15AE4E52A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -422,7 +420,6 @@ Global
 		{8EE8DB49-5475-4030-B49A-8D3FF6E56CFE} = {A5961018-6CCE-489B-ADCA-43DC5C63480E}
 		{5DF1040E-282E-42E0-842A-8B5E4BCDC97C} = {8EE8DB49-5475-4030-B49A-8D3FF6E56CFE}
 		{73DCFB38-A031-441A-8120-9461DB3466FF} = {A5961018-6CCE-489B-ADCA-43DC5C63480E}
-		{B8973A26-7294-430F-8146-9DE15AE4E52A} = {73DCFB38-A031-441A-8120-9461DB3466FF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F524668-5FE5-406F-B1D4-177A413C9DD6}
