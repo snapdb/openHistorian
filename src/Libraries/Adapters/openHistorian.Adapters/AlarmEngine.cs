@@ -447,7 +447,7 @@ public class AlarmEngine : FacileActionAdapterBase
         if (m_disposing)
             return;
 
-        // Cancel any currently running measurement processing operation
+        // Cancel any pending measurement processing delay
         Interlocked.Exchange(ref m_cancelMeasurementProcessingDelay, null)?.Invoke();
 
         Ticks measurementsReceived = DateTime.UtcNow.Ticks;
