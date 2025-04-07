@@ -1,6 +1,6 @@
 ﻿
 //******************************************************************************************************
-//  AlarmAdapter.cs - Gbtc
+//  AlarmEngine.cs - Gbtc
 //
 //  Copyright © 2012, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -51,13 +51,14 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using ConfigSettings = Gemstone.Configuration.Settings;
 
+// TODO: Move to the data quality monitoring assembly
 namespace DataQualityMonitoring;
 
 /// <summary>
-/// Action adapter that generates alarm measurements based on alarm definitions from the database.
+/// Action adapter that generates alarm measurements based on configured alarm definitions in a database.
 /// </summary>
 [Description("Alarm Engine: Manages Alarms defined in the database")]
-public class AlarmAdapter : FacileActionAdapterBase
+public class AlarmEngine : FacileActionAdapterBase
 {
     #region [ Members ]
 
@@ -251,6 +252,7 @@ public class AlarmAdapter : FacileActionAdapterBase
     private readonly ConcurrentQueue<AlarmEvent> m_eventDetailsQueue;
     private readonly TaskSynchronizedOperation m_eventDetailsOperation;
     private readonly TaskSynchronizedOperation m_processMeasurementsOperation;
+    private Func<bool>? m_cancelMeasurementProcessing;
 
     private DataSet? m_alarmDataSet;
     private int m_dataSourceState;
@@ -271,9 +273,9 @@ public class AlarmAdapter : FacileActionAdapterBase
     #region [ Constructors ]
 
     /// <summary>
-    /// Creates a new instance of the <see cref="AlarmAdapter"/> class.
+    /// Creates a new instance of the <see cref="AlarmEngine"/> class.
     /// </summary>
-    public AlarmAdapter()
+    public AlarmEngine()
     {
         m_alarmLock = new object();
         m_alarmProcessors = new Dictionary<int, AlarmProcessor>();
@@ -342,7 +344,7 @@ public class AlarmAdapter : FacileActionAdapterBase
     #region [ Methods ]
 
     /// <summary>
-    /// Initializes the <see cref="AlarmAdapter"/>.
+    /// Initializes the <see cref="AlarmEngine"/>.
     /// </summary>
     public override void Initialize()
     {
@@ -365,7 +367,7 @@ public class AlarmAdapter : FacileActionAdapterBase
     }
 
     /// <summary>
-    /// Releases the unmanaged resources used by the <see cref="AlarmAdapter"/> object and optionally releases the managed resources.
+    /// Releases the unmanaged resources used by the <see cref="AlarmEngine"/> object and optionally releases the managed resources.
     /// </summary>
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
     protected override void Dispose(bool disposing)
@@ -398,7 +400,7 @@ public class AlarmAdapter : FacileActionAdapterBase
     }
 
     /// <summary>
-    /// Starts the <see cref="AlarmAdapter"/>, or restarts it if it is already running.
+    /// Starts the <see cref="AlarmEngine"/>, or restarts it if it is already running.
     /// </summary>
     public override void Start()
     {
@@ -445,6 +447,9 @@ public class AlarmAdapter : FacileActionAdapterBase
         if (m_disposing)
             return;
 
+        // Cancel any currently running measurement processing operation
+        Interlocked.Exchange(ref m_cancelMeasurementProcessing, null)?.Invoke();
+
         Ticks measurementsReceived = DateTime.UtcNow.Ticks;
 
         // Get the current state of the data source
@@ -473,17 +478,21 @@ public class AlarmAdapter : FacileActionAdapterBase
 
         lock (m_alarmLock)
         {
-            // Determine next time this Action needs to run to time out any alarms that timed out.
+            // Determine next time this Action needs to run to handle any alarms that timed out.
             Ticks[] timeouts = m_alarmProcessors.Values
                 .Where(alarmProcessor => alarmProcessor.Alarm is { State: AlarmState.Raised, Timeout: > 0 })
                 .Select(alarmProcessor => alarmProcessor.LastProcessed + (long)(alarmProcessor.Alarm.Timeout * Ticks.PerSecond))
                 .ToArray();
 
-            if (timeouts.Any())
-                new Action(m_processMeasurementsOperation.RunAsync)
-                    .DelayAndExecute((int)(timeouts.Min() - measurementsReceived).ToMilliseconds());
+            if (timeouts.Length > 0)
+            {
+                Interlocked.Exchange(ref m_cancelMeasurementProcessing, 
+                    new Action(m_processMeasurementsOperation.RunAsync)
+                        .DelayAndExecute((int)(timeouts.Min() - measurementsReceived).ToMilliseconds()));
+            }
         }
     }
+
 
     // Dequeue and write alarm Events
     private async Task ProcessAlarmEvents()
@@ -557,7 +566,6 @@ public class AlarmAdapter : FacileActionAdapterBase
                 .Select(CreateAlarm)
                 .ToDictionary(alarm => alarm.ID);
 
-            // TODO: This alarm list is added to, but nothing is done with added measurements
             // Create a list to store alarm events generated by this process
             List<IMeasurement> alarmEvents = [];
 
@@ -580,8 +588,13 @@ public class AlarmAdapter : FacileActionAdapterBase
                         // Remove the alarm from the active alarm list
                         using FileBackedDictionary<int, AlarmEvent> activeAlarms = new(FileBackedDictionaryPath);
 
-                        // TODO: If alarm measurement is created here, should it not be published via OnNewMeasurements?
-                        alarmEvents.Add(CreateAlarmEvent(now, existingAlarm, activeAlarms));
+                        IMeasurement? alarmEvent = CreateAlarmEvent(now, existingAlarm, activeAlarms);
+
+                        if (alarmEvent is not null)
+                            alarmEvents.Add(alarmEvent);
+                        else
+                            OnStatusMessage(MessageLevel.Error, $"@{nameof(UpdateAlarmDefinitions)}: Alarm ID {existingAlarm.ID:N0} is in an invalid state: {existingAlarm.State}");
+
 
                     }
                     else if (definedAlarm is not null)
@@ -651,6 +664,10 @@ public class AlarmAdapter : FacileActionAdapterBase
                 // Set input measurement keys for measurement routing
                 InputMeasurementKeys = ParseInputMeasurementKeys(DataSource, true, filterExpression);
             }
+
+            // Publish new alarm measurements
+            if (alarmEvents.Count > 0)
+                OnNewMeasurements(alarmEvents);
         });
     }
 
@@ -668,13 +685,13 @@ public class AlarmAdapter : FacileActionAdapterBase
             AlarmProcessor? alarmProcessor;
 
             // Change status on any alarms that timed out.
-            foreach (KeyValuePair<int, AlarmEvent> evt in activeAlarms)
+            foreach ((int alarmID, _) in activeAlarms)
             {
                 lock (m_alarmLock)
                 {
-                    if (!m_alarmProcessors.TryGetValue(evt.Key, out alarmProcessor))
+                    if (!m_alarmProcessors.TryGetValue(alarmID, out alarmProcessor))
                     {
-                        OnStatusMessage(MessageLevel.Error, $"Alarm ID {evt.Key} no longer exists but is still active. Throwing away active alarm details.");
+                        OnStatusMessage(MessageLevel.Error, $"@{nameof(ProcessSingleMeasurementAlarms)}: Alarm ID {alarmID:N0} no longer exists but is still active. Throwing away active alarm details.");
                         continue;
                     }
 
@@ -683,11 +700,12 @@ public class AlarmAdapter : FacileActionAdapterBase
                     
                     alarmProcessor.Alarm.State = AlarmState.Cleared;
 
-                    // TODO: Determine if alarm measurement can be null here - code is CreateAlarmEvent allows this...
-                    IMeasurement? measurement = CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms);
+                    IMeasurement? alarmEvent = CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms);
 
-                    if (measurement is not null)
-                        alarmMeasurements.Add(measurement);
+                    if (alarmEvent is not null)
+                        alarmMeasurements.Add(alarmEvent);
+                    else
+                        OnStatusMessage(MessageLevel.Error, $"@{nameof(ProcessSingleMeasurementAlarms)}: Alarm ID {alarmID:N0} is in an invalid state: {alarmProcessor.Alarm.State}");
                 }
             }
 
@@ -704,7 +722,7 @@ public class AlarmAdapter : FacileActionAdapterBase
                     {
                         if (!m_alarmProcessors.TryGetValue(alarmID, out alarmProcessor))
                         {
-                            OnStatusMessage(MessageLevel.Error, $"Alarm ID {alarmID:N0} no longer exists but is still receiving measurements. Discarding active alarm details.");
+                            OnStatusMessage(MessageLevel.Error, $"@{nameof(ProcessSingleMeasurementAlarms)}: Alarm ID {alarmID:N0} no longer exists but is still receiving measurements. Discarding active alarm details.");
                             continue;
                         }
 
@@ -716,14 +734,15 @@ public class AlarmAdapter : FacileActionAdapterBase
                         alarmProcessor.AssignMeasurement(measurement);
 
                         // Test the Alarm
-                        if (alarmProcessor.Test(RealTime))
-                        {
-                            // TODO: I am confused by this conditional logic - alarm is added to alarmMeasurements regardless? Also, what about possible null measurement?
-                            if (activeAlarms.TryGetValue(alarmProcessor.Alarm.ID, out AlarmEvent _))
-                                alarmMeasurements.Add(CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms));
-                            else
-                                alarmMeasurements.Add(CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms));
-                        }
+                        if (!alarmProcessor.Test(RealTime))
+                            continue;
+
+                        IMeasurement? alarmEvent = CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms);
+
+                        if (alarmEvent is not null)
+                            alarmMeasurements.Add(alarmEvent);
+                        else
+                            OnStatusMessage(MessageLevel.Error, $"@ {nameof(ProcessSingleMeasurementAlarms)}: Alarm ID  {alarmID:N0}  is in an invalid state: ");
                     }
                 }
             }
@@ -734,30 +753,34 @@ public class AlarmAdapter : FacileActionAdapterBase
             OnNewMeasurements(alarmMeasurements);
     }
 
-    // TODO: Is it OK that when exiting this function that a measurement is not created? Seems wrong...
     private IMeasurement? CreateAlarmEvent(Ticks timestamp, Alarm alarm, FileBackedDictionary<int, AlarmEvent> activeAlarms)
     {
         IMeasurement? measurement = null;
         AlarmEvent? alarmEvent = null;
 
-        if (alarm.State == AlarmState.Raised && !activeAlarms.TryGetValue(alarm.ID, out alarmEvent))
+        switch (alarm.State)
         {
-            measurement = CreateAlarmRaisedEvent(timestamp, alarm, out alarmEvent);
-            activeAlarms.Add(alarm.ID, alarmEvent);
-        }
-        else if (alarm.State == AlarmState.Cleared && activeAlarms.TryGetValue(alarm.ID, out alarmEvent))
-        {
-            measurement = CreateAlarmClearedEvent(timestamp, alarm, alarmEvent);
-            activeAlarms.Remove(alarm.ID);
+            case AlarmState.Raised when !activeAlarms.TryGetValue(alarm.ID, out alarmEvent):
+                measurement = CreateAlarmRaisedEvent(timestamp, alarm, out alarmEvent);
+                activeAlarms.Add(alarm.ID, alarmEvent);
+                break;
+            case AlarmState.Cleared when activeAlarms.TryGetValue(alarm.ID, out alarmEvent):
+                measurement = CreateAlarmClearedEvent(timestamp, alarm, alarmEvent);
+                activeAlarms.Remove(alarm.ID);
+                break;
+            default:
+                Logger.SwallowException(new InvalidOperationException($"Alarm ID {alarm.ID:N0} is in an invalid state: {alarm.State}"), nameof(AlarmEngine), nameof(CreateAlarmEvent));
+                break;
         }
 
-        if (alarmEvent is not null)
-        {
-            m_eventDetailsQueue.Enqueue(alarmEvent);
+        // Existing with a null measurement is an indication of invalid state, i.e., alarm was not raised or cleared
+        if (alarmEvent is null)
+            return null;
 
-            if (!m_disposing)
-                m_eventDetailsOperation.RunAsync();
-        }
+        m_eventDetailsQueue.Enqueue(alarmEvent);
+
+        if (!m_disposing)
+            m_eventDetailsOperation.RunAsync();
 
         return measurement;
 
@@ -772,7 +795,7 @@ public class AlarmAdapter : FacileActionAdapterBase
     /// <summary>
     /// The default (most recently created) instance of the alarm adapter.
     /// </summary>
-    public static AlarmAdapter? Default { get; private set; }
+    public static AlarmEngine? Default { get; private set; }
 
     // Returns true if a change to the alarm's configuration also changed the alarm's behavior.
     private static bool BehaviorChanged(Alarm existingAlarm, Alarm? definedAlarm)
