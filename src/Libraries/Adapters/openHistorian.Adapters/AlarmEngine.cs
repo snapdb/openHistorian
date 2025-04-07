@@ -742,7 +742,7 @@ public class AlarmEngine : FacileActionAdapterBase
                         if (alarmEvent is not null)
                             alarmMeasurements.Add(alarmEvent);
                         else
-                            OnStatusMessage(MessageLevel.Error, $"@ {nameof(ProcessSingleMeasurementAlarms)}: Alarm ID  {alarmID:N0}  is in an invalid state: ");
+                            OnStatusMessage(MessageLevel.Error, $"@ {nameof(ProcessSingleMeasurementAlarms)}: Alarm ID  {alarmID:N0}  is in an invalid state");
                     }
                 }
             }
