@@ -252,7 +252,7 @@ public class AlarmEngine : FacileActionAdapterBase
     private readonly ConcurrentQueue<AlarmEvent> m_eventDetailsQueue;
     private readonly TaskSynchronizedOperation m_eventDetailsOperation;
     private readonly TaskSynchronizedOperation m_processMeasurementsOperation;
-    private Func<bool>? m_cancelMeasurementProcessing;
+    private Func<bool>? m_cancelMeasurementProcessingDelay;
 
     private DataSet? m_alarmDataSet;
     private int m_dataSourceState;
@@ -448,7 +448,7 @@ public class AlarmEngine : FacileActionAdapterBase
             return;
 
         // Cancel any currently running measurement processing operation
-        Interlocked.Exchange(ref m_cancelMeasurementProcessing, null)?.Invoke();
+        Interlocked.Exchange(ref m_cancelMeasurementProcessingDelay, null)?.Invoke();
 
         Ticks measurementsReceived = DateTime.UtcNow.Ticks;
 
@@ -486,7 +486,7 @@ public class AlarmEngine : FacileActionAdapterBase
 
             if (timeouts.Length > 0)
             {
-                Interlocked.Exchange(ref m_cancelMeasurementProcessing, 
+                Interlocked.Exchange(ref m_cancelMeasurementProcessingDelay, 
                     new Action(m_processMeasurementsOperation.RunAsync)
                         .DelayAndExecute((int)(timeouts.Min() - measurementsReceived).ToMilliseconds()));
             }
