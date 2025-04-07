@@ -773,7 +773,7 @@ public class AlarmEngine : FacileActionAdapterBase
                 break;
         }
 
-        // Existing with a null measurement is an indication of invalid state, i.e., alarm was not raised or cleared
+        // Exiting with a null measurement is an indication of invalid state, i.e., alarm was not raised or cleared
         if (alarmEvent is null)
             return null;
 
