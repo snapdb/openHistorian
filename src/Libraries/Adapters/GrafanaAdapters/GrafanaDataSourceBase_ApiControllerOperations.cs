@@ -31,7 +31,6 @@ using GrafanaAdapters.Model.Common;
 using GrafanaAdapters.Model.Database;
 using GrafanaAdapters.Model.Functions;
 using GrafanaAdapters.Model.Metadata;
-using Gemstone;
 using Gemstone.Data;
 using Gemstone.Data.Model;
 using Gemstone.Timeseries.Model;
@@ -118,7 +117,7 @@ partial class GrafanaDataSourceBase
 
                 // Provided unrestricted metadata table field names if data type index is -1
                 if (dataTypeIndex > -1 && !dataSourceValueType.MetadataTableIsValid(metadata, tableName))
-                    return Enumerable.Empty<FieldDescription>();
+                    return [];
 
                 return metadata.Tables[tableName].Columns.Cast<DataColumn>().Select(column => new FieldDescription
                 {
@@ -296,7 +295,7 @@ partial class GrafanaDataSourceBase
                 {
                     // Expression was not a 'SELECT' statement, execute a 'LIKE' statement against primary meta-data table for data source value type
                     // returning matching point tags - this can be a slow operation for large meta-data sets, so results are cached by expression
-                    return metadata.Tables[dataSourceValueType.MetadataTableName]
+                    return metadata.Tables[dataSourceValueType.MetadataTableName]!
                         .Select($"ID LIKE '{InstanceName}:%' AND PointTag LIKE '%{request.expression}%'")
                         .Take(MaximumSearchTargetsPerRequest)
                         .Select(row => $"{row["PointTag"]}")
