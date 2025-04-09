@@ -192,6 +192,7 @@ public interface IDataSourceValueType<T> : IDataSourceValueType, IComparable<T>,
     /// <summary>
     /// Assign queried data source value to time-value map.
     /// </summary>
+    /// <param name="instanceName">Data source instance name for current <see cref="GrafanaDataSourceBase"/> implementation.</param>
     /// <param name="dataSourceValue">Queried data source value type.</param>
     /// <param name="timeValueMap">Time-value map for specified <paramref name="dataSourceValue"/>.</param>
     /// <param name="metadata">Source metadata.</param>
@@ -201,7 +202,7 @@ public interface IDataSourceValueType<T> : IDataSourceValueType, IComparable<T>,
     /// time-value map. If the data source value type has multiple fields, this function will be called once
     /// per each field in the data source value type for a given timestamp.
     /// </remarks>
-    void AssignToTimeValueMap(DataSourceValue dataSourceValue, SortedList<double, T> timeValueMap, DataSet metadata);
+    void AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, T> timeValueMap, DataSet metadata);
 
     /// <summary>
     /// Executes provided function for data source fields, applying the results

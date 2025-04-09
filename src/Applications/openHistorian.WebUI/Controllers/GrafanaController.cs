@@ -22,6 +22,7 @@
 //******************************************************************************************************
 // ReSharper disable CompareOfFloatsByEqualityOperator
 
+using System.Data;
 using System.Diagnostics;
 using System.Net;
 using System.Runtime.CompilerServices;
@@ -30,6 +31,7 @@ using Gemstone;
 using Gemstone.Collections;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.DateTimeExtensions;
+using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using GrafanaAdapters;
 using GrafanaAdapters.DataSourceValueTypes;
@@ -187,7 +189,17 @@ public class GrafanaController : ControllerBase
 
                 ulong pointID = key.PointID;
                 ulong timestamp = key.Timestamp;
-                float pointValue = value.AsSingle;
+                float pointValue;
+
+                if (s_alarmIDs.Contains(pointID))
+                {
+                    (bool alarmed, _, _) = value.AsAlarm;
+                    pointValue = alarmed ? 1.0F : 0.0F;
+                }
+                else
+                {
+                    pointValue = value.AsSingle;
+                }
 
                 if (includePeaks)
                 {
@@ -331,11 +343,32 @@ public class GrafanaController : ControllerBase
 
             if (adapterInstance is not null)
             {
+                DataSet? metadata = adapterInstance.DataSource;
+
                 m_dataSource = new OH2DataSource
                 {
                     InstanceName = instanceName,
-                    Metadata = adapterInstance.DataSource
+                    Metadata = metadata
                 };
+
+                // Reestablish alarm ID hash set if metadata has changed
+                if (!ReferenceEquals(Interlocked.Exchange(ref s_currentMetadata, metadata), metadata))
+                {
+                    HashSet<ulong> alarmIDs = [];
+
+                    if (metadata is not null && metadata.Tables.Contains("ActiveMeasurements"))
+                    {
+                        DataRow[] rows = metadata.Tables["ActiveMeasurements"]!.Select("SignalType = 'ALRM'");
+
+                        foreach (DataRow row in rows)
+                        {
+                            if (ulong.TryParse(row["ID"].ToNonNullString(), out ulong pointID))
+                                alarmIDs.Add(pointID);
+                        }
+                    }
+
+                    Interlocked.Exchange(ref s_alarmIDs, alarmIDs);
+                }
             }
 
             return m_dataSource;
@@ -379,7 +412,7 @@ public class GrafanaController : ControllerBase
     [HttpPost]
     public virtual IEnumerable<DataSourceValueType> GetValueTypes()
     {
-        return DataSource?.GetValueTypes() ?? Enumerable.Empty<DataSourceValueType>();
+        return DataSource?.GetValueTypes() ?? [];
     }
 
     /// <summary>
@@ -508,6 +541,8 @@ public class GrafanaController : ControllerBase
 
     #region [ Static ]
 
+    private static DataSet? s_currentMetadata;
+    private static HashSet<ulong> s_alarmIDs = [];
     private static readonly Regex s_intervalExpression = new(@"(?<Value>\d+\.?\d*)(?<Unit>\w+)", RegexOptions.Compiled);
 
     // Static Methods

@@ -31,12 +31,12 @@ using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Data;
 using Gemstone.Data.DataExtensions;
 using Gemstone.Diagnostics;
+using Gemstone.EventHandlerExtensions;
 using Gemstone.IO;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
-using GrafanaAdapters;
 using openHistorian.Net;
 using openHistorian.Snap;
 using openHistorian.Snap.Definitions;
@@ -58,6 +58,13 @@ namespace openHistorian.Adapters;
 public class LocalOutputAdapter : OutputAdapterBase
 {
     #region [ Members ]
+
+    // Events
+
+    /// <summary>
+    /// Event is raised when the <see cref="DataSource"/> is updated, meaning the configuration of the historian has been updated.
+    /// </summary>
+    public static event EventHandler? ConfigurationUpdated;
 
     // Constants
 
@@ -521,8 +528,8 @@ public class LocalOutputAdapter : OutputAdapterBase
             Interlocked.Exchange(ref m_measurements, measurements);
             Interlocked.Exchange(ref m_compressionSettings, compressionSettings);
 
-            // When metadata is updated for an output adapter, reset sliding memory caches for Grafana data sources
-            TargetCaches.ResetAll();
+            // Notify consumers that the configuration has been updated
+            ConfigurationUpdated?.SafeInvoke(typeof(LocalOutputAdapter), EventArgs.Empty);
         }
     }
 

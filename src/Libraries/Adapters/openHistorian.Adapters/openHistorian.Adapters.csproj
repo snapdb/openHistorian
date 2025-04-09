@@ -27,8 +27,6 @@
     <ProjectReference Include="..\..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'" />
     
     <ProjectReference Include="..\..\openHistorian.Core\openHistorian.Core.csproj" />
-    
-    <ProjectReference Include="..\GrafanaAdapters\GrafanaAdapters.csproj" />
   </ItemGroup>
 
   <ItemGroup>

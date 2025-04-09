@@ -69,20 +69,20 @@ public class HistorianValue : SnapTypeBase<HistorianValue>
     }
 
     /// <summary>
-    /// Type casts all values as an alarmed flag, an associated signal ID and status flags representing an alarm.
+    /// Type casts all values as an alarmed flag, an associated event ID and status flags representing an alarm.
     /// </summary>
     /// <remarks>
-    /// <see cref="Value1"/> and <see cref="Value2"/> are used to store the Guid-based signal ID.
+    /// <see cref="Value1"/> and <see cref="Value2"/> are used to store the Guid-based event ID.
     /// <see cref="Value3"/> is used to store the alarmed flag and the status flags.
     /// Alarmed flag is stored in the high 32-bits of <see cref="Value3"/> (bits 32-63) with a value of 0 or 1.
     /// Status flags are stored in the low 32-bits of <see cref="Value3"/> (bits 0-31) - per normal location.
     /// </remarks>
-    public (bool alarmed, Guid signalID, MeasurementStateFlags flags) AsAlarm
+    public (bool alarmed, Guid eventID, MeasurementStateFlags flags) AsAlarm
     {
         get => (Value3.HighDoubleWord() > 0, BitConvert.ToGuid(Value1, Value2), (MeasurementStateFlags)Value3.LowDoubleWord());
         set
         {
-            (Value1, Value2) = BitConvert.ToUInt64Pair(value.signalID);
+            (Value1, Value2) = BitConvert.ToUInt64Pair(value.eventID);
             Value3 = Word.MakeQuadWord(value.alarmed ? 1U : 0U, (uint)value.flags);
         }
     }

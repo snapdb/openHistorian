@@ -68,6 +68,8 @@
     <ProjectReference Include="..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" />
     
     <ProjectReference Include="..\..\Libraries\Adapters\AdaptersUI\AdaptersUI.csproj" />
+    
+    <ProjectReference Include="..\..\Libraries\Adapters\GrafanaAdapters\GrafanaAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\PhasorProtocolAdapters\PhasorProtocolAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />

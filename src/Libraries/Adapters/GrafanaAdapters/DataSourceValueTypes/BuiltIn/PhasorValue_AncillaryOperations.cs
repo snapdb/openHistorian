@@ -23,9 +23,6 @@
 
 using GrafanaAdapters.Metadata;
 using GrafanaAdapters.Model.Common;
-using Gemstone;
-using Gemstone.Collections;
-using Gemstone.Data;
 using Gemstone.Diagnostics;
 using Gemstone.Timeseries;
 using System;
@@ -167,7 +164,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
 
     readonly int IDataSourceValueType.DataTypeIndex => TypeIndex;
 
-    readonly void IDataSourceValueType<PhasorValue>.AssignToTimeValueMap(DataSourceValue dataSourceValue, SortedList<double, PhasorValue> timeValueMap, DataSet metadata)
+    readonly void IDataSourceValueType<PhasorValue>.AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, PhasorValue> timeValueMap, DataSet metadata)
     {
         string pointTag = dataSourceValue.ID.pointTag;
         string target = dataSourceValue.ID.target;
@@ -262,7 +259,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                 long startTime = DateTime.UtcNow.Ticks;
 
                 // Extract phasor rows from active measurements table in current metadata
-                DataTable activeMeasurements = metadata.Tables[MeasurementValue.MetadataTableName];
+                DataTable activeMeasurements = metadata.Tables[MeasurementValue.MetadataTableName]!;
                 DataRow[] phasorRows = activeMeasurements.Select("PhasorID IS NOT NULL", "PhasorID ASC");
 
                 // Group phase angle and magnitudes together by phasor ID
@@ -273,7 +270,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                     int phasorID = Convert.ToInt32(row["PhasorID"]);
                     (DataRow magnitude, DataRow angle) = phasorTargets.GetOrAdd(phasorID, _ => (null, null));
 
-                    string signalType = row["SignalType"].ToString().Trim();
+                    string signalType = row["SignalType"].ToString()!.Trim();
 
                     if (signalType.EndsWith("PHA", StringComparison.OrdinalIgnoreCase))
                         angle = row;
@@ -326,15 +323,15 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                         // Create a new row that will reference phasor magnitude and angle metadata
                         DataRow phasorRow = phasorValues.NewRow();
 
-                        magnitudePointTag = magnitude["PointTag"].ToString();
-                        anglePointTag = angle["PointTag"].ToString();
+                        magnitudePointTag = magnitude["PointTag"].ToString()!;
+                        anglePointTag = angle["PointTag"].ToString()!;
 
                         // Find overlapping point tag name that will become primary phasor point tag
-                        string pointTag = magnitudePointTag.LongestCommonSubstring(anglePointTag);
+                        string pointTag = magnitudePointTag.LongestCommonSubstring(anglePointTag)!;
 
                         // Remove any trailing non-alphanumeric characters from point tag
-                        while (pointTag.Length > 0 && !char.IsLetterOrDigit(pointTag[pointTag.Length - 1]))
-                            pointTag = pointTag.Substring(0, pointTag.Length - 1);
+                        while (pointTag.Length > 0 && !char.IsLetterOrDigit(pointTag[^1]))
+                            pointTag = pointTag[..^1];
 
                         // Copy in specific magnitude and angle phasor metadata, default to magnitude metadata for common values
                         phasorRow["Device"] = magnitude["Device"];

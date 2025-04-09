@@ -111,6 +111,14 @@ public class HistorianServer : IDisposable
         AddDatabase(database);
     }
 
+    /// <summary>
+    /// Releases the unmanaged resources before the <see cref="HistorianServer"/> object is reclaimed by <see cref="GC"/>.
+    /// </summary>
+    ~HistorianServer()
+    {
+        Dispose(false);
+    }
+
     #endregion
 
     #region [ Properties ]
@@ -125,16 +133,44 @@ public class HistorianServer : IDisposable
     /// </summary>
     public SnapSocketListenerSettings? Settings { get; }
 
+    /// <summary>
+    /// Gets a value indicating whether the <see cref="HistorianServer"/> has been disposed.
+    /// </summary>
+    public bool IsDisposed { get; private set; }
+
     #endregion
 
     #region [ Methods ]
 
     /// <summary>
-    /// Disposes of the new snap server initialized above.
+    /// Releases all the resources used by the <see cref="HistorianServer"/> object.
     /// </summary>
     public void Dispose()
     {
-        Host.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases the unmanaged resources used by the <see cref="HistorianServer"/> object and optionally releases the managed resources.
+    /// </summary>
+    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (IsDisposed)
+            return;
+
+        try
+        {
+            if (!disposing)
+                return;
+
+            Host.Dispose();
+        }
+        finally
+        {
+            IsDisposed = true;  // Prevent duplicate dispose.
+        }
     }
 
     /// <summary>

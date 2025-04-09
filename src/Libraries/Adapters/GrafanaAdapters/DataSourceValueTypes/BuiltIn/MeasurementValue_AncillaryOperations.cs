@@ -142,7 +142,7 @@ public partial struct MeasurementValue : IDataSourceValueType<MeasurementValue>
 
     readonly int IDataSourceValueType.DataTypeIndex => TypeIndex;
 
-    readonly void IDataSourceValueType<MeasurementValue>.AssignToTimeValueMap(DataSourceValue dataSourceValue, SortedList<double, MeasurementValue> timeValueMap, DataSet metadata)
+    readonly void IDataSourceValueType<MeasurementValue>.AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, MeasurementValue> timeValueMap, DataSet metadata)
     {
         timeValueMap[dataSourceValue.Time] = new MeasurementValue
         {

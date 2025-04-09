@@ -44,6 +44,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using openHistorian.Adapters;
 
 namespace GrafanaAdapters;
 
@@ -313,11 +314,13 @@ public abstract partial class GrafanaDataSourceBase
                 targetValues[target] = new SortedList<double, T>();
         }
 
+        string instanceName = instance.InstanceName;
+
         // Query underlying data source, assigning each value to its own data source target time-value map
         await foreach (DataSourceValue dataSourceValue in instance.QueryDataSourceValues(queryParameters, targetMap, cancellationToken).ConfigureAwait(false))
         {
             // Assign data value, identified by pointTag, to its own time-value map based on its target
-            default(T).AssignToTimeValueMap(dataSourceValue, targetValues[dataSourceValue.ID.target], metadata);
+            default(T).AssignToTimeValueMap(instanceName, dataSourceValue, targetValues[dataSourceValue.ID.target], metadata);
         }
 
         // Transpose each target into a data source value group along with its associated queried values
@@ -710,6 +713,21 @@ public abstract partial class GrafanaDataSourceBase
     // contains a string literal with a semicolon, e.g., FILTER ActiveMeasurements WHERE Description LIKE '%A;B%', see
     // Expresso 'Documentation/SemiColonSplitterRegex.xso' for development details on regex
     private static readonly Regex s_semiColonSplitter = new(@";(?=(?:[^']*'[^']*')*[^']*$)", RegexOptions.Compiled);
+
+
+    static GrafanaDataSourceBase()
+    {
+        // Note that `EventState` data source requires a reference to `openHistorian.Adapters.LocalOutputAdapter` so
+        // that it can query the openHistorian directly for special alarm/event details, e.g., getting the Guid-based
+        // event ID out of the historian. The current Grafana data source abstraction is only setup to handle simple
+        // floating-point values from any time-series data source, so this is a special case that needs to be handled
+        // separately. Because this creates a dependency on the `openHistorian.Adapters` assembly, we now need to make
+        // sure that configuration reload detection code gets executed here since this can no longer be done in the
+        // `openHistorian.Adapters` assembly, which would otherwise create a circular dependency.
+
+        // When metadata is updated for an openHistorian output adapter, reset sliding memory caches for Grafana data sources
+        LocalOutputAdapter.ConfigurationUpdated += (_, _) => { TargetCaches.ResetAll(); };
+    }
 
     // To ensure RegEx split ignores empty entries, define a predicate function that returns true if string is not empty
     private static bool NotEmpty(string value)
