@@ -502,7 +502,7 @@ internal static class FunctionParsing
             }
 
             // Check all substitution fields for table name specifications (ActiveMeasurements assumed)
-            HashSet<string> tableNames = new(new[] { MeasurementValue.MetadataTableName }, StringComparer.OrdinalIgnoreCase);
+            HashSet<string> tableNames = new([MeasurementValue.MetadataTableName], StringComparer.OrdinalIgnoreCase);
             MatchCollection fields = fieldExpression.Matches(labelExpression);
 
             foreach (Match match in fields)
