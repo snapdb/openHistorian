@@ -137,6 +137,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private long m_externalDatabaseUpdates;
     private object m_lastExternalDatabaseResult;
     private int m_dataSourceState;
+    private DataSet? m_deviceStateDataSet;
 
     private bool m_disposed;
     private bool m_disposing;
@@ -582,6 +583,14 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         if (m_disposing)
             return;
 
+        if (!await ValidateStates())
+        {
+            OnStatusMessage(MessageLevel.Warning, "Device state definition updated, need to reload device state.");
+            base.OnConfigurationChanged();
+            new Action(m_processDeviceStatus.RunAsync).DelayAndExecute(MonitoringRate);
+            return;
+        }
+
         lock (m_alarmStates)
         {
             ImmediateMeasurements measurements = LatestMeasurements;
@@ -847,7 +856,42 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         m_lastExternalDatabaseStateChange = DateTime.UtcNow.Ticks;
     }
 
+    private async Task<bool> ValidateStates()
+    {
+        DataSet? dataSource = DataSource;
 
+        if (dataSource is null)
+        {
+            OnStatusMessage(MessageLevel.Warning, "Device State definition update skipped, no data source is available.");
+            return true;
+        }
+
+        DataSet deviceStateDataSet = new();
+        deviceStateDataSet.Tables.Add(dataSource.Tables["DeviceState"]!.Copy());
+
+        if (DataSetEqualityComparer.Default.Equals(m_deviceStateDataSet, deviceStateDataSet))
+            return true;
+
+        m_deviceStateDataSet = deviceStateDataSet;
+
+        bool addedState = false;
+
+        await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        foreach (DeviceState state in s_baseStates.Values)
+        {
+            DataRow row = deviceStateDataSet.Tables[0].Rows.Cast<DataRow>().Where(x => string.Equals(x.ConvertField<string>("State"),state.State,StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+            if (row == null)
+            {
+                new TableOperations<DeviceState>(connection).AddNewRecord(state);
+                addedState = true;
+
+            }
+
+        }
+
+        return !addedState;
+
+    }
     #endregion
 
     #region [ Static ]
