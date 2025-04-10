@@ -202,12 +202,17 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
             if (sourceValue.Time == 0.0D)
                 yield break;
 
-            // Cache the expression complier for the expression (will only be compiled once per expression)
-            ExpressionCompiler<object, ExpressionContext> dynamicExpression = TargetCache<ExpressionCompiler<object, ExpressionContext>>.GetOrAdd(expression, () =>
+            // Compile and cache the expression (will only be compiled once per expression)
+            ExpressionContextCompiler<double, double> dynamicExpression = TargetCache<ExpressionContextCompiler<double, double>>.GetOrAdd(expression, () =>
             {
                 try
                 {
-                    return new(expression) { TypeRegistry = context.Imports };
+                    ExpressionContextCompiler<double, double> expressionCompiler = new(expression, context);
+
+                    // Compile expression - doing this in advance for better syntax error reporting
+                    expressionCompiler.Compile();
+
+                    return expressionCompiler;
                 }
                 catch (Exception ex)
                 {
@@ -215,15 +220,10 @@ public abstract partial class Evaluate<T> : GrafanaFunctionBase<T> where T : str
                 }
             });
 
-            Func<ExpressionContext<double>, double> compiledFunction = dynamicExpression.CompiledFunction;
-
-            if (compiledFunction is null)
-                throw new SyntaxErrorException($"Failed to get compiled expression \"{expression}\" for evaluation");
-
             // Return evaluated expression
             yield return sourceValue with
             {
-                Value = compiledFunction(context),
+                Value = dynamicExpression.ExecuteFunction(),
                 Target = $"{string.Join("; ", targets.Take(4))}{(targets.Count > 4 ? "; ..." : "")}"
             };
         }
