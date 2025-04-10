@@ -85,8 +85,8 @@ public static class AggregateFunctions
     /// provided comparison expression.
     /// </returns>
     /// <remarks>
-    /// Expression is compiled with support for <see cref="Math"/> and <see cref="DateTime"/> types so
-    /// related static functions and constants can be used in expressions, e.g., <c>">= 2 * PI"</c>.
+    /// Expression is compiled with static support for <see cref="Math"/> and <see cref="DateTime"/>
+    /// types so related functions and constants can be used in expressions, e.g., <c>">= 2 * PI"</c>.
     /// </remarks>
     public static bool Any(double[] array, string comparisonExpr)
     {
@@ -105,8 +105,8 @@ public static class AggregateFunctions
     /// provided comparison expression.
     /// </returns>
     /// <remarks>
-    /// Expression is compiled with support for <see cref="Math"/> and <see cref="DateTime"/> types so
-    /// related static functions and constants can be used in expressions, e.g., <c>">= 2 * PI"</c>.
+    /// Expression is compiled with static support for <see cref="Math"/> and <see cref="DateTime"/>
+    /// types so related functions and constants can be used in expressions, e.g., <c>">= 2 * PI"</c>.
     /// </remarks>
     public static bool All(double[] array, string comparisonExpr)
     {
@@ -131,8 +131,8 @@ public static class AggregateFunctions
         {
             ExpressionContext<double> context = new() { DefaultValue = double.NaN };
             
-            context.Imports.RegisterType(typeof(Math));
-            context.Imports.RegisterType(typeof(DateTime));
+            context.Imports.RegisterStaticType(typeof(Math));
+            context.Imports.RegisterStaticType(typeof(DateTime));
             context.Variables.Add("value", double.NaN);
 
             // Create expression compiler that will handle aggregate expressions like, "value > 0", where

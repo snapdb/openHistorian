@@ -210,7 +210,7 @@ public class DynamicCalculator : ActionAdapterBase
                 return;
 
             // Build the collection of variable names with the new value
-            foreach (string token in value.Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries))
+            foreach (string token in value.Split([';'], StringSplitOptions.RemoveEmptyEntries))
                 AddVariable(token);
 
             // Perform alias replacement on tokens that were not explicitly aliased
@@ -632,23 +632,12 @@ public class DynamicCalculator : ActionAdapterBase
         return;
 
         ExpressionContextCompiler newExpressionCompiler()
-            {
+        {
             if (!string.IsNullOrWhiteSpace(m_aliasedExpressionText))
                 return new ExpressionContextCompiler(m_aliasedExpressionText, m_expressionContext);
 
-                Enabled = false;
-                throw new InvalidOperationException($"No expression defined, {GetType().Name} execution terminated.");
-            }
-
-            ExpressionCompiler expression = new(m_aliasedExpressionText)
-            {
-                TypeRegistry = m_expressionContext.Imports,
-                VariableContext = m_expressionContext
-            };
-
-            expression.Compile();
-
-            return expression;
+            Enabled = false;
+            throw new InvalidOperationException($"No expression defined, {GetType().Name} execution terminated.");
         }
     }
 
