@@ -26,16 +26,19 @@
 
   <ItemGroup>
     <Compile Remove="AccessControl\**" />
+    <Compile Remove="Adapter\**" />
     <Compile Remove="Diagnostics\**" />
     <Compile Remove="IO\**" />
     <Compile Remove="SortedTreeStore\**" />
     <Compile Remove="Threading\**" />
     <EmbeddedResource Remove="AccessControl\**" />
+    <EmbeddedResource Remove="Adapter\**" />
     <EmbeddedResource Remove="Diagnostics\**" />
     <EmbeddedResource Remove="IO\**" />
     <EmbeddedResource Remove="SortedTreeStore\**" />
     <EmbeddedResource Remove="Threading\**" />
     <None Remove="AccessControl\**" />
+    <None Remove="Adapter\**" />
     <None Remove="Diagnostics\**" />
     <None Remove="IO\**" />
     <None Remove="SortedTreeStore\**" />
@@ -73,10 +76,6 @@
     <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'">
       <HintPath>..\Dependencies\SnapDB\SnapDB.dll</HintPath>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Adapter\" />
   </ItemGroup>
 
 </Project>

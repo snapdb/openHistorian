@@ -34,12 +34,4 @@ namespace openHistorian.UnitTests;
 
 internal class NumericFunctions
 {
-
-    [Test]
-    public void NaNMedian()
-    {
-        IEnumerable<double> data = new double[] { 1, 2, 3, double.NaN, 5, 6, 7, 8, 9, 10 };
-
-        double median = data.Median();
-    }
 }

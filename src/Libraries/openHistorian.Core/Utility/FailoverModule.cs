@@ -323,14 +323,12 @@ public static class FailoverModule
         StringBuilder deleteQuery = new StringBuilder();
         List<object> deleteParameters = new List<object>();
 
-        using (AdoDataConnection connection = new AdoDataConnection(Gemstone.Configuration.Settings.Instance))
-        {
         using AdoDataConnection connection = new(Settings.Instance);
             log.Timestamp = DateTime.UtcNow;
             new TableOperations<FailoverLog>(connection).AddNewOrUpdateRecord(log);
             connection.ExecuteNonQuery("DELETE FROM FailoverLog WHERE Timestamp < {0} AND SystemName = {1} ",
                 log.Timestamp.AddHours(-LogRetention), log.SystemName);
-        }
+        
     }
 
     #endregion
