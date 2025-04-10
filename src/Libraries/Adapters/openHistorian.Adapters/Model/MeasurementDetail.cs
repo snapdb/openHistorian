@@ -26,6 +26,7 @@
 using System.ComponentModel.DataAnnotations;
 using Gemstone.Data.Model;
 using System.Data;
+using Gemstone.Timeseries.Model;
 
 namespace openHistorian.Model;
 
