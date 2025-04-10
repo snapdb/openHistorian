@@ -47,6 +47,7 @@ using Gemstone.StringExtensions;
 using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
+using Gemstone.Timeseries.Model;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using ConfigSettings = Gemstone.Configuration.Settings;
@@ -182,7 +183,7 @@ public class AlarmEngine : FacileActionAdapterBase
 
     private sealed class AlarmEvent : ISupportStreamSerialization<AlarmEvent>
     {
-        public Guid Guid;
+        public Guid ID;
         public DateTime StartTime;
         public DateTime? EndTime;
         public string SignalTag = default!;
@@ -203,7 +204,7 @@ public class AlarmEngine : FacileActionAdapterBase
 
             return new AlarmEvent
             {
-                Guid = new Guid(reader.ReadBytes(16)),
+                ID = new Guid(reader.ReadBytes(16)),
                 StartTime = new DateTime(reader.ReadInt64(), DateTimeKind.Utc),
                 EndTime = reader.ReadBoolean() ? new DateTime(reader.ReadInt64(), DateTimeKind.Utc) : null,
                 SignalTag = reader.ReadString(),
@@ -224,7 +225,7 @@ public class AlarmEngine : FacileActionAdapterBase
         {
             BinaryWriter writer = new(stream, Encoding.UTF8, true);
 
-            writer.Write(instance.Guid.ToByteArray());
+            writer.Write(instance.ID.ToByteArray());
             writer.Write(instance.StartTime.Ticks);
             writer.Write(instance.EndTime.HasValue);
 
@@ -521,7 +522,7 @@ public class AlarmEngine : FacileActionAdapterBase
             deleteParameters.Add(alarmEvent.MeasurementID);
             deleteParameters.Add(alarmEvent.StartTime.AddHours(-AlarmRetention));
 
-            EventDetails? currentRecord = tableOperations.QueryRecordWhere("EventGuid = {0}", alarmEvent.Guid);
+            EventDetails? currentRecord = tableOperations.QueryRecordWhere("EventID = {0}", alarmEvent.ID);
             EventDetails updatedRecord = GenerateAlarmDetails(alarmEvent);
 
             if (currentRecord is not null)
@@ -838,7 +839,7 @@ public class AlarmEngine : FacileActionAdapterBase
     {
         alarmEvent = new AlarmEvent
         {
-            Guid = Guid.NewGuid(),
+            ID = Guid.NewGuid(),
             StartTime = timestamp,
             EndTime = null,
             AlarmID = alarm.ID,
@@ -853,7 +854,7 @@ public class AlarmEngine : FacileActionAdapterBase
         {
             Timestamp = timestamp,
             Value = (int)alarm.State,
-            AlarmID = alarmEvent.Guid
+            AlarmID = alarmEvent.ID
         };
 
         measurement.Metadata = MeasurementKey.LookUpBySignalID(alarm.SignalID).Metadata;
@@ -869,7 +870,7 @@ public class AlarmEngine : FacileActionAdapterBase
         {
             Timestamp = timestamp,
             Value = (int)alarm.State,
-            AlarmID = alarmEvent.Guid
+            AlarmID = alarmEvent.ID
         };
 
         measurement.Metadata = MeasurementKey.LookUpBySignalID(alarm.SignalID).Metadata;
@@ -883,7 +884,7 @@ public class AlarmEngine : FacileActionAdapterBase
         {
             StartTime = alarmEvent.StartTime,
             EndTime = alarmEvent.EndTime,
-            EventGuid = alarmEvent.Guid,
+            EventID = alarmEvent.ID,
             Type = "alarm",
             MeasurementID = alarmEvent.MeasurementID,
             Details = JsonConvert.SerializeObject(new

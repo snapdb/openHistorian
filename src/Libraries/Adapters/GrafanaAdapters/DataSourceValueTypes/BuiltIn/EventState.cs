@@ -61,7 +61,7 @@ public partial struct EventState
     public string Details;
 
     /// <summary>
-    /// Queried active event alarm state, 0 or 1.
+    /// Queried active event alarm state, 0.0 or 1.0.
     /// </summary>
     public double Raised;
 

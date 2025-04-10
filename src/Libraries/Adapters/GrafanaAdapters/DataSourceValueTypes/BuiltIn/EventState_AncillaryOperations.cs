@@ -27,6 +27,7 @@ using Gemstone;
 using Gemstone.Diagnostics;
 using Gemstone.Timeseries;
 using Gemstone.TimeSpanExtensions;
+using Gemstone.Timeseries.Model;
 using openHistorian.Adapters;
 using openHistorian.Net;
 using openHistorian.Snap;
@@ -38,6 +39,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using Gemstone.Data;
+using Gemstone.Data.Model;
 using ConfigSettings = Gemstone.Configuration.Settings;
 
 namespace GrafanaAdapters.DataSourceValueTypes.BuiltIn;
@@ -163,7 +166,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
     readonly TargetIDSet IDataSourceValueType.GetTargetIDSet(DataRow record)
     {
         // A target ID set is: (target, (measurementKey, pointTag)[])
-        // For the simple MeasurementValue functionality the target is the point tag
+        // For the simple EventState functionality the target is the point tag
         string pointTag = record["PointTag"].ToString()!;
         return (pointTag, [(record.KeyFromRecord(), pointTag)]);
     }
@@ -184,10 +187,25 @@ public partial struct EventState : IDataSourceValueType<EventState>
         // Execute historian query to resolve event state
         (Guid eventID, double duration) = QueryEventData(instanceName, measurementID, dataSourceValue.Time, raised);
 
-        // TODO: Once table and model is established, use event ID to query for details
+        string eventDetails;
+
+        try
+        {
+            using AdoDataConnection connection = new(ConfigSettings.Instance);
+            TableOperations<EventDetails> eventDetailsTable = new(connection);
+            eventDetails = (eventDetailsTable.QueryRecordWhere("EventID = {0}", eventID) ?? new EventDetails()).Details;
+        }
+        catch (Exception ex)
+        {
+            eventDetails = $"Error loading event details from database: {ex.Message}";
+            Logger.SwallowException(ex, nameof(EventState), nameof(IDataSourceValueType<EventState>.AssignToTimeValueMap));
+        }
+
         string details = eventID == Guid.Empty ?
-            $"No event details were recorded for alarm measurement '{instanceName}:{measurementID}'" :
-            $"TODO: Database lookup required for details on event '{eventID}' for alarm measurement '{instanceName}:{measurementID}'";
+            $"No event details were recorded for event {eventID}" :
+            $"{(string.IsNullOrWhiteSpace(eventDetails) ? $"No event details available for event {eventID}" : eventDetails)}";
+
+        details += $"<br/><br/>Alarm measurement: '{instanceName}:{measurementID}' [{pointTag}]";
 
         timeValueMap[dataSourceValue.Time] = new EventState
         {
