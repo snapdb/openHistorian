@@ -595,8 +595,6 @@ public class AlarmEngine : FacileActionAdapterBase
                             alarmEvents.Add(alarmEvent);
                         else
                             OnStatusMessage(MessageLevel.Error, $"@{nameof(UpdateAlarmDefinitions)}: Alarm ID {existingAlarm.ID:N0} is in an invalid state: {existingAlarm.State}");
-
-
                     }
                     else if (definedAlarm is not null)
                     {

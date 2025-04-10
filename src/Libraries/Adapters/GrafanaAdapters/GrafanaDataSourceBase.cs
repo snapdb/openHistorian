@@ -714,7 +714,6 @@ public abstract partial class GrafanaDataSourceBase
     // Expresso 'Documentation/SemiColonSplitterRegex.xso' for development details on regex
     private static readonly Regex s_semiColonSplitter = new(@";(?=(?:[^']*'[^']*')*[^']*$)", RegexOptions.Compiled);
 
-
     static GrafanaDataSourceBase()
     {
         // Note that `EventState` data source requires a reference to `openHistorian.Adapters.LocalOutputAdapter` so
