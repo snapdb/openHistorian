@@ -187,25 +187,28 @@ public partial struct EventState : IDataSourceValueType<EventState>
         // Execute historian query to resolve event state
         (Guid eventID, double duration) = QueryEventData(instanceName, measurementID, dataSourceValue.Time, raised);
 
-        string eventDetails;
+        string eventDetails = null;
 
-        try
+        if (eventID != Guid.Empty)
         {
-            using AdoDataConnection connection = new(ConfigSettings.Instance);
-            TableOperations<EventDetails> eventDetailsTable = new(connection);
-            eventDetails = (eventDetailsTable.QueryRecordWhere("EventID = {0}", eventID) ?? new EventDetails()).Details;
-        }
-        catch (Exception ex)
-        {
-            eventDetails = $"Error loading event details from database: {ex.Message}";
-            Logger.SwallowException(ex, nameof(EventState), nameof(IDataSourceValueType<EventState>.AssignToTimeValueMap));
+            try
+            {
+                using AdoDataConnection connection = new(ConfigSettings.Instance);
+                TableOperations<EventDetails> eventDetailsTable = new(connection);
+                eventDetails = (eventDetailsTable.QueryRecordWhere("EventID = {0}", eventID) ?? new EventDetails()).Details;
+            }
+            catch (Exception ex)
+            {
+                eventDetails = $"Error loading event details from database: {ex.Message}";
+                Logger.SwallowException(ex, nameof(EventState), nameof(IDataSourceValueType<EventState>.AssignToTimeValueMap));
+            }
         }
 
         string details = eventID == Guid.Empty ?
-            $"No event details were recorded for event {eventID}" :
-            $"{(string.IsNullOrWhiteSpace(eventDetails) ? $"No event details available for event {eventID}" : eventDetails)}";
+            "No event ID was found for details record" :
+            $"{(string.IsNullOrWhiteSpace(eventDetails) ? "No details were recorded for event" : eventDetails)}";
 
-        details += $"<br/><br/>Alarm measurement: '{instanceName}:{measurementID}' [{pointTag}]";
+        details += $" [{eventID}]<br/><br/>Alarm measurement: '{instanceName}:{measurementID}' [{pointTag}]";
 
         timeValueMap[dataSourceValue.Time] = new EventState
         {
