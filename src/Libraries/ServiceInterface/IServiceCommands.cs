@@ -46,7 +46,7 @@ public interface IServiceCommands
     /// <summary>
     /// Gets the current status of the openHistorian.
     /// </summary>
-    (string Status, string Type, string Description) GetCurrentStatus();
+    (string Status, ServiceStatus Type, string Description) GetCurrentStatus();
 
 
     /// <summary>

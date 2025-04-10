@@ -210,7 +210,7 @@ public class DynamicCalculator : ActionAdapterBase
                 return;
 
             // Build the collection of variable names with the new value
-            foreach (string token in value.Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries))
+            foreach (string token in value.Split([';'], StringSplitOptions.RemoveEmptyEntries))
                 AddVariable(token);
 
             // Perform alias replacement on tokens that were not explicitly aliased

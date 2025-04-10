@@ -398,3 +398,9 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 /src/Applications/openHistorian/DynamicAssemblies
+
+# Themes
+/src/Applications/openHistorian.WebUI/wwwroot/Themes/*
+
+# Dont ignore default theme
+!/src/Applications/openHistorian.WebUI/wwwroot/Themes/bootstrap.min.css

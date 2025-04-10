@@ -501,9 +501,9 @@ public class GrafanaController : ControllerBase
     /// </summary>
     /// <param name="cancellationToken">Propagates notification from client that operations should be canceled.</param>
     [HttpPost]
-    public virtual Task<IEnumerable<AlarmDeviceStateView>> GetAlarmState(CancellationToken cancellationToken)
+    public virtual Task<IEnumerable<DeviceStateView>> GetAlarmState(CancellationToken cancellationToken)
     {
-        return DataSource?.GetAlarmState(cancellationToken) ?? Task.FromResult(Enumerable.Empty<AlarmDeviceStateView>());
+        return DataSource?.GetAlarmState(cancellationToken) ?? Task.FromResult(Enumerable.Empty<DeviceStateView>());
     }
 
     /// <summary>

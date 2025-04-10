@@ -51,7 +51,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
     [HttpPost, Route("Execute/{assemblyName}/{typeName}/{command}")]
     public IActionResult Execute(string assemblyName, string typeName, string command)
     {
-        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out _, out MethodInfo method);
+        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out MethodInfo method);
 
         if (result is not OkResult)
             return result;
@@ -69,7 +69,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
     [HttpPost, Route("Execute/{assemblyName}/{typeName}/{command}/{*parameters}")]
     public IActionResult Execute(string assemblyName, string typeName, string command, string parameters)
     {
-        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out _, out MethodInfo method);
+        IActionResult result = TryGetCommandMethod(assemblyName, typeName, command, out MethodInfo method);
 
         if (result is not OkResult)
             return result;
@@ -175,12 +175,11 @@ public class AdapterCommandControllerBase<TIAdapter> :
     }
     */
 
-    private IActionResult TryGetCommandMethod(string assemblyName, string typeName, string command, out AdapterInfo info, out MethodInfo method)
+    private IActionResult TryGetCommandMethod(string assemblyName, string typeName, string command, out MethodInfo method)
     {
         assemblyName = WebUtility.UrlDecode(assemblyName);
         typeName = WebUtility.UrlDecode(typeName);
         command = WebUtility.UrlDecode(command);
-        info = default!;
         method = default!;
 
         return !AdapterCache<TIAdapter>.AssemblyTypes.TryGetValue((assemblyName, typeName), out Type? adapterType) ? 
@@ -194,8 +193,6 @@ public class AdapterCommandControllerBase<TIAdapter> :
 
         if (!AdapterCache<TIAdapter>.AdapterCommands.TryGetValue(adapterType, out AdapterCommandInfo? commandInfo))
             return NotFound();
-
-        AdapterInfo info = commandInfo.Info;
 
         if (!commandInfo.MethodAttributeMap.TryGetValue(command, out (MethodInfo, AdapterCommandAttribute) methodAttribute))
             return NotFound();

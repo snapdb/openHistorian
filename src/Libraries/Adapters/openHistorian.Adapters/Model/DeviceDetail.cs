@@ -21,7 +21,5 @@ public class DeviceDetail : Device
 
     public string InterconnectionName { get; set; } = "";
 
-    public string NodeName { get; set; } = "";
-
     public string ParentAcronym { get; set; } = "";
 }

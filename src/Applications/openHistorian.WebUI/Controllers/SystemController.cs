@@ -21,10 +21,15 @@
 //
 //******************************************************************************************************
 
+using Gemstone.Configuration;
 using Gemstone.PhasorProtocols;
 using Microsoft.AspNetCore.Mvc;
+using openHistorian.Model;
+using openHistorian.Utility;
 using openHistorian.WebUI.Controllers.JsonModels;
 using ServiceInterface;
+using System.Diagnostics;
+using static openHistorian.Utility.FailoverModule;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -32,6 +37,7 @@ namespace openHistorian.WebUI.Controllers;
 [ApiController]
 public class SystemController : Controller
 {
+
     private readonly IServiceCommands m_serviceCommands = WebServer.ServiceCommands;
 
     [HttpGet, Route("reloadConfig")]
@@ -44,7 +50,7 @@ public class SystemController : Controller
     [HttpGet, Route("currentStatus")]
     public SystemStatus GetCurrentStatus()
     {
-        (string status, string type, string description) = m_serviceCommands.GetCurrentStatus();
+        (string status, ServiceStatus type, string description) = m_serviceCommands.GetCurrentStatus();
         
         return new SystemStatus
         {
@@ -60,25 +66,54 @@ public class SystemController : Controller
         m_serviceCommands.SendCommand(connectionID, command);
     }
 
-    [HttpGet, Route("getEvents")]
-    public IEnumerable<Event> GetEvents(DateTime startTime, DateTime endTime)
+    /// <summary>
+    /// Returns a true if this node should prevent the requesting node from starting up
+    /// </summary>
+    /// <returns><c>true</c> if the other node should be prevented from starting up; otherwise <c>false</c>.</returns>
+    [HttpPost, Route("checkFailOverState")]
+    public IActionResult CheckFailOverStatus(FailOverRequest request)
     {
-        return
-        [
-            new Event
-            {
-                StartTime = DateTime.UtcNow - TimeSpan.FromMinutes(5.0D),
-                EndTime = DateTime.UtcNow,
-                PointTag = "SHELBY-AL2",
-                Details = "Test Event",
-                Type = "Test",
-                ID = Guid.NewGuid()
-            }
-        ];
+        if (!string.Equals(request.ClusterSecret, FailOverModule.ClusterSecret, StringComparison.InvariantCultureIgnoreCase))
+            return Unauthorized();
+
+        // Fail over disablesS
+        if (FailOverModule.SystemPriority == 0)
+            return BadRequest("Fail over is disabled on this System");
+        
+        FailOverLog log = new()
+        {
+            SystemName = request.SystemName,
+            Priority = request.SystemPriority,
+            Timestamp = DateTime.UtcNow
+        };
+
+        FailOverResponse response = new()
+        {
+            SystemName = FailOverModule.SystemName,
+            SystemPriority = FailOverModule.SystemPriority
+        };
+
+        if (request.SystemPriority < FailOverModule.SystemPriority)
+        {
+            log.Message = $"Prevented startup of {log.SystemName} due to lower priority.";
+            response.PreventStartup = true;
+        }
+        else if (request.SystemPriority == FailOverModule.SystemPriority)
+        {
+            log.Message = "Node with matching priority started.";
+            response.PreventStartup = false;
+        }
+        else
+        {
+            log.Message = $"Node with higher priority started. Shutting down {SystemName}";
+            response.PreventStartup = false;
+            Process.Start("ServiceActions.exe", $"--restart --service={FailOverModule.ServiceName}");
+
+        }
+
+        FailOverModule.LogMessage(log);
+
+        return Ok(response);
     }
 
-    public void WriteEvent(Event evt)
-    {
-        // TODO: Write event to database with historian record
-    }
 }

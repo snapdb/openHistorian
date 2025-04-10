@@ -20,8 +20,12 @@
 //
 //******************************************************************************************************
 
+using System.Data;
 using Gemstone.PhasorProtocols;
 using Gemstone.Timeseries;
+using Gemstone.Timeseries.Adapters;
+using Gemstone.Timeseries.Data;
+using openHistorian.Utility;
 using Gemstone.Timeseries.Adapters;
 using openHistorian.WebUI;
 using ServiceInterface;
@@ -129,10 +133,10 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
     }
 
     /// <inheritdoc />
-    public (string Status, string Type, string Description) GetCurrentStatus()
+    public (string Status, ServiceStatus Type, string Description) GetCurrentStatus()
     {
         // WARNING / NORMAL / ERROR
-        return ("NORMAL", "Service", "openHistorian service is running.");
+        return ("ONLINE", ServiceStatus.Normal, "openHistorian service is running normal.");
     }
 
     private void GetStatsForCurrentStatus()
@@ -154,6 +158,9 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
             DiagnosticsLogger.DefineSettings(settings);
             WebHosting.DefineSettings(settings);
             ServiceHostBase.DefineSettings(settings);
+            FailoverModule.DefineSettings(settings);
         }
     }
+
+    public void ReloadConfig() { }
 }

@@ -458,12 +458,12 @@ partial class GrafanaDataSourceBase
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns> Queried device alarm states.</returns>
-    public virtual Task<IEnumerable<AlarmDeviceStateView>> GetAlarmState(CancellationToken cancellationToken)
+    public virtual Task<IEnumerable<DeviceStateView>> GetAlarmState(CancellationToken cancellationToken)
     {
         return Task.Factory.StartNew(() =>
         {
             using AdoDataConnection connection = new(Settings.Default.System);
-            return new TableOperations<AlarmDeviceStateView>(connection).QueryRecords("Name");
+            return new TableOperations<DeviceStateView>(connection).QueryRecords("Name");
         },
         cancellationToken);
     }

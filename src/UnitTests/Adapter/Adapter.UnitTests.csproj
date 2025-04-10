@@ -1,0 +1,81 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Configurations>Debug;Release;Development</Configurations>
+    <PackageId>Adapter.UnitTests</PackageId>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Development'">
+    <DebugType>Full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;CS0642</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;CS0642</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|AnyCPU'">
+    <NoWarn>1701;1702;CS0642</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="AccessControl\**" />
+    <Compile Remove="Adapter\**" />
+    <Compile Remove="Diagnostics\**" />
+    <Compile Remove="IO\**" />
+    <Compile Remove="SortedTreeStore\**" />
+    <Compile Remove="Threading\**" />
+    <EmbeddedResource Remove="AccessControl\**" />
+    <EmbeddedResource Remove="Adapter\**" />
+    <EmbeddedResource Remove="Diagnostics\**" />
+    <EmbeddedResource Remove="IO\**" />
+    <EmbeddedResource Remove="SortedTreeStore\**" />
+    <EmbeddedResource Remove="Threading\**" />
+    <None Remove="AccessControl\**" />
+    <None Remove="Adapter\**" />
+    <None Remove="Diagnostics\**" />
+    <None Remove="IO\**" />
+    <None Remove="SortedTreeStore\**" />
+    <None Remove="Threading\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="BenchmarkSockets.cs" />
+    <Compile Remove="BitGuidReadWrite.cs" />
+    <Compile Remove="CheckSHA1Guid.cs" />
+    <Compile Remove="ConcurrentReading.cs" />
+    <Compile Remove="Program.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
+    <PackageReference Include="Gemstone.Data" Version="1.0.129" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.13" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+
+    <PackageReference Include="nunit" Version="4.3.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    
+    <PackageReference Include="NUnit.Analyzers" Version="4.6.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="SnapDB" Condition="'$(Configuration)'!='Development'">
+      <HintPath>..\Dependencies\SnapDB\SnapDB.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
