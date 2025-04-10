@@ -215,6 +215,8 @@ public class InitialSchema : Migration
             .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
             .WithColumn("Local").AsBoolean().NotNullable().WithDefaultValue(true)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
+            .WithColumn("Manual").AsBoolean().NotNullable().WithDefaultValue(true)
+            .WithColumn("Label").AsString().Nullable()
             .WithCreatedBy();
 
         Create.Table("Phasor")
@@ -517,6 +519,7 @@ public class InitialSchema : Migration
            .WithColumn("State").AsString(50).Nullable()
            .WithColumn("Color").AsString(50).Nullable()
            .WithColumn("RecommendedAction").AsString(500).Nullable()
+           .WithColumn("Priority").AsInt32().WithDefaultValue(0)
            .WithColumn("Rules").AsString(int.MaxValue).Nullable();
 
         Create.Table("DeviceStatus")
