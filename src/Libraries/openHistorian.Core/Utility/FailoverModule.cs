@@ -63,7 +63,7 @@ public static class FailoverModule
     public class FailoverRequest
     {
         public string SystemName { get; set; }
-        public int SystemPriotity { get; set; }
+        public int SystemPriority { get; set; }
         public string ClusterSecret { get; set; }
     }
 
@@ -215,7 +215,7 @@ public static class FailoverModule
                 {
                     ClusterSecret = ClusterSecret,
                     SystemName = SystemName,
-                    SystemPriotity = SystemPriority
+                    SystemPriority = SystemPriority
                 }.ToString(), Encoding.UTF8, "application/json");
 
 
@@ -227,11 +227,11 @@ public static class FailoverModule
                 if (response is null)
                     return false;
 
-                FailOverResponse? failOverResponse = response.Content.ReadFromJsonAsync<FailOverResponse>().GetAwaiter().GetResult();
+                FailoverResponse? failoverResponse = response.Content.ReadFromJsonAsync<FailoverResponse>().GetAwaiter().GetResult();
                 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    FailoverResponse failoverResponse = response.Content.ReadFromJsonAsync<FailoverResponse>().GetAwaiter().GetResult();
+                    failoverResponse = response.Content.ReadFromJsonAsync<FailoverResponse>().GetAwaiter().GetResult();
                     LogMessage(new FailoverLog()
                     {
                         SystemName = failoverResponse.SystemName,

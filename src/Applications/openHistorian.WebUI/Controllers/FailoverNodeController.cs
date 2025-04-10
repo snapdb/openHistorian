@@ -15,8 +15,8 @@ public class FailoverNodeController : ReadOnlyModelController<JsonModels.Failove
         if (!GetAuthCheck()) return Unauthorized();
 
         return Ok(new FailoverNodeView() { 
-            SystemName = FailOverModule.SystemName, 
-            Priority = FailOverModule.SystemPriority,
+            SystemName = FailoverModule.SystemName, 
+            Priority = FailoverModule.SystemPriority,
             LastLog = DateTime.UtcNow
         });
     }

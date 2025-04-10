@@ -41,7 +41,7 @@ internal class Program
                 .ConfigureGemstoneDefaults(settings)
                 .AddCommandLine(args, settings.SwitchMappings));
 
-            FailOverModule.PreventStartup();
+            FailoverModule.PreventStartup();
 
             HostApplicationBuilderSettings appSettings = new()
             {
