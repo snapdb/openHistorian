@@ -205,6 +205,8 @@ public class InitialSchema : Migration
             .WithColumn("DeviceID").AsInt32().Nullable().ForeignKey("Device", "ID")
             .WithColumn("PointTag").AsString(200).NotNullable()
             .WithColumn("AlternateTag").AsString().Nullable()
+            .WithColumn("AlternateTag2").AsString().Nullable()
+            .WithColumn("AlternateTag3").AsString().Nullable()
             .WithColumn("SignalReference").AsString(200).NotNullable()
             .WithColumn("SignalTypeID").AsInt32().NotNullable().ForeignKey("SignalType", "ID")
             .WithColumn("PhasorSourceIndex").AsInt32().Nullable()
