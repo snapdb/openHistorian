@@ -158,7 +158,9 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
             DiagnosticsLogger.DefineSettings(settings);
             WebHosting.DefineSettings(settings);
             ServiceHostBase.DefineSettings(settings);
-            FailOverModule.DefineSettings(settings);
+            FailoverModule.DefineSettings(settings);
         }
     }
+
+    public void ReloadConfig() { }
 }
