@@ -48,7 +48,6 @@ using System.Text;
 using System.Threading;
 using System.Timers;
 using ConfigSettings = Gemstone.Configuration.Settings;
-using DeviceStateRecord = GrafanaAdapters.Model.Database.DeviceState;
 using ConnectionStringParser = Gemstone.Configuration.ConnectionStringParser<Gemstone.Timeseries.Adapters.ConnectionStringParameterAttribute>;
 using Timer = System.Timers.Timer;
 using Microsoft.AspNetCore.Mvc;
@@ -87,13 +86,13 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// </summary>
     private static readonly Dictionary<AlarmState, DeviceState> s_baseStates = new ()
     {
-        { AlarmState.Good, new DeviceStateRecord() { Color="green", State=nameof(AlarmState.Good), Rules="" }  },
-        { AlarmState.Alarm, new DeviceStateRecord() { Color="red", State=nameof(AlarmState.Alarm), Rules="" }  },
-        { AlarmState.NotAvailable, new DeviceStateRecord() { Color="orange", State=nameof(AlarmState.NotAvailable), Rules="" }  },
-        { AlarmState.BadData, new DeviceStateRecord() { Color="blue", State=nameof(AlarmState.BadData), Rules="" }  },
-        { AlarmState.BadTime, new DeviceStateRecord() { Color="purple", State=nameof(AlarmState.BadTime), Rules="" }  },
-        { AlarmState.OutOfService, new DeviceStateRecord() { Color="grey", State=nameof(AlarmState.OutOfService), Rules="" }  },
-        { AlarmState.Acknowledged, new DeviceStateRecord() { Color="rosybrown", State=nameof(AlarmState.Acknowledged), Rules="" }  }
+        { AlarmState.Good, new DeviceState() { Color="green", State=nameof(AlarmState.Good), Rules="", Priority=0 }  },
+        { AlarmState.Alarm, new DeviceState() { Color="red", State=nameof(AlarmState.Alarm), Rules="" }  },
+        { AlarmState.NotAvailable, new DeviceState() { Color="orange", State=nameof(AlarmState.NotAvailable), Rules="" }  },
+        { AlarmState.BadData, new DeviceState() { Color="blue", State=nameof(AlarmState.BadData), Rules="" }  },
+        { AlarmState.BadTime, new DeviceState() { Color="purple", State=nameof(AlarmState.BadTime), Rules="" }  },
+        { AlarmState.OutOfService, new DeviceState() { Color="grey", State=nameof(AlarmState.OutOfService), Rules="" }  },
+        { AlarmState.Acknowledged, new DeviceState() { Color="rosybrown", State=nameof(AlarmState.Acknowledged), Rules="" }  }
     };
 
     private const int UpToDate = 0;
@@ -120,7 +119,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     public const double DefaultExternalDatabaseHysteresisDelay = 5.0D;
 
     // Fields
-    private Dictionary<AlarmState, DeviceStateRecord> m_alarmStates;
+    private Dictionary<AlarmState, DeviceState> m_alarmStates;
     private Dictionary<int, AlarmState> m_alarmStateIDs;
     private Dictionary<int, MeasurementKey[]> m_deviceMeasurementKeys;
     private Dictionary<int, DataRow> m_deviceMetadata;
@@ -129,7 +128,9 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private Dictionary<int, Ticks> m_lastAcknowledgedTransition;
     private Ticks m_lastExternalDatabaseStateChange;
     private Dictionary<AlarmState, string> m_mappedAlarmStates;
-    private Dictionary<AlarmState, int> m_stateCounts;
+
+    private Dictionary<int, int> m_stateCounts;
+    private List<DeviceState> m_deviceStates;
     private List<int> m_compositeStates;
     private Lock m_stateCountLock;
     private Ticks m_alarmTime;
@@ -326,13 +327,8 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
             lock (m_stateCountLock)
             {
-                status.AppendLine($"              Good Devices: {m_stateCounts[AlarmState.Good]:N0}");
-                status.AppendLine($"           Alarmed Devices: {m_stateCounts[AlarmState.Alarm]:N0}");
-                status.AppendLine($"       Unavailable Devices: {m_stateCounts[AlarmState.NotAvailable]:N0}");
-                status.AppendLine($"Devices Reporting Bad Data: {m_stateCounts[AlarmState.BadData]:N0}");
-                status.AppendLine($"Devices Reporting Bad Time: {m_stateCounts[AlarmState.BadTime]:N0}");
-                status.AppendLine($"    Out of Service Devices: {m_stateCounts[AlarmState.OutOfService]:N0}");
-                status.AppendLine($"      Acknowledged Devices: {m_stateCounts[AlarmState.Acknowledged]:N0}");
+                foreach (DeviceState s in m_deviceStates)
+                    status.AppendLine($"{s.State.PadLeft(30)}: {(m_stateCounts.TryGetValue(s.ID, out int count) ? count : 0)}");
             }
 
             return status.ToString();
@@ -394,7 +390,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         ConnectionStringParser parser = new();
         parser.ParseConnectionString(ConnectionString, this);
 
-        m_alarmStates = new Dictionary<AlarmState, DeviceStateRecord>();
+        m_alarmStates = new Dictionary<AlarmState, DeviceState>();
         m_alarmStateIDs = new Dictionary<int, AlarmState>();
         m_deviceMeasurementKeys = new Dictionary<int, MeasurementKey[]>();
         m_deviceMetadata = new Dictionary<int, DataRow>();
@@ -405,9 +401,8 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         m_mappedAlarmStates = new Dictionary<AlarmState, string>();
         m_stateCounts = CreateNewStateCountsMap();
         m_compositeStates = [];
-        m_stateCountLock = new Lock();
-
-        LoadAlarmStates();
+        m_stateCountLock = new object();
+        m_deviceStates = new List<DeviceState>();
 
         // Parse external database mapped alarm states, if defined
         if (!string.IsNullOrEmpty(ExternalDatabaseMappedAlarmStates))
@@ -425,8 +420,8 @@ public class DeviceStateAdapter : FacileActionAdapterBase
        
         if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified) == Modified)
             m_processDeviceStatus.RunAsync();
-
-        new Action(m_processDeviceStatus.RunAsync).DelayAndExecute(MonitoringRate);
+        else
+            new Action(m_processDeviceStatus.RunAsync).DelayAndExecute(MonitoringRate);
     }
 
     private void LoadAlarmStates(bool reload = false)
@@ -436,12 +431,12 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         using AdoDataConnection connection = new(ConfigSettings.Default.System);
 
         // Load alarm state map - this defines database state ID and custom color for each alarm state
-        TableOperations<DeviceStateRecord> alarmStateTable = new(connection);
-        DeviceStateRecord[] alarmStateRecords = alarmStateTable.QueryRecords().ToArray();
+        TableOperations<DeviceState> alarmStateTable = new(connection);
+        DeviceState[] alarmStateRecords = alarmStateTable.QueryRecords().ToArray();
 
         foreach (AlarmState alarmState in Enum.GetValues(typeof(AlarmState)))
         {
-            DeviceStateRecord alarmStateRecord = alarmStateRecords.FirstOrDefault(record => record.State.RemoveWhiteSpace().Equals(alarmState.ToString(), StringComparison.OrdinalIgnoreCase));
+            DeviceState alarmStateRecord = alarmStateRecords.FirstOrDefault(record => record.State.RemoveWhiteSpace().Equals(alarmState.ToString(), StringComparison.OrdinalIgnoreCase));
 
             if (alarmStateRecord is null)
             {
@@ -595,7 +590,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         {
             ImmediateMeasurements measurements = LatestMeasurements;
             List<DeviceStatus> alarmDeviceUpdates = [];
-            Dictionary<AlarmState, int> stateCounts = CreateNewStateCountsMap();
+            Dictionary<int, int> stateCounts = CreateNewStateCountsMap();
 
             OnStatusMessage(MessageLevel.Info, "Updating device alarm states");
 
@@ -605,10 +600,13 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
                 foreach (DeviceStatus alarmDevice in alarmDeviceTable.QueryRecords())
                 {
+                    //Skip a Device if there are no measurements or it has no entry in the Device MetaData
                     if (!m_deviceMeasurementKeys.TryGetValue(alarmDevice.DeviceID, out MeasurementKey[] keys) ||
                         !m_deviceMetadata.TryGetValue(alarmDevice.DeviceID, out DataRow metadata))
                         continue;
 
+
+                    //Loop Through all States In Priority Order. If a state matches we are done. If it does not we continue
                     if (!m_alarmStateIDs.TryGetValue(alarmDevice.StateID, out AlarmState currentState))
                         currentState = AlarmState.NotAvailable;
 
@@ -683,7 +681,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                     }
 
                     // Track current state counts
-                    stateCounts[newState]++;
+                    stateCounts[(int)newState]++;
 
                     // Update alarm device state if it has changed
                     int stateID = m_alarmStates[newState].ID;
@@ -725,7 +723,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                 Dictionary<string, string> substitutions = new();
 
                 // Provide state counts as available substitution parameters
-                foreach (KeyValuePair<AlarmState, int> stateCount in stateCounts)
+                foreach (KeyValuePair<int, int> stateCount in stateCounts)
                     substitutions[$"{{{stateCount.Key}StateCount}}"] = stateCount.Value.ToString();
 
                 using AdoDataConnection connection = string.IsNullOrWhiteSpace(ExternalDatabaseConnectionString) ? new AdoDataConnection(ConfigSettings.Default.System) : new AdoDataConnection(ExternalDatabaseConnectionString, ExternalDatabaseProviderString);
@@ -869,6 +867,8 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         DataSet deviceStateDataSet = new();
         deviceStateDataSet.Tables.Add(dataSource.Tables["DeviceState"]!.Copy());
 
+      
+
         if (DataSetEqualityComparer.Default.Equals(m_deviceStateDataSet, deviceStateDataSet))
             return true;
 
@@ -877,16 +877,18 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         bool addedState = false;
 
         await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        TableOperations<DeviceState> tblOperation = new(connection);
+
+        m_deviceStates = deviceStateDataSet.Tables[0].Rows.Cast<DataRow>().Select((row) => tblOperation.LoadRecord(row)).ToList();
         foreach (DeviceState state in s_baseStates.Values)
         {
             DataRow row = deviceStateDataSet.Tables[0].Rows.Cast<DataRow>().Where(x => string.Equals(x.ConvertField<string>("State"),state.State,StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
             if (row == null)
             {
-                new TableOperations<DeviceState>(connection).AddNewRecord(state);
+                tblOperation.AddNewRecord(state);
                 addedState = true;
 
             }
-
         }
 
         return !addedState;
@@ -899,18 +901,14 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private static readonly string[] s_shortTimeNames = [" yr", " yr", " d", " d", " hr", " hr", " m", " m", " s", " s", "< "];
     private static readonly double s_daysPerYear = new Time(Time.SecondsPerYear(DateTime.UtcNow.Year)).ToDays();
 
-    private static Dictionary<AlarmState, int> CreateNewStateCountsMap()
+    private Dictionary<int, int> CreateNewStateCountsMap()
     {
-        return new Dictionary<AlarmState, int>
+        Dictionary<int,int> counts = new Dictionary<int, int>();
+        foreach (DeviceState s in m_deviceStates)
         {
-            [AlarmState.Good] = 0,
-            [AlarmState.Alarm] = 0,
-            [AlarmState.NotAvailable] = 0,
-            [AlarmState.BadData] = 0,
-            [AlarmState.BadTime] = 0,
-            [AlarmState.OutOfService] = 0,
-            [AlarmState.Acknowledged] = 0
-        };
+            counts.Add(s.ID, 0);
+        }
+        return counts;
     }
 
     private static string GetOutOfServiceTime(DataRow deviceRow)
