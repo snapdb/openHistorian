@@ -237,9 +237,12 @@ public class AdapterCommandControllerBase<TIAdapter> :
 
         (method, AdapterCommandAttribute attribute) = methodAttribute;
 
-        // Verify user is in allowed roles for command
+    
+       /* Temporarily commenting auth check as security is not yet implemented
+        * // Verify user is in allowed roles for command
         if (!attribute.AllowedRoles.Any(User.IsInRole))
             return Unauthorized();
+       */
 
         // Verify method return type is IActionResult
         if (method.ReturnType != typeof(IActionResult))
