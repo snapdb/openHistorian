@@ -1043,7 +1043,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
         ConfigurationFrame derivedFrame = new()
         {
-            IDCode = device.AccessID,
+            IDCode = (ushort)device.AccessID,
             StationName = device.Name,
             IDLabel = device.Acronym,
             ConnectionString = device.ConnectionString,
@@ -1067,7 +1067,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     UniqueID = device.UniqueID,
                     Longitude = device.Longitude,
                     Latitude = device.Latitude,
-                    IDCode = childDevice.AccessID,
+                    IDCode = (ushort)childDevice.AccessID,
                     StationName = childDevice.Name,
                     IDLabel = childDevice.Acronym,
                     FrequencyDefinition = new FrequencyDefinition { Label = "Frequency" },
@@ -1143,7 +1143,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 Longitude = device.Longitude,
                 Latitude = device.Latitude,
                 ParentID = null,
-                IDCode = device.AccessID,
+                IDCode = (ushort)device.AccessID,
                 StationName = device.Name,
                 IDLabel = device.Acronym,
                 FrequencyDefinition = new FrequencyDefinition { Label = "Frequency" },
