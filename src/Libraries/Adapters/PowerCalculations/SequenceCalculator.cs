@@ -41,7 +41,7 @@ namespace PowerCalculations;
 /// Calculates positive, negative and zero sequences using A, B and C phase voltage or current magnitude and angle signals input to the adapter.
 /// </summary>
 [Description("Sequence Calculator: Computes positive, negative and zero sequences for synchrophasor measurements")]
-[UIResource("AdaptersUI", $".{nameof(PowerCalculations)}.{nameof(SequenceCalculator)}.{nameof(PowerCalculations)}.{nameof(SequenceCalculator)}.js", $"{nameof(PowerCalculations)}.{nameof(SequenceCalculator)}.js")]
+[UIResource("AdaptersUI", $".{nameof(PowerCalculations)}.{nameof(SequenceCalculator)}.main.js")]
 [UIResource("AdaptersUI", $".{nameof(PowerCalculations)}.{nameof(SequenceCalculator)}.chunk.js")]
 public class SequenceCalculator : CalculatedMeasurementBase
 {

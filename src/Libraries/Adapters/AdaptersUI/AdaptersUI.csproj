@@ -8,42 +8,50 @@
 
   <ItemGroup>
     <None Remove="CSVAdapters\CSVInputAdapter\CSVAdapters.CSVInputAdapter.js" />
+    <None Remove="CSVAdapters\CSVInputAdapter\main.js" />
     <None Remove="CSVAdapters\CSVInputAdapter\openHistorian.Adapters.CsvInputAdapter.js" />
     <None Remove="DynamicCalculator\DynamicCalculator\chunk.js" />
     <None Remove="DynamicCalculator\DynamicCalculator\DynamicCalculator.DynamicCalculator.js" />
+    <None Remove="DynamicCalculator\DynamicCalculator\main.js" />
     <None Remove="FileAdapters\ProcessLauncher\chunk.js" />
     <None Remove="FileAdapters\ProcessLauncher\FileAdapters.ProcessLauncher.js" />
+    <None Remove="FileAdapters\ProcessLauncher\main.js" />
     <None Remove="Gemstone\Timeseries\StatisticsEngine\Gemstone.Timeseries.Statistics.StatisticsEngine.js" />
+    <None Remove="Gemstone\Timeseries\StatisticsEngine\main.js" />
     <None Remove="GrafanaAdapters\DeviceAlarmStateAdapter\GrafanaAdapters.DeviceAlarmStateAdapter.js" />
+    <None Remove="GrafanaAdapters\DeviceAlarmStateAdapter\main.js" />
     <None Remove="openHistorian.Adapters\LocalOutputAdapter\chunk.js" />
-    <None Remove="openHistorian.Adapters\LocalOutputAdapter\openHistorian.Adapters.LocalOutputAdapter.js" />
+    <None Remove="openHistorian.Adapters\LocalOutputAdapter\main.js" />
     <None Remove="PowerCalculations\ImpedanceCalculator\chunk.js" />
+    <None Remove="PowerCalculations\ImpedanceCalculator\main.js" />
     <None Remove="PowerCalculations\ImpedanceCalculator\PowerCalculations.ImpedanceCalculator.js" />
     <None Remove="PowerCalculations\PowerCalculator\chunk.js" />
+    <None Remove="PowerCalculations\PowerCalculator\main.js" />
     <None Remove="PowerCalculations\PowerCalculator\PowerCalculations.PowerCalculator.js" />
     <None Remove="PowerCalculations\SequenceCalculator\chunk.js" />
+    <None Remove="PowerCalculations\SequenceCalculator\main.js" />
     <None Remove="PowerCalculations\SequenceCalculator\PowerCalculations.SequenceCalculator.js" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="CSVAdapters\CSVInputAdapter\chunk.js" />
-    <EmbeddedResource Include="CSVAdapters\CSVInputAdapter\CSVAdapters.CSVInputAdapter.js" />
+    <EmbeddedResource Include="CSVAdapters\CSVInputAdapter\main.js" />
     <EmbeddedResource Include="DynamicCalculator\DynamicCalculator\chunk.js" />
-    <EmbeddedResource Include="DynamicCalculator\DynamicCalculator\DynamicCalculator.DynamicCalculator.js" />
+    <EmbeddedResource Include="DynamicCalculator\DynamicCalculator\main.js" />
     <EmbeddedResource Include="FileAdapters\ProcessLauncher\chunk.js" />
-    <EmbeddedResource Include="FileAdapters\ProcessLauncher\FileAdapters.ProcessLauncher.js" />
-    <EmbeddedResource Include="Gemstone\Timeseries\StatisticsEngine\Gemstone.Timeseries.Statistics.StatisticsEngine.js" />
+    <EmbeddedResource Include="FileAdapters\ProcessLauncher\main.js" />
+    <EmbeddedResource Include="Gemstone\Timeseries\StatisticsEngine\main.js" />
     <EmbeddedResource Include="GrafanaAdapters\DeviceAlarmStateAdapter\chunk.js" />
-    <EmbeddedResource Include="GrafanaAdapters\DeviceAlarmStateAdapter\GrafanaAdapters.DeviceAlarmStateAdapter.js" />
     <EmbeddedResource Include="Gemstone\Timeseries\StatisticsEngine\chunk.js" />
+    <EmbeddedResource Include="GrafanaAdapters\DeviceAlarmStateAdapter\main.js" />
     <EmbeddedResource Include="openHistorian.Adapters\LocalOutputAdapter\chunk.js" />
-    <EmbeddedResource Include="openHistorian.Adapters\LocalOutputAdapter\openHistorian.Adapters.LocalOutputAdapter.js" />
+    <EmbeddedResource Include="openHistorian.Adapters\LocalOutputAdapter\main.js" />
     <EmbeddedResource Include="PowerCalculations\ImpedanceCalculator\chunk.js" />
-    <EmbeddedResource Include="PowerCalculations\ImpedanceCalculator\PowerCalculations.ImpedanceCalculator.js" />
+    <EmbeddedResource Include="PowerCalculations\ImpedanceCalculator\main.js" />
     <EmbeddedResource Include="PowerCalculations\PowerCalculator\chunk.js" />
-    <EmbeddedResource Include="PowerCalculations\PowerCalculator\PowerCalculations.PowerCalculator.js" />
+    <EmbeddedResource Include="PowerCalculations\PowerCalculator\main.js" />
     <EmbeddedResource Include="PowerCalculations\SequenceCalculator\chunk.js" />
-    <EmbeddedResource Include="PowerCalculations\SequenceCalculator\PowerCalculations.SequenceCalculator.js" />
+    <EmbeddedResource Include="PowerCalculations\SequenceCalculator\main.js" />
   </ItemGroup>
 
 </Project>
