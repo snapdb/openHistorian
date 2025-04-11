@@ -24,6 +24,8 @@ public class VendorDevice
     [UrlValidation]
     public string URL { get; set; } = "";
 
+    public int LoadOrder { get; set; }
+
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("UserInfo.CurrentUserID")]
@@ -39,6 +41,6 @@ public class VendorDevice
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    //[UpdateValueExpression("UserInfo.CurrentUserID")]
+    [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; } = "";
 }

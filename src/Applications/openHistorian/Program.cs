@@ -10,7 +10,6 @@ namespace openHistorian;
 
 internal class Program
 {
-   
     private static void Main(string[] args)
     {
         try

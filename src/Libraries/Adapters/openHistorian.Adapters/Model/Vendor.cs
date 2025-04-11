@@ -58,6 +58,12 @@ public class Vendor
         set;
     }
 
+    public int LoadOrder
+    {
+        get;
+        set;
+    }
+
     /// <summary>
     /// Created on field.
     /// </summary>

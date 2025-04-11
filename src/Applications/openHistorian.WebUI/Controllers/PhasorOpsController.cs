@@ -59,6 +59,7 @@ using Phasor = Gemstone.Timeseries.Model.Phasor;
 using Measurement = Gemstone.Timeseries.Model.Measurement;
 using SignalType = Gemstone.Timeseries.Model.SignalType;
 using ConfigSettings = Gemstone.Configuration.Settings;
+using Gemstone.Timeseries.Model;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -388,12 +389,12 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     }
 
     /// <inheritdoc />
-    [HttpGet, Route("Connect/{connectionString}/{expiration:double?}")]
-    public Task<IActionResult> Connect(string connectionString, double? expiration, CancellationToken cancellationToken)
+    [HttpPost, Route("Connect/{expiration:double?}")]
+    public Task<IActionResult> Connect([FromBody] ConnectionRequest request, double? expiration, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.ConnectionString);
 
-        ConnectionCache cache = ConnectionCache.Create(this, connectionString, expiration ?? 1.0D);
+        ConnectionCache cache = ConnectionCache.Create(this, request.ConnectionString, expiration ?? 1.0D);
 
         return Task.FromResult<IActionResult>(Ok(cache.Token));
     }
@@ -1042,7 +1043,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
         ConfigurationFrame derivedFrame = new()
         {
-            IDCode = device.AccessID,
+            IDCode = (ushort)device.AccessID,
             StationName = device.Name,
             IDLabel = device.Acronym,
             ConnectionString = device.ConnectionString,
@@ -1066,7 +1067,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     UniqueID = device.UniqueID,
                     Longitude = device.Longitude,
                     Latitude = device.Latitude,
-                    IDCode = childDevice.AccessID,
+                    IDCode = (ushort)childDevice.AccessID,
                     StationName = childDevice.Name,
                     IDLabel = childDevice.Acronym,
                     FrequencyDefinition = new FrequencyDefinition { Label = "Frequency" },
@@ -1142,7 +1143,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 Longitude = device.Longitude,
                 Latitude = device.Latitude,
                 ParentID = null,
-                IDCode = device.AccessID,
+                IDCode = (ushort)device.AccessID,
                 StationName = device.Name,
                 IDLabel = device.Acronym,
                 FrequencyDefinition = new FrequencyDefinition { Label = "Frequency" },

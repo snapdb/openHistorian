@@ -69,4 +69,6 @@ public class SignalType
         get;
         set;
     }
+
+    public int LoadOrder { get; set; }
 }

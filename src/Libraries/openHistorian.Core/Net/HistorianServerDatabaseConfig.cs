@@ -104,7 +104,7 @@ public class HistorianServerDatabaseConfig : IToServerDatabaseSettings
         get => m_config.DesiredRemainingSpace;
         set
         {
-            if (value < 100 * SI2.Mega)
+            if (value <= 100 * SI2.Mega)
                 throw new ArgumentOutOfRangeException(nameof(value), "Desired remaining space must be between 100MB and 1TB");
 
             if (value > SI2.Tera)

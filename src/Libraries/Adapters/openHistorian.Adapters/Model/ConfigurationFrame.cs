@@ -137,7 +137,7 @@ public class ConfigurationFrame
 
     public string Acronym
     {
-        get => ConfigurationFrame.GetCleanAcronym(IDLabel);
+        get => GetCleanAcronym(IDLabel);
         set => IDLabel = value;
     }
 
@@ -148,7 +148,7 @@ public class ConfigurationFrame
     /// <returns>Clean acronym.</returns>
     public static string GetCleanAcronym(string acronym)
     {
-        return Regex.Replace(acronym.ToUpperInvariant().Replace(" ", "_"), @"[^A-Z0-9\-!_\.@#\$]", "", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        return Regex.Replace((acronym ?? "").ToUpperInvariant().Replace(" ", "_"), @"[^A-Z0-9\-!_\.@#\$]", "", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     }
 
     /// <summary>

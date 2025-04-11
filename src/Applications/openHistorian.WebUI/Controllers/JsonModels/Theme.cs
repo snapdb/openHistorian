@@ -7,8 +7,7 @@ namespace openHistorian.WebUI.Controllers.JsonModels;
 public class Theme
 {
     [PrimaryKey(true)]
-    [DefaultValueExpression("-1")]
-    public int ID { get; set; }
+    public int ID { get; set; } = -1;
 
     public string FileName { get; set; }
 

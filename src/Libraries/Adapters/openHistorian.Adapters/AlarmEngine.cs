@@ -36,6 +36,7 @@ using System.Data;
 using System.Text;
 using Gemstone;
 using Gemstone.ActionExtensions;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Data;
 using Gemstone.Data.DataExtensions;
 using Gemstone.Data.Model;
@@ -316,6 +317,7 @@ public class AlarmEngine : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Define the flag indicating if this adapter supports temporal processing.")]
     [DefaultValue(false)]
+    [Label("Supports Temporal Processing")]
     public override bool SupportsTemporalProcessing => m_supportsTemporalProcessing;
 
     /// <summary>
@@ -324,6 +326,7 @@ public class AlarmEngine : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Define the amount of time, in hours, the alarms will be kept in the AlarmTable.")]
     [DefaultValue(DefaultAlarmRetention)]
+    [Label("Default Alarm Retention")]
     public double AlarmRetention { get; set; }
 
     /// <inheritdoc/>
@@ -435,11 +438,16 @@ public class AlarmEngine : FacileActionAdapterBase
     /// Gets a collection containing all the raised alarms in the system.
     /// </summary>
     /// <returns>A collection containing all the raised alarms.</returns>
-    [AdapterCommand("Gets a collection containing all the raised alarms in the system.", "Administrator", "Editor", "Viewer")]
-    public IActionResult GetRaisedAlarms(ControllerBase controller)
+    public IActionResult GetRaisedAlarms(ControllerBase controller, IEnumerable<AlarmSeverity>? severities = null)
     {
         lock (m_alarmLock)
-            return controller.Ok(m_alarmProcessors.Values.Where(alarm => alarm.Alarm.State == AlarmState.Raised).Select(alarm => alarm.Alarm.Clone()));
+        {
+            var raisedAlarms = m_alarmProcessors.Values
+                .Where(ap => ap.Alarm.State == AlarmState.Raised &&
+                             (severities is null || severities.Contains(ap.Alarm.Severity)))
+                .Select(ap => ap.Alarm.Clone());
+            return controller.Ok(raisedAlarms);
+        }
     }
 
     // Dequeues measurements from the measurement queue and processes them.
@@ -810,6 +818,31 @@ public class AlarmEngine : FacileActionAdapterBase
     }
 
     // Static Methods
+
+    /// <summary>
+    /// Gets the raised alarms from the default instance of the AlarmAdapter.
+    /// </summary>
+    /// <param name="controller">The controller from which to generate the IActionResult.</param>
+    /// <returns>An IActionResult containing the raised alarms</returns>
+    [AdapterCommand("Gets the Raised Alarms of the Default instance.", "Viewer", "Adminastrator", "Editor")]
+    public static IActionResult GetRaisedAlarmsStatic(ControllerBase controller, string? severities = null)
+    {
+        IEnumerable<AlarmSeverity>? parsedSeverities = null;
+
+        // If the severities string is provided, split it into parts and parse each value.
+        if (!string.IsNullOrWhiteSpace(severities))
+        {
+            parsedSeverities = severities.Split(',')
+                                         .Select(s => s.Trim())
+                                         .Select(s => (AlarmSeverity)Enum.Parse(typeof(AlarmSeverity), s, true))
+                                         .ToList();
+        }
+
+        if (Default is null)
+            return controller.Ok(new List<Alarm>());
+
+        return controller.Ok(Default.GetRaisedAlarms(controller, parsedSeverities));
+    }
 
     // Creates an alarm using data defined in the database.
     private static Alarm CreateAlarm(DataRow row)

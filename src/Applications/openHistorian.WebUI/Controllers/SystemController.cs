@@ -37,7 +37,6 @@ namespace openHistorian.WebUI.Controllers;
 [ApiController]
 public class SystemController : Controller
 {
-
     private readonly IServiceCommands m_serviceCommands = WebServer.ServiceCommands;
 
     [HttpGet, Route("reloadConfig")]

@@ -186,7 +186,8 @@ public class WebServer(WebServerConfiguration configuration)
             options.Conventions.AddPageRoute("/Index", "Reports");
             options.Conventions.AddPageRoute("/Index", "Themes");
             options.Conventions.AddPageRoute("/Index", "SignalTypes");
-            options.Conventions.AddPageRoute("/Index", "AlarmStates");
+            options.Conventions.AddPageRoute("/Index", "DeviceStates");
+            options.Conventions.AddPageRoute("/Index", "Alarms");
 
             //options.Conventions.AuthorizePage("/Devices", Viewers);
             //options.Conventions.AuthorizePage("/Device", Editors);

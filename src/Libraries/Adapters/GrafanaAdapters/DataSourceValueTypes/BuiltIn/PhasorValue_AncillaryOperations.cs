@@ -286,12 +286,14 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
 
                 // Add columns to phasor metadata table
                 phasorValues.Columns.Add("Device", typeof(string));
+                phasorValues.Columns.Add("DeviceID", typeof(int));
 
                 // These are standard required fields for metadata lookup functions,
                 // especially as related to AdapterBase.ParseFilterExpression
                 phasorValues.Columns.Add("PointTag", typeof(string));   // Unique point tag for phasor
                 phasorValues.Columns.Add("ID", typeof(string));         // Mapped to magnitude ID
                 phasorValues.Columns.Add("SignalID", typeof(Guid));     // Mapped to magnitude SignalID
+                phasorValues.Columns.Add("PhasorID", typeof(int));
 
                 phasorValues.Columns.Add("MagnitudePointTag", typeof(string));
                 phasorValues.Columns.Add("AnglePointTag", typeof(string));
@@ -304,6 +306,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                 phasorValues.Columns.Add("Label", typeof(string));
                 phasorValues.Columns.Add("Type", typeof(char));
                 phasorValues.Columns.Add("Phase", typeof(char));
+                phasorValues.Columns.Add("SourceIndex", typeof(int));
                 phasorValues.Columns.Add("BaseKV", typeof(int));
                 phasorValues.Columns.Add("Longitude", typeof(decimal));
                 phasorValues.Columns.Add("Latitude", typeof(decimal));
@@ -335,11 +338,14 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
 
                         // Copy in specific magnitude and angle phasor metadata, default to magnitude metadata for common values
                         phasorRow["Device"] = magnitude["Device"];
+                        phasorRow["DeviceID"] = magnitude["DeviceID"];
+
                         phasorRow["PointTag"] = pointTag;
                         phasorRow["MagnitudePointTag"] = magnitudePointTag;
                         phasorRow["AnglePointTag"] = anglePointTag;
                         phasorRow["MagnitudeID"] = magnitude["ID"];
                         phasorRow["AngleID"] = angle["ID"];
+                        phasorRow["PhasorID"] = magnitude["PhasorID"];
                         phasorRow["MagnitudeSignalID"] = magnitude.ConvertGuidField("SignalID");
                         phasorRow["AngleSignalID"] = angle.ConvertGuidField("SignalID");
                         phasorRow["MagnitudeSignalReference"] = magnitude["SignalReference"];
@@ -347,6 +353,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                         phasorRow["Label"] = magnitude["PhasorLabel"];
                         phasorRow["Type"] = (magnitude["PhasorType"].ToString() ?? "V").Trim()[0];
                         phasorRow["Phase"] = (magnitude["Phase"].ToString() ?? "+").Trim()[0];
+                        phasorRow["SourceIndex"] = magnitude["SourceIndex"];
                         phasorRow["BaseKV"] = magnitude["BaseKV"];
                         phasorRow["Longitude"] = Convert.ToDecimal(magnitude["Longitude"]);
                         phasorRow["Latitude"] = Convert.ToDecimal(magnitude["Latitude"]);

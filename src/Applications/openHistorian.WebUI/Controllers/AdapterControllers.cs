@@ -102,8 +102,8 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
     /// Gets all adapters from a specified Assembly.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing an <see cref="IEnumerable{ValueLabel}"/> of the Types.</returns>
-    [HttpGet, Route("Types/{assemblyName}")]
-    public IActionResult GetTypes(string assemblyName)
+    [HttpGet, Route("Types/{assemblyName}/{useAdvancedAdapters}")]
+    public IActionResult GetTypes(string assemblyName, int useAdvancedAdapters)
     {
         if (!GetAuthCheck())
             return Unauthorized();
@@ -206,7 +206,7 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
         if (!resourceInfo.AttributeMap.TryGetValue(resourceID, out UIResourceAttribute? resourceAttribute))
             return NotFound();
 
-        using Stream? stream = resourceAttribute.GetResourceStream();
+        Stream? stream = resourceAttribute.GetResourceStream();
 
         if (stream is null)
             return NotFound();

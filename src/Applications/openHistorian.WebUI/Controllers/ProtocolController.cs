@@ -1,7 +1,8 @@
-﻿using openHistorian.Model;
+﻿using Gemstone.Timeseries.Adapters;
 using Gemstone.Web.APIController;
 using Microsoft.AspNetCore.Mvc;
-using Gemstone.Timeseries.Adapters;
+using openHistorian.Model;
+using System.Net;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -51,5 +52,37 @@ public class ProtocolController : ReadOnlyModelController<Protocol>
             });
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Retrieves the JavaScript module containing UI resources for the specified protocol.
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing the JavaScript module required by the adapter's UI.</returns>
+    [HttpGet, Route("Components/{protocolAcronym}/{resourceID}")]
+    public IActionResult GetAdapterResource(string protocolAcronym, string resourceID)
+    {
+        if (!GetAuthCheck())
+            return Unauthorized();
+
+        protocolAcronym = WebUtility.UrlDecode(protocolAcronym);
+
+        IEnumerable<UIResourceAttribute> allAttributes = AdapterCache<IAdapter>.UIResources.Values
+            .SelectMany(uiInfo => uiInfo.Attributes);
+
+        UIAdapterProtocolAttribute? protocolUIAttribute = allAttributes
+            .OfType<UIAdapterProtocolAttribute>()
+            .FirstOrDefault(attr => attr.Acronym.Equals(protocolAcronym, StringComparison.OrdinalIgnoreCase) && attr.ResourceID.Equals(resourceID, StringComparison.OrdinalIgnoreCase));
+
+        if (protocolUIAttribute is null)
+            return NotFound();
+
+        // Get the JavaScript resource stream using the shared UI resource logic.
+        Stream? resourceStream = protocolUIAttribute.GetResourceStream();
+
+        if (resourceStream is null)
+            return NotFound();
+
+        // Return the stream as a JavaScript file.
+        return File(resourceStream, "text/javascript");
     }
 }

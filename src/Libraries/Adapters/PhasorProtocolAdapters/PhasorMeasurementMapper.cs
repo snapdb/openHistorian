@@ -71,11 +71,27 @@ namespace PhasorProtocolAdapters;
 [AdapterProtocol(nameof(PhasorProtocol.IEEEC37_118V2), "IEEE C37.118.2-2011", ProtocolType.Frame, "Phasor", true, 2)]
 [AdapterProtocol(nameof(PhasorProtocol.IEEEC37_118D6), "IEEE C37.118 Draft 6", ProtocolType.Frame, "Phasor", true, 3)]
 [AdapterProtocol(nameof(PhasorProtocol.IEEE1344), "IEEE 1344-1995", ProtocolType.Frame, "Phasor", true, 4)]
+
 [AdapterProtocol(nameof(PhasorProtocol.BPAPDCstream), "BPA PDCstream", ProtocolType.Frame, "Phasor", true, 5)]
+[UIAdapterProtocol(nameof(PhasorProtocol.BPAPDCstream), "Gemstone.PhasorProtocols", ".BPAPDCstream.UI.BPAPDCstream.js")]
+[UIAdapterProtocol(nameof(PhasorProtocol.BPAPDCstream), "Gemstone.PhasorProtocols", ".BPAPDCstream.UI.BPAPDCstreamChunk.js")]
+
 [AdapterProtocol(nameof(PhasorProtocol.IEC61850_90_5), "IEC 61850-90-5", ProtocolType.Frame, "Phasor", true, 6)]
+[UIAdapterProtocol(nameof(PhasorProtocol.IEC61850_90_5), "Gemstone.PhasorProtocols", ".IEC61850_90_5.UI.IEC61850_90_5.js")]
+[UIAdapterProtocol(nameof(PhasorProtocol.IEC61850_90_5), "Gemstone.PhasorProtocols", ".IEC61850_90_5.UI.IEC61850_90_5Chunk.js")]
+
 [AdapterProtocol(nameof(PhasorProtocol.FNET), "UTK F-NET", ProtocolType.Frame, "Phasor", true, 7)]
+[UIAdapterProtocol(nameof(PhasorProtocol.FNET), "Gemstone.PhasorProtocols", ".FNET.UI.FNET.js")]
+[UIAdapterProtocol(nameof(PhasorProtocol.FNET), "Gemstone.PhasorProtocols", ".FNET.UI.FNETChunk.js")]
+
 [AdapterProtocol(nameof(PhasorProtocol.SelFastMessage), "SEL Fast Message", ProtocolType.Frame, "Phasor", true, 8)]
+[UIAdapterProtocol(nameof(PhasorProtocol.SelFastMessage), "Gemstone.PhasorProtocols", ".SelFastMessage.UI.SelFastMessage.js")]
+[UIAdapterProtocol(nameof(PhasorProtocol.SelFastMessage), "Gemstone.PhasorProtocols", ".SelFastMessage.UI.SelFastMessageChunk.js")]
+
 [AdapterProtocol(nameof(PhasorProtocol.Macrodyne), "Macrodyne", ProtocolType.Frame, "Phasor", true, 9)]
+[UIAdapterProtocol(nameof(PhasorProtocol.Macrodyne), "Gemstone.PhasorProtocols", ".Macrodyne.UI.Macrodyne.js")]
+[UIAdapterProtocol(nameof(PhasorProtocol.Macrodyne), "Gemstone.PhasorProtocols", ".Macrodyne.UI.MacrodyneChunk.js")]
+
 public class PhasorMeasurementMapper : InputAdapterBase
 {
     #region [ Members ]

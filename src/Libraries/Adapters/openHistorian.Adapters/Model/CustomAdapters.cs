@@ -40,7 +40,7 @@ public abstract class CustomAdapterBase
     [DefaultValue("DynamicCalculator.DynamicCalculator")]
     public string TypeName { get; set; }
 
-    public string ConnectionString { get; set; }
+    public string ConnectionString { get; set; } = "";
 
     public int LoadOrder { get; set; }
 
@@ -55,12 +55,12 @@ public abstract class CustomAdapterBase
     public string CreatedBy { get; set; }
 
     [DefaultValueExpression("this.CreatedOn", EvaluationOrder = 1)]
-    //[UpdateValueExpression("DateTime.UtcNow")]
+    [UpdateValueExpression("DateTime.UtcNow")]
     public DateTime UpdatedOn { get; set; }
 
     [Required]
     [StringLength(200)]
     [DefaultValueExpression("this.CreatedBy", EvaluationOrder = 1)]
-    //[UpdateValueExpression("UserInfo.CurrentUserID")]
+    [UpdateValueExpression("UserInfo.CurrentUserID")]
     public string UpdatedBy { get; set; }
 }
