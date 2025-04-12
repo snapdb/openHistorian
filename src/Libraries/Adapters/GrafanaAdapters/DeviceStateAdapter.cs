@@ -88,15 +88,38 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     {
         { AlarmState.Good, new DeviceState() { Color="green", State=nameof(AlarmState.Good), Rules="", Priority=0 }  },
         { AlarmState.Alarm, new DeviceState() { Color="red", State=nameof(AlarmState.Alarm), Rules="" }  },
-        { AlarmState.NotAvailable, new DeviceState() { Color="orange", State=nameof(AlarmState.NotAvailable), Rules="" }  },
+        { AlarmState.NotAvailable, new DeviceState() { Color="orange", State=nameof(AlarmState.NotAvailable), Rules="", Priority=int.MaxValue-3 }  },
         { AlarmState.BadData, new DeviceState() { Color="blue", State=nameof(AlarmState.BadData), Rules="" }  },
         { AlarmState.BadTime, new DeviceState() { Color="purple", State=nameof(AlarmState.BadTime), Rules="" }  },
-        { AlarmState.OutOfService, new DeviceState() { Color="grey", State=nameof(AlarmState.OutOfService), Rules="" }  },
-        { AlarmState.Acknowledged, new DeviceState() { Color="rosybrown", State=nameof(AlarmState.Acknowledged), Rules="" }  }
+        { AlarmState.OutOfService, new DeviceState() { Color="grey", State=nameof(AlarmState.OutOfService), Rules="", Priority=int.MaxValue-2 }  },
+        { AlarmState.Acknowledged, new DeviceState() { Color="rosybrown", State=nameof(AlarmState.Acknowledged), Rules="", Priority=int.MaxValue-1 }  }
     };
 
     private const int UpToDate = 0;
     private const int Modified = 1;
+
+    // Internal Classes
+
+    private class Rule
+    {
+        /// <summary>
+        /// Checks whether this rule is satsified.
+        /// </summary>
+        /// <returns></returns>
+        public bool Test(ImmediateMeasurements measuremnts ) => false;
+
+        public AlarmCombination Combination { get; set; }
+        public double SetPoint { get; set; }
+        public AlarmOperation Operation { get; set; }
+        public string Query { get; set; }
+        public double Delay { get; set; }
+        public MeasurementKey[] MeasurementKeys { get; set; }
+
+        private Ticks m_lastUpdateTime;
+
+    }
+
+
 
     /// <summary>
     /// Defines the default value for the <see cref="MonitoringRate"/>.
@@ -131,8 +154,10 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
     private Dictionary<int, int> m_stateCounts;
     private List<DeviceState> m_deviceStates;
-    private List<int> m_compositeStates;
-    private Lock m_stateCountLock;
+    private Dictionary<AlarmState, int> m_requiredStateIDs;
+    private Dictionary<int, List<Rule>> m_stateRules;
+
+    private object m_stateCountLock;
     private Ticks m_alarmTime;
     private long m_alarmStateUpdates;
     private long m_externalDatabaseUpdates;
@@ -400,9 +425,9 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         m_lastExternalDatabaseStateChange = 0L;
         m_mappedAlarmStates = new Dictionary<AlarmState, string>();
         m_stateCounts = CreateNewStateCountsMap();
-        m_compositeStates = [];
         m_stateCountLock = new object();
         m_deviceStates = new List<DeviceState>();
+
 
         // Parse external database mapped alarm states, if defined
         if (!string.IsNullOrEmpty(ExternalDatabaseMappedAlarmStates))
@@ -605,104 +630,47 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                         !m_deviceMetadata.TryGetValue(alarmDevice.DeviceID, out DataRow metadata))
                         continue;
 
-
-                    //Loop Through all States In Priority Order. If a state matches we are done. If it does not we continue
                     if (!m_alarmStateIDs.TryGetValue(alarmDevice.StateID, out AlarmState currentState))
                         currentState = AlarmState.NotAvailable;
 
-                    AlarmState newState = AlarmState.Good;
-                    Ticks currentTime = DateTime.UtcNow.Ticks;
+                    int newState = 0;
 
-                    // Determine and update state
                     if (metadata["Enabled"].ToString().ParseBoolean())
-                    {
-                        AlarmState compositeState = AlarmState.OutOfService;
-
-                        foreach (MeasurementKey key in keys)
-                        {
-                            Ticks lastUpdateTime = m_lastDeviceDataUpdates.GetOrAdd(key, currentTime);
-                            TemporalMeasurement measurement = measurements.Measurement(key);
-                            AlarmState deviceState = AlarmState.Good;
-
-                            // Check quality of device frequency measurement
-                            if (double.IsNaN(measurement.AdjustedValue) || measurement.AdjustedValue == 0.0D)
-                            {
-                                // If value is missing for longer than defined adapter lead / lag time tolerances,
-                                // state is unavailable or in alarm if unavailable beyond configured alarm time
-                                deviceState = currentTime - lastUpdateTime > m_alarmTime ? AlarmState.Alarm : AlarmState.NotAvailable;
-                            }
-                            else
-                            {
-                                // Have a value, update last device data time
-                                m_lastDeviceDataUpdates[key] = currentTime;
-
-                                if (!measurement.ValueQualityIsGood())
-                                    deviceState = AlarmState.BadData;
-                                else if (!measurement.TimestampQualityIsGood() || !measurement.Timestamp.UtcTimeIsValid(LagTime, LeadTime))
-                                    deviceState = AlarmState.BadTime;
-                            }
-
-                            // Reporting device with worst state
-                            if (deviceState != AlarmState.Good && deviceState < compositeState)
-                                compositeState = deviceState;
-                        }
-
-                        if (compositeState < AlarmState.OutOfService)
-                            newState = compositeState;
-                        else if (TargetParentDevices)
-                            newState = AlarmState.Good;
-                    }
+                        newState = (int)AlarmState.OutOfService;
                     else
                     {
-                        newState = AlarmState.OutOfService;
+                        //Loop Through all States In Priority Order. If a state matches we are done. If it does not we continue
+                        foreach (DeviceState state in m_deviceStates)
+                        {
+                            newState = state.ID;
+                            if (!m_stateRules.TryGetValue(state.ID, out List<Rule> rules))
+                                rules = new List<Rule>();
+
+                            if (!rules.Any() || rules.All(r => r.Test(measurements)))
+                            {
+                                break;
+                            }
+                        }
+
                     }
 
-                    // Maintain any acknowledged state unless state changes to good
+                    // Currently is Acknowledged special Logic applys
                     if (currentState == AlarmState.Acknowledged)
                     {
-                        if (newState == AlarmState.Good)
-                        {
-                            Ticks lastTransitionTime = m_lastAcknowledgedTransition.GetOrAdd(alarmDevice.DeviceID, currentTime);
-
-                            if (lastTransitionTime == Ticks.MinValue)
-                            {
-                                lastTransitionTime = currentTime;
-                                m_lastAcknowledgedTransition[alarmDevice.DeviceID] = lastTransitionTime;
-                            }
-
-                            if ((DateTime.UtcNow.Ticks - lastTransitionTime).ToMinutes() <= AcknowledgedTransitionHysteresisDelay)
-                                newState = AlarmState.Acknowledged;
-                        }
-                        else
-                        {
-                            newState = AlarmState.Acknowledged;
-                            m_lastAcknowledgedTransition[alarmDevice.DeviceID] = Ticks.MinValue;
-                        }
+                        if (newState != (int)AlarmState.Good)
+                            newState = currentState;
                     }
 
                     // Track current state counts
                     stateCounts[(int)newState]++;
 
-                    // Update alarm device state if it has changed
-                    int stateID = m_alarmStates[newState].ID;
-
-                    if (stateID != alarmDevice.StateID)
+                    if (currentState != newState)
                     {
-                        m_lastDeviceStateChange[alarmDevice.DeviceID] = currentTime;
-                        alarmDevice.StateID = stateID;
+                        alarmDevice.StateID = newState;
                     }
-
-                    // Update display text to show time since last alarm state change
-                    alarmDevice.DisplayData = newState switch
-                    {
-                        AlarmState.Good => "0",
-                        AlarmState.OutOfService => GetOutOfServiceTime(metadata),
-                        _ => GetShortElapsedTimeString(currentTime - m_lastDeviceStateChange[alarmDevice.DeviceID])
-                    };
 
                     // Update alarm table record
                     alarmDeviceTable.UpdateRecord(alarmDevice);
-                    alarmDeviceUpdates.Add(alarmDevice);
                 }
 
                 m_alarmStateUpdates++;
@@ -879,7 +847,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         await using AdoDataConnection connection = new(ConfigSettings.Instance);
         TableOperations<DeviceState> tblOperation = new(connection);
 
-        m_deviceStates = deviceStateDataSet.Tables[0].Rows.Cast<DataRow>().Select((row) => tblOperation.LoadRecord(row)).ToList();
+        m_deviceStates = deviceStateDataSet.Tables[0].Rows.Cast<DataRow>().Select((row) => tblOperation.LoadRecord(row)).OrderBy(r => r.Priority).ToList();
         foreach (DeviceState state in s_baseStates.Values)
         {
             DataRow row = deviceStateDataSet.Tables[0].Rows.Cast<DataRow>().Where(x => string.Equals(x.ConvertField<string>("State"),state.State,StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
