@@ -127,19 +127,14 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     public const int DefaultMonitoringRate = 30000;
 
     /// <summary>
-    /// Defines the default value for the <see cref="AlarmMinutes"/>.
+    /// Defines the default value for the <see cref="NotAvailableMinutes"/>.
     /// </summary>
-    public const double DefaultAlarmMinutes = 10.0D;
+    public const double DefaultNotAvailableMinutes = 10.0D;
 
     /// <summary>
     /// Defines the default value for the <see cref="AcknowledgedTransitionHysteresisDelay"/>.
     /// </summary>
     public const double DefaultAcknowledgedTransitionHysteresisDelay = 30.0D;
-
-    /// <summary>
-    /// Defines the default value for the <see cref="DefaultExternalDatabaseHysteresisDelay"/>.
-    /// </summary>
-    public const double DefaultExternalDatabaseHysteresisDelay = 5.0D;
 
     // Fields
     private Dictionary<AlarmState, DeviceState> m_alarmStates;
@@ -179,7 +174,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// </summary>
     public DeviceStateAdapter()
     {
-        m_alarmTime = TimeSpan.FromMinutes(DefaultAlarmMinutes).Ticks;
+        m_alarmTime = TimeSpan.FromMinutes(NotAvailableMinutes).Ticks;
 
         m_processDeviceStatus = new TaskSynchronizedOperation(MonitoringOperation, ex => OnProcessException(MessageLevel.Warning, ex));
 
@@ -202,9 +197,9 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// Gets or sets the time, in minutes, for which to change the device state to alarm when no data is received.
     /// </summary>
     [ConnectionStringParameter]
-    [Description("Defines the time, in minutes, for which to change the device state to alarm when no data is received.")]
-    [DefaultValue(DefaultAlarmMinutes)]
-    public double AlarmMinutes
+    [Description("Defines the time, in minutes, for which to change the device state to not available when no data is received.")]
+    [DefaultValue(DefaultNotAvailableMinutes)]
+    public double NotAvailableMinutes
     {
         get => m_alarmTime.ToMinutes();
         set => m_alarmTime = TimeSpan.FromMinutes(value).Ticks;
@@ -224,87 +219,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     [Description("Defines the delay time, in minutes, before transitioning the Acknowledged state back to Good.")]
     [DefaultValue(DefaultAcknowledgedTransitionHysteresisDelay)]
     public double AcknowledgedTransitionHysteresisDelay { get; set; }
-
-    /// <summary>
-    /// Gets or sets the delay time, in minutes, before reporting the external database state.
-    /// </summary>
-    [ConnectionStringParameter]
-    [Description("Defines the delay time, in minutes, before reporting the external database state.")]
-    [DefaultValue(DefaultExternalDatabaseHysteresisDelay)]
-    public double ExternalDatabaseHysteresisDelay { get; set; }
-
-    /// <summary>
-    /// Gets or sets the minimum state for application of <see cref="ExternalDatabaseHysteresisDelay"/>. Defaults to setting Good and Alarm states immediately and applying delay to all other states.
-    /// </summary>
-    [ConnectionStringParameter]
-    [Description("Defines the minimum state for application of \"ExternalDatabaseHysteresisDelay\". Defaults to setting Good and Alarm states immediately and applying delay to all other states.")]
-    [DefaultValue(1)]
-    public int ExternalDatabaseHysteresisMinimumState { get; set; } = 1;
-
-    /// <summary>
-    /// Gets or sets the flag that determines if an external database connection should be enabled for synchronization of alarm states.
-    /// </summary>
-    [ConnectionStringParameter]
-    [Description("Defines the flag that determines if an external database connection should be enabled for synchronization of alarm states.")]
-    [DefaultValue(false)]
-    public bool EnableExternalDatabaseSynchronization { get; set; }
-
-    /// <summary>
-    /// Gets or sets the external database connection string used for synchronization of alarm states. Leave blank to use local configuration database defined in "systemSettings".
-    /// </summary>
-    [ConnectionStringParameter]
-    [Description("Defines the external database connection string used for synchronization of alarm states. Leave blank to use local configuration database defined in \"systemSettings\".")]
-    [DefaultValue("")]
-    public string ExternalDatabaseConnectionString { get; set; }
-
-    /// <summary>
-    /// Gets or sets the external database provider string used for synchronization of alarm states.
-    /// </summary>
-    [ConnectionStringParameter]
-    [Description("Defines the external database provider string used for synchronization of alarm states.")]
-    [DefaultValue("AssemblyName={System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089}; ConnectionType=System.Data.SqlClient.SqlConnection; AdapterType=System.Data.SqlClient.SqlDataAdapter")]
-    public string ExternalDatabaseProviderString { get; set; }
-
-    /// <summary>
-    /// Gets or sets the external database command used for synchronization of alarm states.
-    /// </summary>
-    [ConnectionStringParameter]
-    [Description("Defines the external database command used for synchronization of alarm states.")]
-    [DefaultValue("sp_LogSsamEvent")]
-    public string ExternalDatabaseCommand { get; set; }
-
-    /// <summary>
-    /// Gets or sets the external database command parameters with value substitutions used for synchronization of alarm states.
-    /// </summary>
-    /// <remarks>
-    /// Examples for composite state reporting:
-    /// <code>
-    /// 'openPDC Overall Device Status = {AlarmState}[?{AlarmState}!=Good[ -- for \[{Device.Acronym}\]]]'
-    /// </code>
-    /// <code>
-    /// 'Good = {GoodStateCount} / Alarmed = {AlarmStateCount} / Unavailable = {NotAvailableStateCount} / Bad Data = {BadDataStateCount} / Bad Time = {BadTimeStateCount} / Out of Service = {OutOfServiceStateCount}[?{AlarmState}!=Good[ -- \&lt;a href=\"http://localhost:8280/DeviceStatus.cshtml?DeviceID={Device.ID}\"\&gt;\[{Device.Acronym}\] Device Status\&lt;/a\&gt;]]'
-    /// </code>
-    /// </remarks>
-    [ConnectionStringParameter]
-    [Description("Defines the external database command parameters with value substitutions used for synchronization of alarm states.")]
-    [DefaultValue("{MappedAlarmState},1,'PDC_DEVICE_{Device.Acronym}','','openPDC Device Status = {AlarmState} for \\[{Device.Acronym}\\]','\\<a href=\"http://localhost:8280/DeviceStatus.cshtml?DeviceID={Device.ID}\"\\>\\[{Device.Acronym}\\] Device Status\\</a\\>'")]
-    public string ExternalDatabaseCommandParameters { get; set; }
-
-    /// <summary>
-    /// Gets or sets the external database mapped alarm states defining the {MappedAlarmState} command parameter substitution parameter used for synchronization of alarm states.
-    /// </summary>
-    [ConnectionStringParameter]
-    [Description("Defines the external database mapped alarm states defining the {MappedAlarmState} command parameter substitution parameter used for synchronization of alarm states.")]
-    [DefaultValue("Good=1,Alarm=3,NotAvailable=2,BadData=3,BadTime=3,OutOfService=5")]
-    public string ExternalDatabaseMappedAlarmStates { get; set; }
-
-    /// <summary>
-    /// Gets or sets the flag that determines if external database should report a single composite state or a state for each device.
-    /// </summary>
-    [ConnectionStringParameter]
-    [Description("Defines the flag that determines if external database should report a single composite state or a state for each device.")]
-    [DefaultValue(false)]
-    public bool ExternalDatabaseReportSingleCompositeState { get; set; }
 
     /// <summary>
     /// Gets or sets primary keys of input measurements the adapter expects, if any.
@@ -342,13 +256,10 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
             status.Append(base.Status);
             status.AppendLine($"           Monitoring Rate: {MonitoringRate:N0}ms");
-            status.AppendLine($"        Monitoring Enabled: {MonitoringEnabled}");
             status.AppendLine($"  Targeting Parent Devices: {TargetParentDevices}");
             status.AppendLine($"    Monitored Device Count: {InputMeasurementKeys?.Length ?? 0:N0}");
             status.AppendLine($"     No Data Alarm Timeout: {m_alarmTime.ToElapsedTimeString(2)}");
-            status.AppendLine($"       Alarm State Updates: {m_alarmStateUpdates:N0}");
-            status.AppendLine($" External Database Updates: {m_externalDatabaseUpdates:N0}");
-            status.AppendLine($"   Last External DB Result: {m_lastExternalDatabaseResult?.ToString() ?? "null"}");
+            status.AppendLine($"             State Updates: {m_alarmStateUpdates:N0}");
 
             lock (m_stateCountLock)
             {
@@ -359,8 +270,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
             return status.ToString();
         }
     }
-
-    private bool MonitoringEnabled => Enabled;
 
     /// <summary>
     /// Gets or sets <see cref="DataSet"/> based data source available to this <see cref="AdapterBase"/>.
@@ -427,22 +336,8 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         m_stateCounts = CreateNewStateCountsMap();
         m_stateCountLock = new object();
         m_deviceStates = new List<DeviceState>();
+        m_requiredStateIDs = new();
 
-
-        // Parse external database mapped alarm states, if defined
-        if (!string.IsNullOrEmpty(ExternalDatabaseMappedAlarmStates))
-        {
-            string[] mappings = ExternalDatabaseMappedAlarmStates.Split((char[])[','], StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (string mapping in mappings)
-            {
-                string[] parts = mapping.Split((char[])['='], StringSplitOptions.RemoveEmptyEntries);
-
-                if (parts.Length == 2 && Enum.TryParse(parts[0].Trim(), out AlarmState state))
-                    m_mappedAlarmStates[state] = parts[1].Trim();
-            }
-        }
-       
         if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified) == Modified)
             m_processDeviceStatus.RunAsync();
         else
@@ -564,18 +459,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         m_processDeviceStatus?.RunAsync();
     }
 
-    /// <summary>
-    /// Updates alarm states from database.
-    /// </summary>
-    [AdapterCommand("Updates alarm states from database.", "Administrator", "Editor")]
-    public void UpdateAlarmStates()
-    {
-        if (!Initialized)
-            return;
-
-        lock (m_alarmStates)
-            LoadAlarmStates(true);
-    }
 
     /// <summary>
     ///  Get measurements for the provided query and device ID.
@@ -593,7 +476,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// <returns>A short one-line summary of the current status of this adapter.</returns>
     public override string GetShortStatus(int maxLength)
     {
-        return MonitoringEnabled
+        return Enabled
             ? $"Monitoring enabled for every {Ticks.FromMilliseconds(MonitoringRate).ToElapsedTimeString()}".CenterText(maxLength)
             : "Monitoring is disabled...".CenterText(maxLength);
     }
@@ -678,148 +561,18 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                 lock (m_stateCountLock)
                     m_stateCounts = stateCounts;
             }
-
-            if (EnableExternalDatabaseSynchronization)
-            {
-                TemplatedExpressionParser parameterTemplate = new()
-                {
-                    TemplatedExpression = ExternalDatabaseCommandParameters
-                };
-
-                AlarmState compositeState = AlarmState.OutOfService;
-                DataRow alarmedDeviceMetadata = null;
-                Dictionary<string, string> substitutions = new();
-
-                // Provide state counts as available substitution parameters
-                foreach (KeyValuePair<int, int> stateCount in stateCounts)
-                    substitutions[$"{{{stateCount.Key}StateCount}}"] = stateCount.Value.ToString();
-
-                using AdoDataConnection connection = string.IsNullOrWhiteSpace(ExternalDatabaseConnectionString) ? new AdoDataConnection(ConfigSettings.Default.System) : new AdoDataConnection(ExternalDatabaseConnectionString, ExternalDatabaseProviderString);
-
-                foreach (DeviceStatus alarmDevice in alarmDeviceUpdates)
-                {
-                    if (!m_deviceMetadata.TryGetValue(alarmDevice.DeviceID, out DataRow metadata))
-                        continue;
-
-                    if (!m_alarmStateIDs.TryGetValue(alarmDevice.StateID, out AlarmState state))
-                        state = AlarmState.NotAvailable;
-
-                    alarmedDeviceMetadata ??= metadata;
-
-                    if (ExternalDatabaseReportSingleCompositeState)
-                    {
-                        if (state == AlarmState.Good)
-                            continue;
-
-                        // First encountered alarmed device with the highest alarm state will be reported as composite
-                        // state because AlarmState values after Good are order by highest to lowest before OutOfService
-                        if (state >= compositeState)
-                            continue;
-
-                        compositeState = state;
-                        alarmedDeviceMetadata = metadata;
-                    }
-                    else
-                    {
-                        // When ExternalDatabaseReportSingleCompositeState is false, reporting state per device
-                        if (state != AlarmState.Acknowledged)
-                            ExternalDatabaseReportState(parameterTemplate, connection, state, metadata, substitutions);
-                    }
-                }
-
-                if (ExternalDatabaseReportSingleCompositeState)
-                {
-                    AlarmState minimumHysteresisState = (AlarmState)ExternalDatabaseHysteresisMinimumState;
-
-                    if (compositeState == AlarmState.OutOfService)
-                        compositeState = AlarmState.Good;
-
-                    string lastUpdate = m_lastExternalDatabaseStateChange > 0L ? $", last update: {(DateTime.UtcNow.Ticks - m_lastExternalDatabaseStateChange).ToElapsedTimeString(2)}" : "";
-                    OnStatusMessage(MessageLevel.Info, $"Current composite reporting state: {compositeState}{lastUpdate}");
-
-                    if (compositeState <= minimumHysteresisState)
-                    {
-                        // Report composite states less than specified minimum hysteresis state, typically Good and Alarm, immediately
-                        ExternalDatabaseReportState(parameterTemplate, connection, compositeState, alarmedDeviceMetadata, substitutions);
-                        m_compositeStates.Clear();
-                        m_externalDatabaseUpdates++;
-                    }
-                    else
-                    {
-                        m_compositeStates.Add((int)compositeState);
-
-                        // Report other composite states only after specified hysteresis delay has passed
-                        if (!((DateTime.UtcNow.Ticks - m_lastExternalDatabaseStateChange).ToMinutes() > ExternalDatabaseHysteresisDelay))
-                            return;
-
-                        // Pick average composite state
-                        compositeState = (AlarmState)(int)Math.Round(m_compositeStates.Average());
-
-                        // Validate average composite state
-                        if (compositeState <= minimumHysteresisState || compositeState >= AlarmState.OutOfService)
-                            compositeState = m_compositeStates.Select(state => (AlarmState)state).FirstOrDefault(state => state > minimumHysteresisState && state < AlarmState.OutOfService);
-
-                        ExternalDatabaseReportState(parameterTemplate, connection, compositeState, alarmedDeviceMetadata, substitutions);
-                        m_compositeStates.Clear();
-                        m_externalDatabaseUpdates++;
-                    }
-                }
-                else
-                {
-                    m_externalDatabaseUpdates++;
-                }
-            }
         }
         new Action(m_processDeviceStatus.RunAsync).DelayAndExecute(MonitoringRate);
     }
 
-    private void ExternalDatabaseReportState(TemplatedExpressionParser parameterTemplate, AdoDataConnection connection, AlarmState state, DataRow metadata, Dictionary<string, string> initialSubstitutions)
+    private Dictionary<int, int> CreateNewStateCountsMap()
     {
-        Dictionary<string, string> substitutions = new(initialSubstitutions)
+        Dictionary<int, int> counts = new Dictionary<int, int>();
+        foreach (DeviceState s in m_deviceStates)
         {
-            ["{AlarmState}"] = state.ToString(),
-            ["{AlarmStateValue}"] = ((int)state).ToString()
-        };
-
-        if (m_mappedAlarmStates.TryGetValue(state, out string mappedValue))
-            substitutions["{MappedAlarmState}"] = mappedValue;
-        else
-            substitutions["{MappedAlarmState}"] = "0";
-
-        // Use device metadata columns as possible substitution parameters
-        if (metadata is not null)
-        {
-            foreach (DataColumn column in metadata.Table.Columns)
-                substitutions[$"{{Device.{column.ColumnName}}}"] = metadata[column.ColumnName].ToString();
+            counts.Add(s.ID, 0);
         }
-
-        List<object> parameters = [];
-        string commandParameters = parameterTemplate.Execute(substitutions);
-        string[] splitParameters = commandParameters.Split(',');
-
-        // Do some basic typing on command parameters
-        foreach (string splitParameter in splitParameters)
-        {
-            string parameter = splitParameter.Trim();
-
-            if (parameter.StartsWith("'") && parameter.EndsWith("'"))
-                parameters.Add(parameter.Length > 2 ? parameter.Substring(1, parameter.Length - 2) : "");
-            else if (int.TryParse(parameter, out int ival))
-                parameters.Add(ival);
-            else if (double.TryParse(parameter, out double dval))
-                parameters.Add(dval);
-            else if (bool.TryParse(parameter, out bool bval))
-                parameters.Add(bval);
-            else if (DateTime.TryParseExact(parameter, TimeTagBase.DefaultFormat, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTime dtval))
-                parameters.Add(dtval);
-            else if (DateTime.TryParse(parameter, out dtval))
-                parameters.Add(dtval);
-            else
-                parameters.Add(parameter);
-        }
-
-        m_lastExternalDatabaseResult = connection.ExecuteScalar(ExternalDatabaseCommand, [.. parameters]);
-        m_lastExternalDatabaseStateChange = DateTime.UtcNow.Ticks;
+        return counts;
     }
 
     private async Task<bool> ValidateStates()
@@ -868,16 +621,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
     private static readonly string[] s_shortTimeNames = [" yr", " yr", " d", " d", " hr", " hr", " m", " m", " s", " s", "< "];
     private static readonly double s_daysPerYear = new Time(Time.SecondsPerYear(DateTime.UtcNow.Year)).ToDays();
-
-    private Dictionary<int, int> CreateNewStateCountsMap()
-    {
-        Dictionary<int,int> counts = new Dictionary<int, int>();
-        foreach (DeviceState s in m_deviceStates)
-        {
-            counts.Add(s.ID, 0);
-        }
-        return counts;
-    }
 
     private static string GetOutOfServiceTime(DataRow deviceRow)
     {
