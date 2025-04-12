@@ -40,19 +40,19 @@ public class DeviceState
     public int ID { get; set; } = -1;
 
     /// <summary>
-    /// Gets or sets description of the <see cref="AlarmState"/>.
+    /// Gets or sets description of the <see cref="DeviceState"/>.
     /// </summary>
     [StringLength(50)]
     public string State { get; set; }
 
     /// <summary>
-    /// Gets or sets recommended action for the user if a <see cref="DeviceState"/> is in this <see cref="AlarmState"/>.
+    /// Gets or sets recommended action for the user if a <see cref="DeviceStatus"/> is in this <see cref="DeviceState"/>.
     /// </summary>
     [StringLength(500)]
     public string RecommendedAction { get; set; }
 
     /// <summary>
-    /// Gets or sets color associated with the <see cref="AlarmState"/>.
+    /// Gets or sets color associated with the <see cref="DeviceState"/>.
     /// </summary>
     [StringLength(50)]
     public string Color { get; set; } = "red";
@@ -61,4 +61,9 @@ public class DeviceState
     /// Gets or sets rules.
     /// </summary>
     public string Rules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Priority associated with the <see cref="DeviceState"/>.
+    /// </summary>
+    public int Priority { get; set; }
 }
