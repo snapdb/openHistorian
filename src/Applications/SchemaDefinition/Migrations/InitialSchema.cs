@@ -191,7 +191,6 @@ public class InitialSchema : Migration
             .WithColumn("TimeZone").AsString(200).Nullable()
             .WithColumn("TimeAdjustmentTicks").AsInt16().NotNullable().WithDefaultValue(0)
             .WithColumn("ContactList").AsString().Nullable()
-            .WithColumn("MeasuredLines").AsInt32().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
