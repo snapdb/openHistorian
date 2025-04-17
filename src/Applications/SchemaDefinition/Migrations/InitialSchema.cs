@@ -187,12 +187,16 @@ public class InitialSchema : Migration
             .WithColumn("Latitude").AsDecimal(9, 6).Nullable()
             .WithColumn("InterconnectionID").AsInt32().Nullable().ForeignKey("Interconnection", "ID")
             .WithColumn("ConnectionString").AsString().Nullable()
+            .WithColumn("Description").AsString().Nullable()
             .WithColumn("TimeZone").AsString(200).Nullable()
             .WithColumn("TimeAdjustmentTicks").AsInt16().NotNullable().WithDefaultValue(0)
             .WithColumn("ContactList").AsString().Nullable()
             .WithColumn("MeasuredLines").AsInt32().Nullable()
             .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
+            .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
+            .WithColumn("Local").AsBoolean().NotNullable().WithDefaultValue(true)
+            .WithColumn("Subscribed").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithCreatedBy();
 
         Create.UniqueConstraint("IX_Device_UniqueID").OnTable("Device").Column("UniqueID");
@@ -215,7 +219,6 @@ public class InitialSchema : Migration
             .WithColumn("Description").AsString().Nullable()
             .WithColumn("Subscribed").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
-            .WithColumn("Local").AsBoolean().NotNullable().WithDefaultValue(true)
             .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("Manual").AsBoolean().NotNullable().WithDefaultValue(true)
             .WithColumn("Label").AsString().Nullable()
