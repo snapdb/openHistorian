@@ -150,13 +150,8 @@ public class ConfigurationFrame
 
     public string IDLabel { get; set; }
 
-    //[DefaultValueExpression("Global.DefaultCalculationFramesPerSecond")]
-    [DefaultValue(30)]
-    public ushort FrameRate { get; set; }
 
     public string ConnectionString { get; set; }
-
-    public int ProtocolID { get; set; }
 
     public bool IsConcentrator { get; set; }
 

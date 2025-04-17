@@ -676,8 +676,6 @@ public class Concentrator : PhasorDataConcentratorBase
                                     cell.GroupDelay = (settings.TryGetValue(nameof(GroupDelay), out setting) || settings.TryGetValue("GRP_DLY", out setting)) && int.TryParse(setting, out int groupDelay) ?
                                         groupDelay : parent.GroupDelay;
 
-                                    if (device.FramesPerSecond.HasValue)
-                                        framesPerSecond = device.FramesPerSecond.Value;
 
                                     foundSource = true;
                                 }
