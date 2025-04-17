@@ -26,40 +26,39 @@
 // ReSharper disable IdentifierTypo
 #pragma warning disable SYSLIB0050
 
-using System.Collections.Concurrent;
-using System.Net.WebSockets;
-using System.Runtime.Caching;
-using System.Runtime.Serialization.Formatters.Soap;
-using System.Runtime.Serialization.Formatters;
-using System.Text;
-using System.Text.Json;
 using Gemstone;
 using Gemstone.Caching;
 using Gemstone.Data;
 using Gemstone.Data.Model;
 using Gemstone.Diagnostics;
 using Gemstone.Numeric.EE;
-using Gemstone.PhasorProtocols.IEEEC37_118;
 using Gemstone.PhasorProtocols;
+using Gemstone.PhasorProtocols.IEEEC37_118;
 using Gemstone.StringExtensions;
 using Microsoft.AspNetCore.Mvc;
 using openHistorian.Model;
 using PhasorProtocolAdapters;
 using ServiceInterface;
-using DataFrame = openHistorian.Model.DataFrame;
-using DataCell = openHistorian.Model.DataCell;
-using PhasorValue = openHistorian.Model.PhasorValue;
+using System.Collections.Concurrent;
+using System.Net.WebSockets;
+using System.Runtime.Caching;
+using System.Runtime.Serialization.Formatters;
+using System.Runtime.Serialization.Formatters.Soap;
+using System.Text;
+using System.Text.Json;
 using AnalogDefinition = openHistorian.Model.AnalogDefinition;
+using ConfigSettings = Gemstone.Configuration.Settings;
 using ConfigurationCell = openHistorian.Model.ConfigurationCell;
+using DataCell = openHistorian.Model.DataCell;
+using DataFrame = openHistorian.Model.DataFrame;
+using Device = Gemstone.Timeseries.Model.Device;
 using DigitalDefinition = openHistorian.Model.DigitalDefinition;
 using FrequencyDefinition = openHistorian.Model.FrequencyDefinition;
-using PhasorDefinition = openHistorian.Model.PhasorDefinition;
-using Device = Gemstone.Timeseries.Model.Device;
-using Phasor = Gemstone.Timeseries.Model.Phasor;
 using Measurement = Gemstone.Timeseries.Model.Measurement;
+using Phasor = Gemstone.Timeseries.Model.Phasor;
+using PhasorDefinition = openHistorian.Model.PhasorDefinition;
+using PhasorValue = openHistorian.Model.PhasorValue;
 using SignalType = Gemstone.Timeseries.Model.SignalType;
-using ConfigSettings = Gemstone.Configuration.Settings;
-using Gemstone.Timeseries.Model;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -300,11 +299,11 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             {
                 List<string> serverList = [];
 
-                string[] servers = setting.Split((char[]) [','], StringSplitOptions.RemoveEmptyEntries);
+                string[] servers = setting.Split([','], StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (string server in servers)
                 {
-                    string[] parts = server.Split((char[]) ['/'], StringSplitOptions.RemoveEmptyEntries);
+                    string[] parts = server.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
 
                     if (parts.Length == 0)
                         continue;
@@ -472,43 +471,52 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     /// <param name="configFrame">Source config frame.</param>
     /// <param name="deviceID">Device ID to save configuration for, leave blank for new devices.</param>
     [HttpPost, Route("SaveConfiguration/{deviceID:int?}")]
-    public IActionResult SaveConfiguration(ConfigurationFrame configFrame, int? deviceID = null)
+    public IActionResult SaveConfiguration(ConfigurationFrame[] configFrames, int? deviceID = null)
     {
-        // Query existing device record, or create new one
-        Device device = deviceID is null ? NewDevice() : QueryDeviceByID(deviceID.Value);
-        string connectionString = configFrame.ConnectionString;
+        foreach (ConfigurationFrame configFrame in configFrames)
+        {
+            // Query existing device record, or create new one
+            Device device = deviceID is null ? NewDevice() : QueryDeviceByID(deviceID.Value);
+            string connectionString = configFrame.ConnectionString;
 
-        // Set device properties
-        device.Acronym = configFrame.Acronym;
-        device.Name = configFrame.IDLabel;
-        device.ProtocolID = configFrame.ProtocolID;
-        device.FramesPerSecond = configFrame.FrameRate;
-        device.AccessID = configFrame.IDCode;
-        device.IsConcentrator = !string.IsNullOrWhiteSpace(connectionString) && (configFrame.IsConcentrator || configFrame.Cells.Count > 1);
-        
-        // TODO: Thought these were removed as fields in new schema?
-        device.AutoStartDataParsingSequence = true;
-        device.SkipDisableRealTimeData = false;
+            // Set device properties
+            device.Acronym = configFrame.Acronym;
+            device.Name = configFrame.StationName;
+            device.AccessID = configFrame.IDCode;
+            device.LoadOrder = configFrame.LoadOrder;
+            device.TimeZone = configFrame.TimeZone;
+            device.Longitude = configFrame.Longitude;
+            device.Latitude = configFrame.Latitude;
+            device.CompanyID = configFrame.CompanyID;
+            device.HistorianID = configFrame.HistorianID;
+            device.InterconnectionID = configFrame.InterconnectionID;
+            device.HistorianID = configFrame.HistorianID;
+            device.VendorDeviceID = configFrame.VendorDeviceID;
+            device.ContactList = configFrame.ContactList;
+            device.TimeAdjustmentTicks = configFrame.TimeAdjustmentTicks;
 
-        if (string.IsNullOrWhiteSpace(device.Name))
-            device.Name = device.Acronym;
+            device.IsConcentrator = !string.IsNullOrWhiteSpace(connectionString) && (configFrame.IsConcentrator || configFrame.Cells.Count > 1);
 
-        // Only update connection string if one has been defined, prevents changing any existing one to blank
-        if (connectionString.Length > 0)
-            device.ConnectionString = connectionString;
 
-        device.Enabled = true;
+            if (string.IsNullOrWhiteSpace(device.Name))
+                device.Name = device.Acronym;
 
-        // Add new or update existing device record
-        if (deviceID is null)
-            deviceID = AddNewDevice(device);
-        else
-            UpdateDevice(device);
+            // Only update connection string if one has been defined, prevents changing any existing one to blank
+            if (connectionString.Length > 0)
+                device.ConnectionString = connectionString;
 
-        SaveDeviceRecords(configFrame, deviceID.Value);
-        MarkConfigurationAsSynchronized(device.Acronym);
+            device.Enabled = true;
 
-        return Ok();
+            // Add new or update existing device record
+            if (deviceID is null)
+                deviceID = AddNewDevice(device);
+            else
+                UpdateDevice(device);
+
+            SaveDeviceRecords(configFrame, deviceID.Value);
+            MarkConfigurationAsSynchronized(device.Acronym);
+        }
+        return Ok(configFrames.Length);
     }
 
     private void SaveDeviceRecords(ConfigurationFrame configFrame, int deviceID)
@@ -528,7 +536,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 {
                     cell.ID = deviceID;
                     UpdateDevice(device);
-                    
+
                     // Save measurements and calculations associated with a directly edited child device
                     SaveDeviceMeasurements(cell);
                 }
@@ -537,10 +545,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     // Set device properties
                     device.ParentID = cell.ParentID ?? deviceID;
                     device.HistorianID = cell.HistorianID;
-                    device.ProtocolID = configFrame.ProtocolID;
-                    device.FramesPerSecond = configFrame.FrameRate;
                     device.AccessID = cell.IDCode;
-                    device.Acronym = cell.IDLabel;
+                    device.Acronym = cell.Acronym;
+                    device.Name = cell.StationName;
 
                     if (string.IsNullOrWhiteSpace(device.Name))
                         device.Name = device.Acronym;
@@ -568,6 +575,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         {
             // Save measurements and calculations  associated with a directly connected device
             ConfigurationCell cell = configFrame.Cells[0];
+            cell.ID = deviceID;
             SaveDeviceMeasurements(cell);
         }
     }
@@ -698,16 +706,16 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         measurement.SignalTypeID = signalType.ID;
         measurement.Internal = true;
         measurement.Enabled = phasorDefinition.Enabled;
-        
+
         AddNewOrUpdateMeasurement(measurement);
     }
 
     private void SaveDevicePhasors(ConfigurationCell cell)
     {
-        s_iphmSignalType ??= GetDeviceSignalType("IPHM") ?? throw new InvalidOperationException("Failed to load IPHM signal type.");
-        s_iphaSignalType ??= GetDeviceSignalType("IPHA") ?? throw new InvalidOperationException("Failed to load IPHA signal type.");
-        s_vphmSignalType ??= GetDeviceSignalType("VPHM") ?? throw new InvalidOperationException("Failed to load VPHM signal type.");
-        s_vphaSignalType ??= GetDeviceSignalType("VPHA") ?? throw new InvalidOperationException("Failed to load VPHA signal type.");
+        s_iphmSignalType ??= GetPhasorSignalType("IPHM") ?? throw new InvalidOperationException("Failed to load IPHM signal type.");
+        s_iphaSignalType ??= GetPhasorSignalType("IPHA") ?? throw new InvalidOperationException("Failed to load IPHA signal type.");
+        s_vphmSignalType ??= GetPhasorSignalType("VPHM") ?? throw new InvalidOperationException("Failed to load VPHM signal type.");
+        s_vphaSignalType ??= GetPhasorSignalType("VPHA") ?? throw new InvalidOperationException("Failed to load VPHA signal type.");
 
         Phasor[] phasors = QueryPhasorsForDevice(cell.ID).ToArray();
 
@@ -752,7 +760,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
                 if (phasorToRemove is null)
                     continue;
-                
+
                 DeletePhasor(phasorToRemove.ID);
             }
             else
@@ -824,6 +832,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             {
                 Phasor phasor = QueryPhasorForDevice(cell.ID, voltage.SourceIndex);
 
+                if (string.IsNullOrEmpty(voltage.Phase))
+                    voltage.Phase = "+";
+
                 phasor.DeviceID = cell.ID;
                 phasor.Label = voltage.Label;
                 phasor.Type = 'V';
@@ -845,6 +856,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             {
                 Phasor phasor = QueryPhasorForDevice(cell.ID, current.SourceIndex);
                 PhasorDefinition? associatedVoltage = current.GetAssociatedVoltage(cell);
+
+                if (string.IsNullOrEmpty(current.Phase))
+                    current.Phase = "+";
 
                 phasor.DeviceID = cell.ID;
                 phasor.Label = current.Label;
@@ -877,8 +891,6 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
     private int AddNewDevice(Device device)
     {
-        if ((device.ProtocolID ?? 0) == 0)
-            device.ProtocolID = IeeeC37_118ProtocolID;
 
         if (device.UniqueID == Guid.Empty)
             device.UniqueID = Guid.NewGuid();
@@ -896,8 +908,6 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
     private void UpdateDevice(Device device)
     {
-        if ((device.ProtocolID ?? 0) == 0)
-            device.ProtocolID = IeeeC37_118ProtocolID;
 
         if (device.UniqueID == Guid.Empty)
             device.UniqueID = Guid.NewGuid();
@@ -990,7 +1000,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     {
         return Table<Phasor>().QueryRecordWhere("DeviceID = {0} AND SourceIndex = {1}", deviceID, sourceIndex) ?? NewPhasor();
     }
-    
+
     private void UpdatePhasor(Phasor phasor)
     {
         Table<Phasor>().UpdateRecord(phasor);
@@ -1009,6 +1019,12 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     {
         s_deviceSignalTypes ??= LoadSignalTypes("PMU").ToArray();
         return s_deviceSignalTypes.FirstOrDefault(deviceSignalType => string.Compare(deviceSignalType.Acronym, acronym, StringComparison.OrdinalIgnoreCase) == 0);
+    }
+
+    private SignalType? GetPhasorSignalType(string acronym)
+    {
+        IEnumerable<SignalType> phasorSignals = LoadSignalTypes("Phasor").ToArray();
+        return phasorSignals.FirstOrDefault(deviceSignalType => string.Compare(deviceSignalType.Acronym, acronym, StringComparison.OrdinalIgnoreCase) == 0);
     }
 
     #endregion
@@ -1047,11 +1063,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             StationName = device.Name,
             IDLabel = device.Acronym,
             ConnectionString = device.ConnectionString,
-            ProtocolID = device.ProtocolID ?? IeeeC37_118ProtocolID
         };
 
-        if ((device.FramesPerSecond ?? 0) > 0)
-            derivedFrame.FrameRate = (ushort)device.FramesPerSecond.GetValueOrDefault();
 
         if (device.ParentID is null)
         {
@@ -1242,7 +1255,6 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         ConfigurationFrame derivedFrame = new()
         {
             IDCode = sourceFrame.IDCode,
-            FrameRate = sourceFrame.FrameRate,
             ConnectionString = connectionString,
         };
 
@@ -1306,7 +1318,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                         case PhasorComponent.ReservedPhase:
                             break;
                         default:
-                            configPhase = string.Empty;
+                            configPhase = "+";
                             break;
                     }
 
@@ -1322,7 +1334,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     Label = sourcePhasor.Label,
                     PhasorType = sourcePhasor.PhasorType.ToString(),
                     Phase = configPhase,
-                    NominalVoltage = nominalVoltage,
+                    NominalVoltage = nominalVoltage ?? int.Parse(GuessBaseKV(null, sourcePhasor.Label, derivedCell.Acronym)),
                     SourceIndex = ++sourceIndex,
                     CreatedOn = now,
                     UpdatedOn = now
@@ -1330,16 +1342,40 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             }
 
             // Create equivalent derived analog definitions (assuming analog type = SinglePointOnWave)
+            int analogIndex = 0;
+            SignalType? analogSignalType = GetDeviceSignalType("ALOG");
+
+            // Create equivalent derived analog definitions (assuming analog type = SinglePointOnWave)
             foreach (IAnalogDefinition sourceAnalog in sourceCell.AnalogDefinitions)
+            {
+                analogIndex++;
                 derivedCell.AnalogDefinitions.Add(new AnalogDefinition
                 {
                     Label = sourceAnalog.Label,
-                    AnalogType = sourceAnalog.AnalogType.ToString()
+                    AnalogType = sourceAnalog.AnalogType.ToString(),
+                    Adder = 0,
+                    Multiplier = 0,
+                    AlternateTag = "",
+                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, analogSignalType?.Acronym ?? "", analogIndex, sourceAnalog?.Label ?? "")
                 });
+            }
+
+            int digitalIndex = 0;
+            SignalType? digitalSignalType = GetDeviceSignalType("DIGI");
 
             // Create equivalent derived digital definitions
             foreach (IDigitalDefinition sourceDigital in sourceCell.DigitalDefinitions)
-                derivedCell.DigitalDefinitions.Add(new DigitalDefinition { Label = sourceDigital.Label });
+            {
+                digitalIndex++;
+                derivedCell.DigitalDefinitions.Add(new DigitalDefinition
+                {
+                    Label = sourceDigital.Label,
+                    Adder = 0,
+                    Multiplier = 0,
+                    AlternateTag = "",
+                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, digitalSignalType?.Acronym ?? "", analogIndex, sourceDigital?.Label ?? "")
+                });
+            }
 
             // Add cell to frame
             derivedFrame.Cells.Add(derivedCell);

@@ -1,6 +1,7 @@
 ﻿// ReSharper disable CheckNamespace
 #pragma warning disable 1591
 
+using Gemstone.ComponentModel.DataAnnotations;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
@@ -53,6 +54,18 @@ public class PhasorDefinition
 
 public class AnalogDefinition
 {
+    public string PointTag { get; set; }
+
+    public string AlternateTag { get; set; }
+
+    public int SignalTypeID { get; set; }
+
+    public string Description { get; set; } = "";
+
+    public double Adder { get; set; }
+
+    public double Multiplier { get; set; }
+
     public string Label { get; set; }
 
     public string AnalogType { get; set; }
@@ -60,6 +73,18 @@ public class AnalogDefinition
 
 public class DigitalDefinition
 {
+    public string PointTag { get; set; }
+
+    public string AlternateTag { get; set; }
+
+    public int SignalTypeID { get; set; }
+
+    public string Description { get; set; } = "";
+
+    public double Adder { get; set; }
+
+    public double Multiplier { get; set; }
+
     public string Label { get; set; }
 }
 
@@ -85,11 +110,11 @@ public class ConfigurationCell
 
     public FrequencyDefinition FrequencyDefinition { get; set; }
 
-    public List<PhasorDefinition> PhasorDefinitions { get; } = [];
+    public List<PhasorDefinition> PhasorDefinitions { get; set; } = new();
 
-    public List<AnalogDefinition> AnalogDefinitions { get; } = [];
+    public List<AnalogDefinition> AnalogDefinitions { get; set; } = new();
 
-    public List<DigitalDefinition> DigitalDefinitions { get; } = [];
+    public List<DigitalDefinition> DigitalDefinitions { get; set; } = new();
 
     // Device record field proxies
     public string Acronym
@@ -117,7 +142,7 @@ public class ConfigurationCell
 
 public class ConfigurationFrame
 {
-    public List<ConfigurationCell> Cells { get; } = [];
+    public List<ConfigurationCell> Cells { get; set; } = new();
 
     public ushort IDCode { get; set; }
 
@@ -140,6 +165,28 @@ public class ConfigurationFrame
         get => GetCleanAcronym(IDLabel);
         set => IDLabel = value;
     }
+
+    public string TimeZone { get; set; }
+
+    public decimal? Longitude { get; set; }
+
+    public decimal? Latitude { get; set; }
+
+    public int? CompanyID { get; set; }
+
+    public int? HistorianID { get; set; }
+
+    public int? InterconnectionID { get; set; }
+
+    public int? VendorDeviceID { get; set; }
+
+    public string ContactList { get; set; }
+
+    public int LoadOrder { get; set; }
+
+    public bool Enabled { get; set; }
+
+    public long TimeAdjustmentTicks { get; set; }
 
     /// <summary>
     /// Gets a clean acronym.
