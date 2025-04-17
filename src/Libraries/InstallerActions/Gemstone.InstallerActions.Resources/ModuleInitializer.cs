@@ -35,7 +35,7 @@ namespace Gemstone.InstallerActions;
 /// <remarks>
 /// This code is run before any other code in the assembly is executed.
 /// Assemblies need only to be loaded in application domain to be used.
-/// module initialization handled using NuGet package that injects
+/// Module initialization is handled using NuGet package that injects
 /// needed code into the assembly at build time -- assembly not needed
 /// for deployment.
 /// </remarks>
