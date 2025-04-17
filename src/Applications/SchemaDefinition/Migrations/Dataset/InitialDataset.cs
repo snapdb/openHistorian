@@ -254,7 +254,7 @@ public class InitialDataset : Migration
             .Row(new { SourceName = "Alarm", RuntimeName = "Alarms", Description = "Defines alarms that monitor the values of measurements", LoadOrder = 18, Enabled = 1 });
 
         Insert.IntoTable("DataOperation")
-            .Row(new { Description = "Time Series Startup Operations", AssemblyName = "Gemstone.Timeseries.dll", TypeName = "Gemstone.Timeseries.TimeSeriesStartupOperations", MethodName = "PerformTimeSeriesStartupOperations", Arguments = "", LoadOrder = 0, Enabled = 1 })
+            .Row(new { Description = "Time Series Startup Operations", AssemblyName = "Gemstone.Timeseries.dll", TypeName = "Gemstone.Timeseries.TimeseriesStartupOperations", MethodName = "PerformTimeseriesStartupOperations", Arguments = "", LoadOrder = 0, Enabled = 1 })
             .Row(new { Description = "Phasor Data Source Validation", AssemblyName = "PhasorProtocolAdapters.dll", TypeName = "PhasorProtocolAdapters.CommonPhasorServices", MethodName = "PhasorDataSourceValidation", Arguments = "", LoadOrder = 1, Enabled = 1 })
             .Row(new { Description = "Optimize Local Historian Settings", AssemblyName = "openHistorian.Adapters.dll", TypeName = "openHistorian.Adapters.LocalOutputAdapter", MethodName = "OptimizeLocalHistorianSettings", Arguments = "", LoadOrder = 2, Enabled = 1 });
 
