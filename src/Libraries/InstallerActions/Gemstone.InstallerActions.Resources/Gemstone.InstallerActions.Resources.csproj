@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\packages\InjectModuleInitializer.2.0.3\build\InjectModuleInitializer.props" Condition="Exists('..\..\..\packages\InjectModuleInitializer.2.0.3\build\InjectModuleInitializer.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Gemstone.InstallerActions</RootNamespace>
+    <AssemblyName>Gemstone.InstallerActions.Resources</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\$(Configuration)</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>bin\$(Configuration)</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="GSF.Core">
+      <HintPath>..\..\..\Dependencies\GSF\GSF.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="GSF.ServiceProcess">
+      <HintPath>..\..\..\Dependencies\GSF\GSF.ServiceProcess.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ModuleInitializer.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\Dependencies\GSF\Antlr3.Runtime.dll">
+      <Link>Antlr3.Runtime.dll</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\Dependencies\GSF\ExpressionEvaluator.dll">
+      <Link>ExpressionEvaluator.dll</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\Dependencies\GSF\GSF.Communication.dll">
+      <Link>GSF.Communication.dll</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\Dependencies\GSF\GSF.Core.dll">
+      <Link>GSF.Core.dll</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\Dependencies\GSF\GSF.Security.dll">
+      <Link>GSF.Security.dll</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\Dependencies\GSF\GSF.ServiceProcess.dll">
+      <Link>GSF.ServiceProcess.dll</Link>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>IF EXIST "$(TargetDir)Antlr3.Runtime.dll" DEL "$(TargetDir)Antlr3.Runtime.dll"
+IF EXIST "$(TargetDir)ExpressionEvaluator.dll" DEL "$(TargetDir)ExpressionEvaluator.dll"
+IF EXIST "$(TargetDir)Newtonsoft.Json.dll" DEL "$(TargetDir)Newtonsoft.Json.dll"
+IF EXIST "$(TargetDir)GSF.Communication.dll" DEL "$(TargetDir)GSF.Communication.dll"
+IF EXIST "$(TargetDir)GSF.Core.dll" DEL "$(TargetDir)GSF.Core.dll"
+IF EXIST "$(TargetDir)GSF.Security.dll" DEL "$(TargetDir)GSF.Security.dll"
+IF EXIST "$(TargetDir)GSF.ServiceProcess.dll" DEL "$(TargetDir)GSF.ServiceProcess.dll"</PostBuildEvent>
+  </PropertyGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\packages\InjectModuleInitializer.2.0.3\build\InjectModuleInitializer.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\InjectModuleInitializer.2.0.3\build\InjectModuleInitializer.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\InjectModuleInitializer.2.0.3\build\InjectModuleInitializer.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\InjectModuleInitializer.2.0.3\build\InjectModuleInitializer.targets'))" />
+  </Target>
+  <Import Project="..\..\..\packages\InjectModuleInitializer.2.0.3\build\InjectModuleInitializer.targets" Condition="Exists('..\..\..\packages\InjectModuleInitializer.2.0.3\build\InjectModuleInitializer.targets')" />
+</Project>

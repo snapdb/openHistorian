@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using Gemstone.Configuration;
 using Gemstone.Diagnostics;
+using Gemstone.Threading;
 using Microsoft.Extensions.Configuration;
 
 namespace DataExtractionUtility
@@ -37,7 +38,6 @@ namespace DataExtractionUtility
 
                 // Bind settings to configuration sources
                 settings.Bind(new ConfigurationBuilder().ConfigureGemstoneDefaults(settings));
-
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
