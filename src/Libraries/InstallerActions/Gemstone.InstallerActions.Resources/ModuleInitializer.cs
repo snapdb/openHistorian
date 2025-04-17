@@ -42,7 +42,7 @@ namespace Gemstone.InstallerActions;
 internal static class ModuleInitializer
 {
     // This is the namespace prefix used to identify embedded resources in the assembly
-    private const string SourceNamespace = $"{nameof(Gemstone)}.{nameof(InstallerActions)}.";
+    private const string SourceNamespace = $"{nameof(Gemstone)}.{nameof(InstallerActions)}";
 
     private static Assembly s_currentAssembly;
     private static Dictionary<string, Assembly> s_assemblyCache;
