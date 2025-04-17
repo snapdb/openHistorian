@@ -30,7 +30,7 @@ namespace SchemaDefinition.Migrations;
 /// The initial dataset for the openHistorian database.
 /// </summary>
 [SchemaMigration(author: "C. Lackner", branchNumber: 0, year: 2025, month: 02, day: 05)]
-[Tags("Dataset")]
+[Tags(TagBehavior.RequireAny, "Dataset")]
 public class InitialDataset : Migration
 {
     /// <inheritdoc/>
