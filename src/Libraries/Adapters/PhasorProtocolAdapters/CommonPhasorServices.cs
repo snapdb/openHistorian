@@ -1072,7 +1072,7 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     private static Dictionary<string, DataRow> InitializeSignalTypes()
     {
         // It is expected that when a point tag is needing to be created that the database will be available
-        using AdoDataConnection database = new(ConfigSettings.Default.System);
+        using AdoDataConnection database = new(ConfigSettings.Default);
         Dictionary<string, DataRow> signalTypes = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (DataRow row in database.Connection.RetrieveData("SELECT * FROM SignalType").AsEnumerable())
