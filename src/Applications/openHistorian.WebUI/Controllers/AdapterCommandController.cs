@@ -41,7 +41,38 @@ public class AdapterCommandControllerBase<TIAdapter> :
                 Parameters = string.Join(", ", item.method.GetParameters().Select(param => $"{param.Name}: {param.ParameterType.Name}")),
                 item.attribute.AllowedRoles,
             }
-        )}));
+        )
+        }));
+    }
+
+    /// <summary>
+    /// Gets the commands for a specific adapter identified by its assembly name and type name.
+    /// </summary>
+    /// <param name="assemblyName">The file name of the adapter's assembly.</param>
+    /// <param name="typeName">The full type name of the adapter.</param>
+    /// <returns>A JSON result containing the command metadata for the adapter.</returns>
+    [HttpGet, Route("GetCommands/{assemblyName}/{typeName}")]
+    public IActionResult GetAdapterCommands(string assemblyName, string typeName)
+    {
+        // Decode the URL parameters
+        assemblyName = WebUtility.UrlDecode(assemblyName);
+        typeName = WebUtility.UrlDecode(typeName);
+
+        if (!AdapterCache<TIAdapter>.AssemblyTypes.TryGetValue((assemblyName, typeName), out Type? adapterType))
+            return NotFound();
+
+        // Retrieve the adapter command info for this type
+        if (!AdapterCache<TIAdapter>.AdapterCommands.TryGetValue(adapterType, out AdapterCommandInfo? commandInfo))
+            return NotFound();
+
+        return Ok(commandInfo.MethodAttributes.Select(item => new
+        {
+            Description = item.attribute.Description,
+            MethodName = item.method.Name,
+            Parameters = item.method.GetParameters()
+                .Select(p => new { Name = p.Name, Type = p.ParameterType.Name })
+                .ToList()
+        }).ToList());
     }
 
     /// <summary>
@@ -220,8 +251,8 @@ public class AdapterCommandControllerBase<TIAdapter> :
         command = WebUtility.UrlDecode(command);
         method = default!;
 
-        return !AdapterCache<TIAdapter>.AssemblyTypes.TryGetValue((assemblyName, typeName), out Type? adapterType) ? 
-            NotFound() : 
+        return !AdapterCache<TIAdapter>.AssemblyTypes.TryGetValue((assemblyName, typeName), out Type? adapterType) ?
+            NotFound() :
             TryGetCommandMethod(adapterType, command, out method);
     }
 
@@ -237,12 +268,12 @@ public class AdapterCommandControllerBase<TIAdapter> :
 
         (method, AdapterCommandAttribute attribute) = methodAttribute;
 
-    
-       /* Temporarily commenting auth check as security is not yet implemented
-        * // Verify user is in allowed roles for command
-        if (!attribute.AllowedRoles.Any(User.IsInRole))
-            return Unauthorized();
-       */
+
+        /* Temporarily commenting auth check as security is not yet implemented
+         * // Verify user is in allowed roles for command
+         if (!attribute.AllowedRoles.Any(User.IsInRole))
+             return Unauthorized();
+        */
 
         // Verify method return type is IActionResult
         if (method.ReturnType != typeof(IActionResult))
