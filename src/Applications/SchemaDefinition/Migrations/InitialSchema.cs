@@ -129,6 +129,7 @@ public class InitialSchema : Migration
           .WithColumn("AssemblyName").AsString().Nullable()
           .WithColumn("TypeName").AsString().Nullable()
           .WithColumn("ConnectionString").AsString().Nullable()
+          .WithColumn("MeasurementReportingInterval").AsInt32().NotNullable().WithDefaultValue(100000)
           .WithColumn("IsLocal").AsBoolean().NotNullable().WithDefaultValue(true)
           .WithColumn("Description").AsString().Nullable()
           .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
@@ -226,6 +227,7 @@ public class InitialSchema : Migration
             .WithColumn("SignalReference").AsString(200).NotNullable()
             .WithColumn("SignalTypeID").AsInt32().NotNullable().ForeignKey("SignalType", "ID")
             .WithColumn("PhasorSourceIndex").AsInt32().Nullable()
+            .WithColumn("FramesPerSecond").AsInt32().Nullable()
             .WithColumn("Adder").AsDouble().NotNullable().WithDefaultValue(0.0)
             .WithColumn("Multiplier").AsDouble().NotNullable().WithDefaultValue(1.0)
             .WithColumn("Description").AsString().Nullable()
@@ -630,9 +632,7 @@ public class InitialSchema : Migration
                 COALESCE('isConcentrator=' || Device.IsConcentrator || ';', '') ||
                 COALESCE('accessID=' || Device.AccessID || ';', '') ||
                 COALESCE('timeZone=' || Device.TimeZone || ';', '') ||
-                COALESCE('timeAdjustmentTicks=' || Device.TimeAdjustmentTicks || ';', '') ||
-                COALESCE('measurementReportingInterval=' || Device.MeasurementReportingInterval || ';', '') ||
-                COALESCE('connectOnDemand=' || Device.ConnectOnDemand, '') AS ConnectionString
+                COALESCE('timeAdjustmentTicks=' || Device.TimeAdjustmentTicks || ';', '') AS ConnectionString
             FROM 
                 Device
                 LEFT OUTER JOIN Runtime 
@@ -815,7 +815,7 @@ public class InitialSchema : Migration
                        THEN RuntimeP.ID 
                        ELSE Runtime.ID 
                 END AS DeviceID,
-                COALESCE(Device.FramesPerSecond, 30) AS FramesPerSecond,
+                COALESCE(Measurement.FramesPerSecond, 30) AS FramesPerSecond,
                 Measurement.SignalType,
                 Measurement.EngineeringUnits,
                 Phasor.ID AS PhasorID,
@@ -906,8 +906,8 @@ public class InitialSchema : Migration
         this.AddView("IaonInputAdapter", @"
                 RD.ID,
                 RD.AdapterName,
-                RD.AssemblyName,
-                RD.TypeName,
+                '' as AssemblyName,
+                '' as TypeName,
                 RD.ConnectionString
             FROM RuntimeDevice AS RD
             UNION
