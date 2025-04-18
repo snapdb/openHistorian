@@ -583,10 +583,7 @@ public class InitialSchema : Migration
         this.AddRunTimeSync("CustomActionAdapter");
 
         // Views
-        Execute.Sql(@"
-            CREATE VIEW RuntimeOutputStreamMeasurement
-            AS
-            SELECT 
+        this.AddView("RuntimeOutputStreamMeasurement", @"
                 Runtime.ID AS AdapterID,
                 Historian.Acronym AS Historian,
                 OutputStreamMeasurement.PointID,
@@ -603,10 +600,7 @@ public class InitialSchema : Migration
                 OutputStreamMeasurement.PointID;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeHistorian
-            AS
-            SELECT 
+        this.AddView("RuntimeHistorian", @"
                 Runtime.ID,
                 Historian.Acronym AS AdapterName,
                 COALESCE(NULLIF(TRIM(Historian.AssemblyName), ''), 'HistorianAdapters.dll') AS AssemblyName, 
@@ -629,10 +623,7 @@ public class InitialSchema : Migration
                 Historian.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeDevice
-            AS
-            SELECT 
+        this.AddView("RuntimeDevice", @"
                 Runtime.ID,
                 Device.Acronym AS AdapterName,
                 COALESCE(Device.ConnectionString || ';', '') ||
@@ -653,10 +644,7 @@ public class InitialSchema : Migration
                 Device.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeCustomOutputAdapter
-            AS
-            SELECT 
+        this.AddView("RuntimeCustomOutputAdapter", @"
                 Runtime.ID,
                 CustomOutputAdapter.AdapterName,
                 TRIM(CustomOutputAdapter.AssemblyName) AS AssemblyName,
@@ -673,10 +661,7 @@ public class InitialSchema : Migration
                 CustomOutputAdapter.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeInputStreamDevice
-            AS
-            SELECT 
+        this.AddView("RuntimeInputStreamDevice", @"
                 Runtime_P.ID AS ParentID,
                 Runtime.ID,
                 Device.Acronym,
@@ -698,10 +683,7 @@ public class InitialSchema : Migration
                 Device.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeCustomInputAdapter
-            AS
-            SELECT 
+        this.AddView("RuntimeCustomInputAdapter", @"
                 Runtime.ID,
                 CustomInputAdapter.AdapterName,
                 TRIM(CustomInputAdapter.AssemblyName) AS AssemblyName,
@@ -718,10 +700,7 @@ public class InitialSchema : Migration
                 CustomInputAdapter.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeCustomFilterAdapter
-            AS
-            SELECT 
+        this.AddView("RuntimeCustomFilterAdapter", @"
                 Runtime.ID,
                 CustomFilterAdapter.AdapterName,
                 TRIM(CustomFilterAdapter.AssemblyName) AS AssemblyName,
@@ -738,10 +717,7 @@ public class InitialSchema : Migration
                 CustomFilterAdapter.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeOutputStreamDevice
-            AS
-            SELECT 
+        this.AddView("RuntimeOutputStreamDevice", @"
                 Runtime.ID AS ParentID,
                 OutputStreamDevice.ID,
                 OutputStreamDevice.IDCode,
@@ -764,10 +740,7 @@ public class InitialSchema : Migration
                 OutputStreamDevice.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeOutputStream
-            AS
-            SELECT 
+        this.AddView("RuntimeOutputStream", @"
                 Runtime.ID,
                 OutputStream.Acronym AS AdapterName,
                 'PhasorProtocolAdapters.dll' AS AssemblyName,
@@ -811,10 +784,7 @@ public class InitialSchema : Migration
                 OutputStream.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeCustomActionAdapter
-            AS
-            SELECT 
+        this.AddView("RuntimeCustomActionAdapter", @"
                 Runtime.ID,
                 CustomActionAdapter.AdapterName,
                 TRIM(CustomActionAdapter.AssemblyName) AS AssemblyName,
@@ -831,10 +801,7 @@ public class InitialSchema : Migration
                 CustomActionAdapter.LoadOrder;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW ActiveMeasurement
-            AS
-            SELECT
+        this.AddView("ActiveMeasurement", @"
                 COALESCE(Device.Acronym, '__') || ':' || Measurement.PointID AS ID,
                 Measurement.SignalID,
                 Measurement.PointTag,
@@ -901,10 +868,7 @@ public class InitialSchema : Migration
                 AND (Measurement.Enabled <> 0);
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW RuntimeStatistic
-            AS
-            SELECT 
+        this.AddView("RuntimeStatistic", @"
                 Statistic.ID,
                 Statistic.Source,
                 Statistic.SignalIndex,
@@ -922,10 +886,7 @@ public class InitialSchema : Migration
                 Statistic;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW IaonOutputAdapter
-            AS
-            SELECT
+        this.AddView("IaonOutputAdapter", @"
                 RH.ID,
                 RH.AdapterName,
                 RH.AssemblyName,
@@ -942,10 +903,7 @@ public class InitialSchema : Migration
             FROM RuntimeCustomOutputAdapter AS RCOA;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW IaonInputAdapter
-            AS
-            SELECT
+        this.AddView("IaonInputAdapter", @"
                 RD.ID,
                 RD.AdapterName,
                 RD.AssemblyName,
@@ -962,10 +920,7 @@ public class InitialSchema : Migration
             FROM RuntimeCustomInputAdapter AS RCIA;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW IaonActionAdapter
-            AS
-            SELECT
+        this.AddView("IaonActionAdapter", @"
                 RCA.ID,
                 RCA.AdapterName,
                 RCA.AssemblyName,
@@ -974,10 +929,7 @@ public class InitialSchema : Migration
             FROM RuntimeCustomActionAdapter AS RCA;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW IaonFilterAdapter
-            AS
-            SELECT
+        this.AddView("IaonFilterAdapter", @"
                 RCFA.ID,
                 RCFA.AdapterName,
                 RCFA.AssemblyName,
@@ -986,10 +938,7 @@ public class InitialSchema : Migration
             FROM RuntimeCustomFilterAdapter AS RCFA;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW CurrentAlarmState
-            AS
-            SELECT
+        this.AddView("CurrentAlarmState", @"
                 Alarm.ID,
                 Alarm.Acronym,
                 Alarm.Type,
@@ -999,10 +948,7 @@ public class InitialSchema : Migration
             FROM Alarm;
         ");
 
-        Execute.Sql(@"
-            CREATE VIEW IaonTreeView
-            AS
-            SELECT
+        this.AddView("IaonTreeView", @"
                 Device.Acronym AS DeviceAcronym,
                 Device.Name AS DeviceName,
                 Device.ID AS DeviceID,
@@ -1015,9 +961,7 @@ public class InitialSchema : Migration
                 ON Device.ParentID = ParentDevice.ID;
         ");
 
-         Execute.Sql(@"
-            CREATE VIEW FailoverNodeView
-            AS SELECT 
+        this.AddView("FailoverNodeView", @"
                 FailoverLog.SystemName,
 				FailoverLog.Priority,
 				Max(FailoverLog.Timestamp) AS LastLog
