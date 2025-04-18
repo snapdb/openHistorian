@@ -54,6 +54,10 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using Gemstone.ActionExtensions;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using Microsoft.CodeAnalysis;
+using Gemstone.Timeseries.Model;
+using System.Diagnostics.Metrics;
 
 namespace GrafanaAdapters;
 
@@ -106,20 +110,84 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         /// Checks whether this rule is satsified.
         /// </summary>
         /// <returns></returns>
-        public bool Test(ImmediateMeasurements measuremnts ) => false;
+        public bool Test(ImmediateMeasurements measurements, int deviceID, Ticks Time )
+        {
+            if (!MeasurementKeys.TryGetValue(deviceID, out MeasurementKey[] keys))
+                return false;
+
+            bool test = false;
+
+            Func<double, bool> func = GetSuccededTest();
+
+            if (Combination == AlarmCombination.AND)
+                test = keys.All((key) => func.Invoke(measurements[key]));
+            if (Combination == AlarmCombination.OR)
+                test = keys.Any((key)  => func.Invoke(measurements[key]));
+
+            if (!test && LastUpdateTime.ContainsKey(deviceID))
+                LastUpdateTime[deviceID] = Time;
+            else if (!test)
+                LastUpdateTime.Add(deviceID, Time);
+
+            if (Delay >= 0 && LastUpdateTime.ContainsKey(deviceID))
+                return test && (Time - LastUpdateTime[deviceID]).ToSeconds() > Delay;
+
+            return test;
+        }
 
         public AlarmCombination Combination { get; set; }
         public double SetPoint { get; set; }
         public AlarmOperation Operation { get; set; }
         public string Query { get; set; }
         public double Delay { get; set; }
-        public MeasurementKey[] MeasurementKeys { get; set; }
+        public Dictionary<int, MeasurementKey[]> MeasurementKeys { get; set; }
 
-        private Ticks m_lastUpdateTime;
+        public Dictionary<int,Ticks> LastUpdateTime { get; set; }
+
+        // Returns the function used to determine when the rule is satisfied.
+        private Func<double, bool> GetSuccededTest() =>
+            Operation switch
+            {
+                AlarmOperation.Equal => RaiseIfEqual,
+                AlarmOperation.NotEqual => RaiseIfNotEqual,
+                AlarmOperation.GreaterOrEqual => RaiseIfGreaterOrEqual,
+                AlarmOperation.LessOrEqual => RaiseIfLessOrEqual,
+                AlarmOperation.GreaterThan => RaiseIfGreaterThan,
+                AlarmOperation.LessThan => RaiseIfLessThan,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+        // Indicates whether the given measurement is
+        // equal to the set point within the tolerance.
+        private bool RaiseIfEqual(double measurement) => measurement <= SetPoint + s_tolerance &&
+                           measurement >= SetPoint - s_tolerance;
+
+        // Indicates whether the given measurement is outside
+        // the range defined by the set point and tolerance.
+        private bool RaiseIfNotEqual(double measurement) => measurement < SetPoint - s_tolerance ||
+                              measurement > SetPoint + s_tolerance;
+        
+        // Indicates whether the given measurement
+        // is greater than or equal to the set point.
+        private bool RaiseIfGreaterOrEqual(double measurement) => measurement >= SetPoint;
+
+        // Indicates whether the given measurement
+        // is less than or equal to the set point.
+        private bool RaiseIfLessOrEqual(double measurement) => measurement <= SetPoint;
+
+        // Indicates whether the given measurement
+        // is greater than the set point.
+        private bool RaiseIfGreaterThan(double measurement) => measurement > SetPoint;
+
+        // Indicates whether the given measurement
+        // is less than the set point.
+        private bool RaiseIfLessThan(double measurement) => measurement < SetPoint;
+
+        
+
+        static double s_tolerance = double.Epsilon;
 
     }
-
-
 
     /// <summary>
     /// Defines the default value for the <see cref="MonitoringRate"/>.
@@ -137,15 +205,11 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     public const double DefaultAcknowledgedTransitionHysteresisDelay = 30.0D;
 
     // Fields
-    private Dictionary<AlarmState, DeviceState> m_alarmStates;
-    private Dictionary<int, AlarmState> m_alarmStateIDs;
     private Dictionary<int, MeasurementKey[]> m_deviceMeasurementKeys;
-    private Dictionary<int, DataRow> m_deviceMetadata;
-    private Dictionary<MeasurementKey, Ticks> m_lastDeviceDataUpdates;
+    private Dictionary<int, Device> m_deviceMetadata;
+
     private FileBackedDictionary<int, long> m_lastDeviceStateChange;
     private Dictionary<int, Ticks> m_lastAcknowledgedTransition;
-    private Ticks m_lastExternalDatabaseStateChange;
-    private Dictionary<AlarmState, string> m_mappedAlarmStates;
 
     private Dictionary<int, int> m_stateCounts;
     private List<DeviceState> m_deviceStates;
@@ -324,130 +388,21 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         ConnectionStringParser parser = new();
         parser.ParseConnectionString(ConnectionString, this);
 
-        m_alarmStates = new Dictionary<AlarmState, DeviceState>();
-        m_alarmStateIDs = new Dictionary<int, AlarmState>();
-        m_deviceMeasurementKeys = new Dictionary<int, MeasurementKey[]>();
-        m_deviceMetadata = new Dictionary<int, DataRow>();
-        m_lastDeviceDataUpdates = new Dictionary<MeasurementKey, Ticks>();
+        m_deviceMeasurementKeys = new();
+        m_deviceMetadata = new();
+
         m_lastDeviceStateChange = new FileBackedDictionary<int, long>(FilePath.GetAbsolutePath($"{Name}_LastStateChangeCache.bin".RemoveInvalidFileNameCharacters()));
-        m_lastAcknowledgedTransition = new Dictionary<int, Ticks>();
-        m_lastExternalDatabaseStateChange = 0L;
-        m_mappedAlarmStates = new Dictionary<AlarmState, string>();
+
+        m_lastAcknowledgedTransition = new();
         m_stateCounts = CreateNewStateCountsMap();
         m_stateCountLock = new object();
-        m_deviceStates = new List<DeviceState>();
+        m_deviceStates = new();
         m_requiredStateIDs = new();
 
         if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified) == Modified)
             m_processDeviceStatus.RunAsync();
         else
             new Action(m_processDeviceStatus.RunAsync).DelayAndExecute(MonitoringRate);
-    }
-
-    private void LoadAlarmStates(bool reload = false)
-    {
-        const int DeviceGroupAccessID = -99999;
-
-        using AdoDataConnection connection = new(ConfigSettings.Default.System);
-
-        // Load alarm state map - this defines database state ID and custom color for each alarm state
-        TableOperations<DeviceState> alarmStateTable = new(connection);
-        DeviceState[] alarmStateRecords = alarmStateTable.QueryRecords().ToArray();
-
-        foreach (AlarmState alarmState in Enum.GetValues(typeof(AlarmState)))
-        {
-            DeviceState alarmStateRecord = alarmStateRecords.FirstOrDefault(record => record.State.RemoveWhiteSpace().Equals(alarmState.ToString(), StringComparison.OrdinalIgnoreCase));
-
-            if (alarmStateRecord is null)
-            {
-                alarmStateRecord = alarmStateTable.NewRecord();
-                alarmStateRecord.State = alarmState.ToString();
-                alarmStateRecord.Color = "white";
-            }
-
-            m_alarmStates[alarmState] = alarmStateRecord;
-            m_alarmStateIDs[alarmStateRecord.ID] = alarmState;
-        }
-
-        // Define SQL expression for direct connect and parent devices or all direct connect and child devices
-        string deviceSQL = TargetParentDevices ?
-            "SELECT * FROM Device WHERE (IsConcentrator != 0 OR ParentID IS NULL) AND ID NOT IN (SELECT DeviceID FROM AlarmDevice)" :
-            $"SELECT * FROM Device WHERE IsConcentrator = 0 AND AccessID <> {DeviceGroupAccessID} AND ID NOT IN (SELECT DeviceID FROM AlarmDevice)";
-
-        // Load any newly defined devices into the alarm device table
-        TableOperations<DeviceStatus> alarmDeviceTable = new(connection);
-        DataRow[] newDevices = connection.RetrieveData(deviceSQL).Select();
-
-        foreach (DataRow newDevice in newDevices)
-        {
-            DeviceStatus alarmDevice = alarmDeviceTable.NewRecord();
-
-            bool enabled = newDevice["Enabled"].ToString().ParseBoolean();
-
-            alarmDevice.DeviceID = newDevice.ConvertField<int>("ID");
-            alarmDevice.StateID = enabled ? m_alarmStates[AlarmState.NotAvailable].ID : m_alarmStates[AlarmState.OutOfService].ID;
-            alarmDevice.DisplayData = enabled ? "0" : GetOutOfServiceTime(newDevice);
-
-            alarmDeviceTable.AddNewRecord(alarmDevice);
-
-            // Foreign key relationship with Device table with delete cascade should ensure automatic removals
-        }
-
-        List<MeasurementKey> inputMeasurementKeys = [];
-
-        // Load measurement signal ID to alarm device map
-        foreach (DeviceStatus alarmDevice in alarmDeviceTable.QueryRecords())
-        {
-            MeasurementKey[] keys = null;
-            DataRow metadata = connection.RetrieveRow("SELECT * FROM Device WHERE ID = {0}", alarmDevice.DeviceID);
-
-            if (metadata is not null)
-            {
-                // Querying from MeasurementDetail because we also want to include disabled device measurements
-                string measurementSQL = TargetParentDevices ?
-                    "SELECT MeasurementDetail.SignalID AS SignalID, MeasurementDetail.ID AS ID FROM MeasurementDetail INNER JOIN DeviceDetail ON MeasurementDetail.DeviceID = DeviceDetail.ID WHERE (DeviceDetail.Acronym = {0} OR DeviceDetail.ParentAcronym = {0}) AND MeasurementDetail.SignalAcronym = 'FREQ'" :
-                    "SELECT SignalID, ID FROM MeasurementDetail WHERE DeviceAcronym = {0} AND SignalAcronym = 'FREQ'";
-
-                DataTable table = connection.RetrieveData(measurementSQL, metadata.ConvertField<string>("Acronym"));
-
-                // ReSharper disable once AccessToDisposedClosure
-                keys = [.. table.AsEnumerable().Select(row => MeasurementKey.LookUpOrCreate(connection.Guid(row, "SignalID"), row["ID"].ToString()))];
-            }
-
-            if (keys?.Length > 0)
-            {
-                inputMeasurementKeys.AddRange(keys);
-                m_deviceMeasurementKeys[alarmDevice.DeviceID] = keys;
-                m_deviceMetadata[alarmDevice.DeviceID] = metadata;
-
-                if (!m_lastDeviceStateChange.ContainsKey(alarmDevice.DeviceID))
-                    m_lastDeviceStateChange.Add(alarmDevice.DeviceID, alarmDevice.TimeStamp.Ticks);
-
-                foreach (MeasurementKey key in keys)
-                {
-                    if (reload)
-                    {
-                        if (!m_lastDeviceDataUpdates.ContainsKey(key))
-                            m_lastDeviceDataUpdates.Add(key, DateTime.UtcNow.Ticks);
-                    }
-                    else
-                    {
-                        m_lastDeviceDataUpdates[key] = DateTime.UtcNow.Ticks;
-                    }
-                }
-            }
-            else
-            {
-                // Mark alarm record as unavailable if no frequency measurement is available for device
-                alarmDevice.StateID = m_alarmStates[AlarmState.NotAvailable].ID;
-                alarmDevice.DisplayData = GetOutOfServiceTime(metadata);
-                alarmDeviceTable.UpdateRecord(alarmDevice);
-            }
-        }
-
-        // Load desired input measurements
-        InputMeasurementKeys = [.. inputMeasurementKeys];
-        TrackLatestMeasurements = true;
     }
 
     /// <summary>
@@ -494,13 +449,14 @@ public class DeviceStateAdapter : FacileActionAdapterBase
             return;
         }
 
-        lock (m_alarmStates)
+        lock (m_deviceStates)
         {
             ImmediateMeasurements measurements = LatestMeasurements;
             List<DeviceStatus> alarmDeviceUpdates = [];
             Dictionary<int, int> stateCounts = CreateNewStateCountsMap();
+            Ticks now = DateTime.UtcNow;
 
-            OnStatusMessage(MessageLevel.Info, "Updating device alarm states");
+            OnStatusMessage(MessageLevel.Info, "Updating device states");
 
             using (AdoDataConnection connection = new(ConfigSettings.Default.System))
             {
@@ -510,16 +466,16 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                 {
                     //Skip a Device if there are no measurements or it has no entry in the Device MetaData
                     if (!m_deviceMeasurementKeys.TryGetValue(alarmDevice.DeviceID, out MeasurementKey[] keys) ||
-                        !m_deviceMetadata.TryGetValue(alarmDevice.DeviceID, out DataRow metadata))
+                        !m_deviceMetadata.TryGetValue(alarmDevice.DeviceID, out Device metadata))
                         continue;
 
-                    if (!m_alarmStateIDs.TryGetValue(alarmDevice.StateID, out AlarmState currentState))
-                        currentState = AlarmState.NotAvailable;
+                    if (!m_alarmStateIDs.TryGetValue(alarmDevice.StateID, out int currentState))
+                        currentState = m_requiredStateIDs.GetValueOrDefault(AlarmState.NotAvailable);
 
                     int newState = 0;
 
-                    if (metadata["Enabled"].ToString().ParseBoolean())
-                        newState = (int)AlarmState.OutOfService;
+                    if (metadata.Enabled)
+                        newState = m_requiredStateIDs.GetValueOrDefault(AlarmState.OutOfService);
                     else
                     {
                         //Loop Through all States In Priority Order. If a state matches we are done. If it does not we continue
@@ -529,7 +485,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                             if (!m_stateRules.TryGetValue(state.ID, out List<Rule> rules))
                                 rules = new List<Rule>();
 
-                            if (!rules.Any() || rules.All(r => r.Test(measurements)))
+                            if (!rules.Any() || rules.All(r => r.Test(measurements,alarmDevice.DeviceID,now)))
                             {
                                 break;
                             }
@@ -538,9 +494,9 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                     }
 
                     // Currently is Acknowledged special Logic applys
-                    if (currentState == AlarmState.Acknowledged)
+                    if (currentState == m_requiredStateIDs.GetValueOrDefault(AlarmState.Acknowledged))
                     {
-                        if (newState != (int)AlarmState.Good)
+                        if (newState != m_requiredStateIDs.GetValueOrDefault(AlarmState.Good))
                             newState = currentState;
                     }
 
@@ -601,7 +557,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         TableOperations<DeviceState> tblOperation = new(connection);
 
         m_deviceStates = deviceStateDataSet.Tables[0].Rows.Cast<DataRow>().Select((row) => tblOperation.LoadRecord(row)).OrderBy(r => r.Priority).ToList();
-        foreach (DeviceState state in s_baseStates.Values)
+        foreach ((AlarmState key, DeviceState state) in s_baseStates)
         {
             DataRow row = deviceStateDataSet.Tables[0].Rows.Cast<DataRow>().Where(x => string.Equals(x.ConvertField<string>("State"),state.State,StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
             if (row == null)
@@ -610,7 +566,89 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                 addedState = true;
 
             }
+            else
+                m_requiredStateIDs.Add(key, state.ID);
         }
+
+        if (addedState)
+            return false;
+
+        Dictionary<int, List<Rule>> stateRules = new();
+
+        // Get all Devices
+        DataSet deviceDataSet = new();
+        deviceDataSet.Tables.Add(dataSource.Tables["Device"]!.Copy());
+        TableOperations<Device> deviceTblOperation = new(connection);
+
+        // ToDo Verify the Logic for TaregtParentDevices
+        // If TargetParenDevices grab everything otherwhise only get PMUs that are not concentrators
+        m_deviceMetadata = deviceDataSet.Tables[0].Rows.Cast<DataRow>().Select(row => deviceTblOperation.LoadRecord(row)).Where((d) => !TargetParentDevices || !d.IsConcentrator).ToDictionary(item => item.ID);
+        ILookup<string, int> deviceIDLookup = deviceDataSet.Tables[0].Rows.Cast<DataRow>().ToLookup((row) => row["Acronym"].ToString(), (row) => int.Parse(row["ID"].ToString()));
+
+        string filterExpression = string.Join(";", m_stateRules.SelectMany(item => item.Value).Select(item => item.Query));
+
+        // Set input measurement keys for measurement routing
+        MeasurementKey[] measurments = ParseInputMeasurementKeys(DataSource, true, filterExpression);
+        HashSet<Guid> signalSet = [.. measurments.Select(key => key.SignalID)];
+
+        ILookup<Guid, int> deviceLookup = DataSource.Tables["ActiveMeasurements"].Select()
+               .Where(row => signalSet.Contains(row.ConvertField<Guid>("SignalID")))
+               .ToLookup(row => row.ConvertField<Guid>("SignalID"), row => deviceIDLookup[(row.ConvertField<string?>("Device") ?? row.ConvertField<string?>("PointTag"))].FirstOrDefault());
+
+        // Setup Rules
+        foreach (DeviceState state in m_deviceStates)
+        {
+            if (string.IsNullOrWhiteSpace(state.Rules))
+                continue;
+
+            List<Rule> existingRule = new();
+
+            if (!m_stateRules.TryGetValue(state.ID, out existingRule))
+                existingRule = new();
+
+            JArray list = JArray.Parse(state.Rules);
+            int i = 0;
+
+            foreach (JObject rule in list)
+            {
+                MeasurementKey[] ruleMeasurements = ParseInputMeasurementKeys(DataSource, true, rule["Query"]?.ToString() ?? "");
+
+                if (existingRule.Count < (i + 1))
+                {
+                    //Its a new Rule
+                    existingRule.Add(new Rule()
+                    {
+                        Combination = Enum.Parse<AlarmCombination>(rule["Combination"]?.ToString() ?? "AND"),
+                        SetPoint = double.Parse(rule["SetPoint"]?.ToString() ?? "0"),
+                        Operation = Enum.Parse<AlarmOperation>(rule["Operation"]?.ToString() ?? "Equal"),
+                        Query = rule["Query"]?.ToString() ?? "",
+                        Delay = double.Parse(rule["Delay"]?.ToString() ?? "0"),
+                        MeasurementKeys = measurments.GroupBy(meas => deviceLookup[meas.SignalID].First()).ToDictionary(group => group.Key, group => group.ToArray()),
+                        LastUpdateTime = new()
+                    });
+                }
+                else
+                {
+                    //Its an existing Rule
+                    existingRule[i] = new Rule()
+                    {
+                        Combination = Enum.Parse<AlarmCombination>(rule["Combination"]?.ToString() ?? "AND"),
+                        SetPoint = double.Parse(rule["SetPoint"]?.ToString() ?? "0"),
+                        Operation = Enum.Parse<AlarmOperation>(rule["Operation"]?.ToString() ?? "Equal"),
+                        Query = rule["Query"]?.ToString() ?? "",
+                        Delay = double.Parse(rule["Delay"]?.ToString() ?? "0"),
+                        MeasurementKeys = measurments.GroupBy(meas => deviceLookup[meas.SignalID].First()).ToDictionary(group => group.Key, group => group.ToArray()),
+                        LastUpdateTime = existingRule[i].LastUpdateTime
+                    };
+                }
+                i++;
+            }
+            existingRule = existingRule.Take(i).ToList();
+            stateRules.Add(state.ID, existingRule);
+        }
+
+        m_stateRules = stateRules;
+        InputMeasurementKeys = measurments;
 
         return !addedState;
 
