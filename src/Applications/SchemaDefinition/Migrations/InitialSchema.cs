@@ -122,8 +122,21 @@ public class InitialSchema : Migration
     /// <inheritdoc/>
     public override void Up()
     {
+        Create.Table("Historian")
+          .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
+          .WithColumn("Acronym").AsString(200).NotNullable()
+          .WithColumn("Name").AsString(200).Nullable()
+          .WithColumn("AssemblyName").AsString().Nullable()
+          .WithColumn("TypeName").AsString().Nullable()
+          .WithColumn("ConnectionString").AsString().Nullable()
+          .WithColumn("IsLocal").AsBoolean().NotNullable().WithDefaultValue(true)
+          .WithColumn("Description").AsString().Nullable()
+          .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
+          .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
+          .WithCreatedBy();
+
         //MetaData Information
-          Create.Table("Company")
+        Create.Table("Company")
             .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
             .WithColumn("Acronym").AsString(200).NotNullable()
             .WithColumn("MapAcronym").AsString(10).NotNullable()
@@ -203,7 +216,7 @@ public class InitialSchema : Migration
 
          Create.Table("Measurement")
             .WithColumn("PointID").AsInt32().NotNullable().PrimaryKey().Identity()
-            .WithColumn("SignalID").AsString(36).Nullable()
+            .WithColumn("SignalID").AsString(36).Nullable().Unique()
             .WithColumn("HistorianID").AsInt32().Nullable().ForeignKey("Historian", "ID")
             .WithColumn("DeviceID").AsInt32().Nullable().ForeignKey("Device", "ID")
             .WithColumn("PointTag").AsString(200).NotNullable()
@@ -425,18 +438,7 @@ public class InitialSchema : Migration
             .WithColumn("UserAccountID").AsString(36).NotNullable().ForeignKey("UserAccount", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade);
 
         // System related
-        Create.Table("Historian")
-            .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
-            .WithColumn("Acronym").AsString(200).NotNullable()
-            .WithColumn("Name").AsString(200).Nullable()
-            .WithColumn("AssemblyName").AsString().Nullable()
-            .WithColumn("TypeName").AsString().Nullable()
-            .WithColumn("ConnectionString").AsString().Nullable()
-            .WithColumn("IsLocal").AsBoolean().NotNullable().WithDefaultValue(true)
-            .WithColumn("Description").AsString().Nullable()
-            .WithColumn("LoadOrder").AsInt32().NotNullable().WithDefaultValue(0)
-            .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithCreatedBy();
+      
 
         Create.Table("ErrorLog")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
