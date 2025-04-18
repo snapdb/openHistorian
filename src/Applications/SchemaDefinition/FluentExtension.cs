@@ -82,7 +82,7 @@ public static class FluentExtension
 
     public static void AddRunTimeSync(this Migration baseClass, string tableName)
     {
-        baseClass.IfDatabase("Sqlite").Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Insert
+        baseClass.IfDatabase(ProcessorId.SQLite).Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Insert
             AFTER INSERT ON {0}
             FOR EACH ROW 
             BEGIN 
@@ -91,7 +91,7 @@ public static class FluentExtension
             END;
         ", tableName));
 
-        baseClass.IfDatabase("Sqlite").Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Delete
+        baseClass.IfDatabase(ProcessorId.SQLite).Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Delete
             BEFORE DELETE ON {0}
             FOR EACH ROW 
             BEGIN 
@@ -101,7 +101,7 @@ public static class FluentExtension
             END;
         ", tableName));
 
-        baseClass.IfDatabase("SqlServer").Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Insert ON {0}
+        baseClass.IfDatabase(ProcessorId.SqlServer).Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Insert ON {0}
             AFTER INSERT AS
             BEGIN 
                 SET NOCOUNT ON;
@@ -110,7 +110,7 @@ public static class FluentExtension
             END;
         ", tableName));
 
-        baseClass.IfDatabase("SqlServer").Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Delete ON {0}
+        baseClass.IfDatabase(ProcessorId.SqlServer).Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Delete ON {0}
             AFTER DELETE AS
             BEGIN 
                SET NOCOUNT ON;
