@@ -574,13 +574,13 @@ public class InitialSchema : Migration
             .WithColumn("Timestamp").AsDateTime().Nullable()
             .WithColumn("Priority").AsInt32().NotNullable();
 
-        Execute.AddRunTimeSync("Historian");
-        Execute.AddRunTimeSync("OutputStream");
-        Execute.AddRunTimeSync("Device");
-        Execute.AddRunTimeSync("CustomOutputAdapter");
-        Execute.AddRunTimeSync("CustomInputAdapter");
-        Execute.AddRunTimeSync("CustomFilterAdapter");
-        Execute.AddRunTimeSync("CustomActionAdapter");
+        this.AddRunTimeSync("Historian");
+        this.AddRunTimeSync("OutputStream");
+        this.AddRunTimeSync("Device");
+        this.AddRunTimeSync("CustomOutputAdapter");
+        this.AddRunTimeSync("CustomInputAdapter");
+        this.AddRunTimeSync("CustomFilterAdapter");
+        this.AddRunTimeSync("CustomActionAdapter");
 
         // Views
         Execute.Sql(@"

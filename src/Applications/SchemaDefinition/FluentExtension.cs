@@ -80,9 +80,9 @@ public static class FluentExtension
             .WithColumn("UpdatedBy").AsString(200).NotNullable().WithDefaultValue("");
     }
 
-    public static void AddRunTimeSync(this IExecuteExpressionRoot execute, string tableName)
+    public static void AddRunTimeSync(this Migration baseClass, string tableName)
     {
-        execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Insert
+        baseClass.IfDatabase("Sqlite").Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Insert
             AFTER INSERT ON {0}
             FOR EACH ROW 
             BEGIN 
@@ -91,13 +91,30 @@ public static class FluentExtension
             END;
         ", tableName));
 
-        execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Delete
+        baseClass.IfDatabase("Sqlite").Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Delete
             BEFORE DELETE ON {0}
             FOR EACH ROW 
             BEGIN 
                 DELETE FROM Runtime 
                 WHERE SourceID = OLD.ID 
                   AND SourceTable = '{0}'; 
+            END;
+        ", tableName));
+
+        baseClass.IfDatabase("SqlServer").Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Insert ON {0}
+            AFTER INSERT AS
+            BEGIN 
+                SET NOCOUNT ON;
+                INSERT INTO Runtime (SourceID, SourceTable) 
+                SELECT ID, '{0}' FROM INSERTED; 
+            END;
+        ", tableName));
+
+        baseClass.IfDatabase("SqlServer").Execute.Sql(string.Format(@" CREATE TRIGGER {0}_RuntimeSync_Delete ON {0}
+            AFTER DELETE AS
+            BEGIN 
+               SET NOCOUNT ON;
+               DELETE FROM Runtime WHERE SourceID IN (SELECT ID FROM DELETED) AND SourceTable = '{0}'
             END;
         ", tableName));
     }
