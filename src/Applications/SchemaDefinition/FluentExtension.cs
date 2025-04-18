@@ -119,4 +119,18 @@ public static class FluentExtension
         ", tableName));
     }
 
+    public static void AddView(this Migration baseClass, string viewName, string viewDefinition)
+    {
+
+        baseClass.IfDatabase(ProcessorId.SQLite).Execute.Sql(string.Format(@"
+            CREATE VIEW {0}
+            AS
+            SELECT {1}", viewName, viewDefinition));
+
+
+        baseClass.IfDatabase(ProcessorId.SqlServer).Execute.Sql(string.Format(@"
+            CREATE VIEW {0}
+            AS
+            SELECT TOP(100) PERCENT {1}", viewName, viewDefinition));
+    }
 }
