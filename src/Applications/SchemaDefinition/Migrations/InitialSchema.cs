@@ -68,7 +68,7 @@ public class InitialSchema : Migration
         Delete.Table("ApplicationRole");
         Delete.Table("ApplicationRoleSecurityGroup");
         Delete.Table("ApplicationRoleUserAccount");
-        Delete.Table("SecurityGroupUserAccount"); 
+        Delete.Table("SecurityGroupUserAccount");
 
         //System related
         Delete.Table("Historian");
@@ -215,28 +215,28 @@ public class InitialSchema : Migration
         Create.UniqueConstraint("IX_Device_UniqueID").OnTable("Device").Column("UniqueID");
         Create.Index("IX_Device_Acronym").OnTable("Device").OnColumn("Acronym").Ascending();
 
-         Create.Table("Measurement")
-            .WithColumn("PointID").AsInt32().NotNullable().PrimaryKey().Identity()
-            .WithColumn("SignalID").AsString(36).Nullable().Unique()
-            .WithColumn("HistorianID").AsInt32().Nullable().ForeignKey("Historian", "ID")
-            .WithColumn("DeviceID").AsInt32().Nullable().ForeignKey("Device", "ID")
-            .WithColumn("PointTag").AsString(200).NotNullable()
-            .WithColumn("AlternateTag").AsString().Nullable()
-            .WithColumn("AlternateTag2").AsString().Nullable()
-            .WithColumn("AlternateTag3").AsString().Nullable()
-            .WithColumn("SignalReference").AsString(200).NotNullable()
-            .WithColumn("SignalTypeID").AsInt32().NotNullable().ForeignKey("SignalType", "ID")
-            .WithColumn("PhasorSourceIndex").AsInt32().Nullable()
-            .WithColumn("FramesPerSecond").AsInt32().Nullable()
-            .WithColumn("Adder").AsDouble().NotNullable().WithDefaultValue(0.0)
-            .WithColumn("Multiplier").AsDouble().NotNullable().WithDefaultValue(1.0)
-            .WithColumn("Description").AsString().Nullable()
-            .WithColumn("Subscribed").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
-            .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
-            .WithColumn("Manual").AsBoolean().NotNullable().WithDefaultValue(true)
-            .WithColumn("Label").AsString().Nullable()
-            .WithCreatedBy();
+        Create.Table("Measurement")
+           .WithColumn("PointID").AsInt32().NotNullable().PrimaryKey().Identity()
+           .WithColumn("SignalID").AsString(36).Nullable().Unique()
+           .WithColumn("HistorianID").AsInt32().Nullable().ForeignKey("Historian", "ID")
+           .WithColumn("DeviceID").AsInt32().Nullable().ForeignKey("Device", "ID")
+           .WithColumn("PointTag").AsString(200).NotNullable()
+           .WithColumn("AlternateTag").AsString().Nullable()
+           .WithColumn("AlternateTag2").AsString().Nullable()
+           .WithColumn("AlternateTag3").AsString().Nullable()
+           .WithColumn("SignalReference").AsString(200).NotNullable()
+           .WithColumn("SignalTypeID").AsInt32().NotNullable().ForeignKey("SignalType", "ID")
+           .WithColumn("PhasorSourceIndex").AsInt32().Nullable()
+           .WithColumn("FramesPerSecond").AsInt32().Nullable()
+           .WithColumn("Adder").AsDouble().NotNullable().WithDefaultValue(0.0)
+           .WithColumn("Multiplier").AsDouble().NotNullable().WithDefaultValue(1.0)
+           .WithColumn("Description").AsString().Nullable()
+           .WithColumn("Subscribed").AsBoolean().NotNullable().WithDefaultValue(false)
+           .WithColumn("Internal").AsBoolean().NotNullable().WithDefaultValue(true)
+           .WithColumn("Enabled").AsBoolean().NotNullable().WithDefaultValue(false)
+           .WithColumn("Manual").AsBoolean().NotNullable().WithDefaultValue(true)
+           .WithColumn("Label").AsString().Nullable()
+           .WithCreatedBy();
 
         Create.Table("Phasor")
             .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
@@ -250,7 +250,7 @@ public class InitialSchema : Migration
             .WithColumn("BaseKV").AsInt32().NotNullable().WithDefaultValue(0)
             .WithCreatedBy();
 
-        Create.UniqueConstraint("IX_Phasor_DeviceID_SourceIndex").OnTable("Phasor").Columns("DeviceID","SourceIndex");
+        Create.UniqueConstraint("IX_Phasor_DeviceID_SourceIndex").OnTable("Phasor").Columns("DeviceID", "SourceIndex");
 
         Create.Table("OutputStream")
             .WithColumn("ID").AsInt32().NotNullable().PrimaryKey().Identity()
@@ -287,7 +287,7 @@ public class InitialSchema : Migration
         Create.UniqueConstraint("IX_OutputStream_Acronym").OnTable("OutputStream").Columns("Acronym");
 
         Create.Table("OutputStreamDevice")
-            .WithColumn("AdapterID").AsInt32().NotNullable().ForeignKey("OutputStream","ID").OnDelete(System.Data.Rule.Cascade)
+            .WithColumn("AdapterID").AsInt32().NotNullable().ForeignKey("OutputStream", "ID").OnDelete(System.Data.Rule.Cascade)
             .WithColumn("ID").AsInt32().PrimaryKey().Identity().NotNullable()
             .WithColumn("IDCode").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("Acronym").AsString(200).NotNullable()
@@ -434,13 +434,13 @@ public class InitialSchema : Migration
         Create.Table("ApplicationRoleUserAccount")
             .WithColumn("ApplicationRoleID").AsString(36).NotNullable().ForeignKey("ApplicationRole", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade)
             .WithColumn("UserAccountID").AsString(36).NotNullable().ForeignKey("UserAccount", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade);
-           
+
         Create.Table("SecurityGroupUserAccount")
             .WithColumn("SecurityGroupID").AsString(36).NotNullable().ForeignKey("SecurityGroup", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade)
             .WithColumn("UserAccountID").AsString(36).NotNullable().ForeignKey("UserAccount", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade);
 
         // System related
-      
+
 
         Create.Table("ErrorLog")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
@@ -982,7 +982,13 @@ public class InitialSchema : Migration
                 );
         ");
 
+        Execute.Sql(@"
+            CREATE TRIGGER Measurement_InsertDefault AFTER INSERT ON Measurement
+            FOR EACH ROW
+            BEGIN
+                UPDATE Measurement SET SignalID = (SELECT * FROM NEW_GUID) WHERE ROWID = NEW.ROWID AND SignalID IS NULL;
+            END;
+        ");
 
-        
     }
 }
