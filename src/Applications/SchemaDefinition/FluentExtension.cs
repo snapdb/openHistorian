@@ -133,4 +133,15 @@ public static class FluentExtension
             AS
             SELECT TOP(100) PERCENT {1}", viewName, viewDefinition));
     }
+
+    public static void AddGuidGeneration(this Migration baseClass, string tableName, string collumnName)
+    {
+        baseClass.IfDatabase(ProcessorId.SQLite).Execute.Sql(string.Format(@"CREATE TRIGGER {0}_InsertDefault
+            AFTER INSERT ON {0}
+            FOR EACH ROW
+            BEGIN
+                UPDATE {0} SET {1} = (SELECT * FROM NEW_GUID) WHERE ROWID = NEW.ROWID AND {1} IS NULL;
+            END;
+        ", tableName, collumnName));
+    }
 }

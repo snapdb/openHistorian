@@ -982,13 +982,6 @@ public class InitialSchema : Migration
                 );
         ");
 
-        Execute.Sql(@"
-            CREATE TRIGGER Measurement_InsertDefault AFTER INSERT ON Measurement
-            FOR EACH ROW
-            BEGIN
-                UPDATE Measurement SET SignalID = (SELECT * FROM NEW_GUID) WHERE ROWID = NEW.ROWID AND SignalID IS NULL;
-            END;
-        ");
-
+        this.AddGuidGeneration("Measurement", "SignalID");
     }
 }
