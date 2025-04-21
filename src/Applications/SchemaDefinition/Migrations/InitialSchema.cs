@@ -116,6 +116,7 @@ public class InitialSchema : Migration
         Execute.DeleteView("DeviceStatusView");
         Execute.DeleteView("NEW_GUID");
         Execute.DeleteView("FailoverNodeView");
+        Execute.DeleteView("DeviceDetail");
 
     }
 
@@ -440,8 +441,6 @@ public class InitialSchema : Migration
             .WithColumn("UserAccountID").AsString(36).NotNullable().ForeignKey("UserAccount", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(System.Data.Rule.Cascade);
 
         // System related
-
-
         Create.Table("ErrorLog")
             .WithColumn("ID").AsInt32().PrimaryKey().Identity()
             .WithColumn("Source").AsString(200).NotNullable()
@@ -958,8 +957,10 @@ public class InitialSchema : Migration
                 Device.Latitude as Latitude,
                 Device.Longitude as Longitude
             FROM DeviceStatus
-            INNER JOIN DeviceState ON DeviceStatus.StateID = DeviceState.ID
-            INNER JOIN Device ON DeviceStatus.DeviceID = Device.ID;
+                INNER JOIN DeviceState
+                    ON DeviceStatus.StateID = DeviceState.ID
+                INNER JOIN Device
+                    ON DeviceStatus.DeviceID = Device.ID;
         ");
 
         this.AddView("IaonTreeView", @"
@@ -983,6 +984,73 @@ public class InitialSchema : Migration
                 FailoverLog
             GROUP BY 
                 FailoverLog.SystemName, FailoverLog.Priority;
+        ");
+
+        this.AddView("VendorDeviceDetail", @"
+                VD.ID,
+                VD.VendorID,
+                VD.Name,
+                COALESCE(VD.Description, '') AS Description,
+                COALESCE(VD.URL, '') AS URL,
+                VD.LoadOrder,
+                VD.CreatedBy,
+                VD.CreatedOn,
+                VD.UpdatedBy,
+                VD.UpdatedOn,
+                V.Name AS VendorName, 
+                V.Acronym AS VendorAcronym
+            FROM
+                VendorDevice AS VD
+                    INNER JOIN Vendor AS V 
+                        ON VD.VendorID = V.ID;
+        ");
+
+        this.AddView("DeviceDetail", @"
+                D.ID,
+                D.ParentID,
+                D.UniqueID,
+                D.Acronym,
+                COALESCE(D.Name, '') AS Name,
+                D.OriginalSource,
+                D.IsConcentrator,
+                D.CompanyID,
+                D.HistorianID,
+                D.AccessID,
+                D.VendorDeviceID, 
+                D.Longitude,
+                D.Latitude,
+                D.InterconnectionID,
+                COALESCE(D.ConnectionString, '') AS ConnectionString,
+                COALESCE(D.Description, '') AS Description,
+                COALESCE(D.TimeZone, '') AS TimeZone, 
+                D.TimeAdjustmentTicks,
+                COALESCE(D.ContactList, '') AS ContactList,
+                D.Subscribed,
+                D.LoadOrder,
+                D.Enabled,
+                D.CreatedOn,
+                D.UpdatedOn,
+                D.CreatedBy,
+                D.UpdatedBy,
+                COALESCE(C.Name, '') AS CompanyName,
+                COALESCE(C.Acronym, '') AS CompanyAcronym,
+                COALESCE(C.MapAcronym, '') AS CompanyMapAcronym,
+                COALESCE(H.Acronym, '') AS HistorianAcronym,
+                COALESCE(VD.VendorAcronym, '') AS VendorAcronym,
+                COALESCE(VD.Name, '') AS VendorDeviceName,
+                COALESCE(I.Name, '') AS InterconnectionName,
+                COALESCE(PD.Acronym, '') AS ParentAcronym
+            FROM Device AS D 
+                LEFT OUTER JOIN Company AS C
+                    ON C.ID = D.CompanyID
+                LEFT OUTER JOIN Historian AS H
+                    ON H.ID = D.HistorianID
+                LEFT OUTER JOIN VendorDeviceDetail AS VD
+                    ON VD.ID = D.VendorDeviceID
+                LEFT OUTER JOIN Interconnection AS I
+                    ON I.ID = D.InterconnectionID
+                LEFT OUTER JOIN Device AS PD
+                    ON PD.ID = D.ParentID;
         ");
 
         IfDatabase(ProcessorId.SQLite).Execute.Sql(@"
