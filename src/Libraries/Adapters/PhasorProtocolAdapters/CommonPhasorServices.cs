@@ -1192,7 +1192,7 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
         //LoadDefaultInterconnection(database, statusMessage, processException);
         //LoadDefaultProtocol(database, statusMessage, processException);
         //LoadDefaultSignalType(database, statusMessage, processException);
-        //ValidateStatistics(database, statusMessage, processException);
+        ValidateStatistics(database, statusMessage, processException);
         //EstablishDefaultMeasurementKeyCache(database, statusMessage, processException);
 
         //statusMessage("Validating signal types...");
@@ -1744,31 +1744,6 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     }
 
     /// <summary>
-    /// Loads the default configuration for the Protocol table.
-    /// </summary>
-    /// <param name="database">The database connection.</param>
-    /// <param name="statusMessage">The delegate which will display a status message to the user.</param>
-    /// <param name="processException">The delegate which will handle exception logging.</param>
-    private static void LoadDefaultProtocol(AdoDataConnection database, Action<string> statusMessage, Action<Exception> processException)
-    {
-        if (Convert.ToInt32(database.Connection.ExecuteScalar("SELECT COUNT(*) FROM Protocol")) == 0)
-        {
-            statusMessage("Loading default records for Protocol...");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('IeeeC37_118V1', 'IEEE C37.118-2005', 'Frame', 'Phasor', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.PhasorMeasurementMapper', 1)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('IeeeC37_118D6', 'IEEE C37.118 Draft 6', 'Frame', 'Phasor', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.PhasorMeasurementMapper', 3)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('Ieee1344', 'IEEE 1344-1995', 'Frame', 'Phasor', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.PhasorMeasurementMapper', 4)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('BpaPdcStream', 'BPA PDCstream', 'Frame', 'Phasor', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.PhasorMeasurementMapper', 5)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('FNet', 'UTK FNET', 'Frame', 'Phasor', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.PhasorMeasurementMapper', 6)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('SelFastMessage', 'SEL Fast Message', 'Frame', 'Phasor', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.PhasorMeasurementMapper', 7)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('Macrodyne', 'Macrodyne', 'Frame', 'Phasor', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.PhasorMeasurementMapper', 8)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('GatewayTransport', 'Gateway Transport', 'Measurement', 'Gateway', 'Gemstone.Timeseries.dll', 'Gemstone.Timeseries.Transport.DataSubscriber', 9)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('IeeeC37_118V2', 'IEEE C37.118.2-2011', 'Frame', 'Phasor', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.PhasorMeasurementMapper', 2)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('WAV', 'Wave Form Input Adapter', 'Frame', 'Audio', 'WavInputAdapter.dll', 'WavInputAdapter.WavInputAdapter', 10)");
-            database.Connection.ExecuteNonQuery("INSERT INTO Protocol(Acronym, Name, Type, Category, AssemblyName, TypeName, LoadOrder) VALUES('VirtualInput', 'Virtual Device', 'Frame', 'Virtual', 'TestingAdapters.dll', 'TestingAdapters.VirtualInputAdapter', 11)");
-        }
-    }
-
-    /// <summary>
     /// Loads the default configuration for the SignalType table.
     /// </summary>
     /// <param name="database">The database connection.</param>
@@ -1808,8 +1783,8 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
         const string OutputStreamStatCountFormat = "SELECT COUNT(*) FROM Statistic WHERE Source = 'OutputStream' AND AssemblyName = 'PhasorProtocolAdapters.dll'";
 
         // INSERT queries
-        const string InputStreamStatInsertFormat = "INSERT INTO Statistic(Source, SignalIndex, Name, Description, AssemblyName, TypeName, MethodName, Arguments, Enabled, DataType, DisplayFormat, IsConnectedState, LoadOrder) VALUES('InputStream', {0}, '{1}', '{2}', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.CommonPhasorServices', 'GetInputStreamStatistic_{3}', '', 1, '{4}', '{5}', {6}, {7})";
-        const string OutputStreamStatInsertFormat = "INSERT INTO Statistic(Source, SignalIndex, Name, Description, AssemblyName, TypeName, MethodName, Arguments, Enabled, DataType, DisplayFormat, IsConnectedState, LoadOrder) VALUES('OutputStream', {0}, '{1}', '{2}', 'PhasorProtocolAdapters.dll', 'PhasorProtocolAdapters.CommonPhasorServices', 'GetOutputStreamStatistic_{3}', '', 1, '{4}', '{5}', {6}, {7})";
+        const string InputStreamStatInsertFormat = $"INSERT INTO Statistic(Source, SignalIndex, Name, Description, AssemblyName, TypeName, MethodName, Arguments, Enabled, DataType, DisplayFormat, IsConnectedState, LoadOrder) VALUES('InputStream', {{0}}, '{{1}}', '{{2}}', '{nameof(PhasorProtocolAdapters)}.dll', '{nameof(PhasorProtocolAdapters)}.{nameof(CommonPhasorServices)}', 'GetInputStreamStatistic_{{3}}', '', 1, '{{4}}', '{{5}}', {{6}}, {{7}})";
+        const string OutputStreamStatInsertFormat = $"INSERT INTO Statistic(Source, SignalIndex, Name, Description, AssemblyName, TypeName, MethodName, Arguments, Enabled, DataType, DisplayFormat, IsConnectedState, LoadOrder) VALUES('OutputStream', {{0}}, '{{1}}', '{{2}}', '{nameof(PhasorProtocolAdapters)}.dll', '{nameof(PhasorProtocolAdapters)}.{nameof(CommonPhasorServices)}', 'GetOutputStreamStatistic_{{3}}', '', 1, '{{4}}', '{{5}}', {{6}}, {{7}})";
 
         // DELETE queries
         const string InputStreamStatisticDeleteFormat = "DELETE FROM Statistic WHERE Source = 'InputStream' AND SignalIndex <= {0}";
