@@ -41,20 +41,20 @@ public class DeviceStatusView
     /// <summary>
     /// Gets or sets name of the device.
     /// </summary>
-    public string DeviceName { get; set; }
+    public string Name { get; set; }
 
     /// <summary>
     /// Gets or sets longitude of the device.
     /// </summary>
-    public string DeviceLongitude { get; set; }
+    public string Longitude { get; set; }
 
     /// <summary>
-    /// Gets or sets name of the device.
+    /// Gets or sets latitude of the device.
     /// </summary>
-    public string DeviceLatitude { get; set; }
+    public string Latitude { get; set; }
 
     /// <summary>
-    /// Gets or sets description of the device state.
+    /// Gets or sets state of the device.
     /// </summary>
     public string State { get; set; }
 
