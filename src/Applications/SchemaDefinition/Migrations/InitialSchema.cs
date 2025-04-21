@@ -948,6 +948,20 @@ public class InitialSchema : Migration
             FROM Alarm;
         ");
 
+        this.AddView("DeviceStatusView", @"
+                DeviceStatus.ID,
+                Device.Name,
+                DeviceState.State,
+                DeviceState.Color,
+                DeviceStatus.DisplayData,
+                Device.ID AS DeviceID,
+                Device.Latitude as Latitude,
+                Device.Longitude as Longitude
+            FROM DeviceStatus
+            INNER JOIN DeviceState ON DeviceStatus.StateID = DeviceState.ID
+            INNER JOIN Device ON DeviceStatus.DeviceID = Device.ID;
+        ");
+
         this.AddView("IaonTreeView", @"
                 Device.Acronym AS DeviceAcronym,
                 Device.Name AS DeviceName,
