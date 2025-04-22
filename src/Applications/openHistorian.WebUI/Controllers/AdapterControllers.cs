@@ -112,10 +112,11 @@ public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> :
 
         return Ok(GetAdapters()
             .Where(adapter => string.Equals(adapter.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
-            .Select(adapter => new ValueLabel
+            .Select(adapter => new
             {
                 Value = adapter.TypeName,
-                Label = adapter.AdapterName
+                Label = adapter.AdapterName,
+                Description = adapter.Description
             })
             .DistinctBy(label => label.Value)
             .OrderBy(label => label.Label));
