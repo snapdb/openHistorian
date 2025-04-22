@@ -28,10 +28,22 @@ using System.IO;
 using System.Linq;
 using Gemstone.Data;
 using Newtonsoft.Json.Linq;
+using Gemstone.Numeric;
 using NUnit.Framework;
+using Gemstone.Numeric.Analysis;
 
 namespace openHistorian.UnitTests;
 
 internal class NumericFunctions
 {
+    [Test]
+    public void VMD()
+    {
+        // Using Matlab Example
+        double fs = 1e3;
+        double[] t = Enumerable.Range(1, (int)fs).Select(v => 1+(double)(v-1) / fs).ToArray();
+        double[] x = t.Select(v => Math.Cos(2 * Math.PI * 2 * v) + 2 * Math.Cos(2 * Math.PI * 10 * v) + 4 * Math.Cos(2 * Math.PI * 30 * v) + 0.01 * new Random().NextDouble()).ToArray();
+
+        VariableModeDecomposition.vmd(x);
+    }
 }

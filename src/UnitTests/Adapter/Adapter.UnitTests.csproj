@@ -70,6 +70,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
+    <ProjectReference Include="..\..\..\..\..\gemstone\numeric\src\Gemstone.Numeric\Gemstone.Numeric.csproj" />
   </ItemGroup>
 
   <ItemGroup>
