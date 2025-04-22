@@ -15,12 +15,6 @@ public class DeviceDetail : Device
 
     public string VendorDeviceName { get; set; } = "";
 
-    public string ProtocolName { get; set; } = "";
-
-    public string ProtocolType { get; set; } = "";
-
-    public string Category { get; set; } = "";
-
     public string InterconnectionName { get; set; } = "";
 
     public string ParentAcronym { get; set; } = "";
