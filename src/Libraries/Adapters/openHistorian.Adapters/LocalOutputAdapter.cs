@@ -1336,6 +1336,15 @@ public class LocalOutputAdapter : OutputAdapterBase
     // ReSharper disable UnusedParameter.Local
     private static void OptimizeLocalHistorianSettings(AdoDataConnection connection, ulong trackingVersion, string arguments, Action<string> statusMessage, Action<Exception> processException)
     {
+        //ensure at least one data historian exists
+        const string PPAHistorianCountFormat = "SELECT COUNT(*) FROM Historian WHERE Acronym = 'PPA'";
+        int ppaHistorianCount = Convert.ToInt32(connection.ExecuteScalar(string.Format(PPAHistorianCountFormat)));
+        const string PPAHistorianInsertFormat = $"INSERT INTO Historian(Acronym, Name, AssemblyName, TypeName, ConnectionString, IsLocal, Description, LoadOrder, Enabled) VALUES('PPA', 'Primary Phasor Archive', '{nameof(openHistorian)}.{nameof(Adapters)}.dll', '{nameof(openHistorian)}.{nameof(Adapters)}.{nameof(LocalOutputAdapter)}', 'DesiredRemainingSpace=0.1', 1, 'Primary historical archive for phasor data.', 0, 1)";
+
+        // Ensure that statistics historian exists
+        if (ppaHistorianCount == 0)
+            connection.ExecuteNonQuery(string.Format(PPAHistorianInsertFormat));
+
         // TODO: Review this code, only implement what is necessary in context of new system
 
         //TableOperations<CustomInputAdapter> inputAdapterTable = new(connection);
@@ -1497,7 +1506,7 @@ public class LocalOutputAdapter : OutputAdapterBase
         //        case GemstoneDataPublisherTypeName:
         //            if (connectionString.ContainsKey(GemstoneMetadataTables))
         //                continue;
-                        
+
         //            connectionString[GemstoneMetadataTables] = GemstoneDataPublisher.DefaultMetadataTables.Replace(DefaultDeviceFilter, deviceGroupFilter);
         //            connectionStringUpdated = true;
         //            break;
@@ -1530,7 +1539,7 @@ public class LocalOutputAdapter : OutputAdapterBase
 
         //// Make sure default device group classes are defined
         //int count = deviceGroupClassTable.QueryRecordCountWhere("Longitude = {0} and Latitude = {0}", DeviceGroupClass.DefaultGeoID);
-            
+
         //if (count == 0)
         //{
         //    // Add default device group classes
@@ -1559,7 +1568,7 @@ public class LocalOutputAdapter : OutputAdapterBase
         //        continue;
 
         //    Dictionary<string, string> connectionString = dynamicCalculator.ConnectionString?.ParseKeyValuePairs() ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                
+
         //    // variableList={FREQ=bef9f097-d6f8-4b4f-9ce4-97ffa30a08e9}; expressionText=FREQ-60; framesPerSecond=30; lagTime=6; leadTime=3; outputMeasurements=5966846f-156d-4a2d-a181-08c4875447a1; useLatestValues=false
         //    // variableList={VPOSA=62eb881c-4423-47bc-87bd-e3acfd5c7430; VAA=01564cc5-2451-4501-ba51-4fcea7173333}; expressionText=VPOSA-VAA; framesPerSecond=30; lagTime=6; leadTime=3; outputMeasurements=d59389a2-3816-4e84-a593-75f07369e582; useLatestValues=false
         //    // variableList={IANG_DIFF_CA[]=9108df49-4f96-4e8c-a23f-1eb07b281fa1,a66b1545-16f2-4f4a-8469-f3942cf27a56}; expressionText=IF(Any(IANG_DIFF_CA, "< 110") OR Any(IANG_DIFF_CA, "> 130"), 0, 1); framesPerSecond=30; lagTime=6; leadTime=3; outputMeasurements=174b312a-cc47-4390-b073-ee68033956e9; useLatestValues=false
@@ -1579,7 +1588,7 @@ public class LocalOutputAdapter : OutputAdapterBase
         //        continue;
 
         //    int inputCount = connection.ExecuteScalar<int>($"SELECT COUNT(*) FROM Measurement WHERE SignalID IN ({string.Join(",", signalIDs.Select(id => $"'{id}'"))})");
-                
+
         //    if (inputCount == signalIDs.Count)
         //        continue;
 
