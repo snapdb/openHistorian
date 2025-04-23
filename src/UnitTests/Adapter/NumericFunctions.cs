@@ -31,11 +31,26 @@ using Newtonsoft.Json.Linq;
 using Gemstone.Numeric;
 using NUnit.Framework;
 using Gemstone.Numeric.Analysis;
+using DataQualityMonitoring;
+using Gemstone.Diagnostics;
+using Microsoft.Extensions.Logging.Debug;
+using Microsoft.Extensions.Logging;
+using Gemstone.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using System.DirectoryServices.ActiveDirectory;
 
 namespace openHistorian.UnitTests;
 
+[TestFixture]
 internal class NumericFunctions
 {
+    public void Setup()
+    {
+        // Set up any necessary resources or configurations before running the tests
+        // This method is called once before any tests in this fixture are run
+    }
+
     [Test]
     public void VMD()
     {
@@ -45,5 +60,53 @@ internal class NumericFunctions
         double[] x = t.Select(v => Math.Cos(2 * Math.PI * 2 * v) + 2 * Math.Cos(2 * Math.PI * 10 * v) + 4 * Math.Cos(2 * Math.PI * 30 * v) + 0.01 * new Random().NextDouble()).ToArray();
 
         VariableModeDecomposition.vmd(x);
+    }
+
+    [Test]
+    public void Test2()
+    { 
+
+        DEFComputationAdapter adapter = new DEFComputationAdapter();
+        adapter.LoadFile();
+
+    }
+
+    internal static void ConfigureLogging(ILoggingBuilder builder)
+    {
+        builder.ClearProviders();
+        builder.SetMinimumLevel(LogLevel.Information);
+
+        builder.AddFilter("Microsoft", LogLevel.Warning);
+        builder.AddFilter<DebugLoggerProvider>("", LogLevel.Debug);
+        builder.AddFilter<DiagnosticsLoggerProvider>("", LogLevel.Trace);
+
+        builder.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Error);
+        builder.AddDebug();
+
+        // Add Gemstone diagnostics logging
+        builder.AddGemstoneDiagnostics();
+    }
+
+}
+
+[SetUpFixture]
+public class TestLogging
+{
+    [OneTimeSetUp]
+    public void Setup()
+    {
+       
+        // - Command line arguments
+        Settings settings = new()
+        {
+            INIFile = ConfigurationOperation.Disabled,
+            SQLite = ConfigurationOperation.ReadWrite
+        };
+
+        // Define component settings for application
+        DiagnosticsLogger.DefineSettings(settings);
+
+        // Bind settings to configuration sources
+        settings.Bind(new ConfigurationBuilder().ConfigureGemstoneDefaults(settings));
     }
 }
