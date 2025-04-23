@@ -1053,6 +1053,75 @@ public class InitialSchema : Migration
                     ON PD.ID = D.ParentID;
         ");
 
+        this.AddView("MeasurementDetail", @"
+                Measurement.PointID,
+                Measurement.SignalID, 
+                Measurement.HistorianID, 
+                Measurement.DeviceID, 
+                Measurement.PointTag,
+                Measurement.AlternateTag,
+                Measurement.AlternateTag2,
+                Measurement.AlternateTag3,
+                Measurement.SignalTypeID, 
+                Measurement.PhasorSourceIndex,
+                Measurement.SignalReference,
+                COALESCE(Measurement.FramesPerSecond, 30) AS FramesPerSecond,
+                Measurement.Adder,
+                Measurement.Multiplier,
+                Measurement.Description,
+                Measurement.Internal,
+                Measurement.Subscribed,
+                Measurement.Manual, 
+                Measurement.Enabled, 
+                Measurement.UpdatedOn,
+                Measurement.UpdatedBy,
+                Measurement.CreatedOn,
+                Measurement.CreatedBy,
+                Measurement.SignalAcronym,
+                Measurement.SignalName, 
+                Measurement.SignalTypeSuffix,
+                Measurement.Label,
+                (COALESCE(Historian.Acronym, Device.Acronym, '__') || ':' || Measurement.PointID) AS ID,
+                Device.CompanyID,
+                Device.CompanyName, 
+                Historian.Name AS HistorianName,
+                Historian.Acronym AS HistorianAcronym,
+                Historian.ConnectionString AS HistorianConnectionString, 
+                Device.Acronym AS DeviceAcronym,
+                Device.Name AS DeviceName, 
+                Device.Enabled AS DeviceEnabled,
+                Device.ContactList, 
+                Device.Longitude,
+                Device.Latitude,
+                Device.VendorDeviceID,
+                VendorDevice.Name AS VendorDeviceName,
+                VendorDevice.Description AS VendorDeviceDescription, 
+                Phasor.Label AS PhasorLabel,
+                Phasor.Type AS PhasorType,
+                Phasor.Phase,
+                Phasor.BaseKV
+        FROM (SELECT *, SignalType.Acronym AS SignalAcronym, SignalType.Name AS SignalName, SignalType.Suffix AS SignalTypeSuffix FROM Measurement LEFT OUTER JOIN SignalType ON Measurement.SignalTypeID = SignalType.ID)
+        AS Measurement LEFT OUTER JOIN
+            (SELECT *, Company.Acronym AS CompanyAcronym, Company.Name AS CompanyName 
+        FROM Device LEFT OUTER JOIN
+            Company ON Device.CompanyID = Company.ID) AS Device ON Device.ID = Measurement.DeviceID LEFT OUTER JOIN
+            Phasor ON Measurement.DeviceID = Phasor.DeviceID AND Measurement.PhasorSourceIndex = Phasor.SourceIndex LEFT OUTER JOIN
+            VendorDevice ON Device.VendorDeviceID = VendorDevice.ID LEFT OUTER JOIN
+            Historian ON Measurement.HistorianID = Historian.ID;
+        ");
+
+        this.AddView("PhasorDetail", @"
+                P.*,
+                COALESCE(PrimaryVoltagePhasor.Label, '') AS PrimaryVoltageLabel,
+                COALESCE(SecondaryVoltagePhasor.Label, '') AS SecondaryVoltageLabel,
+                D.Acronym AS DeviceAcronym,
+                D.Name AS DeviceName
+        FROM Phasor P LEFT OUTER JOIN
+            Phasor PrimaryVoltagePhasor ON P.PrimaryVoltageID = PrimaryVoltagePhasor.ID LEFT OUTER JOIN
+            Phasor SecondaryVoltagePhasor ON P.SecondaryVoltageID = SecondaryVoltagePhasor.ID LEFT OUTER JOIN
+            Device D ON P.DeviceID = D.ID;
+        ");
+
         IfDatabase(ProcessorId.SQLite).Execute.Sql(@"
             CREATE VIEW NEW_GUID AS
                 SELECT lower(
