@@ -220,7 +220,7 @@ public class InitialSchema : Migration
            .WithColumn("PointID").AsInt32().NotNullable().PrimaryKey().Identity()
            .WithColumn("SignalID").AsString(36).Nullable().Unique()
            .WithColumn("HistorianID").AsInt32().Nullable().ForeignKey("Historian", "ID")
-           .WithColumn("DeviceID").AsInt32().Nullable().ForeignKey("Device", "ID")
+           .WithColumn("DeviceID").AsInt32().Nullable().ForeignKey("Device", "ID").OnDelete(System.Data.Rule.Cascade).OnUpdate(Rule.Cascade)
            .WithColumn("PointTag").AsString(200).NotNullable()
            .WithColumn("AlternateTag").AsString().Nullable()
            .WithColumn("AlternateTag2").AsString().Nullable()
