@@ -72,10 +72,18 @@
       <Private>True</Private>
     </ProjectReference>
     <PackageReference Include="Gemstone.Timeseries" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+    <ProjectReference Include="..\..\Libraries\Adapters\CSVAdapters\CSVAdapters.csproj" />
+    <ProjectReference Include="..\..\Libraries\Adapters\DynamicCalculator\DynamicCalculator.csproj" />
+    <ProjectReference Include="..\..\Libraries\Adapters\FileAdapters\FileAdapters.csproj" />
+    <ProjectReference Include="..\..\Libraries\Adapters\GrafanaAdapters\GrafanaAdapters.csproj" />
 
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
 
     <ProjectReference Include="..\..\Libraries\Adapters\PhasorProtocolAdapters\PhasorProtocolAdapters.csproj" />
+
+    <ProjectReference Include="..\..\Libraries\Adapters\PowerCalculations\PowerCalculations.csproj" />
+
+    <ProjectReference Include="..\..\Libraries\Adapters\TestingAdapters\TestingAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
     <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
     <ProjectReference Include="..\openHistorian.WebUI\openHistorian.WebUI.csproj" />
