@@ -11,6 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" Condition="'$(Configuration)'=='Development'" />
     <PackageReference Include="Gemstone.Common" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="MathNet.Numerics.Data.Matlab" Version="5.0.0" />
 
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
@@ -27,6 +29,7 @@
     <ProjectReference Include="..\..\..\..\..\SnapDB\src\SnapDB\SnapDB.csproj" Condition="'$(Configuration)'=='Development'" />
     
     <ProjectReference Include="..\..\openHistorian.Core\openHistorian.Core.csproj" />
+    <ProjectReference Include="..\PhasorProtocolAdapters\PhasorProtocolAdapters.csproj" />
   </ItemGroup>
 
   <ItemGroup>

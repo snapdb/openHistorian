@@ -114,6 +114,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gemstone.InstallerActions",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gemstone.InstallerActions.Resources", "Libraries\InstallerActions\Gemstone.InstallerActions.Resources\Gemstone.InstallerActions.Resources.csproj", "{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestApp", "UnitTests\UnitTestApp\UnitTestApp.csproj", "{F5605821-37D4-4D1B-BDDD-986FA1826544}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -327,6 +329,12 @@ Global
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}.Development|Any CPU.Build.0 = Debug|Any CPU
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5605821-37D4-4D1B-BDDD-986FA1826544}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5605821-37D4-4D1B-BDDD-986FA1826544}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5605821-37D4-4D1B-BDDD-986FA1826544}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5605821-37D4-4D1B-BDDD-986FA1826544}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{F5605821-37D4-4D1B-BDDD-986FA1826544}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5605821-37D4-4D1B-BDDD-986FA1826544}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -371,6 +379,7 @@ Global
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {AC8924A6-5141-4F21-B45D-016F5892027F}
 		{DE23EEF6-EE66-42DE-81B0-890B3A77B83C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{F5605821-37D4-4D1B-BDDD-986FA1826544} = {A5961018-6CCE-489B-ADCA-43DC5C63480E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F524668-5FE5-406F-B1D4-177A413C9DD6}
