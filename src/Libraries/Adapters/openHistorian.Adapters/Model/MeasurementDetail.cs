@@ -36,8 +36,6 @@ public class MeasurementDetail : Measurement
 
     public string? CompanyName { get; set; }
 
-    //public Guid? NodeID { get; set; }
-
     public string? HistorianName { get; set; }
 
     public string? HistorianAcronym { get; set; }
@@ -50,11 +48,7 @@ public class MeasurementDetail : Measurement
 
     public bool? DeviceEnabled { get; set; }
 
-    public int? FramesPerSecond { get; set; }
-
     public string? ContactList { get; set; }
-
-    public int? ProtocolID { get; set; }
 
     public double? Longitude { get; set; }
 
@@ -66,11 +60,6 @@ public class MeasurementDetail : Measurement
 
     public string? VendorDeviceDescription { get; set; }
 
-    [StringLength(200)]
-    public string? ProtocolAcronym { get; set; }
-
-    public string? ProtocolName { get; set; }
-
     public string? PhasorLabel { get; set; }
 
     [FieldDataType(DbType.String)]
@@ -81,19 +70,12 @@ public class MeasurementDetail : Measurement
 
     public float? BaseKV { get; set; }
 
-    public string? EngineeringUnits { get; set; }
-
-    [StringLength(200)]
-    public string? Source { get; set; }
-
     [StringLength(4)]
     public string? SignalAcronym { get; set; }
 
     public string? SignalName { get; set; }
 
     public string? SignalTypeSuffix { get; set; }
-
-    public string? ParentAcronym { get; set; }
 
     public string ID { get; set; }
 }
