@@ -273,7 +273,7 @@ public class InitialDataset : Migration
             .Row(new { Name = "Digital Value", Acronym = "DIGI", Suffix = "DV", Abbreviation = "DV", LongAcronym = "Digital", Source = "PMU", EngineeringUnits = "", LoadOrder = 8 })
             .Row(new { Name = "Calculated Value", Acronym = "CALC", Suffix = "CV", Abbreviation = "CV", LongAcronym = "Calculated", Source = "PMU", EngineeringUnits = "", LoadOrder = 9 })
             .Row(new { Name = "Statistic", Acronym = "STAT", Suffix = "ST", Abbreviation = "ST", LongAcronym = "Statistic", Source = "Any", EngineeringUnits = "", LoadOrder = 10 })
-            .Row(new { Name = "Event", Acronym = "ALRM", Suffix = "AL", Abbreviation = "AL", LongAcronym = "Event", Source = "Any", EngineeringUnits = "", LoadOrder = 11 })
+            .Row(new { Name = "Alarm", Acronym = "ALRM", Suffix = "AL", Abbreviation = "AL", LongAcronym = "Alarm", Source = "Any", EngineeringUnits = "", LoadOrder = 11 })
             .Row(new { Name = "Quality Flags", Acronym = "QUAL", Suffix = "QF", Abbreviation = "QF", LongAcronym = "QualityFlags", Source = "Frame", EngineeringUnits = "", LoadOrder = 12 });
 
         Insert.IntoTable("Vendor")
