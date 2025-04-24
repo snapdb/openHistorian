@@ -591,7 +591,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         s_digiSignalType ??= GetDeviceSignalType("DIGI") ?? throw new InvalidOperationException("Failed to load DIGI signal type.");
 
         // Save frequency, dF/dt signal types and status flags
-        SaveFixedMeasurement(cell, s_freqSignalType, cell.FrequencyDefinition.Label, cell.FrequencyDefinition.PointTag);
+        SaveFixedMeasurement(cell, s_freqSignalType, cell.FrequencyDefinition.Label, cell.FrequencyDefinition.PointTag, cell.FrequencyDefinition.AlternateTag);
         SaveFixedMeasurement(cell, s_dfdtSignalType);
         SaveFixedMeasurement(cell, s_flagSignalType);
 
@@ -610,11 +610,12 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             // Query existing measurement record for specified signal reference - function will create a new blank measurement record if one does not exist
             Measurement measurement = QueryMeasurement(orgSignalReference);
             string pointTag = string.IsNullOrWhiteSpace(analogDefinition.PointTag) ? CreateIndexedPointTag(cell.Acronym, s_alogSignalType.Acronym, index, analogDefinition.Label) : analogDefinition.PointTag;
+            string alternateTag = string.IsNullOrWhiteSpace(analogDefinition.AlternateTag) ? analogDefinition.Label : analogDefinition.AlternateTag;
 
             measurement.DeviceID = cell.ID;
             measurement.HistorianID = cell.HistorianID;
             measurement.PointTag = pointTag;
-            measurement.AlternateTag = analogDefinition.Label;
+            measurement.AlternateTag = alternateTag;
             measurement.Description = $"{cell.IDLabel} Analog Value {index}:{analogDefinition.AnalogType}: {analogDefinition.Label}";
             measurement.SignalReference = signalReference;
             measurement.SignalTypeID = s_alogSignalType.ID;
@@ -639,11 +640,12 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             // Query existing measurement record for specified signal reference - function will create a new blank measurement record if one does not exist
             Measurement measurement = QueryMeasurement(orgSignalReference);
             string pointTag = string.IsNullOrWhiteSpace(digitalDefinition.PointTag) ? CreateIndexedPointTag(cell.Acronym, s_digiSignalType.Acronym, index, digitalDefinition.Label) : digitalDefinition.PointTag;
+            string alternateTag = string.IsNullOrWhiteSpace(digitalDefinition.AlternateTag) ? digitalDefinition.Label : digitalDefinition.AlternateTag;
 
             measurement.DeviceID = cell.ID;
             measurement.HistorianID = cell.HistorianID;
             measurement.PointTag = pointTag;
-            measurement.AlternateTag = digitalDefinition.Label;
+            measurement.AlternateTag = alternateTag;
             measurement.Description = $"{cell.IDLabel} Digital Value {index}: {digitalDefinition.Label}";
             measurement.SignalReference = signalReference;
             measurement.SignalTypeID = s_digiSignalType.ID;
@@ -657,7 +659,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         SaveDevicePhasors(cell);
     }
 
-    private void SaveFixedMeasurement(ConfigurationCell cell, SignalType signalType, string? label = null, string? pointTag = null)
+    private void SaveFixedMeasurement(ConfigurationCell cell, SignalType signalType, string? label = null, string? pointTag = null, string? alternateTag = null)
     {
         if (string.IsNullOrWhiteSpace(cell.OriginalAcronym))
             cell.OriginalAcronym = cell.Acronym;
@@ -672,6 +674,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         measurement.DeviceID = cell.ID;
         measurement.HistorianID = cell.HistorianID;
         measurement.PointTag = pointTag;
+        measurement.AlternateTag = alternateTag ?? "";
         measurement.Description = $"{cell.Acronym} {signalType.Name}{(string.IsNullOrWhiteSpace(label) ? "" : " - " + label)}";
         measurement.SignalReference = signalReference;
         measurement.SignalTypeID = signalType.ID;
