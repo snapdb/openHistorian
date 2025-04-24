@@ -35,6 +35,8 @@ using Gemstone.Numeric.EE;
 using Gemstone.PhasorProtocols;
 using Gemstone.PhasorProtocols.IEEEC37_118;
 using Gemstone.StringExtensions;
+using Gemstone.Timeseries.Model;
+using Gemstone.Units;
 using Microsoft.AspNetCore.Mvc;
 using openHistorian.Model;
 using PhasorProtocolAdapters;
@@ -1333,7 +1335,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     ID = --phasorID,
                     Label = sourcePhasor.Label,
                     PhasorType = sourcePhasor.PhasorType.ToString(),
-                    Phase = configPhase,
+                    Phase = string.IsNullOrWhiteSpace(configPhase) ? GuessPhase(null, sourcePhasor.Label)[..1] : configPhase,
                     NominalVoltage = nominalVoltage ?? int.Parse(GuessBaseKV(null, sourcePhasor.Label, derivedCell.Acronym)),
                     SourceIndex = ++sourceIndex,
                     CreatedOn = now,
@@ -1356,11 +1358,11 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     Adder = 0,
                     Multiplier = 0,
                     AlternateTag = "",
-                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, analogSignalType?.Acronym ?? "", analogIndex, sourceAnalog?.Label ?? "")
+                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, analogSignalType?.Acronym ?? "", analogIndex, sourceAnalog.Label ?? "")
                 });
             }
 
-            int digitalIndex = 0;
+            int digitalIndex= 0;
             SignalType? digitalSignalType = GetDeviceSignalType("DIGI");
 
             // Create equivalent derived digital definitions
@@ -1373,7 +1375,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     Adder = 0,
                     Multiplier = 0,
                     AlternateTag = "",
-                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, digitalSignalType?.Acronym ?? "", analogIndex, sourceDigital?.Label ?? "")
+                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, digitalSignalType?.Acronym ?? "", digitalIndex, sourceDigital.Label ?? "")
                 });
             }
 
