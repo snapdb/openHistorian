@@ -591,7 +591,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         s_digiSignalType ??= GetDeviceSignalType("DIGI") ?? throw new InvalidOperationException("Failed to load DIGI signal type.");
 
         // Save frequency, dF/dt signal types and status flags
-        SaveFixedMeasurement(cell, s_freqSignalType, cell.FrequencyDefinition.Label);
+        SaveFixedMeasurement(cell, s_freqSignalType, cell.FrequencyDefinition.Label, cell.FrequencyDefinition.PointTag);
         SaveFixedMeasurement(cell, s_dfdtSignalType);
         SaveFixedMeasurement(cell, s_flagSignalType);
 
@@ -609,7 +609,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
             // Query existing measurement record for specified signal reference - function will create a new blank measurement record if one does not exist
             Measurement measurement = QueryMeasurement(orgSignalReference);
-            string pointTag = CreateIndexedPointTag(cell.Acronym, s_alogSignalType.Acronym, index, analogDefinition.Label);
+            string pointTag = string.IsNullOrWhiteSpace(analogDefinition.PointTag) ? CreateIndexedPointTag(cell.Acronym, s_alogSignalType.Acronym, index, analogDefinition.Label) : analogDefinition.PointTag;
 
             measurement.DeviceID = cell.ID;
             measurement.HistorianID = cell.HistorianID;
@@ -638,7 +638,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
             // Query existing measurement record for specified signal reference - function will create a new blank measurement record if one does not exist
             Measurement measurement = QueryMeasurement(orgSignalReference);
-            string pointTag = CreateIndexedPointTag(cell.Acronym, s_digiSignalType.Acronym, index, digitalDefinition.Label);
+            string pointTag = string.IsNullOrWhiteSpace(digitalDefinition.PointTag) ? CreateIndexedPointTag(cell.Acronym, s_digiSignalType.Acronym, index, digitalDefinition.Label) : digitalDefinition.PointTag;
 
             measurement.DeviceID = cell.ID;
             measurement.HistorianID = cell.HistorianID;
@@ -657,7 +657,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         SaveDevicePhasors(cell);
     }
 
-    private void SaveFixedMeasurement(ConfigurationCell cell, SignalType signalType, string? label = null)
+    private void SaveFixedMeasurement(ConfigurationCell cell, SignalType signalType, string? label = null, string? pointTag = null)
     {
         if (string.IsNullOrWhiteSpace(cell.OriginalAcronym))
             cell.OriginalAcronym = cell.Acronym;
@@ -667,7 +667,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
         // Query existing measurement record for specified signal reference - function will create a new blank measurement record if one does not exist
         Measurement measurement = QueryMeasurement(orgSignalReference);
-        string pointTag = CreatePointTag(cell.Acronym, signalType.Acronym);
+        pointTag = string.IsNullOrWhiteSpace(pointTag) ? CreatePointTag(cell.Acronym, signalType.Acronym) : pointTag;
 
         measurement.DeviceID = cell.ID;
         measurement.HistorianID = cell.HistorianID;
@@ -1283,8 +1283,18 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             // Create equivalent derived frequency definition
             IFrequencyDefinition? sourceFrequency = sourceCell.FrequencyDefinition;
 
+
             if (sourceFrequency is not null)
-                derivedCell.FrequencyDefinition = new FrequencyDefinition { Label = sourceFrequency.Label };
+            {
+                SignalType? freqSignalType = GetDeviceSignalType("FREQ");
+
+                derivedCell.FrequencyDefinition = new FrequencyDefinition
+                {
+                    Label = sourceFrequency.Label,
+                    AlternateTag = "",
+                    PointTag = CreatePointTag(derivedCell.Acronym, freqSignalType?.Acronym ?? "FREQ")
+                };
+            }
 
             int sourceIndex = 0;
 
@@ -1358,7 +1368,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     Adder = 0,
                     Multiplier = 0,
                     AlternateTag = "",
-                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, analogSignalType?.Acronym ?? "", analogIndex, sourceAnalog.Label ?? "")
+                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, analogSignalType?.Acronym ?? "ALOG", analogIndex, sourceAnalog.Label ?? "")
                 });
             }
 
@@ -1375,7 +1385,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     Adder = 0,
                     Multiplier = 0,
                     AlternateTag = "",
-                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, digitalSignalType?.Acronym ?? "", digitalIndex, sourceDigital.Label ?? "")
+                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, digitalSignalType?.Acronym ?? "DIGI", digitalIndex, sourceDigital.Label ?? "")
                 });
             }
 

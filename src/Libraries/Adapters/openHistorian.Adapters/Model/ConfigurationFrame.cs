@@ -10,6 +10,10 @@ namespace openHistorian.Model;
 public class FrequencyDefinition
 {
     public string Label { get; set; }
+
+    public string PointTag { get; set; }
+
+    public string AlternateTag { get; set; }
 }
 
 public class PhasorDefinition
