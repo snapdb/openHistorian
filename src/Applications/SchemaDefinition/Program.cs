@@ -150,6 +150,6 @@ internal class Program
         dynamic migrationSettings = settings["Migration"];
         migrationSettings.GenerateScript = (false, "Defines the path used to archive log files.");
         migrationSettings.IncludeDataset = (true, "Determines whether the initial dataset should be added.");
-        migrationSettings.Locale = ("America", "Determines which set of default settings should be added.");
+        migrationSettings.Locale = ("NorthAmerica", "Determines which set of default settings should be added.");
     }
 }
