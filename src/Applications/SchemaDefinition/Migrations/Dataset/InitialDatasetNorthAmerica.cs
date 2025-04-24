@@ -29,7 +29,7 @@ namespace SchemaDefinition.Migrations;
 /// <summary>
 /// The initial Location based Dateset for North America for the openHistorian database.
 /// </summary>
-[SchemaMigration(author: "C. Lackner", branchNumber: 0, year: 2025, month: 02, day: 05)]
+[SchemaMigration(author: "C. Lackner", branchNumber: 0, year: 2025, month: 02, day: 06)]
 [Tags("NorthAmerica", "Dataset")]
 public class InitialDatsetNA : Migration
 {
