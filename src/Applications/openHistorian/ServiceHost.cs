@@ -20,13 +20,10 @@
 //
 //******************************************************************************************************
 
-using System.Data;
 using Gemstone.PhasorProtocols;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
-using Gemstone.Timeseries.Data;
 using openHistorian.Utility;
-using Gemstone.Timeseries.Adapters;
 using openHistorian.WebUI;
 using ServiceInterface;
 
@@ -139,15 +136,6 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
         return ("ONLINE", ServiceStatus.Normal, "openHistorian service is running normal.");
     }
 
-    private void GetStatsForCurrentStatus()
-    {
-        // "SignalReference LIKE '%SYSTEM-ST16'" // [0] System CPU Usage
-        // "SignalReference LIKE '%SYSTEM-ST20'" // [1] System Memory Usage
-        // "SignalReference LIKE '%SYSTEM-ST24'" // [2] System Time Deviation
-        // "SignalReference LIKE '%SYSTEM-ST25'" // [3] Primary Disk Usage
-    }
-
-
     /// <summary>
     /// Establishes default settings for the config file.
     /// </summary>
@@ -161,6 +149,4 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
             FailoverModule.DefineSettings(settings);
         }
     }
-
-    public void ReloadConfig() { }
 }

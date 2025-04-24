@@ -35,8 +35,6 @@ using Gemstone.Numeric.EE;
 using Gemstone.PhasorProtocols;
 using Gemstone.PhasorProtocols.IEEEC37_118;
 using Gemstone.StringExtensions;
-using Gemstone.Timeseries.Model;
-using Gemstone.Units;
 using Microsoft.AspNetCore.Mvc;
 using openHistorian.Model;
 using PhasorProtocolAdapters;
@@ -71,6 +69,8 @@ namespace openHistorian.WebUI.Controllers;
 [ApiController]
 public class PhasorOpsController : Controller, ISupportConnectionTest
 {
+    private readonly IServiceCommands m_serviceCommands = WebServer.ServiceCommands;
+
     private AdoDataConnection? m_connection;
     private bool m_disposed;
 
@@ -518,6 +518,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             SaveDeviceRecords(configFrame, deviceID.Value);
             MarkConfigurationAsSynchronized(device.Acronym);
         }
+
+        m_serviceCommands.ReloadConfig();
+
         return Ok(configFrames.Length);
     }
 
@@ -689,8 +692,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         if (string.IsNullOrWhiteSpace(cell.OriginalAcronym))
             cell.OriginalAcronym = cell.Acronym;
 
-        string orgSignalReference = $"{cell.OriginalAcronym}-{signalType.Suffix}";
-        string signalReference = $"{cell.Acronym}-{signalType.Suffix}";
+        string orgSignalReference = $"{cell.OriginalAcronym}-{signalType.Suffix}{index}";
+        string signalReference = $"{cell.Acronym}-{signalType.Suffix}{index}";
 
         // Query existing measurement record for specified signal reference - function will create a new blank measurement record if one does not exist
         Measurement measurement = QueryMeasurement(orgSignalReference);
@@ -1036,17 +1039,17 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
     private static string CreatePointTag(string deviceAcronym, string signalTypeAcronym)
     {
-        return CommonPhasorServices.CreatePointTag(s_companyAcronym, deviceAcronym, null, signalTypeAcronym);
+        return ConfigurationFrame.GetCleanPointTag(CommonPhasorServices.CreatePointTag(s_companyAcronym, deviceAcronym, null, signalTypeAcronym));
     }
 
     private static string CreateIndexedPointTag(string deviceAcronym, string signalTypeAcronym, int signalIndex, string label)
     {
-        return CommonPhasorServices.CreatePointTag(s_companyAcronym, deviceAcronym, null, signalTypeAcronym, label, signalIndex);
+        return ConfigurationFrame.GetCleanPointTag(CommonPhasorServices.CreatePointTag(s_companyAcronym, deviceAcronym, null, signalTypeAcronym, label, signalIndex));
     }
 
     private static string CreatePhasorPointTag(string deviceAcronym, string signalTypeAcronym, string phasorLabel, string phase, int signalIndex, int baseKV)
     {
-        return CommonPhasorServices.CreatePointTag(s_companyAcronym, deviceAcronym, null, signalTypeAcronym, phasorLabel, signalIndex, string.IsNullOrWhiteSpace(phase) ? '_' : phase.Trim()[0], baseKV);
+        return ConfigurationFrame.GetCleanPointTag(CommonPhasorServices.CreatePointTag(s_companyAcronym, deviceAcronym, null, signalTypeAcronym, phasorLabel, signalIndex, string.IsNullOrWhiteSpace(phase) ? '_' : phase.Trim()[0], baseKV));
     }
 
     /// <summary>
@@ -1366,7 +1369,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 analogIndex++;
                 derivedCell.AnalogDefinitions.Add(new AnalogDefinition
                 {
-                    Label = sourceAnalog.Label,
+                    Label = sourceAnalog.Label ?? $"ANLOG{analogIndex}",
                     AnalogType = sourceAnalog.AnalogType.ToString(),
                     Adder = 0,
                     Multiplier = 0,
@@ -1384,7 +1387,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 digitalIndex++;
                 derivedCell.DigitalDefinitions.Add(new DigitalDefinition
                 {
-                    Label = sourceDigital.Label,
+                    Label = sourceDigital.Label ?? $"DIGITAL{digitalIndex}",
                     Adder = 0,
                     Multiplier = 0,
                     AlternateTag = "",

@@ -4,6 +4,7 @@
 using Gemstone.ComponentModel.DataAnnotations;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace openHistorian.Model;
 
@@ -42,8 +43,10 @@ public class PhasorDefinition
 
     public bool Enabled { get; set; } = true;
 
+    [JsonIgnore]
     public bool IsVoltage => string.Compare(PhasorType, "Voltage", StringComparison.OrdinalIgnoreCase) == 0;
 
+    [JsonIgnore]
     public bool IsCurrent => !IsVoltage;
 
     public PhasorDefinition? GetAssociatedVoltage(ConfigurationCell cell)
@@ -62,8 +65,6 @@ public class AnalogDefinition
 
     public string AlternateTag { get; set; }
 
-    public int SignalTypeID { get; set; }
-
     public string Description { get; set; } = "";
 
     public double Adder { get; set; }
@@ -80,8 +81,6 @@ public class DigitalDefinition
     public string PointTag { get; set; }
 
     public string AlternateTag { get; set; }
-
-    public int SignalTypeID { get; set; }
 
     public string Description { get; set; } = "";
 
@@ -121,9 +120,10 @@ public class ConfigurationCell
     public List<DigitalDefinition> DigitalDefinitions { get; set; } = new();
 
     // Device record field proxies
+    [JsonIgnore]
     public string Acronym
     {
-        get => ConfigurationFrame.GetCleanAcronym(IDLabel);
+        get => ConfigurationFrame.GetCleanAcronym(string.IsNullOrWhiteSpace(IDLabel) ? StationName : IDLabel);
         set => IDLabel = value;
     }
 
@@ -159,9 +159,10 @@ public class ConfigurationFrame
 
     public bool IsConcentrator { get; set; }
 
+    [JsonIgnore]
     public string Acronym
     {
-        get => GetCleanAcronym(IDLabel);
+        get => ConfigurationFrame.GetCleanAcronym(string.IsNullOrWhiteSpace(IDLabel) ? StationName : IDLabel);
         set => IDLabel = value;
     }
 
@@ -204,7 +205,7 @@ public class ConfigurationFrame
     /// <returns>Clean point tag.</returns>
     public static string GetCleanPointTag(string pointTag)
     {
-        // Remove any invalid characters from point tag - @@ is Razor escaped single "at" symbol:
-        return Regex.Replace(pointTag, @"[^A-Z0-9\-\+!\:_\.@@#\$]", "", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        // Remove any invalid characters from point tag
+        return Regex.Replace(pointTag.ToUpperInvariant(), @"[^A-Z0-9\-\+!\:_\.@#\$]", "", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     }
 }
