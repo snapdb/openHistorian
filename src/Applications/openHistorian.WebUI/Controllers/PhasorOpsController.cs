@@ -46,6 +46,7 @@ using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Soap;
 using System.Text;
 using System.Text.Json;
+using Org.BouncyCastle.Asn1;
 using AnalogDefinition = openHistorian.Model.AnalogDefinition;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using ConfigurationCell = openHistorian.Model.ConfigurationCell;
@@ -1278,6 +1279,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 IDLabel = sourceCell.IDLabel,
                 NominalFrequency = (double)sourceCell.NominalFrequency
             };
+
+            if (string.IsNullOrWhiteSpace(derivedCell.IDLabel))
+                derivedCell.IDLabel = derivedCell.Acronym;
 
             if (sourceCell is ConfigurationCell3 configCell3)
             {

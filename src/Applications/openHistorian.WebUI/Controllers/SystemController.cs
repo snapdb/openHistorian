@@ -21,10 +21,8 @@
 //
 //******************************************************************************************************
 
-using Gemstone.Configuration;
 using Gemstone.PhasorProtocols;
 using Microsoft.AspNetCore.Mvc;
-using openHistorian.Model;
 using openHistorian.Utility;
 using openHistorian.WebUI.Controllers.JsonModels;
 using ServiceInterface;
