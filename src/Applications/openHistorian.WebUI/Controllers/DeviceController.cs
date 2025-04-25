@@ -37,10 +37,9 @@ public class DeviceController : ModelController<Device>
         TableOperations<Device> deviceTableOperations = new(connection);
         RecordRestriction deviceRestriction = deviceTableOperations.GetNonPrimaryFieldRecordRestriction(record);
 
-        //this is only place to have cancellation token..
         Device? storedRecord = await deviceTableOperations.QueryRecordWhereAsync("ID = {0}", cancellationToken, record.ID).ConfigureAwait(false);
         if (cancellationToken.IsCancellationRequested)
-            return Ok();
+            return Ok(record);
 
         IActionResult patchResponse = await base.Patch(record, new CancellationToken());
 
@@ -49,7 +48,7 @@ public class DeviceController : ModelController<Device>
             return patchResponse;
 
         if (record.Acronym == storedRecord.Acronym)
-            return Ok();
+            return Ok(record);
 
         List<Measurement?> measurementList = measurementTableOperations.QueryRecordsWhere("DeviceID = {0} AND Manual = 0", record.ID).ToList();
 
