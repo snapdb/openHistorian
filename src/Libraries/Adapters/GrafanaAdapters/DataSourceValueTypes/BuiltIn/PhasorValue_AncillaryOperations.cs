@@ -355,8 +355,14 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                         phasorRow["Phase"] = (magnitude["Phase"].ToString() ?? "+").Trim()[0];
                         phasorRow["SourceIndex"] = magnitude["SourceIndex"];
                         phasorRow["BaseKV"] = magnitude["BaseKV"];
-                        phasorRow["Longitude"] = Convert.ToDecimal(magnitude["Longitude"]);
-                        phasorRow["Latitude"] = Convert.ToDecimal(magnitude["Latitude"]);
+                        phasorRow["Longitude"] = decimal.TryParse(magnitude["Longitude"]?.ToString(), out decimal lon)
+                            ? lon
+                            : DBNull.Value;
+
+                        phasorRow["Latitude"] = decimal.TryParse(magnitude["Latitude"]?.ToString(), out decimal lat)
+                            ? lat
+                            : DBNull.Value;
+
                         phasorRow["Company"] = magnitude["Company"];
                         phasorRow["UpdatedOn"] = magnitude["UpdatedOn"];
 
