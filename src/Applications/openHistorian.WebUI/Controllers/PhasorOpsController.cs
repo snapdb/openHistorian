@@ -485,8 +485,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             device.AccessID = configFrame.IDCode;
             device.LoadOrder = configFrame.LoadOrder;
             device.TimeZone = configFrame.TimeZone;
-            device.Longitude = configFrame.Longitude;
-            device.Latitude = configFrame.Latitude;
+            device.Longitude = configFrame.Longitude ?? 0;
+            device.Latitude = configFrame.Latitude ?? 0;
             device.CompanyID = configFrame.CompanyID;
             device.HistorianID = configFrame.HistorianID;
             device.InterconnectionID = configFrame.InterconnectionID;
