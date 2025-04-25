@@ -42,7 +42,7 @@ public class DeviceController : ModelController<Device>
         if (cancellationToken.IsCancellationRequested)
             return Ok();
 
-        IActionResult patchResponse = await Patch(record, new CancellationToken());
+        IActionResult patchResponse = await base.Patch(record, new CancellationToken());
 
         //return patchresponse immediately if it wasnt successfull
         if (!(patchResponse is OkResult) && !(patchResponse is OkObjectResult))
