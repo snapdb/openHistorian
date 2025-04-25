@@ -451,13 +451,10 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     /// </summary>
     /// <param name="isOptional">Indicates if selection on UI is optional for this collection.</param>
     /// <returns><see cref="Dictionary{T1,T2}"/> type collection of system time zones.</returns>
-    [HttpGet, Route("GetTimeZones/{isOptional:bool?}")]
-    public Dictionary<string, string> GetTimeZones(bool? isOptional = null)
+    [HttpGet, Route("GetTimeZones")]
+    public Dictionary<string, string> GetTimeZones()
     {
         Dictionary<string, string> timeZonesList = new();
-
-        if (isOptional.GetValueOrDefault())
-            timeZonesList.Add("", "Select Time Zone");
 
         foreach (TimeZoneInfo timeZoneInfo in TimeZoneInfo.GetSystemTimeZones())
         {
