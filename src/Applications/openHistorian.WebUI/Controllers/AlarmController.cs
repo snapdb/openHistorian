@@ -24,6 +24,10 @@ public class AlarmController : ModelController<Alarm>
 
         await using AdoDataConnection connection = CreateConnection();
         Gemstone.Timeseries.Model.Measurement? newMeasurement = null;
+
+        TableOperations<Gemstone.Timeseries.Model.SignalType> signalTypeTableOperations = new(connection);
+        Gemstone.Timeseries.Model.SignalType? signalType = signalTypeTableOperations.QueryRecordWhere("Acronym = {0}", "ALRM");
+
         if (cancellationToken.IsCancellationRequested)
             return Ok();
 
@@ -32,6 +36,7 @@ public class AlarmController : ModelController<Alarm>
             TableOperations<Gemstone.Timeseries.Model.Measurement> measurementTableOperations = new(connection);
             newMeasurement = measurementTableOperations.NewRecord()!;
             newMeasurement.PointTag = alarmRecord.TagName;
+            newMeasurement.SignalTypeID = signalType.ID;
             measurementTableOperations.AddNewRecord(newMeasurement);
         }
 
