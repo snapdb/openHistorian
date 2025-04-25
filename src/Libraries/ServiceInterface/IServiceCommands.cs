@@ -37,6 +37,12 @@ public interface IServiceCommands
     void ReloadConfig();
 
     /// <summary>
+    /// Initializes the adapter with the specified acronym.
+    /// </summary>
+    /// <param name="acronym">Acronym to initialize.</param>
+    void Initialize(string acronym);
+
+    /// <summary>
     /// Sends a command to a specific phasor connection instance.
     /// </summary>
     /// <param name="connectionID">ID of the connection for command operation.</param>

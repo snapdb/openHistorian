@@ -113,6 +113,20 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
     }
 
     /// <inheritdoc />
+    public void Initialize(string acronym)
+    {
+        AllAdaptersCollection? adapters = AllAdapters;
+
+        if (adapters is null)
+            throw new NullReferenceException("No adapters are currently defined");
+
+        if (adapters.TryGetAnyAdapterByName(acronym, out IAdapter? adapter, out _))
+            adapter?.Initialize();
+        else
+            throw new InvalidOperationException($"Failed to find adapter with acronym \"{acronym}\"");
+    }
+
+    /// <inheritdoc />
     public void SendCommand(Guid connectionID, DeviceCommand command)
     {
         // TODO: Implement phasor protocol command send

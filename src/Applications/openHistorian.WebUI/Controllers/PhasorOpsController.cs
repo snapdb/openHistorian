@@ -518,9 +518,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
             SaveDeviceRecords(configFrame, deviceID.Value);
             MarkConfigurationAsSynchronized(device.Acronym);
+            
+            m_serviceCommands.Initialize(device.Acronym);
         }
-
-        m_serviceCommands.ReloadConfig();
 
         return Ok(configFrames.Length);
     }
