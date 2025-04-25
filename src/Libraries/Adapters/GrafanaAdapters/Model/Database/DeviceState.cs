@@ -61,4 +61,9 @@ public class DeviceState
     /// Gets or sets rules.
     /// </summary>
     public string Rules { get; set; }
+
+    /// <summary>
+    /// Gets or sets priority.
+    /// </summary>
+    public int Priority { get; set; }
 }
