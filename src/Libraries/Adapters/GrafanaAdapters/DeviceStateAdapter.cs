@@ -90,13 +90,13 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// </summary>
     private static readonly Dictionary<AlarmState, DeviceState> s_baseStates = new ()
     {
-        { AlarmState.Good, new DeviceState() { Color="green", State=nameof(AlarmState.Good), Rules="", Priority=0 }  },
-        { AlarmState.Alarm, new DeviceState() { Color="red", State=nameof(AlarmState.Alarm), Rules="" }  },
-        { AlarmState.NotAvailable, new DeviceState() { Color="orange", State=nameof(AlarmState.NotAvailable), Rules="", Priority=int.MaxValue-3 }  },
-        { AlarmState.BadData, new DeviceState() { Color="blue", State=nameof(AlarmState.BadData), Rules="" }  },
-        { AlarmState.BadTime, new DeviceState() { Color="purple", State=nameof(AlarmState.BadTime), Rules="" }  },
-        { AlarmState.OutOfService, new DeviceState() { Color="grey", State=nameof(AlarmState.OutOfService), Rules="", Priority=int.MaxValue-2 }  },
-        { AlarmState.Acknowledged, new DeviceState() { Color="rosybrown", State=nameof(AlarmState.Acknowledged), Rules="", Priority=int.MaxValue-1 }  }
+        { AlarmState.Good, new DeviceState() { Color="green", RecommendedAction = "", State=nameof(AlarmState.Good), Rules="[{\"Combination\":1,\"Operation\":12,\"SetPoint\":55,\"Query\":\"SignalType LIKE 'FREQ'\"}]", Priority=0 }  },
+        { AlarmState.Alarm, new DeviceState() { Color="red", RecommendedAction = "", State=nameof(AlarmState.Alarm), Rules="[{\"Combination\":1,\"Operation\":12,\"SetPoint\":1,\"Query\":\"SignalType LIKE 'FREQ'\"}]]", Priority=1 }  },
+        { AlarmState.BadData, new DeviceState() { Color="blue", RecommendedAction = "", State=nameof(AlarmState.BadData), Rules="[]", Priority=2 }  },
+        { AlarmState.BadTime, new DeviceState() { Color="purple", RecommendedAction = "", State=nameof(AlarmState.BadTime), Rules="[]", Priority=3 }  },
+        { AlarmState.NotAvailable, new DeviceState() { Color="orange", RecommendedAction = "", State=nameof(AlarmState.NotAvailable), Rules="[]", Priority=int.MaxValue-3 }  },
+        { AlarmState.OutOfService, new DeviceState() { Color="grey", RecommendedAction = "", State=nameof(AlarmState.OutOfService), Rules="[]", Priority=int.MaxValue-2 }  },
+        { AlarmState.Acknowledged, new DeviceState() { Color="rosybrown",  RecommendedAction = "", State=nameof(AlarmState.Acknowledged), Rules="[]", Priority=int.MaxValue-1 }  }
     };
 
     private const int UpToDate = 0;
