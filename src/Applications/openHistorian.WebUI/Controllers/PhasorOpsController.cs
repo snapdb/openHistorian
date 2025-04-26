@@ -490,7 +490,6 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             device.CompanyID = configFrame.CompanyID;
             device.HistorianID = configFrame.HistorianID;
             device.InterconnectionID = configFrame.InterconnectionID;
-            device.HistorianID = configFrame.HistorianID;
             device.VendorDeviceID = configFrame.VendorDeviceID;
             device.ContactList = configFrame.ContactList;
             device.TimeAdjustmentTicks = configFrame.TimeAdjustmentTicks;
