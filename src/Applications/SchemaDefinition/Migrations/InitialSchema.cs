@@ -198,8 +198,8 @@ public class InitialSchema : Migration
             .WithColumn("HistorianID").AsInt32().Nullable()
             .WithColumn("AccessID").AsInt32().NotNullable().WithDefaultValue(0)
             .WithColumn("VendorDeviceID").AsInt32().Nullable().ForeignKey("VendorDevice", "ID")
-            .WithColumn("Longitude").AsDecimal(9, 6).Nullable()
-            .WithColumn("Latitude").AsDecimal(9, 6).Nullable()
+            .WithColumn("Longitude").AsDecimal(9, 6).NotNullable()
+            .WithColumn("Latitude").AsDecimal(9, 6).NotNullable()
             .WithColumn("InterconnectionID").AsInt32().Nullable().ForeignKey("Interconnection", "ID")
             .WithColumn("ConnectionString").AsString().Nullable()
             .WithColumn("Description").AsString().Nullable()
@@ -822,6 +822,7 @@ public class InitialSchema : Migration
                 Phasor.Type AS PhasorType,
                 Phasor.Phase,
                 Phasor.BaseKV,
+                Phasor.SourceIndex,
                 Measurement.Adder,
                 Measurement.Multiplier,
                 Device.CompanyAcronym AS Company, 
