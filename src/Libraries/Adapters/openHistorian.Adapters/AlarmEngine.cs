@@ -419,7 +419,14 @@ public class AlarmEngine : FacileActionAdapterBase
     public override void QueueMeasurementsForProcessing(IEnumerable<IMeasurement> measurements)
     {
         foreach (IMeasurement measurement in measurements)
+        {
+            //Per Ritchie this should not happen but somehow happens anyway
+            // #ToDo Figure out why
+            if (measurement is null)
+                continue;
             m_measurementQueue.Enqueue(measurement);
+        }
+
 
         m_processMeasurementsOperation.RunAsync();
     }
@@ -530,7 +537,7 @@ public class AlarmEngine : FacileActionAdapterBase
             deleteParameters.Add(alarmEvent.MeasurementID);
             deleteParameters.Add(alarmEvent.StartTime.AddHours(-AlarmRetention));
 
-            EventDetails? currentRecord = tableOperations.QueryRecordWhere("EventID = {0}", alarmEvent.ID);
+            EventDetails? currentRecord = tableOperations.QueryRecordWhere("EventGuid = {0}", alarmEvent.ID);
             EventDetails updatedRecord = GenerateAlarmDetails(alarmEvent);
 
             if (currentRecord is not null)
@@ -915,7 +922,7 @@ public class AlarmEngine : FacileActionAdapterBase
         {
             StartTime = alarmEvent.StartTime,
             EndTime = alarmEvent.EndTime,
-            EventID = alarmEvent.ID,
+            EventGuid = alarmEvent.ID,
             Type = "alarm",
             MeasurementID = alarmEvent.MeasurementID,
             Details = JsonConvert.SerializeObject(new
