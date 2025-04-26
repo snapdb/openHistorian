@@ -801,7 +801,7 @@ public class InitialSchema : Migration
         ");
 
         this.AddView("ActiveMeasurement", @"
-                COALESCE(Device.Acronym, '__') || ':' || Measurement.PointID AS ID,
+                COALESCE(Historian.Acronym, '__') || ':' || Measurement.PointID AS ID,
                 Measurement.SignalID,
                 Measurement.PointTag,
                 Measurement.AlternateTag,
