@@ -476,7 +476,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                     if (!m_deviceMetadata.TryGetValue(alarmDevice.DeviceID, out Device metadata))
                         continue;
 
-                    if (!m_lastState.TryGetValue(alarmDevice.StateID, out int currentState))
+                    if (!m_lastState.TryGetValue(alarmDevice.DeviceID, out int currentState))
                         currentState = m_requiredStateIDs.GetValueOrDefault(AlarmState.NotAvailable);
 
                     int newState = 0;
