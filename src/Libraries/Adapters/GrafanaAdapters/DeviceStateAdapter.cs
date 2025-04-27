@@ -120,9 +120,9 @@ public class DeviceStateAdapter : FacileActionAdapterBase
             Func<double, bool> func = GetSuccededTest();
 
             if (Combination == AlarmCombination.AND)
-                test = keys.All((key) => func.Invoke(measurements[key].AdjustedValue));
+                test = keys.All((key) => measurements.TryGetValue(key, out IMeasurement meas) && func.Invoke(meas.AdjustedValue));
             if (Combination == AlarmCombination.OR)
-                test = keys.Any((key)  => func.Invoke(measurements[key].AdjustedValue));
+                test = keys.Any((key) => measurements.TryGetValue(key, out IMeasurement meas) && func.Invoke(meas.AdjustedValue));
 
             if (!test && LastUpdateTime.ContainsKey(deviceID))
                 LastUpdateTime[deviceID] = Time;
