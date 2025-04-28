@@ -54,11 +54,17 @@ public interface IServiceCommands
     /// </summary>
     (string Status, ServiceStatus Type, string Description) GetCurrentStatus();
 
-
     /// <summary>
     /// Gets an adapter instance from active Iaon session by its runtime ID.
     /// </summary>
     /// <param name="runtimeID">Runtime ID of adapter to retrieve.</param>
     /// <returns>Adapter instance from Iaon session with specified <paramref name="runtimeID"/>.</returns>
     IAdapter GetActiveAdapterInstance(uint runtimeID);
+
+    /// <summary>
+    /// Gets an adapter instance from active Iaon session by its acronym.
+    /// </summary>
+    /// <param name="acronym">Acronym of adapter to retrieve.</param>
+    /// <returns>Adapter instance from Iaon session with specified <paramref name="acronym"/>.</returns>
+    IAdapter GetActiveAdapterInstance(string acronym);
 }

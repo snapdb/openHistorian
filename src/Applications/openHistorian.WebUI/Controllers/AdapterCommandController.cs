@@ -152,21 +152,38 @@ public class AdapterCommandControllerBase<TIAdapter> :
     }
 
     /// <summary>
-    /// Gets status of the active adapter instance
+    /// Gets status of the active adapter instance by runtime ID.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("GetStatus/{runtimeID}")]
+    [HttpGet, Route("GetStatus/{runtimeID:int}")]
     public IActionResult SessionGetStatus(uint runtimeID)
     {
         try
         {
             IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(runtimeID);
-
             return Ok(adapter.Status);
         }
-        catch
+        catch (Exception ex)
         {
-            return new JsonResult(null) { StatusCode = 200 };
+            return new JsonResult(ex.Message) { StatusCode = 200 };
+        }
+    }
+
+    /// <summary>
+    /// Gets status of the active adapter instance by acronym.
+    /// </summary>
+    /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
+    [HttpGet, Route("GetStatus/{acronym:alpha}")]
+    public IActionResult SessionGetStatus(string acronym)
+    {
+        try
+        {
+            IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(acronym);
+            return Ok(adapter.Status);
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(ex.Message) { StatusCode = 200 };
         }
     }
 
@@ -267,7 +284,6 @@ public class AdapterCommandControllerBase<TIAdapter> :
             return NotFound();
 
         (method, AdapterCommandAttribute attribute) = methodAttribute;
-
 
         /* Temporarily commenting auth check as security is not yet implemented
          * // Verify user is in allowed roles for command
