@@ -331,6 +331,11 @@ public class DeviceSwitch: FacileActionAdapterBase
             OnStatusMessage(MessageLevel.Warning, $"No input device in acceptable State. Keeping current input device");
             return;
         }
+
+
+        if (m_inputDevices[i].Acronym == m_currentInputDevice)
+            return;
+
         OnStatusMessage(MessageLevel.Warning, $"Switching input device from {m_currentInputDevice} to {m_inputDevices[i].Acronym}");
         m_currentInputDevice = m_inputDevices[i].Acronym;
         m_tagMapping = GenerateMapping();
