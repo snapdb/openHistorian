@@ -187,7 +187,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     private SharedTimer? m_dataStreamMonitor;
     private SharedTimer? m_measurementCounter;
     private bool m_cachedConfigLoadAttempted;
-    private readonly object m_configurationOperationLock;
+    private readonly Lock m_configurationOperationLock;
     private readonly ConcurrentDictionary<Guid, string> m_connectionIDCache;
     private volatile IConfigurationFrame? m_configurationFrame;
     private string? m_connectionInfo;
@@ -241,7 +241,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
         m_dataStreamMonitor.Enabled = false;
 
         m_undefinedDevices = new ConcurrentDictionary<string, long>();
-        m_configurationOperationLock = new object();
+        m_configurationOperationLock = new Lock();
 
         // Create a new connection ID cache
         m_connectionIDCache = new ConcurrentDictionary<Guid, string>();

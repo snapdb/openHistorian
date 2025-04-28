@@ -45,6 +45,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Timers;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using DeviceStateRecord = GrafanaAdapters.Model.Database.DeviceState;
@@ -111,7 +112,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private Dictionary<AlarmState, string> m_mappedAlarmStates;
     private Dictionary<AlarmState, int> m_stateCounts;
     private List<int> m_compositeStates;
-    private object m_stateCountLock;
+    private Lock m_stateCountLock;
     private Ticks m_alarmTime;
     private long m_alarmStateUpdates;
     private long m_externalDatabaseUpdates;
@@ -366,7 +367,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         m_mappedAlarmStates = new Dictionary<AlarmState, string>();
         m_stateCounts = CreateNewStateCountsMap();
         m_compositeStates = [];
-        m_stateCountLock = new object();
+        m_stateCountLock = new Lock();
 
         LoadAlarmStates();
 

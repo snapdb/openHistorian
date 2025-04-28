@@ -248,7 +248,7 @@ public class AlarmEngine : FacileActionAdapterBase
     private const double DefaultAlarmRetention = 24.0D;
 
     // Fields
-    private readonly object m_alarmLock;
+    private readonly Lock m_alarmLock;
 
     private readonly ConcurrentQueue<IMeasurement> m_measurementQueue;
     private readonly ConcurrentQueue<AlarmEvent> m_eventDetailsQueue;
@@ -279,7 +279,7 @@ public class AlarmEngine : FacileActionAdapterBase
     /// </summary>
     public AlarmEngine()
     {
-        m_alarmLock = new object();
+        m_alarmLock = new Lock();
         m_alarmProcessors = new Dictionary<int, AlarmProcessor>();
         m_measurementAlarmMap = new Dictionary<Guid, List<int>>();
 
@@ -922,7 +922,7 @@ public class AlarmEngine : FacileActionAdapterBase
         {
             StartTime = alarmEvent.StartTime,
             EndTime = alarmEvent.EndTime,
-            EventGuid = alarmEvent.ID,
+            EventID = alarmEvent.ID,
             Type = "alarm",
             MeasurementID = alarmEvent.MeasurementID,
             Details = JsonConvert.SerializeObject(new

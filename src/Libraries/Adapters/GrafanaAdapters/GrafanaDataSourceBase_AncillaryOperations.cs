@@ -49,7 +49,7 @@ namespace GrafanaAdapters;
 partial class GrafanaDataSourceBase
 {
     private static ProcessQueryRequestDelegate[] s_processQueryRequestFunctions;
-    private static object s_processQueryRequestFunctionsLock = new();
+    private static Lock s_processQueryRequestFunctionsLock = new();
     private static Regex s_selectExpression;
 
     // Gets array of functions used to process query requests per data source value type, each value in the array

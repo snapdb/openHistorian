@@ -3,7 +3,7 @@
   <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>openHistorian</RootNamespace>
@@ -72,6 +72,7 @@
       <Private>True</Private>
     </ProjectReference>
     <PackageReference Include="Gemstone.Timeseries" Version="1.0.101" Condition="'$(Configuration)'!='Development'" />
+    <ProjectReference Include="..\..\..\..\..\sttp\gsfapi\src\lib\sttp.gemstone\sttp.gemstone.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\CSVAdapters\CSVAdapters.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\DynamicCalculator\DynamicCalculator.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\FileAdapters\FileAdapters.csproj" />

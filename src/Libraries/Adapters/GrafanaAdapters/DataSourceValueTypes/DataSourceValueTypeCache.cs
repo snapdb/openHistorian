@@ -48,7 +48,7 @@ public static class DataSourceValueTypeCache
     private static IDataSourceValueType[] s_defaultInstances;
     private static Type[] s_loadedTypes;
     private static Dictionary<string, int> s_typeIndexMap;
-    private static readonly object s_defaultInstancesLock = new();
+    private static readonly Lock s_defaultInstancesLock = new();
     private static readonly LogPublisher s_log = Logger.CreatePublisher(typeof(DataSourceValueTypeCache), MessageClass.Component);
 
     /// <summary>

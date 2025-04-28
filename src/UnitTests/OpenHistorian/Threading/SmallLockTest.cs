@@ -59,7 +59,7 @@ public class SmallLockTest
         const int count = 100000000;
         Stopwatch sw = new();
         sw.Start();
-        object obj = new();
+        Lock obj = new();
 
         for (int x = 0; x < count; x++)
         {

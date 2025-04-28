@@ -106,13 +106,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Adapter.UnitTests", "UnitTe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DynamicCalculator", "Libraries\Adapters\DynamicCalculator\DynamicCalculator.csproj", "{48BF942A-800E-4818-8874-EE9F0B461F60}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Adapter", "Adapter", "{91E9922F-4F1F-41D3-BC0A-E11A2803F981}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InstallerActions", "InstallerActions", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gemstone.InstallerActions", "Libraries\InstallerActions\Gemstone.InstallerActions\Gemstone.InstallerActions.csproj", "{DE23EEF6-EE66-42DE-81B0-890B3A77B83C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gemstone.InstallerActions.Resources", "Libraries\InstallerActions\Gemstone.InstallerActions.Resources\Gemstone.InstallerActions.Resources.csproj", "{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sttp.gemstone", "..\..\..\sttp\gsfapi\src\lib\sttp.gemstone\sttp.gemstone.csproj", "{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "sttp.core", "..\..\..\sttp\gsfapi\src\lib\sttp.core\sttp.core.shproj", "{5A705FBB-8702-4628-BD2E-9B04E4F7F517}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -327,6 +329,12 @@ Global
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}.Development|Any CPU.Build.0 = Debug|Any CPU
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Development|Any CPU.Build.0 = Development|Any CPU
+		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -371,8 +379,14 @@ Global
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {AC8924A6-5141-4F21-B45D-016F5892027F}
 		{DE23EEF6-EE66-42DE-81B0-890B3A77B83C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{5A705FBB-8702-4628-BD2E-9B04E4F7F517} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F524668-5FE5-406F-B1D4-177A413C9DD6}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\..\..\sttp\gsfapi\src\lib\sttp.core\sttp.core.projitems*{35b1aba6-47b2-43bf-737a-64efb7b7e585}*SharedItemsImports = 5
+		..\..\..\sttp\gsfapi\src\lib\sttp.core\sttp.core.projitems*{5a705fbb-8702-4628-bd2e-9b04e4f7f517}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

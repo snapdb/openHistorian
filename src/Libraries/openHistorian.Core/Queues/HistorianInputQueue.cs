@@ -137,7 +137,7 @@ public class HistorianInputQueue : IDisposable
 
     private readonly StreamPoints m_pointStream;
 
-    private readonly object m_syncWrite;
+    private readonly Lock m_syncWrite;
 
     private readonly ScheduledTask m_worker;
 
@@ -151,7 +151,7 @@ public class HistorianInputQueue : IDisposable
     /// <param name="getDatabase">A function that returns a ClientDatabaseBase of HistorianKey and HistorianValue.</param>
     public HistorianInputQueue(Func<ClientDatabaseBase<HistorianKey, HistorianValue>> getDatabase)
     {
-        m_syncWrite = new object();
+        m_syncWrite = new Lock();
         m_blocks = new IsolatedQueue<PointData>();
         m_pointStream = new StreamPoints(m_blocks, 1000);
         m_getDatabase = getDatabase;

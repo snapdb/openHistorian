@@ -48,7 +48,7 @@ namespace GrafanaAdapters.Functions;
 internal static class FunctionParsing
 {
     private static IGrafanaFunction[] s_grafanaFunctions;
-    private static readonly object s_grafanaFunctionsLock = new();
+    private static readonly Lock s_grafanaFunctionsLock = new();
     private static readonly LogPublisher s_log = Logger.CreatePublisher(typeof(FunctionParsing), MessageClass.Component);
 
     // Calls to this expensive match operation should be temporally cached by expression
