@@ -132,6 +132,7 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
         return adapter ?? throw new NullReferenceException("Adapter instance is not initialized");
     }
 
+    /// <inheritdoc />
     public IAdapter GetActiveAdapterInstance(string acronym)
     {
         AllAdaptersCollection allAdapters = AllAdapters ?? throw new NullReferenceException("No adapters are currently defined");
