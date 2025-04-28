@@ -52,7 +52,7 @@ public class PointListTests
         using HistorianClient client = new("127.0.0.1", 12345);
         using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>("PPA");
         
-        using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1, 2, 3, 4, 5, 6 }))
+        using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, [1, 2, 3, 4, 5, 6]))
         {
             ulong pointID = 1;
 
@@ -64,7 +64,7 @@ public class PointListTests
         }
 
         // Max point ID is 1000, so this should only return 2 points
-        using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 }))
+        using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, [65, 953, 5562]))
         {
             int pointCount = 0;
 
@@ -100,8 +100,8 @@ public class PointListTests
 
         Dictionary<string, HashSet<ulong>> pointRights = new()
         {
-            { UserInfo.UserNameToSID("johndoe") , new HashSet<ulong>(new ulong[] { 1, 2, 3, 4, 5, 6 }) },
-            { UserInfo.UserNameToSID("janedoe"), new HashSet<ulong>(new ulong[] { 65, 953, 5562 }) }
+            { UserInfo.UserNameToSID("johndoe") , [..new ulong[] { 1, 2, 3, 4, 5, 6 }] },
+            { UserInfo.UserNameToSID("janedoe"), [..new ulong[] { 65, 953, 5562 }] }
         };
 
         // Function parameters are:
@@ -124,7 +124,7 @@ public class PointListTests
             using HistorianClient client = new("127.0.0.1", 12345);
             using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>("PPA");
             
-            using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1, 2, 3, 4, 5, 6 }))
+            using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, [1, 2, 3, 4, 5, 6]))
             {
                 ulong pointID = 1;
 
@@ -139,7 +139,7 @@ public class PointListTests
             }
 
             // Max point ID is 1000, so this should only return 2 points
-            using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 }))
+            using (TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, [65, 953, 5562]))
             {
                 int pointCount = 0;
 

@@ -61,7 +61,7 @@ public static class EmbeddedResourceMiddlewareExtensions
             public Assembly ResourceAssembly { get; }
         }
 
-        private List<Route> Routes { get; } = new();
+        private List<Route> Routes { get; } = [];
 
         public EmbeddedResourceProvider Build()
         {

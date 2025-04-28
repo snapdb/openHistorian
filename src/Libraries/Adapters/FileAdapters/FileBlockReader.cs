@@ -113,7 +113,7 @@ public class FileBlockReader : FacileActionAdapterBase
         BlockSize = DefaultBlockSize;
         m_watchInterval = DefaultWatchInterval;
 
-        m_processedFiles = new List<string>();
+        m_processedFiles = [];
         m_unprocessedFiles = new Queue<string>();
     }
 

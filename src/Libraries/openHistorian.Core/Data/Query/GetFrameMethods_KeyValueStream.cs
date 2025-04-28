@@ -84,12 +84,12 @@ public static partial class GetFrameMethods
         /// <summary>
         /// Gets a list of point IDs to be included in the frame.
         /// </summary>
-        public readonly List<ulong> PointID = new();
+        public readonly List<ulong> PointID = [];
 
         /// <summary>
         /// Gets a list of historian values associated with the points.
         /// </summary>
-        public readonly List<HistorianValueStruct> Values = new();
+        public readonly List<HistorianValueStruct> Values = [];
 
         #endregion
 

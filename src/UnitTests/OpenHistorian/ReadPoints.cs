@@ -93,12 +93,12 @@ public class ReadPoints
             using HistorianClient client = new("127.0.0.1", 12345);
             using ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty);
 
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 1 });
+            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, [1]);
             while (stream.Read(key, value))
                 ;
 
             sw.Start();
-            stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
+            stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, [65, 953, 5562]);
 
             while (stream.Read(key, value))
                 pointCount++;
@@ -221,7 +221,7 @@ public class ReadPoints
         using (HistorianClient client = new("127.0.0.1", 12345))
         using (ClientDatabaseBase<HistorianKey, HistorianValue> database = client.GetDatabase<HistorianKey, HistorianValue>(string.Empty))
         {
-            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, new ulong[] { 65, 953, 5562 });
+            TreeStream<HistorianKey, HistorianValue> stream = database.Read(0, (ulong)DateTime.MaxValue.Ticks, [65, 953, 5562]);
             while (stream.Read(key, value))
                 pointCount++;
         }

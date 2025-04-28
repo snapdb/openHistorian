@@ -273,7 +273,7 @@ public class DynamicFilter : DynamicCalculator, IFilterAdapter
     /// Gets the list of reserved variable names.
     /// </summary>
     protected override string[] ReservedVariableNames => 
-        m_reservedVariableNames ??= base.ReservedVariableNames.Concat(new [] { IndexVariable }).ToArray();
+        m_reservedVariableNames ??= base.ReservedVariableNames.Concat([IndexVariable]).ToArray();
 
     /// <summary>
     /// Gets flag that determines if the implementation of the <see cref="DynamicCalculator"/> requires an output measurement.

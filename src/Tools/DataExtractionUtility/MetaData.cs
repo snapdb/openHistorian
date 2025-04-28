@@ -37,7 +37,7 @@ namespace DataExtractionUtility
 
         public MetaData()
         {
-            Measurements = new List<MeasurementRow>();
+            Measurements = [];
 
             // Do the following on button click or missing configuration, etc:
 

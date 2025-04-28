@@ -1071,19 +1071,20 @@ public class CustomActions
     private static void UpdateServiceConfig(Session session, Logger logger)
     {
         // The failure actions to be defined for the service
-        List<WindowsApi.SC_ACTION> failureActionsList = new()
-        {
+        List<WindowsApi.SC_ACTION> failureActionsList =
+        [
             new WindowsApi.SC_ACTION
             {
                 Type = (WindowsApi.SC_ACTION_TYPE)(uint)RecoverAction.Restart,
                 Delay = 2000
             },
+
             new WindowsApi.SC_ACTION
             {
                 Type = (uint)RecoverAction.None,
                 Delay = 2000
             }
-        };
+        ];
 
         // We've got work to do
         IntPtr serviceManagerHandle = IntPtr.Zero;

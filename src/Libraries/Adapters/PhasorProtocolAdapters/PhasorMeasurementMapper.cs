@@ -984,11 +984,11 @@ public class PhasorMeasurementMapper : InputAdapterBase
         {
             List<string> serverList = [];
             List<ushort> accessIDList = [];
-            string[] servers = setting.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] servers = setting.Split([','], StringSplitOptions.RemoveEmptyEntries);
 
             foreach (string server in servers)
             {
-                string[] parts = server.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] parts = server.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
 
                 if (parts.Length == 0)
                     continue;

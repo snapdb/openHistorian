@@ -91,7 +91,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
 
     // In the existing system the need for virtual devices was minimal - there is only one virtual
     // device, the EIRA PMU, which defines the calculated interconnection reference angle - this includes
-    // an average interconnection frequency - hence you have a virtual device consisting entirely of
+    // an average interconnection frequency - hence you have a virtual device consisting entirely
     // of composed measurement points. Normally you just want to retransmit the received device data
     // which is forwarded as a cell in the combined outgoing data stream - this typically excludes any
     // digital or analog values - but there may be cases where this data should be retransmitted as well.
@@ -109,8 +109,8 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     // device as-is in the outgoing data stream definition.
 
     // The interesting part will be tweaking the outgoing device definition - for simple definitions
-    // the existing signal reference for a measurement will define its purpose in an outgoing device
-    // device definition, but for ultimate flexibility any existing measurement can be mapped to a
+    // the existing signal reference for a measurement will define its purpose in an outgoing
+    // device definition, but for ultimate flexibility any existing measurement can be mapped to
     // any field in the device definition - this means the measurement will need a signal reference
     // that is defined when the measurement is mapped to the field - a new signal reference that exists
     // solely for this outgoing stream definition.
@@ -163,7 +163,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     private Dictionary<MeasurementKey, SignalReference[]>? m_signalReferences;
     private readonly ConcurrentDictionary<Guid, string> m_connectionIDCache;
     private Timer? m_commandChannelRestartTimer;
-    private readonly object m_reinitializationLock;
+    private readonly Lock m_reinitializationLock;
     private int m_lastConfigurationPublishMinute;
     private bool m_configurationFramePublished;
     private bool m_addPhaseLabelSuffix;
@@ -198,7 +198,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
         m_connectionIDCache = new ConcurrentDictionary<Guid, string>();
 
         // Lock used to reinitialize socket layer
-        m_reinitializationLock = new object();
+        m_reinitializationLock = new Lock();
 
         // Synchrophasor protocols should default to millisecond resolution
         TimeResolution = Ticks.PerMillisecond;
@@ -227,7 +227,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     /// of each minute on the data channel.
     /// </summary>
     /// <remarks>
-    /// By default if no command channel is defined, this flag will be <c>true</c>; otherwise if command channel
+    /// By default, if no command channel is defined, this flag will be <c>true</c>; otherwise if command channel
     /// is defined the flag will be <c>false</c>.
     /// </remarks>
     public bool AutoPublishConfigurationFrame { get; set; }
@@ -246,7 +246,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     /// Gets or sets flag that determines if concentrator will automatically start data channel.
     /// </summary>
     /// <remarks>
-    /// By default data channel will be started automatically, setting this flag to <c>false</c> will
+    /// By default, data channel will be started automatically, setting this flag to <c>false</c> will
     /// allow alternate methods of enabling and disabling the real-time data stream (e.g., this can
     /// be used to allow a remote to device to enable and disable data stream if the protocol supports
     /// such commands).
@@ -385,7 +385,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     /// <summary>
     /// Gets or sets <see cref="DataSet"/> based data source available to this <see cref="PhasorDataConcentratorBase"/>.
     /// </summary>
-    public override DataSet DataSource
+    public override DataSet? DataSource
     {
         get => base.DataSource;
         set
@@ -672,7 +672,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
 
         // Base action adapter gets started once data channel has been started (see m_dataChannel_ServerStarted)
         // so that the system doesn't attempt to start frame publication without an operational output data channel
-        // when m_autoStartDataChannel is set to false. Otherwise if data is being published on command channel,
+        // when m_autoStartDataChannel is set to false. Otherwise, if data is being published on command channel,
         // we go ahead and start concentration engine...
         if (PublishChannel == m_commandChannel)
             base.Start();
@@ -747,8 +747,8 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     [AdapterCommand("Manually stops the real-time data stream.", "Administrator", "Editor")]
     public virtual void StopDataChannel()
     {
-        PublishChannel = null;
         // Undefine publication channel. This effectively halts socket based data publication.
+        PublishChannel = null;
     }
 
     /// <summary>
@@ -864,8 +864,8 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
         BaseConfigurationFrame = new ConfigurationFrame(IDCode, DateTime.UtcNow.Ticks, (ushort)FramesPerSecond) { Name = Name };
         Dictionary<string, int> signalCellIndexes = new(StringComparer.OrdinalIgnoreCase);
 
-        // Define configuration cells (i.e., PMU's that will appear in outgoing data stream)
-        foreach (DataRow deviceRow in DataSource.Tables["OutputStreamDevices"]?.Select($"ParentID={ID}", "LoadOrder")!)
+        // Define configuration cells (i.e., PMUs that will appear in outgoing data stream)
+        foreach (DataRow deviceRow in DataSource!.Tables["OutputStreamDevices"]?.Select($"ParentID={ID}", "LoadOrder")!)
         {
             try
             {
@@ -999,7 +999,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
             }
             catch (Exception ex)
             {
-                OnProcessException(MessageLevel.Warning, new InvalidOperationException($"Failed to define output stream device \"{deviceRow["Acronym"].ToString().Trim()}\" due to exception: {ex.Message}", ex));
+                OnProcessException(MessageLevel.Warning, new InvalidOperationException($"Failed to define output stream device \"{deviceRow["Acronym"].ToString()!.Trim()}\" due to exception: {ex.Message}", ex));
             }
         }
 
@@ -1019,7 +1019,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
             .ThenBy(obj => obj.SigRef.Index)
             .Select(obj => obj.Row);
 
-        // Define measurement to signals cross reference dictionary
+        // Define measurement to signals cross-reference dictionary
         foreach (DataRow measurementRow in measurementRows)
         {
             bool isQualityFlagsMeasurement = false;
@@ -1056,7 +1056,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
                 if (signal.CellIndex > -1 || isQualityFlagsMeasurement)
                 {
                     // Check if this is a phasor measurement
-                    if (signal.Kind == SignalKind.Angle || signal.Kind == SignalKind.Magnitude)
+                    if (signal.Kind is SignalKind.Angle or SignalKind.Magnitude)
                     {
                         // Phasors defined for output stream can be filtered, so check if this
                         // phasor measurement is included in the configured phasor outputs
@@ -1082,13 +1082,13 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
                         // For measurements without a historian defined, the device acronym is used for the ActiveMeasurements measurement key formatted ID field,
                         // try looking up current output device acronym first as an optimization as this will be accurate, i.e., will match input, in most cases.
                         // This is safe, even in cases where the output name might be renamed to another existing device, as point ID is always unique - so the
-                        // worst case scenario here is that look up fails and we execute slower manually lookup.
+                        // worst case scenario here is that look up fails, and we execute slower manually lookup.
                         measurementKey = MeasurementKey.LookUpBySource(signal.Acronym, uint.Parse(pointID));
 
                         if (measurementKey == MeasurementKey.Undefined)
                         {
                             // If measurement key was still not found, then the output stream device name has been adjusted, so
-                            // we have no choice but to fall back on the slower metadata search for the for the point ID value.
+                            // we have no choice but to fall back on the slower metadata search for the point ID value.
                             DataTable? activeMeasurements = DataSource.Tables["ActiveMeasurements"];
                             DataRow[] activeMeasurementRows = [];
 
@@ -1290,13 +1290,13 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     /// location in its <see cref="IDataFrame"/> - so this method overrides the default behavior in order
     /// to accomplish this task.
     /// </remarks>
-    protected override void AssignMeasurementToFrame(IFrame frame, IMeasurement measurement)
+    protected override void AssignMeasurementToFrame(IFrame frame, IMeasurement? measurement)
     {
         ConcurrentDictionary<MeasurementKey, IMeasurement> measurements = frame.Measurements;
 
         // Make sure the measurement is a "SignalReferenceMeasurement" (it should be)
-        SignalReferenceMeasurement signalMeasurement = measurement as SignalReferenceMeasurement;
-        IDataFrame dataFrame = frame as IDataFrame;
+        SignalReferenceMeasurement? signalMeasurement = measurement as SignalReferenceMeasurement;
+        IDataFrame? dataFrame = frame as IDataFrame;
 
         if (signalMeasurement == null || dataFrame == null)
         {
@@ -1369,7 +1369,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
             // in down-sampling scenarios more than one of the same measurement can be sorted into a frame
             // but this only needs to be counted as "one" sort so that when preemptive publishing is
             // enabled you can compare expected measurements to sorted measurements...
-            measurements[measurement.Key] = measurement;
+            measurements[measurement!.Key] = measurement;
         }
     }
 
@@ -1475,63 +1475,63 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
         if (m_disposed)
             return;
 
-        if (Monitor.TryEnter(m_reinitializationLock))
+        if (!m_reinitializationLock.TryEnter())
+            return;
+
+        bool retry = false;
+
+        try
         {
-            bool retry = false;
+            Stop();
 
-            try
+            string? commandChannelConfig = null, dataChannelConfig = null;
+
+            if (m_dataChannel is not null)
             {
-                Stop();
+                // Get current configuration string
+                dataChannelConfig = m_dataChannel.ConfigurationString;
 
-                string? commandChannelConfig = null, dataChannelConfig = null;
-
-                if (m_dataChannel is not null)
-                {
-                    // Get current configuration string
-                    dataChannelConfig = m_dataChannel.ConfigurationString;
-
-                    // Dispose the existing data channel
-                    DataChannel = null;
-                }
-
-                if (m_commandChannel is not null)
-                {
-                    // Get current configuration string
-                    commandChannelConfig = m_commandChannel.ConfigurationString;
-
-                    // Dispose the existing command channel
-                    CommandChannel = null;
-                }
-
-                // Wait a moment to let sockets release
-                Thread.Sleep(1000);
-
-                // Clear existing cache
-                m_connectionIDCache.Clear();
-
-                // Reinitialize data channel, if defined
-                if (!string.IsNullOrWhiteSpace(dataChannelConfig))
-                    DataChannel = new UdpServer(dataChannelConfig);
-
-                // Reinitialize command channel, if defined
-                if (!string.IsNullOrWhiteSpace(commandChannelConfig))
-                    CommandChannel = new TcpServer(commandChannelConfig);
-
-                Start();
-            }
-            catch (Exception ex)
-            {
-                retry = true;
-                OnProcessException(MessageLevel.Warning, new ConnectionException($"Failed to reinitialize socket layer: {ex.Message}", ex));
-            }
-            finally
-            {
-                Monitor.Exit(m_reinitializationLock);
+                // Dispose the existing data channel
+                DataChannel = null;
             }
 
-            if (retry)
-                ThreadPool.QueueUserWorkItem(ReinitializeSocketLayer);
+            if (m_commandChannel is not null)
+            {
+                // Get current configuration string
+                commandChannelConfig = m_commandChannel.ConfigurationString;
+
+                // Dispose the existing command channel
+                CommandChannel = null;
+            }
+
+            // Wait a moment to let sockets release
+            Thread.Sleep(1000);
+
+            // Clear existing cache
+            m_connectionIDCache.Clear();
+
+            // Reinitialize data channel, if defined
+            if (!string.IsNullOrWhiteSpace(dataChannelConfig))
+                DataChannel = new UdpServer(dataChannelConfig);
+
+            // Reinitialize command channel, if defined
+            if (!string.IsNullOrWhiteSpace(commandChannelConfig))
+                CommandChannel = new TcpServer(commandChannelConfig);
+
+            Start();
         }
+        catch (Exception ex)
+        {
+            retry = true;
+            OnProcessException(MessageLevel.Warning, new ConnectionException($"Failed to reinitialize socket layer: {ex.Message}", ex));
+        }
+        finally
+        {
+            m_reinitializationLock.Exit();
+        }
+
+        if (retry)
+            ThreadPool.QueueUserWorkItem(ReinitializeSocketLayer);
     }
 
     /// <summary>
@@ -1721,7 +1721,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     private void m_dataChannel_ReceiveClientDataComplete(object? sender, EventArgs<Guid, byte[], int> e)
     {
         // Queue up derived class device command handling on a different thread since this will
-        // often engage sending data back on the same command channel and we want this async
+        // often engage sending data back on the same command channel, and we want this async
         // thread to complete gracefully...
         if (m_commandChannel is null)
             ThreadPool.QueueUserWorkItem(DeviceCommandHandlerProc, e);
@@ -1786,7 +1786,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     private void m_commandChannel_ReceiveClientDataComplete(object? sender, EventArgs<Guid, byte[], int> e)
     {
         // Queue up derived class device command handling on a different thread since this will
-        // often engage sending data back on the same command channel and we want this async
+        // often engage sending data back on the same command channel, and we want this async
         // thread to complete gracefully...
         ThreadPool.QueueUserWorkItem(DeviceCommandHandlerProc, e);
     }

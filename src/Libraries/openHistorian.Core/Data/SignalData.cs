@@ -37,9 +37,9 @@ public class SignalData : SignalDataBase
 {
     #region [ Members ]
 
-    private readonly List<ulong> m_dateTime = new();
+    private readonly List<ulong> m_dateTime = [];
 
-    private readonly List<ulong> m_values = new();
+    private readonly List<ulong> m_values = [];
 
     #endregion
 

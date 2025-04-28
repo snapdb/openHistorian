@@ -132,7 +132,7 @@ public class DebugStopwatch
     /// <returns>The median execution time in seconds.</returns>
     public double TimeEventMedian(Action function)
     {
-        List<double> values = new();
+        List<double> values = [];
         GC.Collect();
         function();
         

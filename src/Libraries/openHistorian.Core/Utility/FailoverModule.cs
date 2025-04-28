@@ -49,7 +49,7 @@ public static class FailoverModule
 
     private const int DefaultPriority = 0;
     private const double DefaultFailoverLogRetention = 0.01666666;
-    private static readonly string[] DefaultNodes = new string[] { "localhost:8280", "localhost:8280" };
+    private static readonly string[] DefaultNodes = ["localhost:8280", "localhost:8280"];
     private const string DefaultClusterSecret = "GPAClusterSecret";
     private const int DefaultRetryInterval = 1000;
 
@@ -321,7 +321,7 @@ public static class FailoverModule
     public static void LogMessage(FailoverLog log)
     {
         StringBuilder deleteQuery = new StringBuilder();
-        List<object> deleteParameters = new List<object>();
+        List<object> deleteParameters = [];
 
         using AdoDataConnection connection = new(Settings.Instance);
             log.Timestamp = DateTime.UtcNow;

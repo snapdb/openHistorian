@@ -62,8 +62,8 @@ public class PeriodicScanner
     public PeriodicScanner(int samplesPerSecond, TimeSpan windowTolerance)
     {
         m_windowTolerance = windowTolerance;
-        m_downSampleRates = new List<long>();
-        m_downSampleTicks = new List<long>();
+        m_downSampleRates = [];
+        m_downSampleTicks = [];
         CalculateDownSampleRates(samplesPerSecond);
     }
 
@@ -223,7 +223,7 @@ public class PeriodicScanner
     {
         if (number < 1)
             throw new ArgumentOutOfRangeException(nameof(number), "Must be greather than or equal to 1");
-        List<int> factors = new();
+        List<int> factors = [];
         for (int x = 1; x * x <= number; x++)
         {
             if (number % x == 0)

@@ -620,7 +620,7 @@ public class CSVInputAdapter : InputAdapterBase
     {
         try
         {
-            List<IMeasurement> newMeasurements = new List<IMeasurement>();
+            List<IMeasurement> newMeasurements = [];
             long fileTime = 0;
             int timestampColumn = 0;
             string[] fields = m_inStream.ReadLine().ToNonNullString().Split(',');

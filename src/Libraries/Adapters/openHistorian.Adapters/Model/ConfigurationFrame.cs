@@ -114,11 +114,11 @@ public class ConfigurationCell
 
     public FrequencyDefinition FrequencyDefinition { get; set; }
 
-    public List<PhasorDefinition> PhasorDefinitions { get; set; } = new();
+    public List<PhasorDefinition> PhasorDefinitions { get; set; } = [];
 
-    public List<AnalogDefinition> AnalogDefinitions { get; set; } = new();
+    public List<AnalogDefinition> AnalogDefinitions { get; set; } = [];
 
-    public List<DigitalDefinition> DigitalDefinitions { get; set; } = new();
+    public List<DigitalDefinition> DigitalDefinitions { get; set; } = [];
 
     // Device record field proxies
     [JsonIgnore]
@@ -147,7 +147,7 @@ public class ConfigurationCell
 
 public class ConfigurationFrame
 {
-    public List<ConfigurationCell> Cells { get; set; } = new();
+    public List<ConfigurationCell> Cells { get; set; } = [];
 
     public ushort IDCode { get; set; }
 

@@ -219,8 +219,8 @@ public static partial class GetPointStreamExtensionMethods
 
     private class FrameDataConstructor
     {
-        public readonly List<ulong> PointId = new();
-        public readonly List<HistorianValueStruct> Values = new();
+        public readonly List<ulong> PointId = [];
+        public readonly List<HistorianValueStruct> Values = [];
 
         /// <summary>
         /// Creates a new <see cref="FrameData"/> according to specified point IDs and values.

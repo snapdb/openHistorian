@@ -180,7 +180,7 @@ public class Concentrator : PhasorDataConcentratorBase
         if ((settings.TryGetValue(nameof(ServiceClass), out setting) || settings.TryGetValue("SVC_CLASS", out setting)) && char.TryParse(setting, out char serviceClass))
             ServiceClass = serviceClass;
 
-        if (!ServiceClass.IsAnyOf(new[] { 'M', 'P' }))
+        if (!ServiceClass.IsAnyOf(['M', 'P']))
             ServiceClass = 'M';
 
         if (settings.TryGetValue(nameof(Window), out setting) && int.TryParse(setting, out int window))
@@ -824,7 +824,7 @@ public class Concentrator : PhasorDataConcentratorBase
 
                     // The following values are new to Gemstone time-series configuration, so we fall back on configured defaults if needed
                     cell.Elevation = !double.IsInfinity(cachedCell.Elevation) || parent is null ? cachedCell.Elevation : parent.Elevation;
-                    cell.ServiceClass = cachedCell.ServiceClass.IsAnyOf(new[] { 'M', 'P' }) || parent is null ? cachedCell.ServiceClass : parent.ServiceClass;
+                    cell.ServiceClass = cachedCell.ServiceClass.IsAnyOf(['M', 'P']) || parent is null ? cachedCell.ServiceClass : parent.ServiceClass;
                     cell.Window = cachedCell.Window != 0 || parent is null ? cachedCell.Window : parent.Window;
                     cell.GroupDelay = cachedCell.GroupDelay != 0 || parent is null ? cachedCell.GroupDelay : parent.GroupDelay;
                     cell.DataModified = cachedCell.DataModified;

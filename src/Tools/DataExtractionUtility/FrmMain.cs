@@ -434,7 +434,7 @@ namespace DataExtractionUtility
 
         int m_readIndex;
         public Dictionary<ulong, Measurements> m_fillMeasurements = new Dictionary<ulong, Measurements>();
-        public List<Measurements> m_measurementsInOrder = new List<Measurements>();
+        public List<Measurements> m_measurementsInOrder = [];
         public class Measurements
         {
             public int ReadNumber;

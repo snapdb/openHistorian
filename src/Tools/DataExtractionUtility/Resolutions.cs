@@ -7,16 +7,18 @@ namespace DataExtractionUtility
     {
         public static List<string> GetAllResolutions()
         {
-            List<string> rv = new List<string>();
-            rv.Add("Full");
-            rv.Add("10 per Second");
-            rv.Add("Every Second");
-            rv.Add("Every 10 Seconds");
-            rv.Add("Every 30 Seconds");
-            rv.Add("Every Minute");
-            rv.Add("Every 10 Minutes");
-            rv.Add("Every 30 Minutes");
-            rv.Add("Every Hour");
+            List<string> rv =
+            [
+                "Full",
+                "10 per Second",
+                "Every Second",
+                "Every 10 Seconds",
+                "Every 30 Seconds",
+                "Every Minute",
+                "Every 10 Minutes",
+                "Every 30 Minutes",
+                "Every Hour"
+            ];
             return rv;
         }
 

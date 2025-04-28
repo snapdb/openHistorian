@@ -178,7 +178,7 @@ public static partial class GetFrameMethods
             DateTime roundedDate = items.Key.Round(tolerance);
             if (!buckets.TryGetValue(roundedDate, out List<FrameData> frames))
             {
-                frames = new List<FrameData>();
+                frames = [];
                 buckets.Add(roundedDate, frames);
             }
 
@@ -200,7 +200,7 @@ public static partial class GetFrameMethods
                 FrameData tempFrame = new();
                 tempFrame.Points = new SortedList<ulong, HistorianValueStruct>();
 
-                List<EnumerableHelper> allFrames = new();
+                List<EnumerableHelper> allFrames = [];
 
                 foreach (FrameData frame in bucket.Value)
                     allFrames.Add(new EnumerableHelper(frame));

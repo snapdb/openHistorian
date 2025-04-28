@@ -146,7 +146,7 @@ public class ConcurrentReading
                 HistorianValue value = new();
 
                 sw.Start();
-                TreeStream<HistorianKey, HistorianValue> scan = database.Read(0, ulong.MaxValue, new ulong[] { 65, 953, 5562 });
+                TreeStream<HistorianKey, HistorianValue> scan = database.Read(0, ulong.MaxValue, [65, 953, 5562]);
                 while (scan.Read(key, value))
                     ;
                 sw.Stop();

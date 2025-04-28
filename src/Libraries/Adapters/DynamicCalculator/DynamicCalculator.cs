@@ -134,7 +134,7 @@ public class DynamicCalculator : ActionAdapterBase
             RealTimeFunction = () => RealTime
         };
 
-        m_variableNames = new HashSet<string>();
+        m_variableNames = [];
         m_keyMapping = new Dictionary<MeasurementKey, Variable>();
         m_nonAliasedTokens = new SortedDictionary<int, string>();
         m_arrayCache = new Dictionary<string, double[]>();

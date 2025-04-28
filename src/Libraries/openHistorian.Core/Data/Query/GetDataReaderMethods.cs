@@ -56,10 +56,10 @@ public class TableDefinition
     /// </summary>
     public TableDefinition()
     {
-        m_customColumns = new List<string>();
+        m_customColumns = [];
         m_finishedColumns = true;
         m_table = new DataTable();
-        m_signalGroups = new List<KeyValuePair<object, int?[]>>();
+        m_signalGroups = [];
     }
 
     #endregion
@@ -168,7 +168,7 @@ public class HistorianDataPointReader : IDataReader
     /// <param name="tableDefinition">The table definition for organizing and defining data tables.</param>
     public HistorianDataPointReader(ClientDatabaseBase<HistorianKey, HistorianValue> database, DateTime start, DateTime stop, TableDefinition tableDefinition)
     {
-        HashSet<ulong> allPoints = new();
+        HashSet<ulong> allPoints = [];
         m_tableDefinition = tableDefinition;
 
         foreach (KeyValuePair<object, int?[]> signal in tableDefinition.m_signalGroups)

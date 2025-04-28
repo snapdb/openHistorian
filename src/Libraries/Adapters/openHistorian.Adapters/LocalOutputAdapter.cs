@@ -983,7 +983,7 @@ public class LocalOutputAdapter : OutputAdapterBase
                         database.DeleteFiles([..new[] { file.Id }]);
 
                         // Attach downsampled resolution file to active historian instance
-                        database.AttachFilesOrPaths(new [] { downsampledFile });
+                        database.AttachFilesOrPaths([downsampledFile]);
 
                         OnStatusMessage(MessageLevel.Info, $"Downsampled archive file \"{FilePath.GetFileName(file.FileName)}\" to {samplesPerSecond} samples per second.");
                     }
@@ -1009,7 +1009,7 @@ public class LocalOutputAdapter : OutputAdapterBase
             TimeSpan interval = new((long)(TimeSpan.TicksPerSecond * samplesPerSecond));
 
             using ArchiveList<HistorianKey, HistorianValue> archiveList = new();
-            archiveList.LoadFiles(new[] { file.FileName });
+            archiveList.LoadFiles([file.FileName]);
 
             using SequentialReaderStream<HistorianKey, HistorianValue> reader = new(archiveList, SortedTreeEngineReaderOptions.Default, TimestampSeekFilter.CreateFromIntervalData<HistorianKey>(startTime, endTime, interval, new TimeSpan(TimeSpan.TicksPerMillisecond)));
 

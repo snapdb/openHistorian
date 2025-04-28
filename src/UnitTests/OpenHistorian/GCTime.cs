@@ -65,8 +65,8 @@ public class GCTime
         #endregion
     }
 
-    private readonly List<AClass[]> m_objects = new();
-    private readonly List<FinalizableClass[]> m_objects2 = new();
+    private readonly List<AClass[]> m_objects = [];
+    private readonly List<FinalizableClass[]> m_objects2 = [];
 
     #endregion
 
