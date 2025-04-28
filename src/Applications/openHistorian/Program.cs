@@ -15,7 +15,6 @@ internal class Program
         try
         {
             ShutdownHandler.Initialize();
-            LibraryEvents.EnableUnobservedTaskExceptionHandling();
 
             // Define settings for the service. Note that the Gemstone defaults
             // for handling INI and SQLite configuration are defined in a hierarchy
