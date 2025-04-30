@@ -16,6 +16,8 @@ public class FrequencyDefinition
     public string PointTag { get; set; }
 
     public string AlternateTag { get; set; }
+
+    public int? SignalTypeID { get; set; }
 }
 
 public class PhasorDefinition
@@ -75,6 +77,8 @@ public class AnalogDefinition
     public string Label { get; set; }
 
     public string AnalogType { get; set; }
+
+    public int? SignalTypeID { get; set; }
 }
 
 public class DigitalDefinition
@@ -90,6 +94,8 @@ public class DigitalDefinition
     public double Multiplier { get; set; }
 
     public string Label { get; set; }
+
+    public int? SignalTypeID { get; set; }
 }
 
 public class ConfigurationCell
@@ -111,6 +117,8 @@ public class ConfigurationCell
     public string IDLabel { get; set; }
 
     public double NominalFrequency { get; set; }
+
+    public double FramesPerSecond { get; set; }
 
     public FrequencyDefinition FrequencyDefinition { get; set; }
 

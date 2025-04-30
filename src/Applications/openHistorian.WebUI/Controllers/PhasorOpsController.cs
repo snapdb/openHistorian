@@ -46,7 +46,6 @@ using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Soap;
 using System.Text;
 using System.Text.Json;
-using Org.BouncyCastle.Asn1;
 using AnalogDefinition = openHistorian.Model.AnalogDefinition;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using ConfigurationCell = openHistorian.Model.ConfigurationCell;
@@ -74,6 +73,21 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
     private AdoDataConnection? m_connection;
     private bool m_disposed;
+
+    public PhasorOpsController()
+    {
+        // ReSharper disable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+        s_freqSignalType ??= GetDeviceSignalType("FREQ") ?? throw new InvalidOperationException("Failed to load FREQ signal type.");
+        s_dfdtSignalType ??= GetDeviceSignalType("DFDT") ?? throw new InvalidOperationException("Failed to load DFDT signal type.");
+        s_flagSignalType ??= GetDeviceSignalType("FLAG") ?? throw new InvalidOperationException("Failed to load FLAG signal type.");
+        s_alogSignalType ??= GetDeviceSignalType("ALOG") ?? throw new InvalidOperationException("Failed to load ALOG signal type.");
+        s_digiSignalType ??= GetDeviceSignalType("DIGI") ?? throw new InvalidOperationException("Failed to load DIGI signal type.");
+        s_iphmSignalType ??= GetPhasorSignalType("IPHM") ?? throw new InvalidOperationException("Failed to load IPHM signal type.");
+        s_iphaSignalType ??= GetPhasorSignalType("IPHA") ?? throw new InvalidOperationException("Failed to load IPHA signal type.");
+        s_vphmSignalType ??= GetPhasorSignalType("VPHM") ?? throw new InvalidOperationException("Failed to load VPHM signal type.");
+        s_vphaSignalType ??= GetPhasorSignalType("VPHA") ?? throw new InvalidOperationException("Failed to load VPHA signal type.");
+        // ReSharper enable NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+    }
 
     /// <summary>
     /// Releases the unmanaged resources used by the <see cref="PhasorOpsController"/> object and optionally releases the managed resources.
@@ -449,7 +463,6 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     /// <summary>
     /// Returns a collection of system time zones: ID -> DisplayName.
     /// </summary>
-    /// <param name="isOptional">Indicates if selection on UI is optional for this collection.</param>
     /// <returns><see cref="Dictionary{T1,T2}"/> type collection of system time zones.</returns>
     [HttpGet, Route("GetTimeZones")]
     public Dictionary<string, string> GetTimeZones()
@@ -468,7 +481,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     /// <summary>
     /// Saves the configuration frame to the database.
     /// </summary>
-    /// <param name="configFrame">Source config frame.</param>
+    /// <param name="configFrames">Source config frames.</param>
     /// <param name="deviceID">Device ID to save configuration for, leave blank for new devices.</param>
     [HttpPost, Route("SaveConfiguration/{deviceID:int?}")]
     public IActionResult SaveConfiguration(ConfigurationFrame[] configFrames, int? deviceID = null)
@@ -479,7 +492,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             Device device = deviceID is null ? NewDevice() : QueryDeviceByID(deviceID.Value);
             string connectionString = configFrame.ConnectionString;
 
-            // Set device properties
+            // Set device connection-level / concentrator properties (also applies to a single device)
             device.Acronym = configFrame.Acronym;
             device.Name = configFrame.StationName;
             device.AccessID = configFrame.IDCode;
@@ -493,9 +506,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             device.VendorDeviceID = configFrame.VendorDeviceID;
             device.ContactList = configFrame.ContactList;
             device.TimeAdjustmentTicks = configFrame.TimeAdjustmentTicks;
-
             device.IsConcentrator = !string.IsNullOrWhiteSpace(connectionString) && (configFrame.IsConcentrator || configFrame.Cells.Count > 1);
-
 
             if (string.IsNullOrWhiteSpace(device.Name))
                 device.Name = device.Acronym;
@@ -536,6 +547,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 // Check if this is a direct update to child device
                 if (configFrame.Cells.Count == 1 && device.ID == deviceID)
                 {
+                    // For a single device record, other properties are set in the parent device
                     cell.ID = deviceID;
                     UpdateDevice(device);
 
@@ -550,6 +562,11 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     device.AccessID = cell.IDCode;
                     device.Acronym = cell.Acronym;
                     device.Name = cell.StationName;
+                    device.Longitude = configFrame.Longitude ?? 0;
+                    device.Latitude = configFrame.Latitude ?? 0;
+                    device.InterconnectionID = configFrame.InterconnectionID;
+                    device.VendorDeviceID = configFrame.VendorDeviceID;
+                    device.ContactList = configFrame.ContactList;
 
                     if (string.IsNullOrWhiteSpace(device.Name))
                         device.Name = device.Acronym;
@@ -584,16 +601,21 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
     private void SaveDeviceMeasurements(ConfigurationCell cell)
     {
-        s_freqSignalType ??= GetDeviceSignalType("FREQ") ?? throw new InvalidOperationException("Failed to load FREQ signal type.");
-        s_dfdtSignalType ??= GetDeviceSignalType("DFDT") ?? throw new InvalidOperationException("Failed to load DFDT signal type.");
-        s_flagSignalType ??= GetDeviceSignalType("FLAG") ?? throw new InvalidOperationException("Failed to load FLAG signal type.");
-        s_alogSignalType ??= GetDeviceSignalType("ALOG") ?? throw new InvalidOperationException("Failed to load ALOG signal type.");
-        s_digiSignalType ??= GetDeviceSignalType("DIGI") ?? throw new InvalidOperationException("Failed to load DIGI signal type.");
+        double framesPerSecond = cell.FramesPerSecond;
+
+        if (framesPerSecond == 0.0D)
+            framesPerSecond = 30.0D;
+
+        SignalType? freqSignalType = null;
+        int freqSignalTypeID = cell.FrequencyDefinition.SignalTypeID ?? s_freqSignalType.ID;
+
+        if (freqSignalTypeID != s_freqSignalType.ID)
+            freqSignalType = GetDeviceSignalType(freqSignalTypeID) ?? s_freqSignalType;
 
         // Save frequency, dF/dt signal types and status flags
-        SaveFixedMeasurement(cell, s_freqSignalType, cell.FrequencyDefinition.Label, cell.FrequencyDefinition.PointTag, cell.FrequencyDefinition.AlternateTag);
-        SaveFixedMeasurement(cell, s_dfdtSignalType);
-        SaveFixedMeasurement(cell, s_flagSignalType);
+        SaveFixedMeasurement(cell, freqSignalType ?? s_freqSignalType, framesPerSecond, cell.FrequencyDefinition.Label, cell.FrequencyDefinition.PointTag, cell.FrequencyDefinition.AlternateTag);
+        SaveFixedMeasurement(cell, s_dfdtSignalType, framesPerSecond);
+        SaveFixedMeasurement(cell, s_flagSignalType, framesPerSecond);
 
         // Add analogs
         int index = 0;
@@ -618,7 +640,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             measurement.AlternateTag = alternateTag;
             measurement.Description = $"{cell.IDLabel} Analog Value {index}:{analogDefinition.AnalogType}: {analogDefinition.Label}";
             measurement.SignalReference = signalReference;
-            measurement.SignalTypeID = s_alogSignalType.ID;
+            measurement.SignalTypeID = analogDefinition.SignalTypeID ?? s_alogSignalType.ID;
+            measurement.FramesPerSecond = framesPerSecond;
             measurement.Internal = true;
             measurement.Enabled = true;
 
@@ -648,7 +671,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             measurement.AlternateTag = alternateTag;
             measurement.Description = $"{cell.IDLabel} Digital Value {index}: {digitalDefinition.Label}";
             measurement.SignalReference = signalReference;
-            measurement.SignalTypeID = s_digiSignalType.ID;
+            measurement.SignalTypeID = digitalDefinition.SignalTypeID ?? s_digiSignalType.ID;
+            measurement.FramesPerSecond = framesPerSecond;
             measurement.Internal = true;
             measurement.Enabled = true;
 
@@ -656,10 +680,10 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         }
 
         // Save phasor definitions
-        SaveDevicePhasors(cell);
+        SaveDevicePhasors(cell, framesPerSecond);
     }
 
-    private void SaveFixedMeasurement(ConfigurationCell cell, SignalType signalType, string? label = null, string? pointTag = null, string? alternateTag = null)
+    private void SaveFixedMeasurement(ConfigurationCell cell, SignalType signalType, double framesPerSecond, string? label = null, string? pointTag = null, string? alternateTag = null)
     {
         if (string.IsNullOrWhiteSpace(cell.OriginalAcronym))
             cell.OriginalAcronym = cell.Acronym;
@@ -678,13 +702,14 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         measurement.Description = $"{cell.Acronym} {signalType.Name}{(string.IsNullOrWhiteSpace(label) ? "" : " - " + label)}";
         measurement.SignalReference = signalReference;
         measurement.SignalTypeID = signalType.ID;
+        measurement.FramesPerSecond = framesPerSecond;
         measurement.Internal = true;
         measurement.Enabled = true;
 
         AddNewOrUpdateMeasurement(measurement);
     }
 
-    private void SavePhasorMeasurement(ConfigurationCell cell, SignalType signalType, PhasorDefinition phasorDefinition, int index)
+    private void SavePhasorMeasurement(ConfigurationCell cell, SignalType signalType, PhasorDefinition phasorDefinition, int index, double framesPerSecond)
     {
         if (string.IsNullOrWhiteSpace(cell.OriginalAcronym))
             cell.OriginalAcronym = cell.Acronym;
@@ -709,19 +734,15 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         measurement.PhasorSourceIndex = index;
         measurement.SignalReference = signalReference;
         measurement.SignalTypeID = signalType.ID;
+        measurement.FramesPerSecond = framesPerSecond;
         measurement.Internal = true;
         measurement.Enabled = phasorDefinition.Enabled;
 
         AddNewOrUpdateMeasurement(measurement);
     }
 
-    private void SaveDevicePhasors(ConfigurationCell cell)
+    private void SaveDevicePhasors(ConfigurationCell cell, double framesPerSecond)
     {
-        s_iphmSignalType ??= GetPhasorSignalType("IPHM") ?? throw new InvalidOperationException("Failed to load IPHM signal type.");
-        s_iphaSignalType ??= GetPhasorSignalType("IPHA") ?? throw new InvalidOperationException("Failed to load IPHA signal type.");
-        s_vphmSignalType ??= GetPhasorSignalType("VPHM") ?? throw new InvalidOperationException("Failed to load VPHM signal type.");
-        s_vphaSignalType ??= GetPhasorSignalType("VPHA") ?? throw new InvalidOperationException("Failed to load VPHA signal type.");
-
         Phasor[] phasors = QueryPhasorsForDevice(cell.ID).ToArray();
 
         // TODO: This drop and add logic is primitive and should be improved with input from the user
@@ -798,8 +819,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
                 AddNewPhasor(phasor);
 
-                SavePhasorMeasurement(cell, s_vphmSignalType, voltage, phasor.SourceIndex);
-                SavePhasorMeasurement(cell, s_vphaSignalType, voltage, phasor.SourceIndex);
+                SavePhasorMeasurement(cell, s_vphmSignalType, voltage, phasor.SourceIndex, framesPerSecond);
+                SavePhasorMeasurement(cell, s_vphaSignalType, voltage, phasor.SourceIndex, framesPerSecond);
 
                 phasor = QueryPhasorForDevice(cell.ID, phasor.SourceIndex);
                 voltageIDMap[voltage] = phasor.ID;
@@ -826,8 +847,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
                 AddNewPhasor(phasor);
 
-                SavePhasorMeasurement(cell, s_iphmSignalType, current, phasor.SourceIndex);
-                SavePhasorMeasurement(cell, s_iphaSignalType, current, phasor.SourceIndex);
+                SavePhasorMeasurement(cell, s_iphmSignalType, current, phasor.SourceIndex, framesPerSecond);
+                SavePhasorMeasurement(cell, s_iphaSignalType, current, phasor.SourceIndex, framesPerSecond);
             }
         }
         else
@@ -853,8 +874,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
                 UpdatePhasor(phasor);
 
-                SavePhasorMeasurement(cell, s_vphmSignalType, voltage, phasor.SourceIndex);
-                SavePhasorMeasurement(cell, s_vphaSignalType, voltage, phasor.SourceIndex);
+                SavePhasorMeasurement(cell, s_vphmSignalType, voltage, phasor.SourceIndex, framesPerSecond);
+                SavePhasorMeasurement(cell, s_vphaSignalType, voltage, phasor.SourceIndex, framesPerSecond);
             }
 
             foreach (PhasorDefinition current in currentPhasors)
@@ -881,8 +902,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
                 UpdatePhasor(phasor);
 
-                SavePhasorMeasurement(cell, s_iphmSignalType, current, phasor.SourceIndex);
-                SavePhasorMeasurement(cell, s_iphaSignalType, current, phasor.SourceIndex);
+                SavePhasorMeasurement(cell, s_iphmSignalType, current, phasor.SourceIndex, framesPerSecond);
+                SavePhasorMeasurement(cell, s_iphaSignalType, current, phasor.SourceIndex, framesPerSecond);
             }
         }
     }
@@ -1024,6 +1045,12 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     {
         s_deviceSignalTypes ??= LoadSignalTypes("PMU").ToArray();
         return s_deviceSignalTypes.FirstOrDefault(deviceSignalType => string.Compare(deviceSignalType.Acronym, acronym, StringComparison.OrdinalIgnoreCase) == 0);
+    }
+
+    private SignalType? GetDeviceSignalType(int signalTypeID)
+    {
+        s_deviceSignalTypes ??= LoadSignalTypes("PMU").ToArray();
+        return s_deviceSignalTypes.FirstOrDefault(deviceSignalType => deviceSignalType.ID == signalTypeID);
     }
 
     private SignalType? GetPhasorSignalType(string acronym)
@@ -1273,7 +1300,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 IDCode = sourceCell.IDCode,
                 StationName = sourceCell.StationName,
                 IDLabel = sourceCell.IDLabel,
-                NominalFrequency = (double)sourceCell.NominalFrequency
+                NominalFrequency = (double)sourceCell.NominalFrequency,
+                FramesPerSecond = sourceCell.FrameRate
             };
 
             if (string.IsNullOrWhiteSpace(derivedCell.IDLabel))
@@ -1289,16 +1317,14 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             // Create equivalent derived frequency definition
             IFrequencyDefinition? sourceFrequency = sourceCell.FrequencyDefinition;
 
-
             if (sourceFrequency is not null)
             {
-                SignalType? freqSignalType = GetDeviceSignalType("FREQ");
-
                 derivedCell.FrequencyDefinition = new FrequencyDefinition
                 {
-                    Label = sourceFrequency.Label,
+                    Label = sourceFrequency.Label ?? "FREQUENCY",
                     AlternateTag = "",
-                    PointTag = CreatePointTag(derivedCell.Acronym, freqSignalType?.Acronym ?? "FREQ")
+                    PointTag = CreatePointTag(derivedCell.Acronym, s_freqSignalType.Acronym ?? "FREQ"),
+                    SignalTypeID = s_freqSignalType.ID
                 };
             }
 
@@ -1345,15 +1371,17 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 }
 
                 DateTime now = DateTime.UtcNow;
+                string label = sourcePhasor.Label ?? $"PHASOR{sourceIndex}";
+                sourceIndex++;
 
                 derivedCell.PhasorDefinitions.Add(new PhasorDefinition
                 {
                     ID = --phasorID,
-                    Label = sourcePhasor.Label,
+                    Label = label,
                     PhasorType = sourcePhasor.PhasorType.ToString(),
-                    Phase = string.IsNullOrWhiteSpace(configPhase) ? GuessPhase(null, sourcePhasor.Label)[..1] : configPhase,
-                    NominalVoltage = nominalVoltage ?? int.Parse(GuessBaseKV(null, sourcePhasor.Label, derivedCell.Acronym)),
-                    SourceIndex = ++sourceIndex,
+                    Phase = string.IsNullOrWhiteSpace(configPhase) ? GuessPhase(null, label)[..1] : configPhase,
+                    NominalVoltage = nominalVoltage ?? int.Parse(GuessBaseKV(null, label, derivedCell.Acronym)),
+                    SourceIndex = sourceIndex,
                     CreatedOn = now,
                     UpdatedOn = now
                 });
@@ -1361,12 +1389,12 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
             // Create equivalent derived analog definitions (assuming analog type = SinglePointOnWave)
             int analogIndex = 0;
-            SignalType? analogSignalType = GetDeviceSignalType("ALOG");
 
             // Create equivalent derived analog definitions (assuming analog type = SinglePointOnWave)
             foreach (IAnalogDefinition sourceAnalog in sourceCell.AnalogDefinitions)
             {
                 analogIndex++;
+
                 derivedCell.AnalogDefinitions.Add(new AnalogDefinition
                 {
                     Label = sourceAnalog.Label ?? $"ANLOG{analogIndex}",
@@ -1374,24 +1402,26 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     Adder = 0,
                     Multiplier = 0,
                     AlternateTag = "",
-                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, analogSignalType?.Acronym ?? "ALOG", analogIndex, sourceAnalog.Label ?? "")
+                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, s_alogSignalType.Acronym ?? "ALOG", analogIndex, sourceAnalog.Label ?? ""),
+                    SignalTypeID = s_alogSignalType.ID
                 });
             }
 
             int digitalIndex= 0;
-            SignalType? digitalSignalType = GetDeviceSignalType("DIGI");
 
             // Create equivalent derived digital definitions
             foreach (IDigitalDefinition sourceDigital in sourceCell.DigitalDefinitions)
             {
                 digitalIndex++;
+
                 derivedCell.DigitalDefinitions.Add(new DigitalDefinition
                 {
                     Label = sourceDigital.Label ?? $"DIGITAL{digitalIndex}",
                     Adder = 0,
                     Multiplier = 0,
                     AlternateTag = "",
-                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, digitalSignalType?.Acronym ?? "DIGI", digitalIndex, sourceDigital.Label ?? "")
+                    PointTag = CreateIndexedPointTag(derivedCell.Acronym, s_digiSignalType.Acronym ?? "DIGI", digitalIndex, sourceDigital.Label ?? ""),
+                    SignalTypeID = s_digiSignalType.ID
                 });
             }
 
@@ -1705,7 +1735,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             }
         }
 
-        return GuessPhase(configPhase, phasor.Label);
+        return GuessPhase(configPhase, phasor.Label ?? "");
     }
 
     private static string GetPhasorBaseKV(IPhasorDefinition phasor, string deviceAcronym)
@@ -1715,7 +1745,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         if (phasor is PhasorDefinition3 phasor3 && Enum.TryParse(phasor3.UserFlags.ToString(), out VoltageLevel level))
             configBaseKV = level.Value().ToString();
 
-        return GuessBaseKV(configBaseKV, phasor.Label, deviceAcronym);
+        return GuessBaseKV(configBaseKV, phasor.Label ?? "", deviceAcronym);
     }
 
     private static float GetMagnitudeMultiplier(IPhasorDefinition phasor)
@@ -1743,15 +1773,15 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     private static int? s_digitalSignalTypeID;
 
     private static SignalType[]? s_deviceSignalTypes;
-    private static SignalType? s_freqSignalType;
-    private static SignalType? s_dfdtSignalType;
-    private static SignalType? s_flagSignalType;
-    private static SignalType? s_alogSignalType;
-    private static SignalType? s_digiSignalType;
-    private static SignalType? s_iphmSignalType;
-    private static SignalType? s_iphaSignalType;
-    private static SignalType? s_vphmSignalType;
-    private static SignalType? s_vphaSignalType;
+    private static SignalType s_freqSignalType = null!;
+    private static SignalType s_dfdtSignalType = null!;
+    private static SignalType s_flagSignalType = null!;
+    private static SignalType s_alogSignalType = null!;
+    private static SignalType s_digiSignalType = null!;
+    private static SignalType s_iphmSignalType = null!;
+    private static SignalType s_iphaSignalType = null!;
+    private static SignalType s_vphmSignalType = null!;
+    private static SignalType s_vphaSignalType = null!;
 
     private static readonly string[] s_commonVoltageLevels;
     private static readonly string s_companyAcronym;
