@@ -228,7 +228,7 @@ public class InitialSchema : Migration
            .WithColumn("SignalReference").AsString(200).NotNullable()
            .WithColumn("SignalTypeID").AsInt32().NotNullable().ForeignKey("SignalType", "ID")
            .WithColumn("PhasorSourceIndex").AsInt32().Nullable()
-           .WithColumn("FramesPerSecond").AsInt32().Nullable()
+           .WithColumn("FramesPerSecond").AsDouble().Nullable()
            .WithColumn("Adder").AsDouble().NotNullable().WithDefaultValue(0.0)
            .WithColumn("Multiplier").AsDouble().NotNullable().WithDefaultValue(1.0)
            .WithColumn("Description").AsString().Nullable()
