@@ -16,6 +16,9 @@
 
 
     <ProjectReference Include="..\..\..\..\..\..\gemstone\expressions\src\Gemstone.Expressions\Gemstone.Expressions.csproj" Condition="'$(Configuration)'=='Development'" />
+
+
+    <ProjectReference Include="..\GrafanaAdapters\GrafanaAdapters.csproj" />
     <PackageReference Include="Gemstone.Expressions" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
 
   </ItemGroup>

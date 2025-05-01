@@ -922,7 +922,7 @@ public class AlarmEngine : FacileActionAdapterBase
         {
             StartTime = alarmEvent.StartTime,
             EndTime = alarmEvent.EndTime,
-            EventID = alarmEvent.ID,
+            EventGuid = alarmEvent.ID,
             Type = "alarm",
             MeasurementID = alarmEvent.MeasurementID,
             Details = JsonConvert.SerializeObject(new
