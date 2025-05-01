@@ -28,7 +28,6 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Gemstone;
-using Gemstone.Collections;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.DateTimeExtensions;
 using Gemstone.StringExtensions;
@@ -59,6 +58,7 @@ namespace openHistorian.WebUI.Controllers;
 /// Represents a REST based API for a simple JSON based Grafana data source.
 /// </summary>
 [Route("api/[controller]/[action]")]
+[Route("instance/{instanceName}/[controller]/[action]/{id?}")]
 [ApiController]
 public class GrafanaController : ControllerBase
 {
@@ -383,6 +383,7 @@ public class GrafanaController : ControllerBase
     /// Validates that openHistorian Grafana data source is responding as expected.
     /// </summary>
     [HttpGet, Route("/api/[controller]")]
+    [HttpGet, Route("/instance/{instanceName}/[controller]")]
     public HttpResponseMessage Index()
     {
         return new HttpResponseMessage(HttpStatusCode.OK);
