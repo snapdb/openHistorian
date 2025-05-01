@@ -562,11 +562,12 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     device.AccessID = cell.IDCode;
                     device.Acronym = cell.Acronym;
                     device.Name = cell.StationName;
-                    device.Longitude = configFrame.Longitude ?? 0;
-                    device.Latitude = configFrame.Latitude ?? 0;
-                    device.InterconnectionID = configFrame.InterconnectionID;
-                    device.VendorDeviceID = configFrame.VendorDeviceID;
-                    device.ContactList = configFrame.ContactList;
+                    device.Longitude = cell.Longitude ?? 0;
+                    device.Latitude = cell.Latitude ?? 0;
+                    device.InterconnectionID = cell.InterconnectionID;
+                    device.VendorDeviceID = cell.VendorDeviceID;
+                    device.ContactList = cell.ContactList;
+                    device.TimeZone = cell.TimeZone;
 
                     if (string.IsNullOrWhiteSpace(device.Name))
                         device.Name = device.Acronym;
