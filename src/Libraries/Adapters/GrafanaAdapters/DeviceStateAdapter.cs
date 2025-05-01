@@ -216,7 +216,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private Dictionary<AlarmState, int> m_requiredStateIDs;
     private Dictionary<int, List<Rule>> m_stateRules;
 
-    private object m_stateCountLock;
+    private Lock m_stateCountLock;
     private Ticks m_alarmTime;
     private long m_alarmStateUpdates;
     private long m_externalDatabaseUpdates;
@@ -396,7 +396,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         m_lastDeviceStateChange = new FileBackedDictionary<int, long>(FilePath.GetAbsolutePath($"{Name}_LastStateChangeCache.bin".RemoveInvalidFileNameCharacters()));
 
         m_lastAcknowledgedTransition = new();
-        m_stateCountLock = new object();
+        m_stateCountLock = new Lock();
         m_deviceStates = new();
         m_requiredStateIDs = new();
         m_lastState = new();
