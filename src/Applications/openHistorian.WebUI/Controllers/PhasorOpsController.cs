@@ -566,6 +566,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                     device.Latitude = cell.Latitude ?? 0;
                     device.InterconnectionID = cell.InterconnectionID;
                     device.VendorDeviceID = cell.VendorDeviceID;
+                    device.CompanyID = cell.CompanyID;
                     device.ContactList = cell.ContactList;
                     device.TimeZone = cell.TimeZone;
 
