@@ -152,15 +152,15 @@ public class AdapterCommandControllerBase<TIAdapter> :
     }
 
     /// <summary>
-    /// Gets status of the active adapter instance by runtime ID.
+    /// Gets status of the active adapter instance by adapter name.
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("GetStatus/{runtimeID:int}")]
-    public IActionResult SessionGetStatus(uint runtimeID)
+    [HttpGet, Route("GetStatus/{adapterName}")]
+    public IActionResult SessionGetStatus(string adapterName)
     {
         try
         {
-            IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(runtimeID);
+            IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(adapterName);
             return Ok(adapter.Status);
         }
         catch (Exception ex)
@@ -170,33 +170,15 @@ public class AdapterCommandControllerBase<TIAdapter> :
     }
 
     /// <summary>
-    /// Gets status of the active adapter instance by acronym.
+    /// Gets status of the active adapter instance by adapter name
     /// </summary>
     /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("GetStatus/{acronym:alpha}")]
-    public IActionResult SessionGetStatus(string acronym)
+    [HttpGet, Route("GetIsEnabled/{adapterName}")]
+    public IActionResult SessionGetEnabled(string adapterName)
     {
         try
         {
-            IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(acronym);
-            return Ok(adapter.Status);
-        }
-        catch (Exception ex)
-        {
-            return new JsonResult(ex.Message) { StatusCode = 200 };
-        }
-    }
-
-    /// <summary>
-    /// Gets status of the active adapter instance
-    /// </summary>
-    /// <returns>An <see cref="IActionResult"/> containing the result of the command.</returns>
-    [HttpGet, Route("GetIsEnabled/{runtimeID}")]
-    public IActionResult SessionGetEnabled(uint runtimeID)
-    {
-        try
-        {
-            IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(runtimeID);
+            IAdapter adapter = m_serviceCommands.GetActiveAdapterInstance(adapterName);
 
             return Ok(adapter.Enabled);
         }
