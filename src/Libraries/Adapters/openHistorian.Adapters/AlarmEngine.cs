@@ -848,7 +848,7 @@ public class AlarmEngine : FacileActionAdapterBase
         if (Default is null)
             return controller.Ok(new List<Alarm>());
 
-        return controller.Ok(Default.GetRaisedAlarms(controller, parsedSeverities));
+        return Default.GetRaisedAlarms(controller, parsedSeverities);
     }
 
     // Creates an alarm using data defined in the database.
