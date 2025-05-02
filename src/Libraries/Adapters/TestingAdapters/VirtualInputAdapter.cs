@@ -35,6 +35,9 @@ namespace TestingAdapters;
 /// </summary>
 [Description("Virtual: Defines a testing input that does not provide measurements")]
 [AdapterProtocol("VirtualInput", "Virtual Device", ProtocolType.Frame, "Virtual", false, 15)]
+[UIAdapterProtocol("VirtualInput", $"{nameof(TestingAdapters)}", ".UI.VirtualInput.js")]
+[UIAdapterProtocol("VirtualInput", $"{nameof(TestingAdapters)}", ".UI.VirtualInputChunk.js")]
+
 public class VirtualInputAdapter : InputAdapterBase
 {
     #region [ Properties ]

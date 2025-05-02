@@ -9,6 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="UI\Virtual.js" />
+    <None Remove="UI\VirtualChunk.js" />
+    <None Remove="UI\VirtualInput.js" />
+    <None Remove="UI\VirtualInputChunk.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="UI\VirtualInput.js" />
+    <EmbeddedResource Include="UI\VirtualInputChunk.js" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" Condition="'$(Configuration)'=='Development'" />
     <PackageReference Include="Gemstone.Common" Version="1.0.122" Condition="'$(Configuration)'!='Development'" />
 
