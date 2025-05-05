@@ -715,6 +715,7 @@ public class AlarmEngine : FacileActionAdapterBase
                     if (!m_alarmProcessors.TryGetValue(alarmID, out alarmProcessor))
                     {
                         OnStatusMessage(MessageLevel.Error, $"@{nameof(ProcessSingleMeasurementAlarms)}: Alarm ID {alarmID:N0} no longer exists but is still active. Throwing away active alarm details.");
+                        activeAlarms.Remove(alarmID);
                         continue;
                     }
 
