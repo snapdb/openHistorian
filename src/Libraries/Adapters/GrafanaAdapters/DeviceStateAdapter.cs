@@ -91,7 +91,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private static readonly Dictionary<AlarmState, DeviceState> s_baseStates = new ()
     {
         { AlarmState.Good, new DeviceState() { Color="green", RecommendedAction = "", State=nameof(AlarmState.Good), Rules="[{\"Combination\":1,\"Operation\":12,\"SetPoint\":55,\"Query\":\"SignalType LIKE 'FREQ'\"}]", Priority=0 }  },
-        { AlarmState.Alarm, new DeviceState() { Color="red", RecommendedAction = "", State=nameof(AlarmState.Alarm), Rules="[{\"Combination\":1,\"Operation\":12,\"SetPoint\":1,\"Query\":\"SignalType LIKE 'FREQ'\"}]]", Priority=1 }  },
+        { AlarmState.Alarm, new DeviceState() { Color="red", RecommendedAction = "", State=nameof(AlarmState.Alarm), Rules="[{\"Combination\":1,\"Operation\":12,\"SetPoint\":1,\"Query\":\"SignalType LIKE 'FREQ'\"}]", Priority=1 }  },
         { AlarmState.BadData, new DeviceState() { Color="blue", RecommendedAction = "", State=nameof(AlarmState.BadData), Rules="[]", Priority=2 }  },
         { AlarmState.BadTime, new DeviceState() { Color="purple", RecommendedAction = "", State=nameof(AlarmState.BadTime), Rules="[]", Priority=3 }  },
         { AlarmState.NotAvailable, new DeviceState() { Color="orange", RecommendedAction = "", State=nameof(AlarmState.NotAvailable), Rules="[]", Priority=int.MaxValue-3 }  },
@@ -610,12 +610,26 @@ public class DeviceStateAdapter : FacileActionAdapterBase
             if (!m_stateRules.TryGetValue(state.ID, out existingRule))
                 existingRule = new();
 
-            JArray list = JArray.Parse(state.Rules);
+
+            JArray list;
+            try
+            {
+                list = JArray.Parse(state.Rules);
+            }
+            catch (Exception ex)
+            {
+                OnStatusMessage(MessageLevel.Error, $"Error parsing rules for state {state.State}. Please check the connectionstring");
+                continue;
+            }
+
             int i = 0;
 
             foreach (JObject rule in list)
             {
-                MeasurementKey[] ruleMeasurements = ParseInputMeasurementKeys(DataSource, true, "Filter ActiveMeasurements WHERE " + rule["Query"]?.ToString() ?? "");
+                MeasurementKey[] ruleMeasurements = new MeasurementKey[0];
+
+                if (!string.IsNullOrWhiteSpace(rule["Query"]?.ToString()))
+                    ruleMeasurements = ParseInputMeasurementKeys(DataSource, true, "Filter ActiveMeasurements WHERE " + rule["Query"]?.ToString() ?? "");
 
                 if (existingRule.Count < (i + 1))
                 {
