@@ -40,8 +40,8 @@ namespace PowerCalculations;
 /// Calculates MW and MVAR using Voltage and Current Magnitude and Angle signals input to the adapter.
 /// </summary>
 [Description("Power Calculator: Calculates power and reactive power for synchrophasor measurements")]
-[UIResource("AdaptersUI", $".{nameof(PowerCalculations)}.{nameof(PowerCalculator)}.main.js")]
-[UIResource("AdaptersUI", $".{nameof(PowerCalculations)}.{nameof(PowerCalculator)}.chunk.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.PowerCalculator.main.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.PowerCalculator.chunk.js")]
 public class PowerCalculator : CalculatedMeasurementBase
 {
     #region [ Members ]

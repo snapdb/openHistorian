@@ -55,8 +55,8 @@ namespace openHistorian.Adapters;
 /// Represents an output adapter that archives measurements to a local archive.
 /// </summary>
 [Description("openHistorian 3.0: Archives measurements to a local openHistorian instance.")]
-[UIResource("AdaptersUI", $".{nameof(openHistorian)}.{nameof(Adapters)}.{nameof(LocalOutputAdapter)}.main.js")]
-[UIResource("AdaptersUI", $".{nameof(openHistorian)}.{nameof(Adapters)}.{nameof(LocalOutputAdapter)}.chunk.js")]
+[UIResource("AdaptersUI", $".openHistorian.Adapters.LocalOutputAdapter.main.js")]
+[UIResource("AdaptersUI", $".openHistorian.Adapters.LocalOutputAdapter.chunk.js")]
 public class LocalOutputAdapter : OutputAdapterBase
 {
     #region [ Members ]

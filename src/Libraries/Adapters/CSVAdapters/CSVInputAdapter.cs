@@ -38,8 +38,8 @@ namespace CSVAdapters;
 /// Represents an input adapter that reads measurements from a CSV file.
 /// </summary>
 [Description("CSV: Reads measurements from a CSV file")]
-[UIResource("AdaptersUI", $".{nameof(CSVAdapters)}.{nameof(CSVInputAdapter)}.main.js")]
-[UIResource("AdaptersUI", $".{nameof(CSVAdapters)}.{nameof(CSVInputAdapter)}.chunk.js")]
+[UIResource("AdaptersUI", $".CSVAdapters.CSVInputAdapter.main.js")]
+[UIResource("AdaptersUI", $".CSVAdapters.CSVInputAdapter.chunk.js")]
 public class CSVInputAdapter : InputAdapterBase
 {
     #region [ Members ]
