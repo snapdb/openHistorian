@@ -365,6 +365,8 @@ public class AlarmEngine : FacileActionAdapterBase
         else
             AlarmRetention = DefaultAlarmRetention;
 
+        if (settings.TryGetValue(nameof(LagTime), out setting) && double.TryParse(setting, out double lagTime))
+            LagTime = lagTime;
         // Run the process measurements operation to ensure that the alarm configuration is up-to-date
         if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified) == Modified)
             m_processMeasurementsOperation.RunAsync();
@@ -411,6 +413,11 @@ public class AlarmEngine : FacileActionAdapterBase
         base.Start();
         Interlocked.Exchange(ref m_eventCount, 0L);
     }
+
+    [ConnectionStringParameter]
+    [Description("Define the amount of time, in seconds, the adapter will wait before processing measurements.")]
+    [DefaultValue(10.0D)]
+    public new double LagTime { get; set; }
 
     /// <summary>
     /// Queues a collection of measurements for processing.
@@ -654,7 +661,7 @@ public class AlarmEngine : FacileActionAdapterBase
                             DownsamplingMethod = DownsamplingMethod.Closest
                         },
                         LastProcessed = now,
-                        ExpectedMeasurements = definedAlarm.InputMeasurementKeys.Length,
+                        ExpectedMeasurements = ParseInputMeasurementKeys(DataSource, true, definedAlarm.InputMeasurementKeys).Length,
                         LagTime = LagTime
                     };
                 });
@@ -868,7 +875,8 @@ public class AlarmEngine : FacileActionAdapterBase
             Tolerance = row.ConvertNullableField<double>("Tolerance"),
             Delay = row.ConvertNullableField<double>("Delay"),
             Hysteresis = row.ConvertNullableField<double>("Hysteresis"),
-            State = AlarmState.Cleared
+            State = AlarmState.Cleared,
+            Combination = row.ConvertField<int>("Combination").GetEnumValueOrDefault<AlarmCombination>(AlarmCombination.AND),
         };
     }
 
