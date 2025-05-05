@@ -367,6 +367,8 @@ public class AlarmEngine : FacileActionAdapterBase
 
         if (settings.TryGetValue(nameof(LagTime), out setting) && double.TryParse(setting, out double lagTime))
             LagTime = lagTime;
+        else
+            LagTime = 10.0D;
         // Run the process measurements operation to ensure that the alarm configuration is up-to-date
         if (Interlocked.CompareExchange(ref m_dataSourceState, Modified, Modified) == Modified)
             m_processMeasurementsOperation.RunAsync();
