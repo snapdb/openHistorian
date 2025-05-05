@@ -154,6 +154,8 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                 AlarmOperation.LessOrEqual => RaiseIfLessOrEqual,
                 AlarmOperation.GreaterThan => RaiseIfGreaterThan,
                 AlarmOperation.LessThan => RaiseIfLessThan,
+                AlarmOperation.Or => RaiseIfOr,
+                AlarmOperation.And => RaiseIfAnd,
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -183,7 +185,14 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         // is less than the set point.
         private bool RaiseIfLessThan(double measurement) => measurement < SetPoint;
 
-        
+        // Indicates whether the given measurement is a
+        // Binary AND to the set point.
+        private bool RaiseIfAnd(double measurement) => ((ulong)measurement & (ulong)SetPoint) == 0;
+
+        // Indicates whether the given measurement is a
+        // Binary OR to the set point.
+        private bool RaiseIfOr(double measurement) => ((ulong)measurement | (ulong)SetPoint) == 0;
+
 
         static double s_tolerance = double.Epsilon;
 
