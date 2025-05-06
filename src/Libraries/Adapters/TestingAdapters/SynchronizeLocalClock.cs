@@ -35,6 +35,7 @@ using System.Text;
 using System.Timers;
 using Gemstone;
 using Gemstone.Diagnostics;
+using Gemstone.Security.AccessControl;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
@@ -345,7 +346,7 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
     /// <summary>
     /// Attempts to enable system time privilege for the current process. Privilege must be already granted.
     /// </summary>
-    [AdapterCommand("Attempts to enable system time privilege for the current process. Privilege must be already granted.", "Administrator")]
+    [AdapterCommand("Attempts to enable system time privilege for the current process. Privilege must be already granted.", ResourceAccessLevel.Admin)]
     public void EnableSystemTimePrivilege()
     {
         const int SE_PRIVILEGE_ENABLED = 0x00000002;
@@ -377,7 +378,7 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
     /// <summary>
     /// Manually synchronizes local clock to specified date/time.
     /// </summary>
-    [AdapterCommand("Manually synchronizes local clock to specified date/time.", "Administrator")]
+    [AdapterCommand("Manually synchronizes local clock to specified date/time.", ResourceAccessLevel.Admin)]
     public void ManualSync(string dateTime)
     {
         if (!DateTime.TryParse(dateTime, out DateTime targetTime))
@@ -402,7 +403,7 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
     /// <summary>
     /// Forces local clock synchronization to latest time value.
     /// </summary>
-    [AdapterCommand("Forces local clock synchronization to absolute latest received time value.", "Administrator")]
+    [AdapterCommand("Forces local clock synchronization to absolute latest received time value.", ResourceAccessLevel.Admin)]
     public void ForceSync()
     {
         long targetTime = Volatile.Read(ref m_latestTime);

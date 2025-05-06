@@ -59,6 +59,7 @@ using DeviceRecord = Gemstone.Timeseries.Model.Device;
 using MeasurementRecord = Gemstone.Timeseries.Model.Measurement;
 using TcpClient = Gemstone.Communication.TcpClient;
 using ProtocolType = Gemstone.Timeseries.Adapters.ProtocolType;
+using Gemstone.Security.AccessControl;
 
 namespace PhasorProtocolAdapters;
 
@@ -1413,7 +1414,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// <summary>
     /// Toggles the flag that determines whether to inject the bad data state flag into the stream.
     /// </summary>
-    [AdapterCommand("Toggles the flag that determines whether to inject the bad data state flag into the stream.", "Administrator", "Editor")]
+    [AdapterCommand("Toggles the flag that determines whether to inject the bad data state flag into the stream.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void ToggleBadData()
     {
         m_injectBadData = !m_injectBadData;
@@ -1428,7 +1429,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// Sends the specified <see cref="DeviceCommand"/> to the current device connection.
     /// </summary>
     /// <param name="command"><see cref="DeviceCommand"/> to send to connected device.</param>
-    [AdapterCommand("Sends the specified command to connected phasor device.", "Administrator", "Editor")]
+    [AdapterCommand("Sends the specified command to connected phasor device.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void SendCommand(DeviceCommand command)
     {
         if (m_frameParser is null)
@@ -1445,7 +1446,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// <summary>
     /// Resets the statistics of all devices associated with this connection.
     /// </summary>
-    [AdapterCommand("Resets the statistics of all devices associated with this connection.", "Administrator", "Editor")]
+    [AdapterCommand("Resets the statistics of all devices associated with this connection.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void ResetStatistics()
     {
         if (m_definedDevices is null)
@@ -1472,7 +1473,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// Resets the statistics of the specified device associated with this connection.
     /// </summary>
     /// <param name="idCode">Integer ID code of device on which to reset statistics.</param>
-    [AdapterCommand("Resets the statistics of the device with the specified ID code.", "Administrator", "Editor")]
+    [AdapterCommand("Resets the statistics of the device with the specified ID code.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void ResetDeviceStatistics(ushort idCode)
     {
         if (m_definedDevices is null)
@@ -1502,7 +1503,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// <summary>
     /// Resets the counters for the lifetime statistics without interrupting the adapter's operations.
     /// </summary>
-    [AdapterCommand("Resets the counters for the lifetime statistics without interrupting the adapter's operations.", "Administrator", "Editor")]
+    [AdapterCommand("Resets the counters for the lifetime statistics without interrupting the adapter's operations.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public virtual void ResetLifetimeCounters()
     {
         LifetimeMeasurements = 0L;
@@ -1517,7 +1518,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// <summary>
     /// Resets counters related to latency calculations.
     /// </summary>
-    [AdapterCommand("Resets the latency counters for the device without interrupting the adapter's operations.", "Administrator", "Editor")]
+    [AdapterCommand("Resets the latency counters for the device without interrupting the adapter's operations.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void ResetLatencyCounters()
     {
         m_minimumLatency = 0L;
@@ -1529,7 +1530,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// <summary>
     /// Attempts to delete the last known good (i.e., cached) configuration.
     /// </summary>
-    [AdapterCommand("Attempts to delete the last known good configuration.", "Administrator", "Editor")]
+    [AdapterCommand("Attempts to delete the last known good configuration.", ResourceAccessLevel.Special)]
     public void DeleteCachedConfiguration()
     {
         lock (m_configurationOperationLock)
@@ -1557,7 +1558,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// Returns the current configuration frame to the caller.
     /// </summary>
     /// <returns>A <see cref="IConfigurationFrame"/> if successful, -or- <c>null</c> if request failed.</returns>
-    [AdapterCommand("Requests the current configuration frame and returns it to the caller.", "Administrator", "Editor")]
+    [AdapterCommand("Requests the current configuration frame and returns it to the caller.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public IConfigurationFrame? RequestCurrentConfiguration()
     {
         return m_frameParser?.ConfigurationFrame;
@@ -1566,7 +1567,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// <summary>
     /// Attempts to load the last known good (i.e., cached) configuration.
     /// </summary>
-    [AdapterCommand("Attempts to load the last known good configuration.", "Administrator", "Editor")]
+    [AdapterCommand("Attempts to load the last known good configuration.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void LoadCachedConfiguration()
     {
         lock (m_configurationOperationLock)
@@ -1604,7 +1605,7 @@ public class PhasorMeasurementMapper : InputAdapterBase
     /// Attempts to load the specified configuration.
     /// </summary>
     /// <param name="configurationFileName">Path and file name containing serialized configuration.</param>
-    [AdapterCommand("Attempts to load the specified configuration.", "Administrator", "Editor")]
+    [AdapterCommand("Attempts to load the specified configuration.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void LoadConfiguration(string configurationFileName)
     {
         if (string.IsNullOrWhiteSpace(configurationFileName))

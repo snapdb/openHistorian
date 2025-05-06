@@ -46,6 +46,7 @@ using Gemstone.IO;
 using Gemstone.IO.Parsing;
 using Gemstone.Numeric.EE;
 using Gemstone.PhasorProtocols;
+using Gemstone.Security.AccessControl;
 using Gemstone.StringExtensions;
 using Gemstone.Threading;
 using Gemstone.Timeseries;
@@ -272,7 +273,7 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     /// </summary>
     /// <param name="connectionString">Connection string used to connect to phasor device.</param>
     /// <returns>A <see cref="IConfigurationFrame"/> if successful, -or- <c>null</c> if request failed.</returns>
-    [AdapterCommand("Connects to a phasor device and requests its configuration frame.", "Administrator", "Editor")]
+    [AdapterCommand("Connects to a phasor device and requests its configuration frame.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public IConfigurationFrame RequestDeviceConfiguration(string connectionString)
     {
         m_cancelConfigurationFrameRequest = false;
@@ -410,7 +411,7 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     /// <summary>
     /// Cancels a configuration frame request
     /// </summary>
-    [AdapterCommand("Cancels the currently executing configuration frame request.", "Administrator", "Editor")]
+    [AdapterCommand("Cancels the currently executing configuration frame request.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void CancelConfigurationFrameRequest()
     {
         m_cancelConfigurationFrameRequest = true;
@@ -420,7 +421,7 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     /// <summary>
     /// Initiates a full point-tag rename based on the currently configured \"PointTagNameExpression\" as defined in the &lt;systemSettings&gt; section of the local configuration file.
     /// </summary>
-    [AdapterCommand("Initiates a full point-tag rename based on the currently configured \"PointTagNameExpression\" as defined in the <systemSettings> section of the local configuration file.", "Administrator")]
+    [AdapterCommand("Initiates a full point-tag rename based on the currently configured \"PointTagNameExpression\" as defined in the <systemSettings> section of the local configuration file.", ResourceAccessLevel.Admin)]
     public void RenameAllPointTags()
     {
         const string FilterExpression = $"MethodName = '{nameof(PhasorDataSourceValidation)}'";
@@ -446,7 +447,7 @@ public sealed class CommonPhasorServices : FacileActionAdapterBase
     /// Removes file from local folder.
     /// </summary>
     /// <param name="fileName">File name to remove.</param>
-    [AdapterCommand("Removes specified file - local folder only", "Administrator", "Editor")]
+    [AdapterCommand("Removes specified file - local folder only", ResourceAccessLevel.Special)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public void RemoveFile(string fileName)
     {

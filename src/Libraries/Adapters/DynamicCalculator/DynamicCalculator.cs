@@ -39,6 +39,7 @@ using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using SparseArray = System.Collections.Generic.Dictionary<int, double>;
 using ConfigSettings = Gemstone.Configuration.Settings;
+using Gemstone.Security.AccessControl;
 
 namespace DynamicCalculator;
 
@@ -490,7 +491,7 @@ public class DynamicCalculator : ActionAdapterBase
     /// <summary>
     /// Starts the <see cref="DynamicCalculator"/> or restarts it if it is already running.
     /// </summary>
-    [AdapterCommand("Starts the action adapter or restarts it if it is already running.", "Administrator", "Editor")]
+    [AdapterCommand("Starts the action adapter or restarts it if it is already running.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public override void Start()
     {
         base.Start();
@@ -502,13 +503,13 @@ public class DynamicCalculator : ActionAdapterBase
     /// <summary>
     /// Begins raising verbose messages to provide insight into the values used in the calculation.
     /// </summary>
-    [AdapterCommand("Begins raising verbose messages to provide insight into the values used in the calculation", "Administrator", "Editor")]
+    [AdapterCommand("Begins raising verbose messages to provide insight into the values used in the calculation", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void RaiseVerboseMessages() { RaisingVerboseMessages = true; }
 
     /// <summary>
     /// Stop raising verbose messages.
     /// </summary>
-    [AdapterCommand("Stop raising verbose messages", "Administrator", "Editor")]
+    [AdapterCommand("Stop raising verbose messages", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void StopVerboseMessages() { RaisingVerboseMessages = false; }
 
     /// <summary>

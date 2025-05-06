@@ -58,6 +58,7 @@ using Newtonsoft.Json.Linq;
 using Microsoft.CodeAnalysis;
 using Gemstone.Timeseries.Model;
 using System.Diagnostics.Metrics;
+using Gemstone.Security.AccessControl;
 
 namespace GrafanaAdapters;
 
@@ -422,7 +423,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// <summary>
     /// Queues monitoring operation to update alarm state for immediate execution.
     /// </summary>
-    [AdapterCommand("Queues monitoring operation to update alarm state for immediate execution.", "Administrator", "Editor")]
+    [AdapterCommand("Queues monitoring operation to update alarm state for immediate execution.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void QueueStateUpdate()
     {
         m_processDeviceStatus?.RunAsync();
@@ -432,7 +433,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// <summary>
     ///  Get measurements for the provided query and device ID.
     /// </summary>
-    [AdapterCommand("Gets measurements for provided query and device ID.", "Administrator", "Editor", "Viewer")]
+    [AdapterCommand("Gets measurements for provided query and device ID.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit, ResourceAccessLevel.View)]
     public static IActionResult GetMeasurements(ControllerBase controller, string query, int deviceID)
     {
         return controller.Ok(new List<string>());

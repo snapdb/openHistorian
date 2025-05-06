@@ -48,6 +48,7 @@ using SnapDB.Snap.Services.Reader;
 using SnapDB.Snap.Storage;
 using Timer = System.Timers.Timer;
 using ConfigSettings = Gemstone.Configuration.Settings;
+using Gemstone.Security.AccessControl;
 
 namespace openHistorian.Adapters;
 
@@ -777,7 +778,7 @@ public class LocalOutputAdapter : OutputAdapterBase
     /// Detaches an archive file from the historian.
     /// </summary>
     /// <param name="fileName">Archive file name to detach.</param>
-    [AdapterCommand("Detaches an archive file from the historian. Wild cards are allowed in file name and folders to handle multiple files.", "Administrator", "Editor")]
+    [AdapterCommand("Detaches an archive file from the historian. Wild cards are allowed in file name and folders to handle multiple files.", ResourceAccessLevel.Admin)]
     public void DetachFile(string fileName)
     {
         ClientDatabaseBase<HistorianKey, HistorianValue> database = GetClientDatabase();
@@ -792,7 +793,7 @@ public class LocalOutputAdapter : OutputAdapterBase
     /// Deletes an archive file from the historian.
     /// </summary>
     /// <param name="fileName">Archive file name to delete.</param>
-    [AdapterCommand("Deletes an archive file from the historian. Wild cards are allowed in file name and folders to handle multiple files.", "Administrator", "Editor")]
+    [AdapterCommand("Deletes an archive file from the historian. Wild cards are allowed in file name and folders to handle multiple files.", ResourceAccessLevel.Special)]
     public void DeleteFile(string fileName)
     {
         ClientDatabaseBase<HistorianKey, HistorianValue> database = GetClientDatabase();
@@ -807,7 +808,7 @@ public class LocalOutputAdapter : OutputAdapterBase
     /// Detaches files in an archive folder from the historian.
     /// </summary>
     /// <param name="folderName">Archive folder name to detach.</param>
-    [AdapterCommand("Detaches all archive files in a specified folder from the historian.", "Administrator", "Editor")]
+    [AdapterCommand("Detaches all archive files in a specified folder from the historian.", ResourceAccessLevel.Admin)]
     public void DetachFolder(string folderName)
     {
         ClientDatabaseBase<HistorianKey, HistorianValue> database = GetClientDatabase();
@@ -818,7 +819,7 @@ public class LocalOutputAdapter : OutputAdapterBase
     /// Deletes files in an archive folder from the historian.
     /// </summary>
     /// <param name="folderName">Archive folder name to delete.</param>
-    [AdapterCommand("Deletes all archive files in a specified folder from the historian.", "Administrator", "Editor")]
+    [AdapterCommand("Deletes all archive files in a specified folder from the historian.", ResourceAccessLevel.Special)]
     public void DeleteFolder(string folderName)
     {
         ClientDatabaseBase<HistorianKey, HistorianValue> database = GetClientDatabase();
@@ -828,7 +829,7 @@ public class LocalOutputAdapter : OutputAdapterBase
     /// <summary>
     /// Initiates archive file curtailment based on defined maximum archive days, auto removal of oldest files before full disk and defined downsampling intervals.
     /// </summary>
-    [AdapterCommand("Initiates archive file curtailment based on defined maximum archive days, auto removal of oldest files before full disk and defined downsampling intervals.", "Administrator", "Editor")]
+    [AdapterCommand("Initiates archive file curtailment based on defined maximum archive days, auto removal of oldest files before full disk and defined downsampling intervals.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void CurtailArchiveFiles()
     {
         if (AutoRemoveOldestFilesBeforeFull)

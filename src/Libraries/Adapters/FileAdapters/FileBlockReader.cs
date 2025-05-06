@@ -28,6 +28,7 @@ using System.Timers;
 using Gemstone;
 using Gemstone.Diagnostics;
 using Gemstone.IO;
+using Gemstone.Security.AccessControl;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
@@ -429,7 +430,7 @@ public class FileBlockReader : FacileActionAdapterBase
     /// <summary>
     /// Empties the processed file list.
     /// </summary>
-    [AdapterCommand("Empties the processed file list so that newly dropped files with the same name as old processed files will not be deleted.", "Administrator", "Editor")]
+    [AdapterCommand("Empties the processed file list so that newly dropped files with the same name as old processed files will not be deleted.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void ClearProcessedFileList()
     {
         m_processedFiles.Clear();

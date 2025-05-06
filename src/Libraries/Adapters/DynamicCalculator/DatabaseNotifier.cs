@@ -29,6 +29,7 @@ using Gemstone;
 using Gemstone.Data;
 using Gemstone.Diagnostics;
 using Gemstone.IO.Parsing;
+using Gemstone.Security.AccessControl;
 using Gemstone.StringExtensions;
 using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
@@ -352,7 +353,7 @@ public class DatabaseNotifier : DynamicCalculator
     /// <summary>
     /// Queues database operation for execution. Operation will execute immediately if not already running.
     /// </summary>
-    [AdapterCommand("Queues database operation for execution. Operation will execute immediately if not already running.", "Administrator", "Editor")]
+    [AdapterCommand("Queues database operation for execution. Operation will execute immediately if not already running.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void QueueOperation()
     {
         m_databaseOperation?.Run();

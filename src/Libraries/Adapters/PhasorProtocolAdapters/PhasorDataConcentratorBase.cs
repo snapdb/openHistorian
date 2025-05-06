@@ -53,6 +53,7 @@ using Gemstone.Numeric.BitExtensions;
 using Gemstone.Numeric.EE;
 using Gemstone.PhasorProtocols;
 using Gemstone.PhasorProtocols.Anonymous;
+using Gemstone.Security.AccessControl;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
@@ -702,7 +703,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     /// to manually start the data channel, thus enabling the real-time data stream. If command channel
     /// is defined, it will be unaffected. 
     /// </remarks>
-    [AdapterCommand("Manually starts the real-time data stream.", "Administrator", "Editor")]
+    [AdapterCommand("Manually starts the real-time data stream.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public virtual void StartDataChannel()
     {
         // Make sure publication channel is defined
@@ -744,7 +745,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     /// This method will allow host administrator to manually stop the data channel, thus disabling
     /// the real-time data stream. If command channel is defined, it will be unaffected.
     /// </remarks>
-    [AdapterCommand("Manually stops the real-time data stream.", "Administrator", "Editor")]
+    [AdapterCommand("Manually stops the real-time data stream.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public virtual void StopDataChannel()
     {
         // Undefine publication channel. This effectively halts socket based data publication.
@@ -857,7 +858,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     /// <summary>
     /// Reloads the configuration for this <see cref="PhasorDataConcentratorBase"/>.
     /// </summary>
-    [AdapterCommand("Reloads the phasor data concentrator configuration.", "Administrator", "Editor")]
+    [AdapterCommand("Reloads the phasor data concentrator configuration.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public void UpdateConfiguration()
     {
         // Define a protocol independent configuration frame
@@ -1236,7 +1237,7 @@ public abstract class PhasorDataConcentratorBase : ActionAdapterBase
     /// <summary>
     /// Resets the counters for the lifetime statistics without interrupting the adapter's operations.
     /// </summary>
-    [AdapterCommand("Resets the counters for the lifetime statistics without interrupting the adapter's operations.", "Administrator", "Editor")]
+    [AdapterCommand("Resets the counters for the lifetime statistics without interrupting the adapter's operations.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public virtual void ResetLifetimeCounters()
     {
         LifetimeMeasurements = 0L;

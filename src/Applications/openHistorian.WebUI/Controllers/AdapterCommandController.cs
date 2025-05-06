@@ -39,7 +39,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
                 item.attribute.Description,
                 ReturnType = item.method.ReturnType.Name,
                 Parameters = string.Join(", ", item.method.GetParameters().Select(param => $"{param.Name}: {param.ParameterType.Name}")),
-                item.attribute.AllowedRoles,
+                item.attribute.AllowedResources,
             }
         )
         }));
@@ -65,14 +65,16 @@ public class AdapterCommandControllerBase<TIAdapter> :
         if (!AdapterCache<TIAdapter>.AdapterCommands.TryGetValue(adapterType, out AdapterCommandInfo? commandInfo))
             return NotFound();
 
-        return Ok(commandInfo.MethodAttributes.Select(item => new
-        {
-            Description = item.attribute.Description,
-            MethodName = item.method.Name,
-            Parameters = item.method.GetParameters()
+        return Ok(commandInfo.MethodAttributes.Where(item => item.attribute.UIAcessible)
+            .Select(item => new
+            {
+                Description = item.attribute.Description,
+                MethodName = item.method.Name,
+                Parameters = item.method.GetParameters()
                 .Select(p => new { Name = p.Name, Type = p.ParameterType.Name })
                 .ToList()
-        }).ToList());
+            })
+        .ToList());
     }
 
     /// <summary>
