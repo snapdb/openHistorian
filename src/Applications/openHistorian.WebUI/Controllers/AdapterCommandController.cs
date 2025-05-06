@@ -128,6 +128,9 @@ public class AdapterCommandControllerBase<TIAdapter> :
         if (method.IsStatic)
             return BadRequest($"Command '{command}' is not an instance method. Did you mean to call '{nameof(Execute)}' instead?");
 
+        if (method.ReturnType != typeof(IActionResult))
+            return Ok(method.Invoke(adapter, GetMethodArguments(method)));
+
         return (IActionResult)method.Invoke(adapter, GetMethodArguments(method))!;
     }
 
@@ -273,14 +276,6 @@ public class AdapterCommandControllerBase<TIAdapter> :
              return Unauthorized();
         */
 
-        // Verify method return type is IActionResult
-        if (method.ReturnType != typeof(IActionResult))
-            return BadRequest("Command method must return IActionResult");
-
-        // Verify first parameter is of type ControllerBase
-        if (method.GetParameters().Length == 0 || method.GetParameters()[0].ParameterType != typeof(ControllerBase))
-            return BadRequest("First parameter of command method must be ControllerBase");
-
         return Ok();
     }
 
@@ -290,18 +285,27 @@ public class AdapterCommandControllerBase<TIAdapter> :
         string[] parameterValues = (parameters?.Split('/').Select(WebUtility.UrlDecode).ToArray() ?? [])!;
         ParameterInfo[] methodParameters = method.GetParameters();
 
-        if (parameterValues.Length != methodParameters.Length - 1)
+        if (methodParameters.Length == 0) return [];
+
+        bool includeControllerBase = methodParameters[0].ParameterType != typeof(ControllerBase);
+
+        if ((includeControllerBase && parameterValues.Length != methodParameters.Length - 1))
+            throw new ArgumentException("Invalid number of parameters");
+
+        if (!includeControllerBase && parameterValues.Length != methodParameters.Length)
             throw new ArgumentException("Invalid number of parameters");
 
         // First parameter is always the controller instance
         object?[] methodArguments = new object[methodParameters.Length];
+        if (includeControllerBase)
+            methodArguments[0] = this;
 
-        methodArguments[0] = this;
+        int startIndex = includeControllerBase ? 1 : 0;
 
-        for (int i = 1; i < methodParameters.Length; i++)
+        for (int i = startIndex; i < methodParameters.Length; i++)
         {
             ParameterInfo parameter = methodParameters[i];
-            methodArguments[i] = Convert.ChangeType(parameterValues[i - 1], parameter.ParameterType);
+            methodArguments[i] = Convert.ChangeType(parameterValues[i - startIndex], parameter.ParameterType);
         }
 
         return methodArguments;
