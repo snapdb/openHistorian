@@ -880,6 +880,7 @@ public class AlarmEngine : FacileActionAdapterBase
             Hysteresis = row.ConvertNullableField<double>("Hysteresis"),
             State = AlarmState.Cleared,
             Combination = row.ConvertField<int>("Combination").GetEnumValueOrDefault<AlarmCombination>(AlarmCombination.AND),
+            Enabled = true
         };
     }
 
