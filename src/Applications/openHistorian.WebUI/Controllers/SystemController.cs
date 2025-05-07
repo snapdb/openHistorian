@@ -21,6 +21,7 @@
 //
 //******************************************************************************************************
 
+using Gemstone.Configuration;
 using Gemstone.PhasorProtocols;
 using Microsoft.AspNetCore.Mvc;
 using openHistorian.Utility;
@@ -111,6 +112,20 @@ public class SystemController : Controller
         FailoverModule.LogMessage(log);
 
         return Ok(response);
+    }
+
+    [HttpGet, Route("settings")]
+    public IActionResult GetSettings()
+    {
+        dynamic tileServer = Gemstone.Configuration.Settings.Default["GeospatialDisplayServer"];
+
+        var settings = new {
+            SystemFrequency = Gemstone.Configuration.Settings.Default[Settings.SystemSettingsCategory]?.SystemFrequency ?? 60.0,
+            TileServer = tileServer
+        };
+
+
+        return Ok(settings);
     }
 
 }

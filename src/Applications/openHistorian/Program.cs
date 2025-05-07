@@ -77,6 +77,20 @@ internal class Program
         }
     }
 
+    private static void DefineGeoSpatialDisplaySettings(Settings settings)
+    {
+        dynamic section = settings["GeospatialDisplayServer"];
+
+        section.Url = ("https://tile.openstreetmap.org/{z}/{x}/{y}.png", "Defines the url for the Tile server used for maps in the user interfaces.");
+        section.Attribution = ("&copy; <a href=\"http://www.openstreetmap.org/copyright\">OpenStreetMap</a> <br>' + '&copy; <a href=\"http://cartodb.com/attributions\">CartoDB</a>", "Defines the attribution displayed on maps in the user interfaces.");
+        section.Subdomains = ("abcd", "Defines the subdomains used for the Tile server used to display maps in the user interfaces.");
+        section.MaxZoom = (19, "Defines the maximum zoom level on the maps in the user interfaces.");
+        section.MinZoom = (1, "Defines the minimum zoom level on the maps in the user interfaces.");
+        section.DefaultZoom = (5, "Defines the default zoom level on the maps in the user interfaces.");
+        section.DefaultLatitude = (35.0458, "Defines the default center latitude on the maps in the user interfaces.");
+        section.DefaultLongitude = (-85.3094, "Defines the default center longitude on the maps in the user interfaces.");
+
+    }
     internal static void ConfigureLogging(ILoggingBuilder builder)
     {
         builder.ClearProviders();
