@@ -24,6 +24,7 @@
 using Gemstone.Configuration;
 using Gemstone.PhasorProtocols;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using openHistorian.Utility;
 using openHistorian.WebUI.Controllers.JsonModels;
 using ServiceInterface;
@@ -119,9 +120,15 @@ public class SystemController : Controller
     {
         dynamic tileServer = Gemstone.Configuration.Settings.Default["GeospatialDisplayServer"];
 
+        Dictionary<string,object> parsedTileServer = new();
+        foreach (string key in tileServer.Keys)
+        {
+            parsedTileServer.Add(key, tileServer[key]);
+        }
+
         var settings = new {
             SystemFrequency = Gemstone.Configuration.Settings.Default[Settings.SystemSettingsCategory]?.SystemFrequency ?? 60.0,
-            TileServer = tileServer
+            TileServer = parsedTileServer
         };
 
 
