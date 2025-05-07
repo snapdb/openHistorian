@@ -34,7 +34,8 @@ internal class Program
 
             // Define settings for service components
             ServiceHost.DefineSettings(settings);
-           
+            DefineGeoSpatialDisplaySettings(settings);
+
             // Bind settings to configuration sources
             settings.Bind(new ConfigurationBuilder()
                 .ConfigureGemstoneDefaults(settings)
