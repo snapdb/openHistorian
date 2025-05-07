@@ -289,9 +289,9 @@ public class AdapterCommandControllerBase<TIAdapter> :
 
         if (methodParameters.Length == 0) return [];
 
-        bool includeControllerBase = methodParameters[0].ParameterType != typeof(ControllerBase);
+        bool includeControllerBase = methodParameters[0].ParameterType == typeof(ControllerBase);
 
-        if ((includeControllerBase && parameterValues.Length != methodParameters.Length - 1))
+        if (includeControllerBase && parameterValues.Length != methodParameters.Length - 1)
             throw new ArgumentException("Invalid number of parameters");
 
         if (!includeControllerBase && parameterValues.Length != methodParameters.Length)
