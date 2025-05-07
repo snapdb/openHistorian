@@ -44,6 +44,7 @@ using Gemstone.Diagnostics;
 using Gemstone.EnumExtensions;
 using Gemstone.IO.Collections;
 using Gemstone.IO.Parsing;
+using Gemstone.Security.AccessControl;
 using Gemstone.StringExtensions;
 using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
@@ -841,7 +842,7 @@ public class AlarmEngine : FacileActionAdapterBase
     /// </summary>
     /// <param name="controller">The controller from which to generate the IActionResult.</param>
     /// <returns>An IActionResult containing the raised alarms</returns>
-    [AdapterCommand("Gets the Raised Alarms of the Default instance.", "Viewer", "Adminastrator", "Editor")]
+    [AdapterCommand("Gets the Raised Alarms of the Default instance.", ResourceAccessLevel.View, ResourceAccessLevel.Admin, ResourceAccessLevel.Edit)]
     public static IActionResult GetRaisedAlarmsStatic(ControllerBase controller, string? severities = null)
     {
         IEnumerable<AlarmSeverity>? parsedSeverities = null;
