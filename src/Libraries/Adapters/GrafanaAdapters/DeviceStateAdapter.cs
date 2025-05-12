@@ -59,6 +59,8 @@ using Microsoft.CodeAnalysis;
 using Gemstone.Timeseries.Model;
 using System.Diagnostics.Metrics;
 using Gemstone.Security.AccessControl;
+using GrafanaAdapters.Metadata;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
 namespace GrafanaAdapters;
 
@@ -434,9 +436,23 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     ///  Get measurements for the provided query and device ID.
     /// </summary>
     [AdapterCommand("Gets measurements for provided query and device ID.", ResourceAccessLevel.Admin, ResourceAccessLevel.Edit, ResourceAccessLevel.View)]
-    public static IActionResult GetMeasurements(ControllerBase controller, string query, int deviceID)
+    public static IActionResult GetMeasurements(ControllerBase controller, string query, string deviceAcronym)
     {
-        return controller.Ok(new List<string>());
+        bool dataSourceAvailable = Default?.DataSource is not null;
+
+        if (string.IsNullOrWhiteSpace(query))
+            return controller.Ok(new string[0]);
+
+        List<string> tags = new();
+        if (dataSourceAvailable && ParseFilterExpression("Filter ActiveMeasurements WHERE " + query + " AND Device = '" + deviceAcronym + "'", out string tableName, out string expression, out string sortField, out int takeCount))
+        {
+            foreach (DataRow row in Default?.DataSource!.Tables[tableName].Select(expression, sortField).Take(takeCount))
+            {
+                tags.Add(row.ConvertField<string>("PointTag"));                
+            }
+        }
+
+        return controller.Ok(tags);
     }
 
     /// <summary>
