@@ -719,12 +719,13 @@ public class AlarmEngine : FacileActionAdapterBase
                         activeAlarms.Remove(alarmID);
                         continue;
                     }
+                    alarmProcessor.Alarm.TimeRaised = activeAlarms[alarmID].StartTime;
 
                     if (alarmProcessor.Alarm.Timeout <= 0 || !(alarmProcessor.LastProcessed + alarmProcessor.Alarm.Timeout * Ticks.PerSecond < measurementsReceived))
                         continue;
                     
                     alarmProcessor.Alarm.State = AlarmState.Cleared;
-
+                    
                     IMeasurement? alarmEvent = CreateAlarmEvent(measurementsReceived, alarmProcessor.Alarm, activeAlarms);
 
                     if (alarmEvent is not null)
@@ -788,10 +789,12 @@ public class AlarmEngine : FacileActionAdapterBase
             case AlarmState.Raised when !activeAlarms.TryGetValue(alarm.ID, out alarmEvent):
                 measurement = CreateAlarmRaisedEvent(timestamp, alarm, out alarmEvent);
                 activeAlarms.Add(alarm.ID, alarmEvent);
+                alarm.TimeRaised = alarmEvent.StartTime;
                 break;
             case AlarmState.Cleared when activeAlarms.TryGetValue(alarm.ID, out alarmEvent):
                 measurement = CreateAlarmClearedEvent(timestamp, alarm, alarmEvent);
                 activeAlarms.Remove(alarm.ID);
+                alarm.TimeRaised = null;
                 break;
             default:
                 Logger.SwallowException(new InvalidOperationException($"Alarm ID {alarm.ID:N0} is in an invalid state: {alarm.State}"), nameof(AlarmEngine), nameof(CreateAlarmEvent));
