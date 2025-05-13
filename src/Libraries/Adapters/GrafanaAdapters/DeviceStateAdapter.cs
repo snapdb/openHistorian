@@ -61,6 +61,7 @@ using System.Diagnostics.Metrics;
 using Gemstone.Security.AccessControl;
 using GrafanaAdapters.Metadata;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Gemstone.Configuration;
 
 namespace GrafanaAdapters;
 
@@ -93,8 +94,8 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// </summary>
     private static readonly Dictionary<AlarmState, DeviceState> s_baseStates = new ()
     {
-        { AlarmState.Good, new DeviceState() { Color="green", RecommendedAction = "", State=nameof(AlarmState.Good), Rules="[{\"Combination\":1,\"Operation\":12,\"SetPoint\":55,\"Query\":\"SignalType LIKE 'FREQ'\"}]", Priority=0 }  },
-        { AlarmState.Alarm, new DeviceState() { Color="red", RecommendedAction = "", State=nameof(AlarmState.Alarm), Rules="[{\"Combination\":1,\"Operation\":12,\"SetPoint\":1,\"Query\":\"SignalType LIKE 'FREQ'\"}]", Priority=1 }  },
+        { AlarmState.Good, new DeviceState() { Color="green", RecommendedAction = "", State=nameof(AlarmState.Good), Rules="rule001={Combination=1; Operation=12; SetPoint=55; Query=SignalType LIKE 'FREQ'}", Priority=0 }  },
+        { AlarmState.Alarm, new DeviceState() { Color="red", RecommendedAction = "", State=nameof(AlarmState.Alarm), Rules="rule001={Combination=1; Operation=12; SetPoint=55; Query=SignalType LIKE 'FREQ'}", Priority=1 }  },
         { AlarmState.BadData, new DeviceState() { Color="blue", RecommendedAction = "", State=nameof(AlarmState.BadData), Rules="[]", Priority=2 }  },
         { AlarmState.BadTime, new DeviceState() { Color="purple", RecommendedAction = "", State=nameof(AlarmState.BadTime), Rules="[]", Priority=3 }  },
         { AlarmState.NotAvailable, new DeviceState() { Color="orange", RecommendedAction = "", State=nameof(AlarmState.NotAvailable), Rules="[]", Priority=int.MaxValue-3 }  },
@@ -107,8 +108,22 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
     // Internal Classes
 
-    private class Rule
+    private class Rule(RuleDefinition definition)
     {
+        public AlarmCombination Combination { get; } = definition.Combination;
+        public double SetPoint { get; } = definition.SetPoint;
+        public AlarmOperation Operation { get;} = definition.Operation;
+        public string Query { get; } = definition.Query;
+        public double Delay { get; } = definition.Delay;
+        public Dictionary<int, MeasurementKey[]> MeasurementKeys { get; set; }
+        public Dictionary<int, Ticks> LastUpdateTime { get; set; }
+
+        public Rule(string definition) : this(new RuleDefinition(definition)) 
+        {
+            MeasurementKeys = new Dictionary<int, MeasurementKey[]>();
+            LastUpdateTime = new Dictionary<int, Ticks>();
+        }
+       
         /// <summary>
         /// Checks whether this rule is satsified.
         /// </summary>
@@ -137,15 +152,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
             return test;
         }
-
-        public AlarmCombination Combination { get; set; }
-        public double SetPoint { get; set; }
-        public AlarmOperation Operation { get; set; }
-        public string Query { get; set; }
-        public double Delay { get; set; }
-        public Dictionary<int, MeasurementKey[]> MeasurementKeys { get; set; }
-
-        public Dictionary<int,Ticks> LastUpdateTime { get; set; }
 
         // Returns the function used to determine when the rule is satisfied.
         private Func<double, bool> GetSuccededTest() =>
@@ -201,6 +207,31 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
     }
 
+    private class RuleDefinition
+    {
+        [ConnectionStringParameter]
+        public AlarmCombination Combination { get; set; }
+
+        [ConnectionStringParameter]
+        public double SetPoint { get; set; }
+
+        [ConnectionStringParameter]
+        public AlarmOperation Operation { get; set; }
+
+        [ConnectionStringParameter]
+        public string Query { get; set; }
+
+        [ConnectionStringParameter]
+        public double Delay { get; set; }
+
+        public RuleDefinition(string definition)
+        {
+            ConnectionStringParser<ConnectionStringParameterAttribute> parser = new();
+            parser.ParseConnectionString(definition, this);
+        }
+
+    }
+
     /// <summary>
     /// Defines the default value for the <see cref="MonitoringRate"/>.
     /// </summary>
@@ -220,7 +251,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private Dictionary<int, Device> m_deviceMetadata;
 
     private FileBackedDictionary<int, long> m_lastDeviceStateChange;
-    private Dictionary<int, Ticks> m_lastAcknowledgedTransition;
     private Dictionary<int, int> m_lastState;
 
     private Dictionary<int, int> m_stateCounts;
@@ -231,8 +261,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private Lock m_stateCountLock;
     private Ticks m_alarmTime;
     private long m_alarmStateUpdates;
-    private long m_externalDatabaseUpdates;
-    private object m_lastExternalDatabaseResult;
     private int m_dataSourceState;
     private DataSet? m_deviceStateDataSet;
 
@@ -407,7 +435,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
         m_lastDeviceStateChange = new FileBackedDictionary<int, long>(FilePath.GetAbsolutePath($"{Name}_LastStateChangeCache.bin".RemoveInvalidFileNameCharacters()));
 
-        m_lastAcknowledgedTransition = new();
         m_stateCountLock = new Lock();
         m_deviceStates = new();
         m_requiredStateIDs = new();
@@ -636,54 +663,31 @@ public class DeviceStateAdapter : FacileActionAdapterBase
             if (!m_stateRules.TryGetValue(state.ID, out existingRule))
                 existingRule = new();
 
-
-            JArray list;
-            try
-            {
-                list = JArray.Parse(state.Rules);
-            }
-            catch (Exception ex)
-            {
-                OnStatusMessage(MessageLevel.Error, $"Error parsing rules for state {state.State}. Please check the connectionstring");
-                continue;
-            }
+            Rule[] rules = state.Rules
+                .ParseKeyValuePairs()
+                .OrderBy(kvp => kvp.Key)
+                .Select(kvp => kvp.Value)
+                .Select(definition => new Rule(definition))
+                .ToArray();
 
             int i = 0;
 
-            foreach (JObject rule in list)
+            foreach (Rule rule in rules)
             {
                 MeasurementKey[] ruleMeasurements = new MeasurementKey[0];
 
-                if (!string.IsNullOrWhiteSpace(rule["Query"]?.ToString()))
-                    ruleMeasurements = ParseInputMeasurementKeys(DataSource, true, "Filter ActiveMeasurements WHERE " + rule["Query"]?.ToString() ?? "");
+                if (!string.IsNullOrWhiteSpace(rule.Query?.ToString()))
+                    ruleMeasurements = ParseInputMeasurementKeys(DataSource, true, "Filter ActiveMeasurements WHERE " + rule.Query?.ToString() ?? "");
+
+                rule.MeasurementKeys = ruleMeasurements.GroupBy(meas => deviceLookup[meas.SignalID].First()).ToDictionary(group => group.Key, group => group.ToArray());
 
                 if (existingRule.Count < (i + 1))
-                {
-                    //Its a new Rule
-                    existingRule.Add(new Rule()
-                    {
-                        Combination = Enum.Parse<AlarmCombination>(rule["Combination"]?.ToString() ?? "AND"),
-                        SetPoint = double.Parse(rule["SetPoint"]?.ToString() ?? "0"),
-                        Operation = Enum.Parse<AlarmOperation>(rule["Operation"]?.ToString() ?? "Equal"),
-                        Query = rule["Query"]?.ToString() ?? "",
-                        Delay = double.Parse(rule["Delay"]?.ToString() ?? "0"),
-                        MeasurementKeys = ruleMeasurements.GroupBy(meas => deviceLookup[meas.SignalID].First()).ToDictionary(group => group.Key, group => group.ToArray()),
-                        LastUpdateTime = new()
-                    });
-                }
+                    existingRule.Add(rule); 
                 else
                 {
                     //Its an existing Rule
-                    existingRule[i] = new Rule()
-                    {
-                        Combination = Enum.Parse<AlarmCombination>(rule["Combination"]?.ToString() ?? "AND"),
-                        SetPoint = double.Parse(rule["SetPoint"]?.ToString() ?? "0"),
-                        Operation = Enum.Parse<AlarmOperation>(rule["Operation"]?.ToString() ?? "Equal"),
-                        Query = rule["Query"]?.ToString() ?? "",
-                        Delay = double.Parse(rule["Delay"]?.ToString() ?? "0"),
-                        MeasurementKeys = ruleMeasurements.GroupBy(meas => deviceLookup[meas.SignalID].First()).ToDictionary(group => group.Key, group => group.ToArray()),
-                        LastUpdateTime = existingRule[i].LastUpdateTime
-                    };
+                    rule.LastUpdateTime = existingRule[i].LastUpdateTime;
+                    existingRule[i] = rule;
                 }
                 i++;
             }
