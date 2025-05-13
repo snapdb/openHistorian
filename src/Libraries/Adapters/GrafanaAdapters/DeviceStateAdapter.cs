@@ -62,6 +62,7 @@ using Gemstone.Security.AccessControl;
 using GrafanaAdapters.Metadata;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Gemstone.Configuration;
+using GrafanaAdapters.Model.Common;
 
 namespace GrafanaAdapters;
 
@@ -108,130 +109,6 @@ public class DeviceStateAdapter : FacileActionAdapterBase
 
     // Internal Classes
 
-    private class Rule(RuleDefinition definition)
-    {
-        public AlarmCombination Combination { get; } = definition.Combination;
-        public double SetPoint { get; } = definition.SetPoint;
-        public AlarmOperation Operation { get;} = definition.Operation;
-        public string Query { get; } = definition.Query;
-        public double Delay { get; } = definition.Delay;
-        public Dictionary<int, MeasurementKey[]> MeasurementKeys { get; set; }
-        public Dictionary<int, Ticks> LastUpdateTime { get; set; }
-
-        public Rule(string definition) : this(new RuleDefinition(definition)) 
-        {
-            MeasurementKeys = new Dictionary<int, MeasurementKey[]>();
-            LastUpdateTime = new Dictionary<int, Ticks>();
-        }
-       
-        /// <summary>
-        /// Checks whether this rule is satsified.
-        /// </summary>
-        /// <returns></returns>
-        public bool Test(IReadOnlyDictionary<MeasurementKey,IMeasurement> measurements, int deviceID, Ticks Time )
-        {
-            if (!MeasurementKeys.TryGetValue(deviceID, out MeasurementKey[] keys))
-                return false;
-
-            bool test = false;
-
-            Func<double, bool> func = GetSuccededTest();
-
-            if (Combination == AlarmCombination.AND)
-                test = keys.All((key) => measurements.TryGetValue(key, out IMeasurement meas) && func.Invoke(meas.AdjustedValue));
-            if (Combination == AlarmCombination.OR)
-                test = keys.Any((key) => measurements.TryGetValue(key, out IMeasurement meas) && func.Invoke(meas.AdjustedValue));
-
-            if (!test && LastUpdateTime.ContainsKey(deviceID))
-                LastUpdateTime[deviceID] = Time;
-            else if (!test)
-                LastUpdateTime.Add(deviceID, Time);
-
-            if (Delay >= 0 && LastUpdateTime.ContainsKey(deviceID))
-                return test && (Time - LastUpdateTime[deviceID]).ToSeconds() > Delay;
-
-            return test;
-        }
-
-        // Returns the function used to determine when the rule is satisfied.
-        private Func<double, bool> GetSuccededTest() =>
-            Operation switch
-            {
-                AlarmOperation.Equal => RaiseIfEqual,
-                AlarmOperation.NotEqual => RaiseIfNotEqual,
-                AlarmOperation.GreaterOrEqual => RaiseIfGreaterOrEqual,
-                AlarmOperation.LessOrEqual => RaiseIfLessOrEqual,
-                AlarmOperation.GreaterThan => RaiseIfGreaterThan,
-                AlarmOperation.LessThan => RaiseIfLessThan,
-                AlarmOperation.Or => RaiseIfOr,
-                AlarmOperation.And => RaiseIfAnd,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-
-        // Indicates whether the given measurement is
-        // equal to the set point within the tolerance.
-        private bool RaiseIfEqual(double measurement) => measurement <= SetPoint + s_tolerance &&
-                           measurement >= SetPoint - s_tolerance;
-
-        // Indicates whether the given measurement is outside
-        // the range defined by the set point and tolerance.
-        private bool RaiseIfNotEqual(double measurement) => measurement < SetPoint - s_tolerance ||
-                              measurement > SetPoint + s_tolerance;
-        
-        // Indicates whether the given measurement
-        // is greater than or equal to the set point.
-        private bool RaiseIfGreaterOrEqual(double measurement) => measurement >= SetPoint;
-
-        // Indicates whether the given measurement
-        // is less than or equal to the set point.
-        private bool RaiseIfLessOrEqual(double measurement) => measurement <= SetPoint;
-
-        // Indicates whether the given measurement
-        // is greater than the set point.
-        private bool RaiseIfGreaterThan(double measurement) => measurement > SetPoint;
-
-        // Indicates whether the given measurement
-        // is less than the set point.
-        private bool RaiseIfLessThan(double measurement) => measurement < SetPoint;
-
-        // Indicates whether the given measurement is a
-        // Binary AND to the set point.
-        private bool RaiseIfAnd(double measurement) => ((ulong)measurement & (ulong)SetPoint) == 0;
-
-        // Indicates whether the given measurement is a
-        // Binary OR to the set point.
-        private bool RaiseIfOr(double measurement) => ((ulong)measurement | (ulong)SetPoint) == 0;
-
-
-        static double s_tolerance = double.Epsilon;
-
-    }
-
-    private class RuleDefinition
-    {
-        [ConnectionStringParameter]
-        public AlarmCombination Combination { get; set; }
-
-        [ConnectionStringParameter]
-        public double SetPoint { get; set; }
-
-        [ConnectionStringParameter]
-        public AlarmOperation Operation { get; set; }
-
-        [ConnectionStringParameter]
-        public string Query { get; set; }
-
-        [ConnectionStringParameter]
-        public double Delay { get; set; }
-
-        public RuleDefinition(string definition)
-        {
-            ConnectionStringParser<ConnectionStringParameterAttribute> parser = new();
-            parser.ParseConnectionString(definition, this);
-        }
-
-    }
-
     /// <summary>
     /// Defines the default value for the <see cref="MonitoringRate"/>.
     /// </summary>
@@ -256,7 +133,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     private Dictionary<int, int> m_stateCounts;
     private List<DeviceState> m_deviceStates;
     private Dictionary<AlarmState, int> m_requiredStateIDs;
-    private Dictionary<int, List<Rule>> m_stateRules;
+    private Dictionary<int, List<StateRule>> m_stateRules;
 
     private Lock m_stateCountLock;
     private Ticks m_alarmTime;
@@ -542,8 +419,8 @@ public class DeviceStateAdapter : FacileActionAdapterBase
                         foreach (DeviceState state in m_deviceStates)
                         {
                             newState = state.ID;
-                            if (!m_stateRules.TryGetValue(state.ID, out List<Rule> rules))
-                                rules = new List<Rule>();
+                            if (!m_stateRules.TryGetValue(state.ID, out List<StateRule> rules))
+                                rules = new List<StateRule>();
 
                             if (!rules.Any() || rules.All(r => r.Test(measurementLookup, alarmDevice.DeviceID,now)))
                             {
@@ -634,7 +511,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
         if (addedState)
             return false;
 
-        Dictionary<int, List<Rule>> stateRules = new();
+        Dictionary<int, List<StateRule>> stateRules = new();
 
         // Get all Devices
         DataSet deviceDataSet = new();
@@ -658,21 +535,21 @@ public class DeviceStateAdapter : FacileActionAdapterBase
             if (string.IsNullOrWhiteSpace(state.Rules))
                 continue;
 
-            List<Rule> existingRule = new();
+            List<StateRule> existingRule = new();
 
             if (!m_stateRules.TryGetValue(state.ID, out existingRule))
                 existingRule = new();
 
-            Rule[] rules = state.Rules
+            StateRule[] rules = state.Rules
                 .ParseKeyValuePairs()
                 .OrderBy(kvp => kvp.Key)
                 .Select(kvp => kvp.Value)
-                .Select(definition => new Rule(definition))
+                .Select(definition => new StateRule(definition))
                 .ToArray();
 
             int i = 0;
 
-            foreach (Rule rule in rules)
+            foreach (StateRule rule in rules)
             {
                 MeasurementKey[] ruleMeasurements = new MeasurementKey[0];
 
