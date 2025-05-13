@@ -96,11 +96,11 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     {
         { AlarmState.Good, new DeviceState() { Color="green", RecommendedAction = "", State=nameof(AlarmState.Good), Rules="rule001={Combination=1; Operation=12; SetPoint=55; Query=SignalType LIKE 'FREQ'}", Priority=0 }  },
         { AlarmState.Alarm, new DeviceState() { Color="red", RecommendedAction = "", State=nameof(AlarmState.Alarm), Rules="rule001={Combination=1; Operation=12; SetPoint=55; Query=SignalType LIKE 'FREQ'}", Priority=1 }  },
-        { AlarmState.BadData, new DeviceState() { Color="blue", RecommendedAction = "", State=nameof(AlarmState.BadData), Rules="[]", Priority=2 }  },
-        { AlarmState.BadTime, new DeviceState() { Color="purple", RecommendedAction = "", State=nameof(AlarmState.BadTime), Rules="[]", Priority=3 }  },
-        { AlarmState.NotAvailable, new DeviceState() { Color="orange", RecommendedAction = "", State=nameof(AlarmState.NotAvailable), Rules="[]", Priority=int.MaxValue-3 }  },
-        { AlarmState.OutOfService, new DeviceState() { Color="grey", RecommendedAction = "", State=nameof(AlarmState.OutOfService), Rules="[]", Priority=int.MaxValue-2 }  },
-        { AlarmState.Acknowledged, new DeviceState() { Color="rosybrown",  RecommendedAction = "", State=nameof(AlarmState.Acknowledged), Rules="[]", Priority=int.MaxValue-1 }  }
+        { AlarmState.BadData, new DeviceState() { Color="blue", RecommendedAction = "", State=nameof(AlarmState.BadData), Rules="", Priority=2 }  },
+        { AlarmState.BadTime, new DeviceState() { Color="purple", RecommendedAction = "", State=nameof(AlarmState.BadTime), Rules="", Priority=3 }  },
+        { AlarmState.NotAvailable, new DeviceState() { Color="orange", RecommendedAction = "", State=nameof(AlarmState.NotAvailable), Rules="", Priority=int.MaxValue-3 }  },
+        { AlarmState.OutOfService, new DeviceState() { Color="grey", RecommendedAction = "", State=nameof(AlarmState.OutOfService), Rules="", Priority=int.MaxValue-2 }  },
+        { AlarmState.Acknowledged, new DeviceState() { Color="rosybrown",  RecommendedAction = "", State=nameof(AlarmState.Acknowledged), Rules="", Priority=int.MaxValue-1 }  }
     };
 
     private const int UpToDate = 0;
