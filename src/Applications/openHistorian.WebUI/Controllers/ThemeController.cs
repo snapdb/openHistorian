@@ -123,8 +123,8 @@ public class ThemeController : ModelController<Theme>
         return File(stream, "text/css");
     }
 
-    [HttpDelete, Route("Delete")]
-    public new async Task<IActionResult> Delete([FromBody] Theme record, CancellationToken cancellationToken)
+    [HttpDelete, Route("")]
+    public override async Task<IActionResult> Delete([FromBody] Theme record, CancellationToken cancellationToken)
     {
         if (!DeleteAuthCheck())
             return Unauthorized();
