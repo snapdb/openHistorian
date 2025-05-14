@@ -7,6 +7,7 @@ using Gemstone.EnumExtensions;
 using System.Text;
 using System.Text.RegularExpressions;
 using ServiceInterface;
+using System;
 namespace openHistorian.WebUI.Controllers;
 
 [Route("api/[controller]")]
@@ -31,7 +32,7 @@ public class AlarmController : ModelController<Alarm>
         Gemstone.Timeseries.Model.Measurement? newMeasurement = null;
 
         TableOperations<Gemstone.Timeseries.Model.SignalType> signalTypeTableOperations = new(connection);
-        Gemstone.Timeseries.Model.SignalType? signalType = signalTypeTableOperations.QueryRecordWhere("Acronym = {0}", "ALRM");
+        Gemstone.Timeseries.Model.SignalType? alarmSignalType = signalTypeTableOperations.QueryRecordWhere("Acronym = {0}", "ALRM");
 
         TableOperations<Model.Historian> historianTableOperations = new(connection);
         Model.Historian? statHistorian = historianTableOperations.QueryRecordWhere("Acronym = {0}", "STAT");
@@ -41,10 +42,12 @@ public class AlarmController : ModelController<Alarm>
 
         if (alarmRecord.CreateAssociatedMeasurement)
         {
+            string cleanedTag = GetCleanPointTag(alarmRecord);
             TableOperations<Gemstone.Timeseries.Model.Measurement> measurementTableOperations = new(connection);
             newMeasurement = measurementTableOperations.NewRecord()!;
-            newMeasurement.PointTag = GetCleanPointTag(alarmRecord);
-            newMeasurement.SignalTypeID = signalType.ID;
+            newMeasurement.PointTag = cleanedTag;
+            newMeasurement.SignalTypeID = alarmSignalType.ID;
+            newMeasurement.SignalReference = $"{cleanedTag}-{alarmSignalType.Suffix}{0}";
             newMeasurement.HistorianID = statHistorian?.ID;
             measurementTableOperations.AddNewRecord(newMeasurement);
         }
