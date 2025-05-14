@@ -412,8 +412,17 @@ public partial struct EventState : IDataSourceValueType<EventState>
                         eventStateRow["SignalID"] = alarmRow["SignalID"];
                         eventStateRow["PointTag"] = alarmRow["PointTag"];
                         eventStateRow["Device"] = alarmRow["Device"];
-                        eventStateRow["Longitude"] = Convert.ToDecimal(alarmRow["Longitude"]);
-                        eventStateRow["Latitude"] = Convert.ToDecimal(alarmRow["Latitude"]);
+
+                        if (!alarmRow.IsNull("Longitude"))
+                            eventStateRow["Longitude"] = Convert.ToDecimal(alarmRow["Longitude"]);
+                        else
+                            eventStateRow["Longitude"] = DBNull.Value;
+
+                        if (!alarmRow.IsNull("Latitude"))
+                            eventStateRow["Latitude"] = Convert.ToDecimal(alarmRow["Latitude"]);
+                        else
+                            eventStateRow["Latitude"] = DBNull.Value;
+
                         eventStateRow["Company"] = alarmRow["Company"];
                         eventStateRow["UpdatedOn"] = alarmRow["UpdatedOn"];
 
