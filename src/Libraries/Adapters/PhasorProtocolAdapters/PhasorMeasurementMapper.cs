@@ -69,7 +69,11 @@ namespace PhasorProtocolAdapters;
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
 [AdapterProtocol(nameof(PhasorProtocol.IEEEC37_118V1), "IEEE C37.118-2005", ProtocolType.Frame, "Phasor", true, 1)]
+
 [AdapterProtocol(nameof(PhasorProtocol.IEEEC37_118V2), "IEEE C37.118.2-2011", ProtocolType.Frame, "Phasor", true, 2)]
+[UIAdapterProtocol(nameof(PhasorProtocol.IEEEC37_118V2), "Gemstone.PhasorProtocols", ".IEEEC37_118.UI.IEEEC37_118V2.js")]
+[UIAdapterProtocol(nameof(PhasorProtocol.IEEEC37_118V2), "Gemstone.PhasorProtocols", ".IEEEC37_118.UI.IEEEC37_118V2Chunk.js")]
+
 [AdapterProtocol(nameof(PhasorProtocol.IEEEC37_118D6), "IEEE C37.118 Draft 6", ProtocolType.Frame, "Phasor", true, 3)]
 [AdapterProtocol(nameof(PhasorProtocol.IEEE1344), "IEEE 1344-1995", ProtocolType.Frame, "Phasor", true, 4)]
 
