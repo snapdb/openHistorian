@@ -202,6 +202,7 @@ public class WebServer(WebServerConfiguration configuration)
             options.SuppressModelStateInvalidFilter = true;
         });
 
+        services.AddControllers();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -230,6 +231,7 @@ public class WebServer(WebServerConfiguration configuration)
 
         app.UseWebSockets();
         app.UseRouting();
+        
 
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>

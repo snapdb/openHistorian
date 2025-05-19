@@ -25,6 +25,7 @@ using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using openHistorian.Utility;
 using openHistorian.WebUI;
+using openHistorian.WebUI.Controllers;
 using ServiceInterface;
 
 namespace openHistorian;
@@ -160,6 +161,7 @@ internal sealed class ServiceHost : ServiceHostBase, IServiceCommands
             DiagnosticsLogger.DefineSettings(settings);
             WebHosting.DefineSettings(settings);
             ServiceHostBase.DefineSettings(settings);
+            GrafanaAuthProxyController.DefineSettings(settings);
             FailoverModule.DefineSettings(settings);
         }
     }
