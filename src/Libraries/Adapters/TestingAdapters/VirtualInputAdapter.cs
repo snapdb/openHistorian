@@ -26,6 +26,7 @@
 using System.ComponentModel;
 using Gemstone.PhasorProtocols;
 using Gemstone.StringExtensions;
+using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 
 namespace TestingAdapters;
@@ -52,6 +53,12 @@ public class VirtualInputAdapter : InputAdapterBase
     /// </summary>
     public override bool SupportsTemporalProcessing => false;
 
+    [ConnectionStringParameter(false)]
+    public override IMeasurement[]? OutputMeasurements
+    {
+        get => base.OutputMeasurements;
+        set => base.OutputMeasurements = value;
+    }
     #endregion
 
     #region [ Methods ]
