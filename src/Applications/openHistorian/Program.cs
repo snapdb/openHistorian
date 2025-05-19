@@ -8,7 +8,7 @@ using openHistorian.Utility;
 
 namespace openHistorian;
 
-internal class Program
+internal partial class Program
 {
     private static void Main(string[] args)
     {
@@ -61,6 +61,8 @@ internal class Program
             application.Services.AddHostedService<ServiceHost>();
 
             ConfigureLogging(application.Logging);
+
+            SetupGrafanaHostingAdapter(settings);
 
             IHost host = application.Build();
             host.Run();
