@@ -33,6 +33,7 @@ using Gemstone.Data.DataExtensions;
 using Gemstone.Diagnostics;
 using Gemstone.EventHandlerExtensions;
 using Gemstone.IO;
+using Gemstone.Numeric.EE;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
@@ -1171,10 +1172,22 @@ public class LocalOutputAdapter : OutputAdapterBase
             m_key.Timestamp = (ulong)measurement.Timestamp.Value;
             m_key.PointID = measurement.Key.ID;
 
-            // Since current time-series measurements are basically all floats - values fit into first value,
-            // this will change as value types for time-series framework expands
-            m_value.Value1 = BitConvert.ToUInt64((float)measurement.AdjustedValue);
-            m_value.Value3 = (ulong)measurement.StateFlags;
+            if (measurement is AlarmMeasurement alarmMeasurement)
+            {
+                // Log an exception if defined measurement signal type is not a valid alarm measurement, otherwise
+                // queries, e.g., from Grafana, will fail to find load the measurement as an alarm measurement
+                if (measurement.GetSignalType(DataSource!) != s_alarmSignalTypeID)
+                    OnProcessException(MessageLevel.Error, new InvalidOperationException($"Measurement \"{measurement}\" metadata is not defined with a signal type of '{nameof(SignalType.ALRM)}' (SignalType.ID = {s_alarmSignalTypeID}): value was archived, but queries may fail to load alarm measurement value."));
+
+                // Save alarm data type to the historian which includes the UUID-based alarm ID and state flags
+                m_value.AsAlarm = (alarmMeasurement.AdjustedValue > 0.0D, alarmMeasurement.AlarmID, alarmMeasurement.StateFlags);
+            }
+            else
+            {
+                // Since current time-series measurements are basically all floats - values fit into first value
+                m_value.Value1 = BitConvert.ToUInt64((float)measurement.AdjustedValue);
+                m_value.Value3 = (ulong)measurement.StateFlags;
+            }
 
             // Check to see if swinging door compression is enabled
             if (SwingingDoorCompressionEnabled)
@@ -1314,7 +1327,7 @@ public class LocalOutputAdapter : OutputAdapterBase
     /// </summary>
     public static readonly ConcurrentDictionary<string, LocalOutputAdapter> Instances = new(StringComparer.OrdinalIgnoreCase);
 
-    //private static int s_virtualProtocolID;
+    private static readonly int s_alarmSignalTypeID;
 
     // Static Constructor
 
@@ -1329,6 +1342,17 @@ public class LocalOutputAdapter : OutputAdapterBase
             Globals.MemoryPool.SetMaximumBufferSize((long)(memoryPoolSize * SI2.Giga));
 
         Globals.MemoryPool.SetTargetUtilizationLevel(targetLevel);
+
+        try
+        {
+            using AdoDataConnection connection = new(ConfigSettings.Instance);
+            s_alarmSignalTypeID = connection.ExecuteScalar<int>($"SELECT ID FROM SignalType WHERE Acronym = '{nameof(SignalType.ALRM)}'");
+        }
+        catch (Exception ex)
+        {
+            Logger.SwallowException(ex, $"Failed to lookup \"SignalType.ID\" for \"SignalType.Acronym = '{nameof(SignalType.ALRM)}'\", using default value of {SignalType.ALRM}");
+            s_alarmSignalTypeID = (int)SignalType.ALRM;
+        }
     }
 
     // Static Methods
