@@ -24,6 +24,7 @@
 using System.ComponentModel;
 using System.Text;
 using Gemstone;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Diagnostics;
 using Gemstone.IO;
 using Gemstone.StringExtensions;
@@ -56,6 +57,7 @@ namespace FileAdapters
         /// </summary>
         [ConnectionStringParameter]
         [Description("Defines the directory to which files are written.")]
+        [Label("Output Directory")]
         public string? OutputDirectory { get; set; }
 
         /// <summary>

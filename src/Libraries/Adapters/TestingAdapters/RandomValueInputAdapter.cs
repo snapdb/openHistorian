@@ -28,6 +28,7 @@
 using System.ComponentModel;
 using System.Text;
 using Gemstone;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
@@ -145,6 +146,7 @@ public class RandomValueInputAdapter : InputAdapterBase
     [ConnectionStringParameter]
     [Description("Define the number of frames to send into the concentrator.")]
     [DefaultValue(5)]
+    [Label("Points To Send")]
     public int PointsToSend { get; set; }
 
     /// <summary>
@@ -153,6 +155,7 @@ public class RandomValueInputAdapter : InputAdapterBase
     [ConnectionStringParameter]
     [Description("Define the interval of time, in milliseconds, between sending frames into the concentrator.")]
     [DefaultValue(33)]
+    [Label("Interpoint Delay")]
     public int InterpointDelay { get; set; }
 
     /// <summary>
