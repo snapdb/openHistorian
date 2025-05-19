@@ -20,6 +20,7 @@
 //       Generated original version of source code.
 //
 //******************************************************************************************************
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 using System.Collections.Concurrent;
 using System.ComponentModel;
@@ -34,6 +35,7 @@ using Gemstone.Diagnostics;
 using Gemstone.EventHandlerExtensions;
 using Gemstone.IO;
 using Gemstone.Numeric.EE;
+using Gemstone.Security.AccessControl;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
@@ -49,7 +51,6 @@ using SnapDB.Snap.Services.Reader;
 using SnapDB.Snap.Storage;
 using Timer = System.Timers.Timer;
 using ConfigSettings = Gemstone.Configuration.Settings;
-using Gemstone.Security.AccessControl;
 
 namespace openHistorian.Adapters;
 
@@ -57,8 +58,8 @@ namespace openHistorian.Adapters;
 /// Represents an output adapter that archives measurements to a local archive.
 /// </summary>
 [Description("openHistorian 3.0: Archives measurements to a local openHistorian instance.")]
-[UIResource("AdaptersUI", $".openHistorian.Adapters.LocalOutputAdapter.main.js")]
-[UIResource("AdaptersUI", $".openHistorian.Adapters.LocalOutputAdapter.chunk.js")]
+[UIResource("AdaptersUI", ".openHistorian.Adapters.LocalOutputAdapter.main.js")]
+[UIResource("AdaptersUI", ".openHistorian.Adapters.LocalOutputAdapter.chunk.js")]
 public class LocalOutputAdapter : OutputAdapterBase
 {
     #region [ Members ]
@@ -1159,7 +1160,7 @@ public class LocalOutputAdapter : OutputAdapterBase
         {
             if (measurement is null)
                 continue;
-
+             
             // Validate timestamp reasonability as compared to local clock, when enabled
             if (EnableTimeReasonabilityCheck)
             {
@@ -1176,7 +1177,7 @@ public class LocalOutputAdapter : OutputAdapterBase
             {
                 // Log an exception if defined measurement signal type is not a valid alarm measurement, otherwise
                 // queries, e.g., from Grafana, will fail to find load the measurement as an alarm measurement
-                if (measurement.GetSignalType(DataSource!) != s_alarmSignalTypeID)
+                if (measurement.GetSignalTypeID(DataSource!, SignalType.ALRM) != s_alarmSignalTypeID)
                     OnProcessException(MessageLevel.Error, new InvalidOperationException($"Measurement \"{measurement}\" metadata is not defined with a signal type of '{nameof(SignalType.ALRM)}' (SignalType.ID = {s_alarmSignalTypeID}): value was archived, but queries may fail to load alarm measurement value."));
 
                 // Save alarm data type to the historian which includes the UUID-based alarm ID and state flags
@@ -1304,12 +1305,12 @@ public class LocalOutputAdapter : OutputAdapterBase
         SafeFileWatcher fileWatcher = new(path, "*.d2*");
 
         fileWatcher.Created += (_, args) => ThreadPool.QueueUserWorkItem(state =>
-            {
-                ClientDatabaseBase<HistorianKey, HistorianValue> clientDatabase = GetClientDatabase();
-                string[] filePtr = [(string)state!];
-                clientDatabase.AttachFilesOrPaths(filePtr);
-            },
-            args.FullPath);
+        {
+            ClientDatabaseBase<HistorianKey, HistorianValue> clientDatabase = GetClientDatabase();
+            string[] filePtr = [(string)state!];
+            clientDatabase.AttachFilesOrPaths(filePtr);
+        },
+        args.FullPath);
 
         fileWatcher.InternalBufferSize = 65536;
 
@@ -1364,6 +1365,7 @@ public class LocalOutputAdapter : OutputAdapterBase
         //ensure at least one data historian exists
         const string PPAHistorianCountFormat = "SELECT COUNT(*) FROM Historian WHERE Acronym = 'PPA'";
         int ppaHistorianCount = Convert.ToInt32(connection.ExecuteScalar(string.Format(PPAHistorianCountFormat)));
+
         const string PPAHistorianInsertFormat = $"INSERT INTO Historian(Acronym, Name, AssemblyName, TypeName, ConnectionString, IsLocal, Description, LoadOrder, Enabled) VALUES('PPA', 'Primary Phasor Archive', '{nameof(openHistorian)}.{nameof(Adapters)}.dll', '{nameof(openHistorian)}.{nameof(Adapters)}.{nameof(LocalOutputAdapter)}', 'DesiredRemainingSpace=0.1', 1, 'Primary historical archive for phasor data.', 0, 1)";
 
         // Ensure that statistics historian exists
