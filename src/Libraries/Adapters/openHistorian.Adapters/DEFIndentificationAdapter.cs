@@ -49,6 +49,8 @@ using MathNet.Numerics.LinearAlgebra;
 using PhasorProtocolAdapters;
 using Gemstone.Timeseries.Model;
 using MathNet.Numerics.LinearAlgebra.Factorization;
+using System.Drawing;
+using System.Reflection.Emit;
 
 namespace DataQualityMonitoring;
 
@@ -88,7 +90,13 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         }
     }
 
-    #endregion
+    private class LabelMatch
+    {
+        public string Label { get; set; }
+        public int IndexDE { get; set; }
+        public int IndexLabel { get; set; }
+    }
+        #endregion
 
     #region [ Constructors ]
 
@@ -221,7 +229,11 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             if (m_DeLabels[i].Enabled == false)
                 continue;
 
-            List<string> tags = m_DeLabels[i].Label.Take(nt).Intersect(PointTags).ToList();
+            var tags = m_DeLabels[i].Label.Take(nt).Intersect(PointTags).Select((t) => new LabelMatch() {
+               Label = t,
+               IndexLabel = m_DeLabels[i].Label.TakeWhile((l) => l != t).Count(),
+               IndexDE = PointTags.TakeWhile((l) => l != t).Count()
+            });
 
             if (tags.Count() == 0)
             {
@@ -230,20 +242,52 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             }
             else
             {
-                Correlation[i] = Corr(new (m_DeNum[i].Where((item,j) => tags.Contains(m_DeLabels[i].Label[j])).ToArray(),1) ,DE(id2,1));
-                for j = 1:numel(id2)
-                    rank.r(i) = rank.r(i) + DEnum(i, id3(j)) * DE(id2(j));
-                end
+                Gemstone.Numeric.Matrix<double> labelMatrix = new(1,tags.Select((k) => m_DeNum[i][k.IndexLabel]).ToArray());
+                Gemstone.Numeric.Matrix<double> deMatrix = new(1,tags.Select((k) => DE[1][k.IndexDE]).ToArray());
+
+                Correlation[i] = Corr(labelMatrix, deMatrix)[0][0];
+                Rank[i] = tags.Sum((t) => DE[t.IndexDE].Sum(v => v * m_DeNum[i][t.IndexLabel]));
             }
 
         }
+
+        double rankMax = Rank.Max();
+        int[] = Rank.FindIndex()
 
         return;
     }
 
     private Gemstone.Numeric.Matrix<double> Corr(Gemstone.Numeric.Matrix<double> X, Gemstone.Numeric.Matrix<double> Y)
     {
-    
+        Gemstone.Numeric.Matrix<double> rho = new(X.NColumns,Y.NColumns, 0.0D);
+
+        for (int j = 0; j < X.NColumns; j++)
+        {
+            for (int k = 0; k < Y.NColumns; k++)
+            {
+                double numerator = 0;
+                double Xdenominator = 0;
+                double Ydenominator = 0;
+
+                double[] colX = X.GetColumn(j);
+                double[] colY = Y.GetColumn(k);
+
+                double Xmean = colX.Mean();
+                double Ymean = colY.Mean();
+
+               
+                for (int i = 0; i < X.NRows; i++)
+                {
+                    numerator += (colX[i] - Xmean) * (colY[i] - Ymean);
+                    Xdenominator += (colX[i] - Xmean) * (colX[i] - Xmean);
+                    Ydenominator += (colY[i] - Ymean) * (colY[i] - Ymean);
+                }
+
+                rho[j][k] =  numerator / Math.Sqrt(Xdenominator * Ydenominator);
+            }
+        }
+
+        return rho;      
     }
     protected override void PublishFrame(IFrame frame, int index)
     {
