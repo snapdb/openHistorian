@@ -27,6 +27,7 @@ using Gemstone.Timeseries;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using GrafanaAdapters.Functions;
 
 namespace GrafanaAdapters.DataSourceValueTypes.BuiltIn;
 
@@ -142,7 +143,7 @@ public partial struct MeasurementValue : IDataSourceValueType<MeasurementValue>
 
     readonly int IDataSourceValueType.DataTypeIndex => TypeIndex;
 
-    readonly void IDataSourceValueType<MeasurementValue>.AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, MeasurementValue> timeValueMap, DataSet metadata)
+    readonly void IDataSourceValueType<MeasurementValue>.AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, MeasurementValue> timeValueMap, DataSet metadata, QueryParameters queryParameters)
     {
         timeValueMap[dataSourceValue.Time] = new MeasurementValue
         {
@@ -151,6 +152,10 @@ public partial struct MeasurementValue : IDataSourceValueType<MeasurementValue>
             Time = dataSourceValue.Time,
             Flags = dataSourceValue.Flags
         };
+    }
+
+    readonly void IDataSourceValueType<MeasurementValue>.TimeValueMapAssignmentsComplete(string instanceName, OrderedDictionary<string, SortedList<double, MeasurementValue>> timeValueMaps, DataSet metadata, QueryParameters queryParameters)
+    {
     }
 
     /// <summary>
