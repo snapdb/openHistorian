@@ -33,6 +33,7 @@ using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Data.DataExtensions;
 using Gemstone.StringExtensions.FuzzyStrings;
 using Gemstone.TimeSpanExtensions;
+using GrafanaAdapters.Functions;
 
 namespace GrafanaAdapters.DataSourceValueTypes.BuiltIn;
 
@@ -164,7 +165,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
 
     readonly int IDataSourceValueType.DataTypeIndex => TypeIndex;
 
-    readonly void IDataSourceValueType<PhasorValue>.AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, PhasorValue> timeValueMap, DataSet metadata)
+    readonly void IDataSourceValueType<PhasorValue>.AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, PhasorValue> timeValueMap, DataSet metadata, QueryParameters queryParameters)
     {
         string pointTag = dataSourceValue.ID.pointTag;
         string target = dataSourceValue.ID.target;
@@ -221,6 +222,10 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
                 Flags = MeasurementStateFlags.SuspectData
             });
         }
+    }
+
+    readonly void IDataSourceValueType<PhasorValue>.TimeValueMapAssignmentsComplete(string instanceName, OrderedDictionary<string, SortedList<double, PhasorValue>> timeValueMaps, DataSet metadata, QueryParameters queryParameters)
+    {
     }
 
     /// <summary>

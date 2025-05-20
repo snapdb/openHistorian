@@ -45,6 +45,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using openHistorian.Adapters;
+using GrafanaAdapters.DataSourceValueTypes.BuiltIn;
 
 namespace GrafanaAdapters;
 
@@ -320,21 +321,23 @@ public abstract partial class GrafanaDataSourceBase
         await foreach (DataSourceValue dataSourceValue in instance.QueryDataSourceValues(queryParameters, targetMap, cancellationToken).ConfigureAwait(false))
         {
             // Assign data value, identified by pointTag, to its own time-value map based on its target
-            default(T).AssignToTimeValueMap(instanceName, dataSourceValue, targetValues[dataSourceValue.ID.target], metadata);
+            default(T).AssignToTimeValueMap(instanceName, dataSourceValue, targetValues[dataSourceValue.ID.target], metadata, queryParameters);
         }
 
+        default(T).TimeValueMapAssignmentsComplete(instanceName, targetValues, metadata, queryParameters);
+
         // Transpose each target into a data source value group along with its associated queried values
-        foreach (KeyValuePair<string, SortedList<double, T>> item in targetValues)
+        foreach ((string target, SortedList<double, T> timeValueMap) in targetValues)
         {
             yield return new DataSourceValueGroup<T>
             {
-                Target = item.Key,
-                RootTarget = item.Key,
+                Target = target,
+                RootTarget = target,
                 SourceTarget = queryParameters.SourceTarget,
-                Source = item.Value.Values.ToAsyncEnumerable(),
+                Source = timeValueMap.Values.ToAsyncEnumerable(),
                 DropEmptySeries = queryParameters.DropEmptySeries,
                 RefID = queryParameters.SourceTarget.refID,
-                MetadataMap = metadata.GetMetadataMap<T>(item.Key, queryParameters)
+                MetadataMap = metadata.GetMetadataMap<T>(target, queryParameters)
             };
         }
     }

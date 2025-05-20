@@ -21,6 +21,7 @@
 //
 //******************************************************************************************************
 
+using System;
 using Gemstone.Timeseries;
 
 namespace GrafanaAdapters.DataSourceValueTypes.BuiltIn;
@@ -31,9 +32,9 @@ namespace GrafanaAdapters.DataSourceValueTypes.BuiltIn;
 public enum EventStateTarget
 {
     /// <summary>
-    /// Target the raised component of the event state.
+    /// Target the start time component of the event state.
     /// </summary>
-    Raised,
+    StartTime,
     /// <summary>
     /// Target the duration component of the event state.
     /// </summary>
@@ -51,6 +52,11 @@ public partial struct EventState
     public const string MetadataTableName = "EventStates";
 
     /// <summary>
+    /// Event ID, i.e., a unique identifier for the event.
+    /// </summary>
+    public Guid EventID;
+
+    /// <summary>
     /// Query target, i.e., a point-tag representing the event.
     /// </summary>
     public string Target;
@@ -59,11 +65,6 @@ public partial struct EventState
     /// Event details.
     /// </summary>
     public string Details;
-
-    /// <summary>
-    /// Queried active event alarm state, 0.0 or 1.0.
-    /// </summary>
-    public double Raised;
 
     /// <summary>
     /// Event duration, in milliseconds, since raised state if cleared; otherwise, <c>double.NaN</c>.
@@ -75,9 +76,16 @@ public partial struct EventState
     public double Duration;
 
     /// <summary>
-    /// Timestamp, in Unix epoch milliseconds, of queried value.
+    /// Timestamp, in Unix epoch milliseconds, of queried value. In an event state context, this
+    /// time represents this start of the event when in the range of the the active Grafana query;
+    /// otherwise, this will be the start or the end of the query range.
     /// </summary>
     public double Time;
+
+    /// <summary>
+    /// Timestamp, in Unix epoch milliseconds, of the start time of the event.
+    /// </summary>
+    public double StartTime;
 
     /// <summary>
     /// Flags for queried value.

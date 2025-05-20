@@ -26,6 +26,7 @@ using Gemstone.Timeseries;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using GrafanaAdapters.Functions;
 
 namespace GrafanaAdapters.DataSourceValueTypes;
 
@@ -196,13 +197,23 @@ public interface IDataSourceValueType<T> : IDataSourceValueType, IComparable<T>,
     /// <param name="dataSourceValue">Queried data source value type.</param>
     /// <param name="timeValueMap">Time-value map for specified <paramref name="dataSourceValue"/>.</param>
     /// <param name="metadata">Source metadata.</param>
+    /// <param name="queryParameters">Active query parameters.</param>
     /// <remarks>
     /// Provided time-value map is specific to the queried data source value type, by target, and is keyed by Unix
     /// epoch milliseconds timestamp. This function is used to assign the queried data source value type to the
     /// time-value map. If the data source value type has multiple fields, this function will be called once
     /// per each field in the data source value type for a given timestamp.
     /// </remarks>
-    void AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, T> timeValueMap, DataSet metadata);
+    void AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, T> timeValueMap, DataSet metadata, QueryParameters queryParameters);
+
+    /// <summary>
+    /// Called when all data source values have been assigned to the time-value maps.
+    /// </summary>
+    /// <param name="instanceName">Data source instance name for current <see cref="GrafanaDataSourceBase"/> implementation.</param>
+    /// <param name="timeValueMaps">Time-value maps for all targets.</param>
+    /// <param name="metadata">Source metadata.</param>
+    /// <param name="queryParameters">Active query parameters.</param>
+    void TimeValueMapAssignmentsComplete(string instanceName, OrderedDictionary<string, SortedList<double, T>> timeValueMaps, DataSet metadata, QueryParameters queryParameters);
 
     /// <summary>
     /// Executes provided function for data source fields, applying the results
