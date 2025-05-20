@@ -28,7 +28,9 @@ using Newtonsoft.Json.Linq;
 using openHistorian.Utility;
 using openHistorian.WebUI.Controllers.JsonModels;
 using ServiceInterface;
+using System;
 using System.Diagnostics;
+using System.Reflection;
 using static openHistorian.Utility.FailoverModule;
 
 namespace openHistorian.WebUI.Controllers;
@@ -135,4 +137,18 @@ public class SystemController : Controller
         return Ok(settings);
     }
 
+
+    [HttpGet, Route("version")]
+    public IActionResult GetVersion()
+    {
+        string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+#if DEBUG
+                version += " (Deb)";
+#elif DEVELOPMENT
+                version += " (Dev)";
+#endif
+
+        return Ok(version);
+    }
 }
