@@ -69,6 +69,7 @@ public class InitialSchema : Migration
         Delete.Table("ApplicationRoleSecurityGroup");
         Delete.Table("ApplicationRoleUserAccount");
         Delete.Table("SecurityGroupUserAccount");
+        Delete.Table("UserSettings");
 
         //System related
         Delete.Table("Historian");
@@ -574,6 +575,16 @@ public class InitialSchema : Migration
             .WithColumn("Message").AsString(int.MaxValue).NotNullable()
             .WithColumn("Timestamp").AsDateTime().Nullable()
             .WithColumn("Priority").AsInt32().NotNullable();
+
+
+        Create.Table("UserSettings")
+            .WithColumn("ID").AsInt32().PrimaryKey().Identity()
+            .WithColumn("UserID").AsString(50).NotNullable()
+            .WithColumn("AuthProviderID").AsString(50).NotNullable()
+            .WithColumn("Settings").AsString(int.MaxValue).Nullable();
+        
+        Create.UniqueConstraint("IX_UserSettings_UserID_AuthProviderID").OnTable("UserSettings").Columns("UserID", "AuthProviderID");
+
 
         this.AddRunTimeSync("Historian");
         this.AddRunTimeSync("OutputStream");
