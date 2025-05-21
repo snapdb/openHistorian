@@ -29,6 +29,7 @@
 
 using System.ComponentModel;
 using System.Text;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Diagnostics;
 using Gemstone.Numeric.EE;
 using Gemstone.Timeseries;
@@ -94,6 +95,7 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the threshold for detecting an abnormal excursion in frequency.")]
     [DefaultValue(DefaultEstimateTriggerThreshold)]
+    [Label("Estimate Trigger Threshold")]
     public double EstimateTriggerThreshold { get; set; } = DefaultEstimateTriggerThreshold;
 
     /// <summary>
@@ -101,6 +103,7 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     /// </summary>
     [ConnectionStringParameter]
     [Description("Define the number of frames to be analyzed at any given time. The default value is 4 times the frame-rate defined in the connection string for this Frequency Excursion.")]
+    [Label("Analysis Window Size")]
     public int AnalysisWindowSize { get; set; }
 
     /// <summary>
@@ -108,6 +111,7 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     /// </summary>
     [ConnectionStringParameter]
     [Description("Define the interval between adjacent calculations. The default value is the frame-rate defined in the connection string for this Frequency Excursion.")]
+    [Label("Analysis Interval")]
     public int AnalysisInterval { get; set; }
 
     /// <summary>
@@ -116,6 +120,7 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the minimum number of consecutive excursions needed in order to trip the alarm.")]
     [DefaultValue(DefaultConsecutiveDetections)]
+    [Label("Consecutive Detections")]
     public int ConsecutiveDetections { get; set; } = DefaultConsecutiveDetections;
 
     /// <summary>
@@ -124,6 +129,7 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the minimum frequency values needed to perform a valid calculation.")]
     [DefaultValue(DefaultMinimumValidChannels)]
+    [Label("Minimum Valid Channels")]
     public int MinimumValidChannels { get; set; } = DefaultMinimumValidChannels;
 
     /// <summary>
@@ -132,6 +138,7 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the ratio used to calculate the total estimated MW change from frequency.")]
     [DefaultValue(DefaultPowerEstimateRatio)]
+    [Label("Power Estimate Ratio")]
     public double PowerEstimateRatio { get; set; } = DefaultPowerEstimateRatio;
 
     /// <summary>
@@ -140,6 +147,7 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the period, in seconds, used to prevent duplicate alarms.")]
     [DefaultValue(DefaultMinimumAlarmInterval)]
+    [Label("Minimum Alarm Interval")]
     public int MinimumAlarmInterval { get; set; } = DefaultMinimumAlarmInterval;
 
     private int AlarmProhibitPeriod => MinimumAlarmInterval * FramesPerSecond;

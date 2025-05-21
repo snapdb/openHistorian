@@ -30,6 +30,7 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Text;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Numeric.EE;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
@@ -75,6 +76,7 @@ public class AverageFrequency : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Defines low frequency reasonability threshold. Value is inclusive, i.e., frequency will be unreasonable at and beyond specified threshold.")]
     [DefaultValue(DefaultLowFrequencyThreshold)]
+    [Label("Low Frequency Threshold")]
     public double LowFrequencyThreshold { get; set; }
 
     /// <summary>
@@ -83,6 +85,7 @@ public class AverageFrequency : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Defines high frequency reasonability threshold. Value is inclusive, i.e., frequency will be unreasonable at and beyond specified threshold.")]
     [DefaultValue(DefaultHighFrequencyThreshold)]
+    [Label("High Frequency Threshold")]
     public double HighFrequencyThreshold { get; set; }
 
     /// <summary>
@@ -91,6 +94,7 @@ public class AverageFrequency : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Defines flag that determines if unreasonable results should be reported as NaN.")]
     [DefaultValue(DefaultReportUnreasonableResultsAsNaN)]
+    [Label("Report Unreasonable Results As NaN")]
     public bool ReportUnreasonableResultsAsNaN { get; set; }
 
     /// <summary>

@@ -26,6 +26,7 @@ using System.ComponentModel;
 using System.Text;
 using System.Timers;
 using Gemstone;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Diagnostics;
 using Gemstone.IO;
 using Gemstone.Security.AccessControl;
@@ -127,6 +128,7 @@ public class FileBlockReader : FacileActionAdapterBase
     /// </summary>
     [ConnectionStringParameter]
     [Description("Defines the path to the directory to be watched for files.")]
+    [Label("Watch Directory")]
     public string? WatchDirectory { get; set; }
 
     /// <summary>
@@ -135,6 +137,7 @@ public class FileBlockReader : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Determines which files are to processed when they appear in the watch folder.")]
     [DefaultValue(DefaultFilePattern)]
+    [Label("File Pattern")]
     public string FilePattern { get; set; }
 
     /// <summary>
@@ -143,6 +146,7 @@ public class FileBlockReader : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Determines the statistic that defines the number of buffer block retransmissions in the system.")]
     [DefaultValue(null)]
+    [Label("Retransmission Stat")]
     public string RetransmissionStat
     {
         get => base.InputMeasurementKeys.First().ToString();
@@ -155,6 +159,7 @@ public class FileBlockReader : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Determines the size of each block of data that is read from the file.")]
     [DefaultValue(DefaultBlockSize)]
+    [Label("Block Size")]
     public int BlockSize
     {
         get => m_blockSize;
@@ -171,6 +176,7 @@ public class FileBlockReader : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Determines the amount of time, in seconds, between each scan of the watch folder.")]
     [DefaultValue(DefaultWatchInterval)]
+    [Label("Watch Interval")]
     public double WatchInterval
     {
         get => m_watchInterval;
@@ -189,6 +195,7 @@ public class FileBlockReader : FacileActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(DefaultProcessInterval)]
     [Description("Determines the amount of time, in seconds, between each publication of a block of data from the active file.")]
+    [Label("Process Interval")]
     public double ProcessInterval
     {
         get => m_processInterval;
@@ -209,6 +216,7 @@ public class FileBlockReader : FacileActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(DefaultRetransmissionThreshold)]
     [Description("Defines the percentage of buffer blocks that can be retransmitted before throttling begins.")]
+    [Label("Retransmission Threshold")]
     public double RetransmissionThreshold
     {
         get => m_retransmissionThreshold;
@@ -222,6 +230,7 @@ public class FileBlockReader : FacileActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(DefaultBlockSizeAdjustment)]
     [Description("Defines the percentage by which to adjust the buffer size when throttling buffer blocks.")]
+    [Label("Block Size Adjustment")]
     public double BlockSizeAdjustment
     {
         get => m_blockSizeAdjustment;
@@ -235,6 +244,7 @@ public class FileBlockReader : FacileActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(DefaultBlockSizeAdjustment)]
     [Description("Defines the percentage by which to adjust the process interval when throttling buffer blocks.")]
+    [Label("Process Interval Adjustment")]
     public double ProcessIntervalAdjustment
     {
         get => m_processIntervalAdjustment;
