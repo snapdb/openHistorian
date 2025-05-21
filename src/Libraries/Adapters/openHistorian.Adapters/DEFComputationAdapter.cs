@@ -503,10 +503,10 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         }
 
 
-        Gemstone.Numeric.Matrix<ComplexNumber> complexPower;
-        Gemstone.Numeric.Matrix<double> voltageMagnitude;
-        Gemstone.Numeric.Matrix<double> voltageAngle;
-        Gemstone.Numeric.Matrix<double> frequencyBus;
+        Matrix<ComplexNumber> complexPower;
+        Matrix<double> voltageMagnitude;
+        Matrix<double> voltageAngle;
+        Matrix<double> frequencyBus;
         double[] voltageMean;
         {
             // ToDo: this might be an artifact of loading data strangely in OSL
@@ -522,17 +522,17 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             double sqrt3 = Math.Sqrt(3); // to convert to phase to phase
             voltageM = voltageM.Select(col => col.Select(val => val * sqrt3));
             voltageMean = voltageM.Select(v => v.Mean()).ToArray();
-            Gemstone.Numeric.Matrix<ComplexNumber> voltage = new Gemstone.Numeric.Matrix<ComplexNumber>(
+            Matrix<ComplexNumber> voltage = new Matrix<ComplexNumber>(
                 voltageM.Zip(voltageA, (mRow, aRow) => mRow.Zip(aRow, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m)).ToArray()).ToArray());
-            complexPower = new Gemstone.Numeric.Matrix<ComplexNumber>(
+            complexPower = new Matrix<ComplexNumber>(
                 currentM.Zip(currentA, (mRow, aRow) => mRow.Zip(aRow, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m)).ToArray()).ToArray());
 
             complexPower = complexPower.TransformByValue((c, i, j) => sqrt3 * c.Conjugate * voltage[i][j]).Transpose;
 
-            voltageMagnitude = new Gemstone.Numeric.Matrix<double>(voltageM.Select(row => row.ToArray()).ToArray()).Transpose;
+            voltageMagnitude = new Matrix<double>(voltageM.Select(row => row.ToArray()).ToArray()).Transpose;
             // We measure (-180,180), matlab (0,360). Not doing it the same way can cause issues
-            voltageAngle = new Gemstone.Numeric.Matrix<double>(voltageA.Select(row => row.Select(v => v < 0 ? v+360 : v).ToArray()).ToArray()).Transpose;
-            frequencyBus = new Gemstone.Numeric.Matrix<double>(fBus.Select(row => row.ToArray()).ToArray()).Transpose;
+            voltageAngle = new Matrix<double>(voltageA.Select(row => row.Select(v => v < 0 ? v+360 : v).ToArray()).ToArray()).Transpose;
+            frequencyBus = new Matrix<double>(fBus.Select(row => row.ToArray()).ToArray()).Transpose;
         }
 
         // 0.7 MW, 2s (60 samples)
@@ -543,8 +543,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         JObject details = new JObject();
         double kFactor;
         {
-            Gemstone.Numeric.Matrix<double> realPowerTrendless = RemoveTrend(complexPower.TransformByValue(v => v.Real));
-            Gemstone.Numeric.Matrix<double> reactivePowerTrendless = RemoveTrend(complexPower.TransformByValue(v => v.Imaginary));
+            Matrix<double> realPowerTrendless = RemoveTrend(complexPower.TransformByValue(v => v.Real));
+            Matrix<double> reactivePowerTrendless = RemoveTrend(complexPower.TransformByValue(v => v.Imaginary));
 
             double cumulativePQRatio = CalculateCumulativePQRatio(realPowerTrendless, reactivePowerTrendless, freqAlarm);
 
@@ -553,9 +553,9 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             // Apply CPSD Method
             if (deMethodFlag == DEMethod.CPSD || deMethodFlag == DEMethod.Both)
             {
-                Gemstone.Numeric.Matrix<double> voltageMagnitudeNoTrend = RemoveTrend(voltageMagnitude);
-                Gemstone.Numeric.Matrix<double> voltageAngleNoTrend = RemoveTrend(voltageAngle);
-                Gemstone.Numeric.Matrix<double> DE_cpsd = DE_CPSD(realPowerTrendless, reactivePowerTrendless, voltageMagnitudeNoTrend, voltageAngleNoTrend, voltageMean, kFactor, freqAlarm).Item1;
+                Matrix<double> voltageMagnitudeNoTrend = RemoveTrend(voltageMagnitude);
+                Matrix<double> voltageAngleNoTrend = RemoveTrend(voltageAngle);
+                Matrix<double> DE_cpsd = DE_CPSD(realPowerTrendless, reactivePowerTrendless, voltageMagnitudeNoTrend, voltageAngleNoTrend, voltageMean, kFactor, freqAlarm).Item1;
                 details.Add("CPSD_LineNumber", JsonConvert.SerializeObject(DE_cpsd.GetColumn(0)));
                 details.Add("CPSD_Summation", JsonConvert.SerializeObject(DE_cpsd.GetColumn(1)));
                 details.Add("CPSD_RealPower_VoltageAngle", JsonConvert.SerializeObject(DE_cpsd.GetColumn(2)));
@@ -566,8 +566,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         }
 
         // Bandpass filtering for Fdominant without trend removal
-        Gemstone.Numeric.Matrix<double> realPower = BandPassFilter(complexPower.TransformByValue(v => v.Real), freqAlarm);
-        Gemstone.Numeric.Matrix<double> reactivePower = BandPassFilter(complexPower.TransformByValue(v => v.Imaginary), freqAlarm);
+        Matrix<double> realPower = BandPassFilter(complexPower.TransformByValue(v => v.Real), freqAlarm);
+        Matrix<double> reactivePower = BandPassFilter(complexPower.TransformByValue(v => v.Imaginary), freqAlarm);
         voltageMagnitude = BandPassFilter(voltageMagnitude, freqAlarm);
         if (IsRealData)
             frequencyBus = BandPassFilter(frequencyBus, freqAlarm);
@@ -577,13 +577,13 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         if (deMethodFlag == DEMethod.CDEF || deMethodFlag == DEMethod.Both)
         {
             CDEF(realPower, reactivePower, voltageMagnitude, voltageAngle, frequencyBus, voltageMean, kFactor,
-                out Gemstone.Numeric.Matrix<double> DE_ranked,
+                out Matrix<double> DE_ranked,
                 out double[] DE_time,
-                out Gemstone.Numeric.Matrix<double> DE_curve,
-                out Gemstone.Numeric.Matrix<double> DE_curveP,
-                out Gemstone.Numeric.Matrix<double> DE_curveQ,
-                out Gemstone.Numeric.Matrix<double> DE_curveQF,
-                out Gemstone.Numeric.Matrix<double> DE_curvePV);
+                out Matrix<double> DE_curve,
+                out Matrix<double> DE_curveP,
+                out Matrix<double> DE_curveQ,
+                out Matrix<double> DE_curveQF,
+                out Matrix<double> DE_curvePV);
             details.Add("CDEF_LineNumber", JsonConvert.SerializeObject(DE_ranked.GetColumn(0)));
             details.Add("CDEF_DECurve", JsonConvert.SerializeObject(DE_ranked.GetColumn(1)));
             details.Add("CDEF_DECurvePF", JsonConvert.SerializeObject(DE_ranked.GetColumn(2)));
@@ -820,7 +820,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
 
             // Spike analysis based on the deviation of PSD intergral from
-            Gemstone.Numeric.Matrix<double> data_sp = new Gemstone.Numeric.Matrix<double>(Pline.ToArray(), 2);
+            Matrix<double> data_sp = new Matrix<double>(Pline.ToArray(), 2);
             (double[] ff1, double[] ss1) = SpectrumAna(t0, data_sp);
             int nf = ff1.Count();
             // skip first two values in spectra, get normalized PSD integral
@@ -968,7 +968,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     /// <returns></returns>
     public double[] SteadyStateRemoval(IEnumerable<double> x, double penalityFactor)
     {
-        Gemstone.Numeric.Matrix<double> imf = VariableModeDecomposition.vmd(x, 500, 5, penalityFactor);
+        Matrix<double> imf = VariableModeDecomposition.vmd(x, 500, 5, penalityFactor);
         return imf.GetSubmatrix(0, 0, imf.NRows, imf.NColumns - 1).RowSums;
     }
 
@@ -976,7 +976,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     /// Spectrum analysis for time data series given as a matrix
     /// </summary>
     /// <returns></returns>
-    public (double[], double[]) SpectrumAna(IEnumerable<double> t, Gemstone.Numeric.Matrix<double> data)
+    public (double[], double[]) SpectrumAna(IEnumerable<double> t, Matrix<double> data)
     {
         // Spectrum analysis
         double fs = Math.Round((t.Count() - 1) / (t.Last() - t.First()));
@@ -1244,7 +1244,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         return result;
     }
 
-    private Gemstone.Numeric.Matrix<double> BandPassFilter(Gemstone.Numeric.Matrix<double> data, double fDominant)
+    private Matrix<double> BandPassFilter(Matrix<double> data, double fDominant)
     {
         // fs = FramesPerSecond Genset 12
         // ddF = BandThreshold Genset 4
@@ -1258,9 +1258,9 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         return data.TransformByColumn((col, _) => butterFilter.FiltFilt(col));
     }
 
-    private void RemoveTrippedLines(ref Gemstone.Numeric.Matrix<ComplexNumber> power, double threshold, int allowedLowContiguous)
+    private void RemoveTrippedLines(ref Matrix<ComplexNumber> power, double threshold, int allowedLowContiguous)
     {
-        Gemstone.Numeric.Matrix<double> abs_real = power.TransformByValue<double>((value) => Math.Abs(value.Real));
+        Matrix<double> abs_real = power.TransformByValue<double>((value) => Math.Abs(value.Real));
         for(int j = 0; j < power.NColumns; j++)
         {
             int count = 0;
@@ -1271,7 +1271,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     count++;
                     if (count > allowedLowContiguous)
                     {
-                        power.ReplaceSubmatrix(new Gemstone.Numeric.Matrix<ComplexNumber>(power.NRows, [new ComplexNumber(0.00001, 0.00001)]), 0, j);
+                        power.ReplaceSubmatrix(new Matrix<ComplexNumber>(power.NRows, [new ComplexNumber(0.00001, 0.00001)]), 0, j);
                         i = power.NRows; // breaks our loop, since we found our result
                     }
                 }
@@ -1280,7 +1280,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         }
     }
 
-    private void RemoveNoisySignals(ref Gemstone.Numeric.Matrix<ComplexNumber> power)
+    private void RemoveNoisySignals(ref Matrix<ComplexNumber> power)
     {
         double value = 0.00001;
         double threshold = 10 * value;
@@ -1288,7 +1288,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         RemoveNoisySignals(ref power, value, threshold, false);
     }
 
-    private void RemoveNoisySignals(ref Gemstone.Numeric.Matrix<ComplexNumber> power, double value, double threshold, bool checkReal = true)
+    private void RemoveNoisySignals(ref Matrix<ComplexNumber> power, double value, double threshold, bool checkReal = true)
     {
         int nfft = (int) Math.Floor(power.NRows / 2.0D) + 1;
         List<double> ffSums = new List<double>();
@@ -1316,7 +1316,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         });
     }
 
-    private Gemstone.Numeric.Matrix<double> RemoveTrend(Gemstone.Numeric.Matrix<double> series)
+    private Matrix<double> RemoveTrend(Matrix<double> series)
     {
         switch (RemoveTrendFlag)
         {
@@ -1336,7 +1336,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         }
     }
 
-    private Gemstone.Numeric.Matrix<double> HighPassFilter(Gemstone.Numeric.Matrix<double> series) 
+    private Matrix<double> HighPassFilter(Matrix<double> series) 
     {
         // This uses a precalculated 8th order elliptical filter with highpass frequency of 0.06 Hz (GenSet(18)), Attenuation of Stopband of 60 dB, allowed ripple of 0.1 dB
         /* precalculated gain (this shouldn't matter for our analysis)
@@ -1369,13 +1369,13 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         });
     }
 
-    private double CalculateCumulativePQRatio(Gemstone.Numeric.Matrix<double> realPower, Gemstone.Numeric.Matrix<double> reactivePower, double? frequency = null)
+    private double CalculateCumulativePQRatio(Matrix<double> realPower, Matrix<double> reactivePower, double? frequency = null)
     {
         int window = realPower.NRows - 1;
         int overlap = window - 1;
-        (Gemstone.Numeric.Matrix<ComplexNumber> realCpsd, double[] freqVector) = CPSD(realPower, realPower, window, overlap);
+        (Matrix<ComplexNumber> realCpsd, double[] freqVector) = CPSD(realPower, realPower, window, overlap);
         freqVector = freqVector.Select(val => val * FramesPerSecond / Math.PI / 2).ToArray();
-        Gemstone.Numeric.Matrix<ComplexNumber> imagCpsd = CPSD(reactivePower, reactivePower, window, overlap).Item1;
+        Matrix<ComplexNumber> imagCpsd = CPSD(reactivePower, reactivePower, window, overlap).Item1;
 
         double nearestFind = frequency ?? FrequencyThreshold;
         double comparitor = double.PositiveInfinity;
@@ -1496,12 +1496,12 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         return (periodogramAvg.ToArray(), Enumerable.Range(0, take).Select(n => n * fstep).ToArray());
     }
 
-    private (Gemstone.Numeric.Matrix<ComplexNumber>, double[]) CPSD(Gemstone.Numeric.Matrix<double> x, Gemstone.Numeric.Matrix<double> y, int window, int overlap)
+    private (Matrix<ComplexNumber>, double[]) CPSD(Matrix<double> x, Matrix<double> y, int window, int overlap)
     {
         if (x.NColumns != y.NColumns) throw new InvalidOperationException("CPSD of matrices of different dimensions not supported.");
 
         double[] freqVector = [];
-        Gemstone.Numeric.Matrix<ComplexNumber> cpsdOut;
+        Matrix<ComplexNumber> cpsdOut;
 
         for (int colIndex = 0; colIndex < x.NColumns; colIndex++)
         {
@@ -1511,7 +1511,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             {
                 // Frequency vector is the same for all results for this calculation
                 (Complex32[] cpsd, freqVector) = CPSD(xVector, yVector, window, overlap);
-                cpsdOut = new Gemstone.Numeric.Matrix<ComplexNumber>(cpsd.Select(c => new ComplexNumber((double)c.Real, c.Imaginary)).ToArray(), x.NColumns);
+                cpsdOut = new Matrix<ComplexNumber>(cpsd.Select(c => new ComplexNumber((double)c.Real, c.Imaginary)).ToArray(), x.NColumns);
             }
             else
             {
@@ -1525,11 +1525,11 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         return (cpsdOut, freqVector);
     }
 
-    private (Gemstone.Numeric.Matrix<double>, double) DE_CPSD(
-        Gemstone.Numeric.Matrix<double> realPower,
-        Gemstone.Numeric.Matrix<double> reactivePower,
-        Gemstone.Numeric.Matrix<double> voltageMagnitude,
-        Gemstone.Numeric.Matrix<double> voltageAngle,
+    private (Matrix<double>, double) DE_CPSD(
+        Matrix<double> realPower,
+        Matrix<double> reactivePower,
+        Matrix<double> voltageMagnitude,
+        Matrix<double> voltageAngle,
         double[] voltageAverage,
         double kFactor,
         double frequency
@@ -1545,10 +1545,10 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         int window = realPower.NRows - 1;
         int overlap = window - 1;
 
-        Gemstone.Numeric.Matrix<ComplexNumber> cP;
+        Matrix<ComplexNumber> cP;
         IEnumerable<double> wP;
         {
-            Gemstone.Numeric.Matrix<double> pq = new(realPower.NRows, 2*realPower.NColumns, 0);
+            Matrix<double> pq = new(realPower.NRows, 2*realPower.NColumns, 0);
             for(int colIndex = 0; colIndex < pq.NColumns; colIndex++)
             {
                 int pqColIndex = colIndex % realPower.NColumns;
@@ -1576,13 +1576,13 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         double fCpsd = wP.ElementAt(maxIndex); // rectified studied requency
 
         // 1 original index, 2 sum of rest, 3 mPVa, 4 mQV, 5 mPV, 6 mQVA
-        Gemstone.Numeric.Matrix<double> DE_cpsd = new Gemstone.Numeric.Matrix<double>(realPower.NColumns, 6, 0);
+        Matrix<double> DE_cpsd = new Matrix<double>(realPower.NColumns, 6, 0);
         double realScale = 1 / Math.Sqrt(1 + Math.Pow(kFactor, 2));
         double reactiveScale = realScale * kFactor;
-        Gemstone.Numeric.Matrix<ComplexNumber> mPVa = CPSD(realPower, voltageAngle, window, overlap).Item1;
-        Gemstone.Numeric.Matrix<ComplexNumber> mQV = CPSD(reactivePower, voltageMagnitude, window, overlap).Item1;
-        Gemstone.Numeric.Matrix<ComplexNumber> mPV = CPSD(realPower, voltageMagnitude, window, overlap).Item1;
-        Gemstone.Numeric.Matrix<ComplexNumber> mQVa = CPSD(reactivePower, voltageAngle, window, overlap).Item1.TransformByValue(v => -v);
+        Matrix<ComplexNumber> mPVa = CPSD(realPower, voltageAngle, window, overlap).Item1;
+        Matrix<ComplexNumber> mQV = CPSD(reactivePower, voltageMagnitude, window, overlap).Item1;
+        Matrix<ComplexNumber> mPV = CPSD(realPower, voltageMagnitude, window, overlap).Item1;
+        Matrix<ComplexNumber> mQVa = CPSD(reactivePower, voltageAngle, window, overlap).Item1.TransformByValue(v => -v);
         double[] mPVaRow = mPVa.GetRow(maxIndex).Select(v => (v * realScale).Imaginary).ToArray();
         double[] mQVRow = mQV.GetRow(maxIndex).Select(v => (v * realScale).Imaginary).ToArray();
         double[] mQVaRow = mQVa.GetRow(maxIndex).Select(v => (v * reactiveScale).Imaginary).ToArray();
@@ -1608,20 +1608,20 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     }
 
     private void CDEF(
-        Gemstone.Numeric.Matrix<double> realPower,
-        Gemstone.Numeric.Matrix<double> reactivePower,
-        Gemstone.Numeric.Matrix<double> vMagnitude,
-        Gemstone.Numeric.Matrix<double> vAngle,
-        Gemstone.Numeric.Matrix<double> fBus,
+        Matrix<double> realPower,
+        Matrix<double> reactivePower,
+        Matrix<double> vMagnitude,
+        Matrix<double> vAngle,
+        Matrix<double> fBus,
         double[] vMean,
         double kfactor,
-        out Gemstone.Numeric.Matrix<double> DE_ranked,
+        out Matrix<double> DE_ranked,
         out double[] DE_time,
-        out Gemstone.Numeric.Matrix<double> DE_curve,
-        out Gemstone.Numeric.Matrix<double> DE_curveP,
-        out Gemstone.Numeric.Matrix<double> DE_curveQ,
-        out Gemstone.Numeric.Matrix<double> DE_curveQF, 
-        out Gemstone.Numeric.Matrix<double> DE_curvePV
+        out Matrix<double> DE_curve,
+        out Matrix<double> DE_curveP,
+        out Matrix<double> DE_curveQ,
+        out Matrix<double> DE_curveQF, 
+        out Matrix<double> DE_curvePV
     )
     {
         List<double> time = Enumerable.Range(0, vMagnitude.NRows).Select(n => (double) n / FramesPerSecond).ToList();
@@ -1637,7 +1637,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         reactivePower = reactivePower.GetSubmatrix(startInd, 0, endInd - startInd + 1, reactivePower.NColumns);
         vMagnitude = vMagnitude.GetSubmatrix(startInd, 0, endInd - startInd + 1, vMagnitude.NColumns);
 
-        Gemstone.Numeric.Matrix<double> usedData;
+        Matrix<double> usedData;
         if (IsRealData)
         {
             usedData = fBus.GetSubmatrix(startInd, 0, endInd - startInd + 1, fBus.NColumns);
@@ -1651,11 +1651,11 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         (int start, int end) = GetStartEndNumericalDerivative(vMagnitude.NRows, nn);
         DE_time = time.Skip(start).Take(end - start + 1).ToArray();
         // We're gonna use this in a lambda, so we need to make it not out yet
-        Gemstone.Numeric.Matrix<double> DE_curve_temp = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
-        DE_curveP = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
-        DE_curveQ = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
-        DE_curveQF = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
-        DE_curvePV = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        Matrix<double> DE_curve_temp = new Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        DE_curveP = new Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        DE_curveQ = new Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        DE_curveQF = new Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        DE_curvePV = new Matrix<double>(end - start + 1, realPower.NColumns, 0);
 
         for (int col = 0; col < realPower.NColumns; col++)
         {
@@ -1704,10 +1704,10 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             }
         }
 
-        Gemstone.Numeric.Matrix<double> Amatrix = new Gemstone.Numeric.Matrix<double>(DE_time, 2);
+        Matrix<double> Amatrix = new Matrix<double>(DE_time, 2);
         for (int row = 0; row < Amatrix.NRows; row++) Amatrix[row][1] = 1;
 
-        DE_ranked = new Gemstone.Numeric.Matrix<double>(DE_curve_temp.NColumns, 7, 0);
+        DE_ranked = new Matrix<double>(DE_curve_temp.NColumns, 7, 0);
         IEnumerable<Tuple<double, int>> sortOrder = Enumerable
             .Range(0, DE_ranked.NRows)
             .Select(ind => new Tuple<double, int>(GetSlopeCurve(Amatrix, DE_curve_temp.GetColumn(ind)), ind))
@@ -1730,9 +1730,9 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         DE_curve = DE_curve_temp;
     }
 
-    private double GetSlopeCurve(Gemstone.Numeric.Matrix<double> timeMatrix, double[] vector)
+    private double GetSlopeCurve(Matrix<double> timeMatrix, double[] vector)
     {
-        Gemstone.Numeric.Matrix<double> paraMatrix = timeMatrix.GetLeastSquares(vector);
+        Matrix<double> paraMatrix = timeMatrix.GetLeastSquares(vector);
         return paraMatrix[0][0];
     }
 
