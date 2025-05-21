@@ -36,6 +36,8 @@ namespace PowerCalculations;
 /// Calculates a composed angle difference.
 /// </summary>
 [Description("Angle Difference Calculator: Safely calculates a difference between two angles, unwrapping source angles as needed")]
+[UIResource("AdaptersUI", $".PowerCalculations.AngleDifferenceCalculator.main.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.AngleDifferenceCalculator.chunk.js")]
 public class AngleDifferenceCalculator : CalculatedMeasurementBase
 {
     #region [ Members ]
