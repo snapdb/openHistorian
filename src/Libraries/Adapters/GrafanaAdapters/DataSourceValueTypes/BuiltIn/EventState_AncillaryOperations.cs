@@ -198,7 +198,8 @@ public partial struct EventState : IDataSourceValueType<EventState>
         if (measurement.GetSignalTypeID(metadata, SignalType.ALRM) != s_alarmSignalTypeID)
             throw new InvalidOperationException($"Measurement {pointID:N0} '{target}' is not an alarm signal type. Only alarm measurements can generate event states.");
 
-        // Get event ID for the current timeseries value
+        // Get event ID for the current timeseries value - note that the value of incoming dataSourceValue is not used since
+        // this is an alarm data type in the historian with special storage and retrieval semantics, only time is used
         (Guid eventID, bool alarmed, MeasurementStateFlags flags) = QueryEvent(instanceName, pointID, dataSourceValue.Time);
 
         // Verify alarm event ID is defined
@@ -313,7 +314,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         // Technically, multiple event states for the same target could have started and be ongoing before the
         // current Grafana query range or have started at the exact same time. Each of these event states must
         // have a unique timestamp in the time value map, so if there are multiple events with the same instance
-        // time, we increment the time by 1ms until it is unique timestamp in the time value map.
+        // time, we increment the time by 1ms until it is a unique timestamp in the time value map.
         while (timeValueMap.ContainsKey(instanceTime))
             instanceTime += 1.0D;
 
@@ -470,10 +471,10 @@ public partial struct EventState : IDataSourceValueType<EventState>
         bool alarmed = false;
 
         // Query for next alarm change state after current time
-        using TreeStream<HistorianKey, HistorianValue> lastValueStream = database.Read(timestamp + 1, timestamp + s_alarmSearchLimit, pointIDs);
+        using TreeStream<HistorianKey, HistorianValue> nextValueStream = database.Read(timestamp + 1, timestamp + s_alarmSearchLimit, pointIDs);
 
         // Scan to next value for event ID
-        while (lastValueStream.Read(key, value))
+        while (nextValueStream.Read(key, value))
         {
             (bool readAlarmState, Guid readEventID, _) = value.AsAlarm;
 
@@ -507,7 +508,6 @@ public partial struct EventState : IDataSourceValueType<EventState>
         using ClientDatabaseBase<HistorianKey, HistorianValue> database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName) ??
             throw new InvalidOperationException($"Failed to get database '{instanceName}' from historian server.");
 
-        Dictionary<Guid, (ulong, ulong, MeasurementStateFlags)> eventRaisedStates = [];
         HistorianKey key = new();
         HistorianValue value = new();
         ulong timestamp = ConvertFromGrafanaTimestamp(queryStartTime);
@@ -530,17 +530,19 @@ public partial struct EventState : IDataSourceValueType<EventState>
             .ToArray();
 
         // Query for last alarm change states prior to query start time
-        using TreeStream<HistorianKey, HistorianValue> lastValueStream = database.Read(timestamp - s_alarmSearchLimit, timestamp - 1, pointIDs);
+        using TreeStream<HistorianKey, HistorianValue> lastValuesStream = database.Read(timestamp - s_alarmSearchLimit, timestamp - 1, pointIDs);
+
+        Dictionary<Guid, (ulong, ulong, MeasurementStateFlags)> eventRaisedStates = [];
 
         // Scan all events to include only those that are not already cleared, i.e., ongoing events
-        while (lastValueStream.Read(key, value))
+        while (lastValuesStream.Read(key, value))
         {
             (bool alarmed, Guid eventID, MeasurementStateFlags flags) = value.AsAlarm;
 
-            if (eventRaisedStates.ContainsKey(eventID) && !alarmed)
-                eventRaisedStates.Remove(eventID);
-            else
+            if (alarmed)
                 eventRaisedStates[eventID] = (key.PointID, key.Timestamp, flags);
+            else
+                eventRaisedStates.Remove(eventID);
         }
 
         Dictionary<ulong, string> pointIDTargets = targetPointIDs.ToDictionary(item => item.Value, item => item.Key);
