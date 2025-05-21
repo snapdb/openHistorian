@@ -665,281 +665,173 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             en = en.Take(ii + 1).ToList();
 
         // ii is the number of intervals with magnitude GT than threshold
-        if (ii > 0)
+            if (ii > -1)
         {
-            //double ind_p = en.Zip(st, (e,s) => e - s);
-            //Tstart = Tstep * (st(ind_p(1)) - 1);
-            //Tend = Tstep * (en(ind_p(1)) - 1);
+                int ind_p = en.Select((e, i) => new Tuple<int, int>(e - st[i], i)).OrderBy(tupe => -tupe.Item1).First().Item2;
+                Tstart = Tstep * (st[ind_p] - 1);
+                Tend = Tstep * (en[ind_p] - 1);
             if (Math.Abs(Tstart - Tend!) > 0.1)
             {
-                Tstart = Tstart + (Ticks)(0.5*Twin);
-                Tend = Tend + (Ticks)(0.5 * Twin);
+                    Tstart = Tstart + 0.5 * Twin;
+                    Tend = Tend + 0.5 * Twin;
 
                 // ------Reduce Tend if it is beond time when line/ gen was tripped
-                double stept = Math.Floor(fs * Tstep);
-                int  nn = (int)Math.Floor(t0.Count() / stept);
-                int nstop = (int) Math.Floor((Tstart - 0.5 * Twin) * fs / stept);
-                //double Pmax = Math.max(abs(Pline));
-                //Ttrip = nn * Tstep;
+                    int stept = (int)Math.Floor(fs * Tstep);
+                    int nn = (int)Math.Floor(t0.Count() / (double)stept);
+                    int nstop = (int)Math.Floor((Tstart - 0.5 * Twin) * fs / (double)stept);
+                    double Pmax = Pline.Select(d => Math.Abs(d)).Max();
+                    Ttrip = nn * Tstep;
 
-                //while nn > nstop
-          //med = median(Pline(stept * (nn - 1):stept * nn));
-            //    if abs(med) / Pmax < 0.05
-              //     nn = nn - 1; Ttrip = nn * Tstep;
-          //else
-            //        nn = nstop;
-              //  end
-             //end
+                    while (nn > nstop)
+                    {
+                        double medAbs = Math.Abs(Pline.Skip(stept * (nn - 1)-1).Take(stept+1).Median());
+                        if (medAbs / Pmax < 0.05)
+                        {
+                            nn = nn - 1;
+                            Ttrip = nn * Tstep;
             }
+                        else
+                            nn = nstop;
             }
+                    if (Tend > Ttrip)
+                        Tend = Math.Max(Ttrip, Tstart + Twin);
+                }
+                else
+                {
+                    Tstart = 0;
+                    Tend = 0;
+                }
+            }
+        }
+
+        // Verify on whether the alarm is related to tripping to to bad PMU data
+        if (Tend > 0)
+        {
+            int[] clust = { 0, 0 };
+            double[] spikeT = { Math.Max(1 / (freqAlarm * 16), 2 / fs + 0.001), 1 / (freqAlarm * 4) };
+            List<double> range = new List<double>();
+            double th = 0;
+            for (int j=0; j < 2; j++)
+            {
+                int stepp = (int) Math.Floor(fs * spikeT[j]);
+                range = new List<double>();
+                List<double> tt = new List<double>();
+                for (double i =  Math.Floor(Tstart  * fs); i <= Math.Floor(Tend*fs-stepp); i += stepp)
+                {
+                    IEnumerable<double> test = Pline.Skip((int)i-1).Take(stepp+1);
+                    range.Add(Pline.Skip((int) i-1).Take(stepp+1).Max() - Pline.Skip((int) i-1).Take(stepp+1).Min());
+                    tt.Add(i / fs);
+                }
+                double av0 = range.Mean(); 
+                th = av0 + 3.5 * range.StandardDeviation();
+                int k = 0;   // flag of current sample
+                int k_1 = 0; // flag of previous sample
+                for (int i = 0; i < range.Count(); i++)
+                {
+                    if (Math.Abs(range[i]) > th)
+                        if (k_1 == 0 & k == 0) // new cluster has been found
+                        {
+                            clust[j] = clust[j] + 1; 
+                            k = 1; 
+                        }
+                        else k_1 = 1;
+                    else
+                    {
+                        k = 0;
+                        k_1 = 0;
+                    }
+
+                }
+            }
+            if (clust[0] > 2 & clust[1] == 0) 
+                pmuCond = DataStatus.SuspectData;
 
 
-        /*
+            // Spike analysis based on the deviation of PSD intergral from
+            Gemstone.Numeric.Matrix<double> data_sp = new Gemstone.Numeric.Matrix<double>(Pline.ToArray(), 2);
+            (double[] ff1, double[] ss1) = SpectrumAna(t0, data_sp);
+            int nf = ff1.Count();
+            // skip first two values in spectra, get normalized PSD integral
+            double[] ss_i = new double[nf];
+            for (int i = 2; i < nf; i++)
+                ss_i[i] = ss_i[i - 1] + ss1[i];
 
+            double ss_i_max = ss_i.Max();
+            for(int i = 0; i < nf; i++)
+                ss_i[i] /= ss_i_max;
 
-
-
-% ii is the number of intervals with magnitude GT than threshold
-if ii>0  
-    [~,ind_p]=sort((en-st),'descend');
-    Tstart=Tstep*(st(ind_p(1))-1);
-    Tend=Tstep*(en(ind_p(1))-1);
-    if abs(Tstart-Tend)>0.1 % time limits are NOT the same
+            // deviation of PSD integral from linear function
+            double[] dss = new double[nf];
+            for (int i = 0; i < nf; i++)
+                dss[i] = Math.Abs(ss_i[i] - (double) (i + 1) / nf);
         
-       % Shift the selected period by half of Twin
-       Tstart=Tstart+0.5*Twin; Tend=Tend+0.5*Twin;
-    
-       %------ Reduce Tend if it is beond time when line/gen was tripped
-       % Find time when the line/gen was disconnected (Ttrip)
-       % That is time when median value become zero
-       stept=floor(fs*Tstep);
-       nn=floor(length(t0)/stept);
-       nstop=floor((Tstart-0.5*Twin)*fs/stept);
-       Pmax=max(abs(Pline));
-       Ttrip=nn*Tstep;
-       while nn>nstop
-          med=median(Pline(stept*(nn-1):stept*nn));
-          if abs(med)/Pmax < 0.05
-             nn=nn-1; Ttrip=nn*Tstep;
+            // Check bad PMU data per PSD integral criteria
+            int h1 = (int) Math.Floor(nf / ff1.Last());
+            if (ss_i[h1 * 2] / ss_i.Max() < 0.5)
+            {
+                if (dss.Mean() < 0.2) // PSD integral is close to linear function
+                    pmuCond = DataStatus.BadData; // defenetely bad PMU data due to spikes
           else
-             nn=nstop;
-          end
-       end
-       if Tend > Ttrip; Tend = max([Ttrip Tstart+Twin]) ; end %limit Tend by Ttrip added on 9-6-2018-------------
-       %----- end of Reduce Tend if it is beond time when line/gen was tripped
-    else
-        Tstart=0; Tend=0;
-    end
-else
-    Tstart=0; Tend=0;
-end
+                    pmuCond = DataStatus.SuspectData; // potentially bad PMU data due to spikes
+            }
 
-%%===== Verify on whether the alarm is related to tripping to to bad PMU data
-if Tend>0
-    %---- Check on spikes within (Tstart, Tend) interval per clastring analysis. 
-    %  These spikes are used to detect potential bad PMU data 
-    clust=zeros(2,1); % number of clusters of spikes
-    spikeT=[max([1/GenSet(23)/16 (2/fs+0.001)]) 1/GenSet(23)/4];% Two spike times for testing
-    for j=1:2
-      clear range; clear tt;
-      % Calculate variability of Pline within spikeT intervals
-      ii=0; stepp=floor(fs*spikeT(j));
-      for i=floor(Tstart*fs):stepp:floor(Tend*fs-stepp)
-          ii=ii+1;
-          range(ii)=max(Pline(i:i+stepp))-min(Pline(i:i+stepp));
-          tt(ii)=i/fs;
-      end
+            // Check of potential trippings withn(0 Tend) interval.
+            // Tripping is declated by spikes of MW range values per 1 / 4 period test
+            {
+                int stepp = (int)Math.Floor(fs * spikeT.Last());
+                int i1 = 0;
+                List<double> rangeP = new List<double>();
+                List<double> tt = new List<double>();
        
-      av0=mean(range); th=av0+3.5*std(range); % threshold for spike
-      % Count the number of clusters of spikes exceeding threshold (clust)
-      %   within (Tstart - Tend) interval
-      k=0;   % flag of current sample
-      k_1=0; % flag of previous sample
-      for i=1:ii
-         if abs(range(i))>th
-             if k_1==0 & k==0
-                 clust(j)=clust(j)+1; k=1; % new cluster has found
-             else
-                 k_1=1; % the same cluster
-             end
-         else
-             k=0; k_1=0; % end of cluster
-         end
-      end
-    end
-    %  Check bad PMU data per clastering analysis
-    if clust(1) >2 & clust(2) ==0; cond(2)=1; end % potential bad PMU
-    %---- end of Check on spikes by clasters analysis
+                for (int i = 1; i < (int)Math.Floor(Tend * fs - stepp); i += stepp)
+                {
+                    i1 = i1 + 1;
+                    IEnumerable<double> test = Pline.Skip(i - 1).Take(stepp + 1);
+                    rangeP.Add(Pline.Skip(i - 1).Take(stepp + 1).Max() - Pline.Skip(i - 1).Take(stepp + 1).Min());
+                    tt.Add(i / fs);
+                }
+                double rangeThreshold = rangeP.Mean() + 5 * rangeP.StandardDeviation();
     
-    %----Spike analysis based on the deviation of PSD intergral from
-    %    linear function; in the entire frequency range and entire sampling period
-    data_sp = [Pline Pline]; % use MW flow as input; need > 1 columns for SpectrumAna
-    [ff1,ss1,~] = SpectrumAna(t0,data_sp);   % spectral analysis by using FFT
-    nf=length(ff1(:,1));
-    ss_i=zeros(nf,1);
-    for i=3:nf % skip first two values in spectra
-       ss_i(i,1)=ss_i(i-1,1)+ss1(i,1); % Integral of PSD
-    end
-    ss_i=ss_i/max(ss_i); % normalized integral
-    for i=1:nf
-       dss(i,1)=abs(ss_i(i)-i/nf); % deviation of PSD integral from linear function
-    end
-    h1=floor(length(ff1)/ff1(end)); % index of 1Hz point in ff1
+                if (rangeP.Any(range => range > rangeThreshold))
+                    trippingCond = DataStatus.SuspectData;
+            }
 
-    % Check bad PMU data per PSD integral criteria
-    if ss_i(h1*2+1)/max(ss_i) < 0.5  % PSD intergal at f=2Hz
-        if mean(dss) < 0.2 % PSD integral is close to linear function
-            cond(2)=2; % defenetely bad PMU data due to spikes
-        else
-            cond(2)=1; % potentially bad PMU data due to spikes
-        end
-    end
-    %---- end of Spike analysis based on the deviation of PSD.....
+            // Check tripping event within (Tstart - Tend) interval
+            if (clust[0] > 0 && clust[1] > 0)
+            {
+                int ii = 0;
+                int i = -1;
+                while (ii == 0 && i < range.Count())
+                {
+                    i++;
+                    if (Math.Abs(range[i]) > th) ii = i + 1;
+                }
     
-    %--Check of potential trippings withn (0 Tend) interval. 
-    % Tripping is declated by spikes of MW range values per 1/4 period test
-    %  Detected tripping impacts only output message per cond3 value
-      i1=0; stepp=floor(fs*spikeT(j));
-      for i=1:stepp:floor(Tend*fs-stepp)
-          i1=i1+1;
-          rangeP(i1)=max(Pline(i:i+stepp))-min(Pline(i:i+stepp));
-          tt(i1)=i/fs;
-      end
-      th2=mean(rangeP)+5*std(rangeP); % threshold for spike
-      cond4=0;
-      for i=1:i1
-          if rangeP(i)>th2; cond4=cond4+1; end % declare spike if larger than threshold
-      end
-      
-      if cond4>0; cond(3)=1; end % potential tripping - set cond3 flag
-      
-    if GenSet(21)>2 % Graph of spike analysis
-        figure(6)
-        subplot(3,1,1)
-        plot(ff1,ss1(1:length(ff1))/max(ss1),'b')
-        ylabel('p.u.','fontsize',10)
-        title('Power spectra density');
-        
-        subplot(3,1,2)
-        plot(ff1,ss_i(1:length(ff1))/max(ss_i),'b')
-        hold on
-        plot([ff1(1) ff1(end)],[0.5 0.5],'r')
-        hold on
-        plot([2],[0.5],'or')
-        hold off
-        title('Integral of PSD, p.u.');
-        legend('Integral','Threshold','Test point')
-        
-        subplot(3,1,3)
-        plot(ff1,dss,'b')
-        hold on
-        plot([ff1(1) ff1(end)],[mean(dss) mean(dss)],'g')
-        hold on
-        plot([ff1(1) ff1(end)],[0.2 0.2],'r')
-        hold off
-        legend('Deviation','Mean','Threshold')
-        title('Deviation of PSD Integral from white noise');
-        xlabel('Frequency, Hz','fontsize',10)
-        print([ff{5} ff{20}],'-djpeg','-r0') % save with screen resolution
-        ff{56}=[ff{5} ff{20}];
-    end
-    %-- end of Check of potential trippings ...
-
-    
-    % ################# Check tripping event within (Tstart - Tend) interval
-    %  by using clust(2)>0 criterion (spike per 1/4 period test)
-    % Adjust study period to select interval before first spike if interval
-    % is sufficient for DEF method, or interval after spike
-    if clust(1) >0 & clust(2) >0 % potential tripping
-       % Find time for the first spike per 1/4 period test
-       ii=0;i=0;
-       while ii==0 & i<length(range)
-          i=i+1;
-          if abs(range(i))>th;ii=i; end
-       end
-       % Adjust interval per time of first spike
-       leng=Tend-Tstart;
-       Tspike=ii*spikeT(2)-0.5/GenSet(23); % time of first spike per 1/4 period test
-       if Tspike > T_th
-           % interval before fist spike is suffucient for DEF; selecting this one
-           Tend=min([Tstart+leng Tstart+Tspike]);
+                double leng = Tend - Tstart;
+                double Tspike = ii * spikeT[1] - 0.5 / freqAlarm;
+                if (Tspike > Tth)
+                    Tend = Math.Min(Tstart + leng, Tstart + Tspike);
        else
-           % selecting inteval after spike
-           Tstart=Tstart+Tspike;
-           Tend=min([Tstart+leng Ttrip]);    
-       end
-    end 
-end
-%%===== end of Verify on whether the alarm...
-%%----------------------------
+                {
+                    Tstart = Tstart + Tspike;
+                    Tend = Math.Min(Tstart + leng, Ttrip);
+                }
+            }
+        }
 
-% Convert relative time into absolute time
-Ts1=datestr(AlarmTime_num-(-Tstart+GenSet(24)+dt)/24/60/60,'yyyy-mm-dd HH:MM:SS'); %Ts as a string
-Te1=datestr(AlarmTime_num-(-Tend+GenSet(24)+dt)/24/60/60,'yyyy-mm-dd HH:MM:SS'); %Te as a string
-pmu.ind_s=floor(Tstart*fs); % indices of start and end time in Pline
-pmu.ind_e=floor(Tend*fs);
-AlarmLine=[pmu.LineID{ind},',',pmu.Subs{ind}];
-ff{17}=AlarmLine;
+        Ts1 = Talarm - (long)((HysteresisAlarm + TimeMargin - Tstart) * Ticks.PerSecond);
+        Te1 = Talarm - (long)((HysteresisAlarm + TimeMargin - Tend) * Ticks.PerSecond);
 
-% Is selected interval sufficient to fit min number of oscillation periods?
-Fav=mean(Fint); % average frequency of interest in interval !!! need to do so only for study interval
-% min required time interval:
-if Fav<F_th; T_th=Cmin_l/Fav; else T_th=Cmin_h/Fav; end
-
-deal='r';
-if (Tend-Tstart)<T_th
-    cond(1)=1; % interval is NOT sufficient for analysis
-        if Tstart==Tend; 
-        cond(1)=2; % no suitable interval is detected
-    end
-    deal=':r';
-    if GenSet(20)>0
-      Write_msg(ff{1}, [ff{16} '...Study interval is too short'],1,1,0);
-      Write_msg(ff{1}, [ff{16} '...Minimal required interval =' num2str(T_th,'%3.1f') 's'],1,1,0);
-      Write_msg(ff{1}, [ff{16} '...Available study interval =' num2str((Tend-Tstart),'%3.1f') 's'],1,1,0);
-      Write_msg(ff{1}, [ff{16} '...Frequency=' num2str(Fav,'%5.3f') 'Hz   Pmax=' num2str(max(mm),'%5.1f') 'MW   Tstart=' num2str(Tstart,'%5.1f') 's   Tend=' num2str(Tend,'%5.1f') 's'],1,1,0);
-    end
+        double fav = Fint.Mean();
+        if (fav < BandThreshold)
+            Tth = Cmin_l / fav;
 else
-  % interval is sufficient for analysis
-  % print solution parameters
-  if GenSet(20)>0
-      buf=['..Study interval is selected  f=' num2str(Fav,'%5.3f') 'Hz   Pmax=' num2str(max(mm),'%5.1f') 'MW   Phasor=' ff{14} '   Tstart=' num2str(Tstart,'%5.1f') 's   Tend=' num2str(Tend,'%5.1f') 's'] ;
-      Write_msg(ff{1},[ff{16} buf],1,1,0);
-  end
-end
+            Tth = Cmin_h / fav;
 
-if GenSet(21)>0
-  %----- plotting graphs
-  pm=min(Pline);
-  figure(5)
-  subplot(2,1,1)
-  plot(t0,Pline,'b'),grid
-  hold on
-  plot([Tstart Tend],[pm pm],deal,'LineWidth',3), grid
-  xlabel('Time,s','fontsize',10)
-  ylabel('Line flow, MW','fontsize',10)
-elem=[pmu.Subs{ind} '_' pmu.LineID_EMS{ind}];
-    idx7 = strfind(elem,'_');
-    if ~isempty(idx7)
-       elem=replace(elem,'_','\_');
-    end
-  title(['Transmission element: ' elem],'FontSize',10)
-  hold off
-
-  subplot(2,1,2)
-  plot(mm,'b')
-  xlabel('Scans','fontsize',10)
-  ylabel('PSD, MW','fontsize',10)
-  hold on
-  plot([1 length(mm)], [m_th m_th],deal), grid
-  hold off
-  title(['Magnitude of the mode at ' num2str(GenSet(23),'%3.3f') ' Hz'],'FontSize',10)
-  print([ff{5} ff{21}],'-djpeg','-r0') % save with screen resolution
-  ff{54}=[ff{5} ff{21}];
-
-end
-        */
-
+        if (Tstart == Tend)
+            timeCond = DataStatus.BadData;
+        else if (Tend - Tstart < Tth)
+            timeCond = DataStatus.SuspectData;
     }
 
     /// <summary>
