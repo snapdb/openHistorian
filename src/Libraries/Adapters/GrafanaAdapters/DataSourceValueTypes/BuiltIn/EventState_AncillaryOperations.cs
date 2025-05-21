@@ -82,6 +82,10 @@ public partial struct EventState : IDataSourceValueType<EventState>
         init => Flags = value;
     }
 
+    // Note that 'StartTime' is actual start time of event, whereas 'Time' is the timestamp of the
+    // event state in context of Grafana query range. For example, the 'Time' will be at the start
+    // of the Grafana query range if the event state started before the query range and is ongoing
+    // so that ongoing events will be displayed in the Grafana UI for a given query range.
     readonly double[] IDataSourceValueType.TimeSeriesValue => [StartTime, Duration, Time];
 
     readonly string[] IDataSourceValueType.TimeSeriesValueDefinition => [nameof(StartTime), nameof(Duration), nameof(Time)];
@@ -266,16 +270,10 @@ public partial struct EventState : IDataSourceValueType<EventState>
 
     readonly void IDataSourceValueType<EventState>.TimeValueMapAssignmentsComplete(string instanceName, OrderedDictionary<string, SortedList<double, EventState>> timeValueMaps, DataSet metadata, QueryParameters queryParameters)
     {
-        // Get list of point IDs that have already been processed
-        HashSet<ulong> existingPointIDs = [];
-
-        foreach ((string target, _) in timeValueMaps)
-            existingPointIDs.Add(GetPointID(metadata, target).pointID);
-
         double queryStartTime = ConvertToGrafanaTimestamp((ulong)queryParameters.StartTime.Ticks);
 
         // Find all ongoing raised events that occured before the current Grafana query range
-        QueryLastEventRaisedStates(instanceName, timeValueMaps, existingPointIDs, metadata, queryStartTime);
+        QueryLastEventRaisedStates(instanceName, timeValueMaps, metadata, queryStartTime);
 
         // Complete duration calculations on all event states
         foreach ((string target, SortedList<double, EventState> timeValueMap) in timeValueMaps)
@@ -335,16 +333,16 @@ public partial struct EventState : IDataSourceValueType<EventState>
         }
 
         string details = $"{(string.IsNullOrWhiteSpace(eventDetails) ? "No details were recorded for event" : eventDetails)}" +
-        $" [{eventID}]<br/><br/>Alarm measurement: '{instanceName}:{pointID}' [{target}]";
+                         $" [{eventID}]<br/><br/>Alarm measurement: '{instanceName}:{pointID}' [{target}]";
 
         return new EventState
         {
             EventID = eventID,
             Target = target,
             Details = details,
+            StartTime = startTime,  // Actual start time of event
             Duration = double.NaN,
             Time = instanceTime,    // Time of event state in context of Grafana query range
-            StartTime = startTime,  // Actual start time of event
             Flags = flags
         };
     }
@@ -382,10 +380,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         // of the GrafanaDataSourceBase time-series query operations, this step is necessary to get proper
         // event details because the alarm data type is not a normal time-series value. It is expected that
         // alarm events are infrequent, so the performance impact should be low.
-        HistorianServer server = GetHistorianServerInstance(instanceName) ?? 
-            throw new InvalidOperationException($"Failed to get historian server instance '{instanceName}'. Source adapter may still be initializing.");
-
-        using SnapClient connection = SnapClient.Connect(server.Host);
+        using SnapClient connection = SnapClient.Connect(GetHistorianServerInstance(instanceName).Host);
         using ClientDatabaseBase<HistorianKey, HistorianValue> database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName) ??
             throw new InvalidOperationException($"Failed to get database '{instanceName}' from historian server.");
 
@@ -396,9 +391,9 @@ public partial struct EventState : IDataSourceValueType<EventState>
         bool alarmed = false;
         Guid eventID = Guid.Empty;
         MeasurementStateFlags flags = MeasurementStateFlags.Normal;
-        const ulong quarterMillisecond = Ticks.PerMillisecond / 4;
+        const ulong QuarterMillisecond = Ticks.PerMillisecond / 4;
 
-        using TreeStream<HistorianKey, HistorianValue> currentValueStream = database.Read(timestamp - quarterMillisecond, timestamp + quarterMillisecond, pointIDs);
+        using TreeStream<HistorianKey, HistorianValue> currentValueStream = database.Read(timestamp - QuarterMillisecond, timestamp + QuarterMillisecond, pointIDs);
 
         // Interpret current value as alarm state
         if (currentValueStream.Read(key, value))
@@ -412,12 +407,8 @@ public partial struct EventState : IDataSourceValueType<EventState>
     // Query last raised state for the event ID
     private static double QueryLastRaisedState(string instanceName, ulong pointID, double time, Guid eventID)
     {
-        // Get historian server instance
-        HistorianServer server = GetHistorianServerInstance(instanceName) ??
-            throw new InvalidOperationException($"Failed to get historian server instance '{instanceName}'. Source adapter may still be initializing.");
-
         // Connect to historian server and get database instance
-        using SnapClient connection = SnapClient.Connect(server.Host);
+        using SnapClient connection = SnapClient.Connect(GetHistorianServerInstance(instanceName).Host);
         using ClientDatabaseBase<HistorianKey, HistorianValue> database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName) ??
             throw new InvalidOperationException($"Failed to get database '{instanceName}' from historian server.");
 
@@ -456,12 +447,8 @@ public partial struct EventState : IDataSourceValueType<EventState>
     // Query next cleared state for the event ID
     private static double QueryNextClearedState(string instanceName, ulong pointID, double time, Guid eventID)
     {
-        // Get historian server instance
-        HistorianServer server = GetHistorianServerInstance(instanceName) ??
-            throw new InvalidOperationException($"Failed to get historian server instance '{instanceName}'. Source adapter may still be initializing.");
-
         // Connect to historian server and get database instance
-        using SnapClient connection = SnapClient.Connect(server.Host);
+        using SnapClient connection = SnapClient.Connect(GetHistorianServerInstance(instanceName).Host);
         using ClientDatabaseBase<HistorianKey, HistorianValue> database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName) ??
             throw new InvalidOperationException($"Failed to get database '{instanceName}' from historian server.");
 
@@ -499,14 +486,10 @@ public partial struct EventState : IDataSourceValueType<EventState>
     }
 
     // Query last event raised states for the specified point IDs
-    private static void QueryLastEventRaisedStates(string instanceName, OrderedDictionary<string, SortedList<double, EventState>> timeValueMaps, HashSet<ulong> existingPointIDs, DataSet metadata, double queryStartTime)
+    private static void QueryLastEventRaisedStates(string instanceName, OrderedDictionary<string, SortedList<double, EventState>> timeValueMaps, DataSet metadata, double queryStartTime)
     {
-        // Get historian server instance
-        HistorianServer server = GetHistorianServerInstance(instanceName) ??
-            throw new InvalidOperationException($"Failed to get historian server instance '{instanceName}'. Source adapter may still be initializing.");
-
         // Connect to historian server and get database instance
-        using SnapClient connection = SnapClient.Connect(server.Host);
+        using SnapClient connection = SnapClient.Connect(GetHistorianServerInstance(instanceName).Host);
         using ClientDatabaseBase<HistorianKey, HistorianValue> database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName) ??
             throw new InvalidOperationException($"Failed to get database '{instanceName}' from historian server.");
 
@@ -514,7 +497,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         HistorianValue value = new();
         ulong timestamp = ConvertFromGrafanaTimestamp(queryStartTime);
 
-        // Derive point IDs from time value maps that are not already in the existing point IDs
+        // Derive point IDs from time value maps
         Dictionary<string, ulong> targetPointIDs = timeValueMaps
             .Select(item => item.Key)
             .ToDictionary(target => target, target => GetPointID(metadata, target).pointID);
@@ -528,8 +511,13 @@ public partial struct EventState : IDataSourceValueType<EventState>
 
         ulong[] pointIDs = targetPointIDs
             .Select(item => item.Value)
-            .Where(pointID => !existingPointIDs.Contains(pointID))
             .ToArray();
+
+        // Get set of event IDs that have already been processed
+        HashSet<Guid> processedEventIDs = timeValueMaps
+            .SelectMany(item => item.Value)
+            .Select(item => item.Value.EventID)
+            .ToHashSet();
 
         // Query for last alarm change states prior to query start time
         using TreeStream<HistorianKey, HistorianValue> lastValuesStream = database.Read(timestamp - s_alarmSearchLimit, timestamp - 1, pointIDs);
@@ -540,6 +528,10 @@ public partial struct EventState : IDataSourceValueType<EventState>
         while (lastValuesStream.Read(key, value))
         {
             (bool alarmed, Guid eventID, MeasurementStateFlags flags) = value.AsAlarm;
+
+            // If this event ID is empty or has already been processed, skip it
+            if (eventID == Guid.Empty || processedEventIDs.Contains(eventID))
+                continue;
 
             if (alarmed)
                 eventRaisedStates[eventID] = (key.PointID, key.Timestamp, flags);
@@ -576,6 +568,8 @@ public partial struct EventState : IDataSourceValueType<EventState>
     private static readonly ulong s_baseTicks;
     private static readonly LogPublisher s_log;
 
+    // Returns shared historian server instance for the specified instance name,
+    // consumers should not dispose this shared instance for best performance
     private static HistorianServer GetHistorianServerInstance(string instanceName)
     {
         if (s_historianServer is not null && s_historianServer.TryGetTarget(out HistorianServer historianServer) && !historianServer.IsDisposed)
@@ -592,7 +586,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         if (historianServer is not null)
             s_historianServer = new WeakReference<HistorianServer>(historianServer);
 
-        return historianServer;
+        return historianServer ?? throw new InvalidOperationException($"Failed to get historian server instance '{instanceName}'. Source adapter may still be initializing.");
     }
 
     static EventState()

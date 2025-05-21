@@ -67,6 +67,11 @@ public partial struct EventState
     public string Details;
 
     /// <summary>
+    /// Timestamp, in Unix epoch milliseconds, of the start time of the event.
+    /// </summary>
+    public double StartTime;
+
+    /// <summary>
     /// Event duration, in milliseconds, since raised state if event has cleared; otherwise, <c>double.NaN</c>.
     /// </summary>
     /// <remarks>
@@ -76,15 +81,17 @@ public partial struct EventState
 
     /// <summary>
     /// Timestamp, in Unix epoch milliseconds, of queried value. In an event state context, this
-    /// time represents this start of the event when in the range of the active Grafana query;
-    /// otherwise, this will be the start of the Grafana query range.
+    /// time represents this start of the event constrained to the active Grafana query range.
     /// </summary>
+    /// <remarks>
+    /// <see cref="StartTime"/> is actual start time of event, whereas <see cref="Time"/> is the
+    /// timestamp of the event state in context of the active Grafana query range. For example,
+    /// <see cref="Time"/> will be set to the start of the query range if the event was still
+    /// active and started before the query range so that ongoing events will be displayed in
+    /// the Grafana UI for a given query range. Without doing this, ongoing events that started
+    /// before active query range would not be visible for the user from the Grafana UI.
+    /// </remarks>
     public double Time;
-
-    /// <summary>
-    /// Timestamp, in Unix epoch milliseconds, of the start time of the event.
-    /// </summary>
-    public double StartTime;
 
     /// <summary>
     /// Flags for queried value.
