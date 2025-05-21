@@ -136,7 +136,9 @@ public class BitGuidReadWrite
         HistorianKey key = new();
         HistorianValue value = new();
         IEnumerable<ulong> pointIDs = Enumerable.Range(1, SignalIDs.Length).Select(id => (ulong)id);
-        using TreeStream<HistorianKey, HistorianValue> stream = database.Read(TestTime, TestTime + 1, pointIDs);
+        using TreeStream<HistorianKey, HistorianValue> stream = database.Read(TestTime, TestTime, pointIDs);
+
+        int pointsRead = 0;
 
         while (stream.Read(key, value))
         {
@@ -145,6 +147,10 @@ public class BitGuidReadWrite
 
             ClassicAssert.AreEqual(SignalIDs[index], signalID);
             ClassicAssert.AreEqual(alarmed, stateFlags == MeasurementStateFlags.AlarmLow);
+
+            pointsRead++;
         }
+
+        ClassicAssert.AreEqual(SignalIDs.Length, pointsRead);
     }
 }
