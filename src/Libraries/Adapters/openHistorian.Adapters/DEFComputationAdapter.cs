@@ -208,7 +208,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         oscillation.Add("Frequency", "1.343");
         oscillation.Add("Hysteresis", "20");
 
-        string dataFile = "C:\\Users\\clackner\\Downloads\\DataAlarmLine.mat";
+        string dataFile = "C:\\Users\\gcsantos\\Downloads\\DataAlarmLine.mat";
         // Load EventData
         MathNet.Numerics.LinearAlgebra.Matrix<double> Vm = MatlabReader.Read<double>(dataFile, "Vm");
         MathNet.Numerics.LinearAlgebra.Matrix<double> Va = MatlabReader.Read<double>(dataFile, "Va");
@@ -221,23 +221,23 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         Ticks[] Time = Vm.ToColumnArrays().First().Select((v,i) => (Ticks)(Tstart + (double)i*1/30.0*Ticks.PerSecond)).ToArray();
         List<LineData> lineData = new List<LineData>([
            new LineData()
-        {
-            Current = Ia.ToColumnArrays().First().Zip(Im.ToColumnArrays().First(),(f,s) => new ComplexNumber(Angle.FromDegrees(f),s)),
-            Frequency = f.ToColumnArrays().First(),
-            Voltage = Va.ToColumnArrays().First().Zip(Vm.ToColumnArrays().First(), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)),
-            Timestamp = Time,
+           {
+                Current = Ia.ToColumnArrays().First().Zip(Im.ToColumnArrays().First(),(f,s) => new ComplexNumber(Angle.FromDegrees(f),s)),
+                Frequency = f.ToColumnArrays().First(),
+                Voltage = Va.ToColumnArrays().First().Zip(Vm.ToColumnArrays().First(), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)),
+                Timestamp = Time,
 
-            CurrentKey = new PhasorKey()
-            {
-                Magnitude = MeasurementKey.CreateOrUpdate(Guid.NewGuid(),"MAT:1"),
-                Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:2")
-            },
-            VoltageKey = new PhasorKey()
-            {
-                Magnitude = MeasurementKey.CreateOrUpdate(new Guid(oscillation["VoltageSignalID"].ToString()), "MAT:3"),
-                Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:4")
-            },
-            FrequencyKey = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:5")
+                CurrentKey = new PhasorKey()
+                {
+                    Magnitude = MeasurementKey.CreateOrUpdate(Guid.NewGuid(),"MAT:1"),
+                    Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:2")
+                },
+                VoltageKey = new PhasorKey()
+                {
+                    Magnitude = MeasurementKey.CreateOrUpdate(new Guid(oscillation["VoltageSignalID"].ToString()), "MAT:3"),
+                    Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:4")
+                },
+                FrequencyKey = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:5")
            }
         ]);
 
@@ -526,7 +526,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 voltageM.Zip(voltageA, (mRow, aRow) => mRow.Zip(aRow, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m)).ToArray()).ToArray());
             complexPower = new Gemstone.Numeric.Matrix<ComplexNumber>(
                 currentM.Zip(currentA, (mRow, aRow) => mRow.Zip(aRow, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m)).ToArray()).ToArray());
-       
+
             complexPower = complexPower.TransformByValue((c, i, j) => sqrt3 * c.Conjugate * voltage[i][j]).Transpose;
 
             voltageMagnitude = new Gemstone.Numeric.Matrix<double>(voltageM.Select(row => row.ToArray()).ToArray()).Transpose;
@@ -699,55 +699,55 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
         double Ttrip = 0;
         {
-        int ii;
+            int ii;
             List<int> st = new List<int>(new int[nScans]);
             List<int> en = new List<int>(new int[nScans]);
 
-        if (mm1.First() > 0)
-        {
+            if (mm1.First() > 0)
+            {
                 ii = 0;
                 st[0] = 1;
-        }
-        else
-        {
-                ii = -1;
-        }
-
-        for (int i = 1; i < nScans; i++)
-        {
-            if (mm1[i] > 0)
-            {
-                if (mm1[i - 1] < 0)
-                {
-                        ii++;
-                        st[ii] = i + 1;
-                }
             }
             else
             {
-                if (mm1[i - 1] > 0)
-                        en[ii] = i + 1;
-                
+                ii = -1;
             }
+
+            for (int i = 1; i < nScans; i++)
+            {
+                if (mm1[i] > 0)
+                {
+                    if (mm1[i - 1] < 0)
+                    {
+                        ii++;
+                        st[ii] = i + 1;
+                    }
+                }
+                else
+                {
+                    if (mm1[i - 1] > 0)
+                        en[ii] = i + 1;
+
+                }
                 if (i == nScans - 1 && mm1[i] > 0)
                     en[ii] = i + 1;
-        }
+            }
 
             st = st.Take(ii + 1).ToList();
             en = en.Take(ii + 1).ToList();
 
-        // ii is the number of intervals with magnitude GT than threshold
+            // ii is the number of intervals with magnitude GT than threshold
             if (ii > -1)
-        {
+            {
                 int ind_p = en.Select((e, i) => new Tuple<int, int>(e - st[i], i)).OrderBy(tupe => -tupe.Item1).First().Item2;
                 Tstart = Tstep * (st[ind_p] - 1);
                 Tend = Tstep * (en[ind_p] - 1);
-            if (Math.Abs(Tstart - Tend!) > 0.1)
-            {
+                if (Math.Abs(Tstart - Tend!) > 0.1)
+                {
                     Tstart = Tstart + 0.5 * Twin;
                     Tend = Tend + 0.5 * Twin;
 
-                // ------Reduce Tend if it is beond time when line/ gen was tripped
+                    // ------Reduce Tend if it is beond time when line/ gen was tripped
                     int stept = (int)Math.Floor(fs * Tstep);
                     int nn = (int)Math.Floor(t0.Count() / (double)stept);
                     int nstop = (int)Math.Floor((Tstart - 0.5 * Twin) * fs / (double)stept);
@@ -761,10 +761,10 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                         {
                             nn = nn - 1;
                             Ttrip = nn * Tstep;
-            }
+                        }
                         else
                             nn = nstop;
-            }
+                    }
                     if (Tend > Ttrip)
                         Tend = Math.Max(Ttrip, Tstart + Twin);
                 }
@@ -775,7 +775,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 }
             }
         }
-
+        
         // Verify on whether the alarm is related to tripping to to bad PMU data
         if (Tend > 0)
         {
@@ -836,14 +836,14 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             double[] dss = new double[nf];
             for (int i = 0; i < nf; i++)
                 dss[i] = Math.Abs(ss_i[i] - (double) (i + 1) / nf);
-        
+
             // Check bad PMU data per PSD integral criteria
             int h1 = (int) Math.Floor(nf / ff1.Last());
             if (ss_i[h1 * 2] / ss_i.Max() < 0.5)
             {
                 if (dss.Mean() < 0.2) // PSD integral is close to linear function
                     pmuCond = DataStatus.BadData; // defenetely bad PMU data due to spikes
-          else
+                else
                     pmuCond = DataStatus.SuspectData; // potentially bad PMU data due to spikes
             }
 
@@ -854,7 +854,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 int i1 = 0;
                 List<double> rangeP = new List<double>();
                 List<double> tt = new List<double>();
-       
+
                 for (int i = 1; i < (int)Math.Floor(Tend * fs - stepp); i += stepp)
                 {
                     i1 = i1 + 1;
@@ -863,7 +863,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     tt.Add(i / fs);
                 }
                 double rangeThreshold = rangeP.Mean() + 5 * rangeP.StandardDeviation();
-    
+
                 if (rangeP.Any(range => range > rangeThreshold))
                     trippingCond = DataStatus.SuspectData;
             }
@@ -878,12 +878,12 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     i++;
                     if (Math.Abs(range[i]) > th) ii = i + 1;
                 }
-    
+
                 double leng = Tend - Tstart;
                 double Tspike = ii * spikeT[1] - 0.5 / freqAlarm;
                 if (Tspike > Tth)
                     Tend = Math.Min(Tstart + leng, Tstart + Tspike);
-       else
+                else
                 {
                     Tstart = Tstart + Tspike;
                     Tend = Math.Min(Tstart + leng, Ttrip);
@@ -897,7 +897,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         double fav = Fint.Mean();
         if (fav < BandThreshold)
             Tth = Cmin_l / fav;
-else
+        else
             Tth = Cmin_h / fav;
 
         if (Tstart == Tend)
@@ -995,7 +995,7 @@ else
             Complex32[] S = fft.Select(c => c * factor).ToArray();
             for(int i = 0; i < data.NRows; i++)
                 sum[i] += S[i].Magnitude;
-    }
+        }
 
         return (f, sum);
         /* Some extra code for the dominant if we need it
