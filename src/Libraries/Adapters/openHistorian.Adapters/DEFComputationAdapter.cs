@@ -1534,6 +1534,11 @@ else
 
         return (DE_cpsd, fCpsd);
     }
+    private double GetSlopeCurve(Gemstone.Numeric.Matrix<double> timeMatrix, double[] vector)
+    {
+        Gemstone.Numeric.Matrix<double> paraMatrix = timeMatrix.GetLeastSquares(vector);
+        return paraMatrix[0][0];
+    }
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
