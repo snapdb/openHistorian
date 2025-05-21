@@ -40,6 +40,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Data;
 using Gemstone.Data.Model;
 using ConfigSettings = Gemstone.Configuration.Settings;
@@ -150,24 +151,24 @@ public partial struct EventState : IDataSourceValueType<EventState>
         return record;
     }
 
-    private readonly (ulong, Guid) GetMeasurementID(DataSet metadata, string pointTag)
+    private static (ulong pointID, Guid signalID) GetPointID(DataSet metadata, string pointTag)
     {
-        DataRow row = LookupMetadata(metadata, MetadataTableName, pointTag);
+        DataRow row = default(EventState).LookupMetadata(metadata, MetadataTableName, pointTag);
 
         if (row is null)
             return (0UL, Guid.Empty);
 
-        // Get measurement ID from metadata
-        string measurementIDValue = row["ID"].ToString();
+        // Get measurement point ID from metadata
+        string pointIDValue = row["ID"].ToString();
+        bool success = ulong.TryParse(pointIDValue, out ulong pointID);
+        Debug.Assert(success, $"Failed to parse measurement point ID '{pointIDValue}' for '{pointTag}'");
 
-        bool success = ulong.TryParse(measurementIDValue, out ulong measurementID);
-        Debug.Assert(success, $"Failed to parse measurement ID '{measurementIDValue}' for '{pointTag}'");
+        // Get measurement signal ID from metadata
+        string signalIDValue = row["SignalID"].ToString();
+        success = Guid.TryParse(signalIDValue, out Guid signalID);
+        Debug.Assert(success, $"Failed to parse measurement signal ID '{signalIDValue}' for '{pointTag}'");
 
-        string measurementSignalIDValue = row["SignalID"].ToString();
-        success = Guid.TryParse(measurementSignalIDValue, out Guid measurementSignalID);
-        Debug.Assert(success, $"Failed to parse measurement signal ID '{measurementSignalIDValue}' for '{pointTag}'");
-
-        return (measurementID, measurementSignalID);
+        return (pointID, signalID);
     }
 
     readonly TargetIDSet IDataSourceValueType.GetTargetIDSet(DataRow record)
@@ -188,39 +189,29 @@ public partial struct EventState : IDataSourceValueType<EventState>
     readonly void IDataSourceValueType<EventState>.AssignToTimeValueMap(string instanceName, DataSourceValue dataSourceValue, SortedList<double, EventState> timeValueMap, DataSet metadata, QueryParameters queryParameters)
     {
         string target = dataSourceValue.ID.pointTag;
-        (ulong measurementID, Guid signalID) = GetMeasurementID(metadata, target);
+        (ulong pointID, Guid signalID) = GetPointID(metadata, target);
 
         // Create an intermediate measurement for signal ID so we can derive its signal type
         Measurement measurement = new() { Metadata = MeasurementKey.LookUpBySignalID(signalID).Metadata };
 
-        // For now, we will treat non alarm measurements for event states as an exception
+        // We treat user selected non alarm measurements for event states as an exception
         if (measurement.GetSignalTypeID(metadata, SignalType.ALRM) != s_alarmSignalTypeID)
-            throw new InvalidOperationException($"Measurement {measurementID:N0} '{target}' is not an alarm signal type. Only alarm measurements can generate event states.");
+            throw new InvalidOperationException($"Measurement {pointID:N0} '{target}' is not an alarm signal type. Only alarm measurements can generate event states.");
 
         // Get event ID for the current timeseries value
-        (Guid eventID, bool alarmed, MeasurementStateFlags flags) = QueryEvent(instanceName, measurementID, dataSourceValue.Time);
+        (Guid eventID, bool alarmed, MeasurementStateFlags flags) = QueryEvent(instanceName, pointID, dataSourceValue.Time);
 
         // Verify alarm event ID is defined
         if (eventID == Guid.Empty)
-            throw new InvalidOperationException($"Alarm measurement {measurementID:N0} '{target}' has no defined event ID. Cannot generate event state."); 
-
-        EventState eventState = default;
+            throw new InvalidOperationException($"Alarm measurement {pointID:N0} '{target}' has no defined event ID. Cannot generate event state."); 
 
         // See if an existing event state for this event ID already exists
-        foreach ((_, EventState state) in timeValueMap)
-        {
-            if (state.EventID != eventID)
-                continue;
-            
-            eventState = state;
-            break;
-        }
+        EventState eventState = timeValueMap.Select(item => item.Value).FirstOrDefault(state => state.EventID == eventID);
 
         // Check if this is a new event state
         if (eventState.EventID == Guid.Empty)
         {
-            double startTime = 0.0D;    // Actual start time of the event
-            double instanceTime;        // Time to use for the event state instance
+            double startTime = 0.0D;
 
             // If this is a new event state and alarm is raised, we can assume this is start of the event,
             // otherwise we need to scan to last alarm raised even state to get the start time which looks
@@ -231,7 +222,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
             }
             else
             {
-                double lastRaisedTime = QueryLastRaisedState(instanceName, measurementID, dataSourceValue.Time, eventID);
+                double lastRaisedTime = QueryLastRaisedState(instanceName, pointID, dataSourceValue.Time, eventID);
 
                 if (lastRaisedTime > 0UL)
                     startTime = lastRaisedTime;
@@ -239,59 +230,16 @@ public partial struct EventState : IDataSourceValueType<EventState>
 
             double queryStartTime = ConvertToGrafanaTimestamp((ulong)queryParameters.StartTime.Ticks);
 
-            // If the raised time is not valid or outside current query range, mark event state
-            // time as the start of the query range
-            if (startTime <= 0.0D || startTime < queryStartTime)
-                instanceTime = queryStartTime;
-            else
-                instanceTime = startTime;
+            // Create new event state
+            eventState = CreateEventState(instanceName, timeValueMap, target, pointID, flags, eventID, startTime, queryStartTime);
 
-            string eventDetails = null;
-
-            if (eventID != Guid.Empty)
+            // Add new event state to time value map
+            timeValueMap[eventState.Time] = eventState with
             {
-                try
-                {
-                    // Query event details from database
-                    using AdoDataConnection connection = new(ConfigSettings.Instance);
-                    TableOperations<EventDetails> eventDetailsTable = new(connection);
-                    eventDetails = (eventDetailsTable.QueryRecordWhere("EventID = {0}", eventID) ?? new EventDetails()).Details;
-                }
-                catch (Exception ex)
-                {
-                    eventDetails = $"Error loading event '{eventID}' details from database: {ex.Message}";
-                    Logger.SwallowException(ex, nameof(EventState), nameof(IDataSourceValueType<EventState>.AssignToTimeValueMap));
-                }
-            }
-
-            string details = $"{(string.IsNullOrWhiteSpace(eventDetails) ? "No details were recorded for event" : eventDetails)}" +
-                             $" [{eventID}]<br/><br/>Alarm measurement: '{instanceName}:{measurementID}' [{target}]";
-
-            double duration = double.NaN;
-
-            // Compute event duration if this is a cleared state with a valid start time
-            if (!alarmed && startTime > 0.0D)
-            {
-                if (dataSourceValue.Time > startTime)
-                {
-                    duration = dataSourceValue.Time - startTime;
-                }
-                else
-                {
-                    string message = $"Time for cleared state '{dataSourceValue.Time}' is earlier than start time '{startTime}' for event '{eventID}' on '{target}' -- this is unexpected, this alarm state is being ignored.";
-                    s_log.Publish(MessageLevel.Warning, message);
-                    Debug.WriteLine($"WARNING: {message}");
-                }
-            }
-
-            timeValueMap[instanceTime] = new EventState
-            {
-                Target = dataSourceValue.ID.target,
-                Details = details,
-                Duration = duration,
-                Time = instanceTime,
-                StartTime = startTime,
-                Flags = flags
+                // Compute event duration if this is a cleared state with a valid event start time
+                Duration = !alarmed && startTime > 0.0D ?
+                    ComputeDuration(startTime, dataSourceValue.Time, eventID, target) :
+                    double.NaN
             };
         }
         else
@@ -306,26 +254,28 @@ public partial struct EventState : IDataSourceValueType<EventState>
             }
             else
             {
-                if (dataSourceValue.Time > eventState.StartTime)
+                // Update event state with computed event duration
+                timeValueMap[eventState.Time] = eventState with
                 {
-                    // Update event state with computed event duration
-                    timeValueMap[eventState.Time] = eventState with
-                    {
-                        Duration = dataSourceValue.Time - eventState.StartTime
-                    };
-                }
-                else
-                {
-                    string message = $"Time for cleared state '{dataSourceValue.Time}' is earlier than start time '{eventState.StartTime}' for event '{eventID}' on '{target}' -- this is unexpected, this alarm state is being ignored.";
-                    s_log.Publish(MessageLevel.Warning, message);
-                    Debug.WriteLine($"WARNING: {message}");
-                }
+                    Duration = ComputeDuration(eventState.StartTime, dataSourceValue.Time, eventID, target)
+                };
             }
         }
     }
 
     readonly void IDataSourceValueType<EventState>.TimeValueMapAssignmentsComplete(string instanceName, OrderedDictionary<string, SortedList<double, EventState>> timeValueMaps, DataSet metadata, QueryParameters queryParameters)
     {
+        // Get list of point IDs that have already been processed
+        HashSet<ulong> existingPointIDs = [];
+
+        foreach ((string target, _) in timeValueMaps)
+            existingPointIDs.Add(GetPointID(metadata, target).pointID);
+
+        double queryStartTime = ConvertToGrafanaTimestamp((ulong)queryParameters.StartTime.Ticks);
+
+        // Find all ongoing events that are raised and occured before the current Grafana query range
+        QueryLastEventRaisedStates(instanceName, timeValueMaps, existingPointIDs, metadata, queryStartTime);
+
         // Complete duration calculations on all event states
         foreach ((string target, SortedList<double, EventState> timeValueMap) in timeValueMaps)
         {
@@ -334,32 +284,85 @@ public partial struct EventState : IDataSourceValueType<EventState>
                 if (!double.IsNaN(eventState.Duration))
                     continue;
 
-                // Get measurement ID for the event state
-                (ulong measurementID, _) = GetMeasurementID(metadata, target);
+                // Get point ID for the event state
+                ulong pointID = GetPointID(metadata, target).pointID;
 
                 // If the event state duration was not calculated, we need to query for the next cleared state since the
                 // event may have been cleared outside the current Grafana query range; otherwise, the event is ongoing
-                double clearedTime = QueryNextClearedState(instanceName, measurementID, timestamp, eventState.EventID);
+                double clearedTime = QueryNextClearedState(instanceName, pointID, timestamp, eventState.EventID);
 
                 if (clearedTime <= 0.0D)
                     continue;
 
-                if (clearedTime > eventState.StartTime)
+                // Update event state with computed event duration
+                timeValueMap[eventState.Time] = eventState with
                 {
-                    // Update event state with computed event duration
-                    timeValueMap[eventState.Time] = eventState with
-                    {
-                        Duration = clearedTime - eventState.StartTime
-                    };
-                }
-                else
-                {
-                    string message = $"Time for cleared state '{clearedTime}' is earlier than start time '{eventState.StartTime}' for event '{eventState.EventID}' on '{target}' -- this is unexpected, this alarm state is being ignored.";
-                    s_log.Publish(MessageLevel.Warning, message);
-                    Debug.WriteLine($"WARNING: {message}");
-                }
+                    Duration = ComputeDuration(eventState.StartTime, clearedTime, eventState.EventID, target)
+                };
             }
         }
+    }
+
+    private static EventState CreateEventState(string instanceName, SortedList<double, EventState> timeValueMap, string target, ulong pointID, MeasurementStateFlags flags, Guid eventID, double startTime, double queryStartTime)
+    {
+        // If the raised time is not valid or outside current query range, then
+        // mark event state time as the start of the query range
+        double instanceTime = startTime <= 0.0D || startTime < queryStartTime ? queryStartTime : startTime;
+        string eventDetails = null;
+
+        // Technically, multiple event states for the same target could have started and be ongoing before the
+        // current Grafana query range or have started at the exact same time. Each of these event states must
+        // have a unique timestamp in the time value map, so if there are multiple events with the same instance
+        // time, we increment the time by 1ms until it is unique timestamp in the time value map.
+        while (timeValueMap.ContainsKey(instanceTime))
+            instanceTime += 1.0D;
+
+        if (eventID != Guid.Empty)
+        {
+            try
+            {
+                // Query event details from database
+                using AdoDataConnection connection = new(ConfigSettings.Instance);
+                TableOperations<EventDetails> eventDetailsTable = new(connection);
+                eventDetails = (eventDetailsTable.QueryRecordWhere("EventID = {0}", eventID) ?? new EventDetails()).Details;
+            }
+            catch (Exception ex)
+            {
+                eventDetails = $"Error loading event '{eventID}' details from database: {ex.Message}";
+                Logger.SwallowException(ex, nameof(EventState), nameof(IDataSourceValueType<EventState>.AssignToTimeValueMap));
+            }
+        }
+
+        string details = $"{(string.IsNullOrWhiteSpace(eventDetails) ? "No details were recorded for event" : eventDetails)}" +
+        $" [{eventID}]<br/><br/>Alarm measurement: '{instanceName}:{pointID}' [{target}]";
+
+        return new EventState
+        {
+            Target = target,
+            Details = details,
+            Duration = double.NaN,
+            Time = instanceTime,    // Time of event state in context of Grafana query range
+            StartTime = startTime,  // Actual start time of event
+            Flags = flags
+        };
+    }
+
+    private static double ComputeDuration(double startTime, double clearedTime, Guid eventID, string target)
+    {
+        double duration = double.NaN;
+
+        if (clearedTime > startTime)
+        {
+            duration = clearedTime - startTime;
+        }
+        else
+        {
+            string message = $"Time for cleared state '{clearedTime}' is earlier than start time '{startTime}' for event '{eventID}' on '{target}' -- this is unexpected, this alarm state is being ignored.";
+            s_log.Publish(MessageLevel.Warning, message);
+            Debug.WriteLine($"WARNING: {message}");
+        }
+
+        return duration;
     }
 
     // These operations make direct queries to openHistorian -- this breaks the abstraction of the base class
@@ -370,7 +373,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
     // openHistorian data sources.
 
     // Query event ID for the current timeseries value
-    private static (Guid, bool, MeasurementStateFlags) QueryEvent(string instanceName, ulong measurementID, double time)
+    private static (Guid, bool, MeasurementStateFlags) QueryEvent(string instanceName, ulong pointID, double time)
     {
         // Re-query current event state for this point tag / time to get alarm based event details. Although
         // this step will re-query the historian for the event state whose value was already queried as part
@@ -387,7 +390,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         HistorianKey key = new();
         HistorianValue value = new();
         ulong timestamp = ConvertFromGrafanaTimestamp(time);
-        ulong[] pointIDs = [measurementID];
+        ulong[] pointIDs = [pointID];
         bool alarmed = false;
         Guid eventID = Guid.Empty;
         MeasurementStateFlags flags = MeasurementStateFlags.Normal;
@@ -398,13 +401,13 @@ public partial struct EventState : IDataSourceValueType<EventState>
         if (currentValueStream.Read(key, value))
             (alarmed, eventID, flags) = value.AsAlarm;
         else
-            Debug.Fail( $"Failed to read current alarmed state for '{measurementID}' at '{time}'");
+            Debug.Fail( $"Failed to read current alarmed state for '{pointID}' at '{time}'");
 
         return (eventID, alarmed, flags);
     }
 
     // Query last raised state for the event ID
-    private static double QueryLastRaisedState(string instanceName, ulong measurementID, double time, Guid eventID)
+    private static double QueryLastRaisedState(string instanceName, ulong pointID, double time, Guid eventID)
     {
         // Get historian server instance
         HistorianServer server = GetHistorianServerInstance(instanceName) ??
@@ -418,7 +421,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         HistorianKey key = new();
         HistorianValue value = new();
         ulong timestamp = ConvertFromGrafanaTimestamp(time);
-        ulong[] pointIDs = [measurementID];
+        ulong[] pointIDs = [pointID];
         ulong raisedTime = 0UL;
         bool alarmed = false;
 
@@ -440,7 +443,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
     #if DEBUG
         // Display debug warning if previous alarmed 'raised' state was not found -- this is unexpected
         if (!alarmed)
-            Debug.WriteLine($"WARNING: Last alarm state for measurement '{measurementID}' / event '{eventID}' at '{raisedTime}' was 'cleared', not 'raised' as expected -- scanned back from {s_alarmSearchLimit / Ticks.PerDay:N3} days ago.");
+            Debug.WriteLine($"WARNING: Last alarm state for measurement '{pointID}' / event '{eventID}' at '{raisedTime}' was 'cleared', not 'raised' as expected -- scanned back from {s_alarmSearchLimit / Ticks.PerDay:N3} days ago.");
     #endif
 
         // Fail with 0 if alarmed state is not 'raised'
@@ -448,7 +451,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
     }
 
     // Query next cleared state for the event ID
-    private static double QueryNextClearedState(string instanceName, ulong measurementID, double time, Guid eventID)
+    private static double QueryNextClearedState(string instanceName, ulong pointID, double time, Guid eventID)
     {
         // Get historian server instance
         HistorianServer server = GetHistorianServerInstance(instanceName) ??
@@ -462,7 +465,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         HistorianKey key = new();
         HistorianValue value = new();
         ulong timestamp = ConvertFromGrafanaTimestamp(time);
-        ulong[] pointIDs = [measurementID];
+        ulong[] pointIDs = [pointID];
         ulong clearedTime = 0UL;
         bool alarmed = false;
 
@@ -485,11 +488,71 @@ public partial struct EventState : IDataSourceValueType<EventState>
     #if DEBUG
         // Display debug warning if next alarmed 'cleared' state was not found -- this is unexpected (should be either found or ongoing event, not alarmed again)
         if (alarmed)
-            Debug.WriteLine($"WARNING: Last alarm state for measurement '{measurementID}' / event '{eventID}' at '{clearedTime}' was 'raised', not 'cleared' as expected -- scanned forward for at up to {s_alarmSearchLimit / Ticks.PerDay:N3} days.");
+            Debug.WriteLine($"WARNING: Last alarm state for measurement '{pointID}' / event '{eventID}' at '{clearedTime}' was 'raised', not 'cleared' as expected -- scanned forward for at up to {s_alarmSearchLimit / Ticks.PerDay:N3} days.");
     #endif
 
         // Fail with 0 if alarmed state is not 'cleared' -- could also be zero if ongoing event
         return alarmed ? 0.0D : ConvertToGrafanaTimestamp(clearedTime);
+    }
+
+    // Query last event raised states for the specified point IDs
+    private static void QueryLastEventRaisedStates(string instanceName, OrderedDictionary<string, SortedList<double, EventState>> timeValueMaps, HashSet<ulong> existingPointIDs, DataSet metadata, double queryStartTime)
+    {
+        // Get historian server instance
+        HistorianServer server = GetHistorianServerInstance(instanceName) ??
+            throw new InvalidOperationException($"Failed to get historian server instance '{instanceName}'. Source adapter may still be initializing.");
+
+        // Connect to historian server and get database instance
+        using SnapClient connection = SnapClient.Connect(server.Host);
+        using ClientDatabaseBase<HistorianKey, HistorianValue> database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName) ??
+            throw new InvalidOperationException($"Failed to get database '{instanceName}' from historian server.");
+
+        Dictionary<Guid, (ulong, ulong, MeasurementStateFlags)> eventRaisedStates = [];
+        HistorianKey key = new();
+        HistorianValue value = new();
+        ulong timestamp = ConvertFromGrafanaTimestamp(queryStartTime);
+
+        // Derive point IDs from time value maps that are not already in the existing point IDs
+        Dictionary<string, ulong> targetPointIDs = timeValueMaps
+            .Select(item => item.Key)
+            .ToDictionary(target => target, target => GetPointID(metadata, target).pointID);
+
+        IEnumerable<string> invalidTargets = targetPointIDs
+            .Where(item => item.Value <= 0UL)
+            .Select(item => item.Key);
+
+        foreach (string invalidTarget in invalidTargets)
+            targetPointIDs.Remove(invalidTarget);
+
+        ulong[] pointIDs = targetPointIDs
+            .Select(item => item.Value)
+            .Where(pointID => !existingPointIDs.Contains(pointID))
+            .ToArray();
+
+        // Query for last alarm change states prior to query start time
+        using TreeStream<HistorianKey, HistorianValue> lastValueStream = database.Read(timestamp - s_alarmSearchLimit, timestamp - 1, pointIDs);
+
+        // Scan all events to include only those that are not already cleared, i.e., ongoing events
+        while (lastValueStream.Read(key, value))
+        {
+            (bool alarmed, Guid eventID, MeasurementStateFlags flags) = value.AsAlarm;
+
+            if (eventRaisedStates.ContainsKey(eventID) && !alarmed)
+                eventRaisedStates.Remove(eventID);
+            else
+                eventRaisedStates[eventID] = (key.PointID, key.Timestamp, flags);
+        }
+
+        Dictionary<ulong, string> pointIDTargets = targetPointIDs.ToDictionary(item => item.Value, item => item.Key);
+
+        // Add event states that start without clearing before Grafana query range to time value maps
+        foreach ((Guid eventID, (ulong pointID, ulong startTime, MeasurementStateFlags flags)) in eventRaisedStates)
+        {
+            string target = pointIDTargets[pointID];
+            SortedList<double, EventState> timeValueMap = timeValueMaps.GetOrAdd(target, _ => []);
+            EventState eventState = CreateEventState(instanceName, timeValueMap, target, pointID, flags, eventID, startTime, queryStartTime);
+            timeValueMap[eventState.Time] = eventState;
+        }
     }
 
     private static ulong ConvertFromGrafanaTimestamp(double timestamp)

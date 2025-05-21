@@ -324,6 +324,8 @@ public abstract partial class GrafanaDataSourceBase
             default(T).AssignToTimeValueMap(instanceName, dataSourceValue, targetValues[dataSourceValue.ID.target], metadata, queryParameters);
         }
 
+        // Let data source type know that all time-value map assignments are complete, note that this step
+        // can add, remove or augment target values as needed
         default(T).TimeValueMapAssignmentsComplete(instanceName, targetValues, metadata, queryParameters);
 
         // Transpose each target into a data source value group along with its associated queried values
