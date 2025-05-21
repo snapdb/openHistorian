@@ -899,9 +899,43 @@ else
         Gemstone.Numeric.Matrix<double> imf = VariableModeDecomposition.vmd(x, 500, 5, penalityFactor);
         return imf.GetSubmatrix(0, 0, imf.NRows, imf.NColumns - 1).RowSums;
     }
+
+    /// <summary>
+    /// Spectrum analysis for time data series given as a matrix
+    /// </summary>
+    /// <returns></returns>
+    public (double[], double[]) SpectrumAna(IEnumerable<double> t, Gemstone.Numeric.Matrix<double> data)
     {
-        Gemstone.Numeric.Matrix<double> imf = Gemstone.Numeric.Analysis.VariableModeDecomposition.vmd(x, 500, 5, penalityFactor);
-        return new Gemstone.Numeric.Matrix<double>(imf.GetSubmatrix(0,0,imf.NRows,imf.NColumns - 1).RowSums,1);
+        // Spectrum analysis
+        double fs = Math.Round((t.Count() - 1) / (t.Last() - t.First()));
+        int nfft = data.NRows;
+        Complex32 factor = new Complex32(2.0f / nfft, 0);
+
+        double[] f = Enumerable.Range(0, (int)Math.Floor(nfft * 0.5D) + 1).Select(d => (double)(d) * fs / (double)(nfft - 1)).ToArray();
+        double[] sum = new double[data.NRows]; 
+
+        for(int colNum =0; colNum < data.NColumns; colNum++)
+        {
+            IEnumerable<double> col = data.GetColumn(colNum);
+            double mean = col.Mean();
+            Complex32[] fft = col.Select(d => new Complex32((float)(d - mean), 0)).ToArray();
+            MathNet.Numerics.IntegralTransforms.Fourier.Forward(fft, MathNet.Numerics.IntegralTransforms.FourierOptions.Matlab);
+            Complex32[] S = fft.Select(c => c * factor).ToArray();
+            for(int i = 0; i < data.NRows; i++)
+                sum[i] += S[i].Magnitude;
+    }
+
+        return (f, sum);
+        /* Some extra code for the dominant if we need it
+            % find dominant frequency above 0.05Hz (beyond DC bias)
+            [~,idx1] = sort(ss_sum(1:length(f),1),'descend');
+            Fdominant=f(idx1(1)); % dominant frequency
+            i=1;
+            while Fdominant<0.05 % disregard frequencies coming from trend (DC bias)
+                i=i+1;
+                Fdominant=f(idx1(i)); 
+            end 
+         */
     }
 
     public IEnumerable<double> CutPeriod(double Tstart, double Tend, IEnumerable<double> data, double fs)
