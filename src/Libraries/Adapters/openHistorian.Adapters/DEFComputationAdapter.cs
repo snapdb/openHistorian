@@ -21,33 +21,33 @@
 //       Generated original version of source code.
 //******************************************************************************************************
 
+using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Data;
 using Gemstone;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Data;
 using Gemstone.Data.Model;
 using Gemstone.Diagnostics;
+using Gemstone.Numeric;
 using Gemstone.Numeric.Analysis;
-using Gemstone.Numeric.EE;
+using Gemstone.Numeric.Interpolation;
+using Gemstone.Numeric.UnitExtensions;
 using Gemstone.StringExtensions;
 using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
-using Newtonsoft.Json.Linq;
-using System.Collections.Concurrent;
-using System.ComponentModel;
-using System.Data;
-using MathNet.Numerics.Data.Matlab;
-using Gemstone.Numeric;
-using Gemstone.Numeric.Interpolation;
-using Gemstone.Numeric.UnitExtensions;
-using Gemstone.Units;
-using MathNet.Numerics.Statistics;
-using SignalType = Gemstone.Numeric.EE.SignalType;
-using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
-using ConfigSettings = Gemstone.Configuration.Settings;
-using MathNet.Numerics.LinearAlgebra;
-using PhasorProtocolAdapters;
 using Gemstone.Timeseries.Model;
+using Gemstone.Units;
+using MathNet.Numerics;
+using MathNet.Numerics.Data.Matlab;
+using MathNet.Numerics.Statistics;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using PhasorProtocolAdapters;
+using ConfigSettings = Gemstone.Configuration.Settings;
+using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
+using SignalType = Gemstone.Numeric.EE.SignalType;
 
 namespace DataQualityMonitoring;
 
@@ -519,27 +519,99 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
             PMUDataCleaning(ref voltageM, ref voltageA, ref currentM, ref currentA, ref fBus, true);
 
+            double sqrt3 = Math.Sqrt(3); // to convert to phase to phase
+            voltageM = voltageM.Select(col => col.Select(val => val * sqrt3));
+            voltageMean = voltageM.Select(v => v.Mean()).ToArray();
+            Gemstone.Numeric.Matrix<ComplexNumber> voltage = new Gemstone.Numeric.Matrix<ComplexNumber>(
+                voltageM.Zip(voltageA, (mRow, aRow) => mRow.Zip(aRow, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m)).ToArray()).ToArray());
+            complexPower = new Gemstone.Numeric.Matrix<ComplexNumber>(
+                currentM.Zip(currentA, (mRow, aRow) => mRow.Zip(aRow, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m)).ToArray()).ToArray());
        
+            complexPower = complexPower.TransformByValue((c, i, j) => sqrt3 * c.Conjugate * voltage[i][j]).Transpose;
 
-        return;
-        // Remove spikes in Current
-        //double Imedian = m_lines.Select(l => m_data[l.Current.Magnitude].Where(d => !double.IsNaN(d)).FirstOrDefault()).Where(d => d != default(double)).Median().FirstOrDefault();
-        //alarmCurrent = alarmCurrent.Select(c => c.Magnitude > 100.0 * Imedian ? Complex.NaN : c).ToArray();
+            voltageMagnitude = new Gemstone.Numeric.Matrix<double>(voltageM.Select(row => row.ToArray()).ToArray()).Transpose;
+            // We measure (-180,180), matlab (0,360). Not doing it the same way can cause issues
+            voltageAngle = new Gemstone.Numeric.Matrix<double>(voltageA.Select(row => row.Select(v => v < 0 ? v+360 : v).ToArray()).ToArray()).Transpose;
+            frequencyBus = new Gemstone.Numeric.Matrix<double>(fBus.Select(row => row.ToArray()).ToArray()).Transpose;
+        }
 
-        // Clean Alarm PMU Data
+        // 0.7 MW, 2s (60 samples)
+        RemoveTrippedLines(ref complexPower, 700000, 60);
 
-        //remove any current values larger than 100X
+        RemoveNoisySignals(ref complexPower);
 
+        JObject details = new JObject();
+        double kFactor;
+        {
+            Gemstone.Numeric.Matrix<double> realPowerTrendless = RemoveTrend(complexPower.TransformByValue(v => v.Real));
+            Gemstone.Numeric.Matrix<double> reactivePowerTrendless = RemoveTrend(complexPower.TransformByValue(v => v.Imaginary));
 
+            double cumulativePQRatio = CalculateCumulativePQRatio(realPowerTrendless, reactivePowerTrendless, freqAlarm);
 
-        //if (dataBad)
-        //    return;
+            kFactor = SelectKFactor(cumulativePQRatio, IntialKFactor, freqAlarm);
 
-        //Calculate Pline 3 Phase MW Flow
+            // Apply CPSD Method
+            if (deMethodFlag == DEMethod.CPSD || deMethodFlag == DEMethod.Both)
+            {
+                Gemstone.Numeric.Matrix<double> voltageMagnitudeNoTrend = RemoveTrend(voltageMagnitude);
+                Gemstone.Numeric.Matrix<double> voltageAngleNoTrend = RemoveTrend(voltageAngle);
+                Gemstone.Numeric.Matrix<double> DE_cpsd = DE_CPSD(realPowerTrendless, reactivePowerTrendless, voltageMagnitudeNoTrend, voltageAngleNoTrend, voltageMean, kFactor, freqAlarm).Item1;
+                details.Add("CPSD_LineNumber", JsonConvert.SerializeObject(DE_cpsd.GetColumn(0)));
+                details.Add("CPSD_Summation", JsonConvert.SerializeObject(DE_cpsd.GetColumn(1)));
+                details.Add("CPSD_RealPower_VoltageAngle", JsonConvert.SerializeObject(DE_cpsd.GetColumn(2)));
+                details.Add("CPSD_ReactivePower_VoltageMagnitude", JsonConvert.SerializeObject(DE_cpsd.GetColumn(3)));
+                details.Add("CPSD_ReactivePower_VoltageAngle", JsonConvert.SerializeObject(DE_cpsd.GetColumn(4)));
+                details.Add("CPSD_RealPower_VoltageMagnitude", JsonConvert.SerializeObject(DE_cpsd.GetColumn(5)));
+            }
+        }
 
+        // Bandpass filtering for Fdominant without trend removal
+        Gemstone.Numeric.Matrix<double> realPower = BandPassFilter(complexPower.TransformByValue(v => v.Real), freqAlarm);
+        Gemstone.Numeric.Matrix<double> reactivePower = BandPassFilter(complexPower.TransformByValue(v => v.Imaginary), freqAlarm);
+        voltageMagnitude = BandPassFilter(voltageMagnitude, freqAlarm);
+        if (IsRealData)
+            frequencyBus = BandPassFilter(frequencyBus, freqAlarm);
+        else
+            voltageAngle = BandPassFilter(voltageAngle, freqAlarm);
 
+        if (deMethodFlag == DEMethod.CDEF || deMethodFlag == DEMethod.Both)
+        {
+            CDEF(realPower, reactivePower, voltageMagnitude, voltageAngle, frequencyBus, voltageMean, kFactor,
+                out Gemstone.Numeric.Matrix<double> DE_ranked,
+                out double[] DE_time,
+                out Gemstone.Numeric.Matrix<double> DE_curve,
+                out Gemstone.Numeric.Matrix<double> DE_curveP,
+                out Gemstone.Numeric.Matrix<double> DE_curveQ,
+                out Gemstone.Numeric.Matrix<double> DE_curveQF,
+                out Gemstone.Numeric.Matrix<double> DE_curvePV);
+            details.Add("CDEF_LineNumber", JsonConvert.SerializeObject(DE_ranked.GetColumn(0)));
+            details.Add("CDEF_DECurve", JsonConvert.SerializeObject(DE_ranked.GetColumn(1)));
+            details.Add("CDEF_DECurvePF", JsonConvert.SerializeObject(DE_ranked.GetColumn(2)));
+            details.Add("CDEF_DECurveQV", JsonConvert.SerializeObject(DE_ranked.GetColumn(3)));
+            details.Add("CDEF_DECurveQF", JsonConvert.SerializeObject(DE_ranked.GetColumn(4)));
+            details.Add("CDEF_DECurvePV", JsonConvert.SerializeObject(DE_ranked.GetColumn(5)));
+        }
 
         // Save Results in Table Form as appropriate
+        AlarmMeasurement measurement = new AlarmMeasurement
+        {
+            Timestamp = Ts1,
+            Value = 1,
+            AlarmID = new Guid()
+        };
+        await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        TableOperations<EventDetails> tableOperations = new(connection);
+        tableOperations.AddNewRecord(new EventDetails()
+        {
+            StartTime = Ts,
+            EndTime = Te,
+            EventID = oscillation.EventID,
+            Type = "defOscillation",
+            MeasurementID = measurement.AlarmID,
+            Details = details.ToString()
+        });
+
+        return;
     }
 
 
