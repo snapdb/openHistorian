@@ -1041,21 +1041,22 @@ else
     /// <returns></returns>
     private IEnumerable<double> InterpolateNaN(IEnumerable<double> data)
     {
-        IEnumerable<int> NaNIndices = data.Select((v, i) => new { v, i }).Where((v) => double.IsNaN(v.v)).Select((v) => v.i);
+        List<int> NaNIndices = data.Select((v, i) => new { v, i }).Where((v) => double.IsNaN(v.v)).Select((v) => v.i).ToList();
         if (NaNIndices.Count() == data.Count() || NaNIndices.Count() == 0)
             return data;
 
-        double[] estimates = Pchip.Interp1(data.Select((v, i) => new { v, i }).Where((v) => double.IsNaN(v.v)).Select((v) => (double)v.i).ToArray(),
+        double[] estimates = Pchip.Interp1(data.Select((v, i) => new { v, i }).Where((v) => !double.IsNaN(v.v)).Select((v) => (double)v.i).ToArray(),
                data.Where((v, i) => !double.IsNaN(v)).ToArray(),
                NaNIndices.Select((v) => (double)v).ToArray());
+
 
         return data.Select((v, i) =>
         {
             if (!double.IsNaN(v)) return v;
 
-            int index = NaNIndices.Where((n) => n == i).FirstOrDefault();
+            int index = NaNIndices.FindIndex((n) => n == i);
 
-            return (index >= 0 ? estimates.ElementAt(index) : double.NaN);
+            return (index >= 0 ? estimates[index] : double.NaN);
         });
     }
 
