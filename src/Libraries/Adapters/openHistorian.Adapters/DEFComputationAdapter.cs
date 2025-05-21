@@ -1066,11 +1066,13 @@ else
     /// <param name="data"></param>
     /// <param name="threshold"></param>
     /// <returns></returns>
-    private IEnumerable<double> RemoveOutliers(IEnumerable<double> data, double threshold = 0.05)
+    private IEnumerable<double> RemoveOutliers(IEnumerable<double> data, double threshold = 0.05, IEnumerable<int>? ind = null)
     {
         int nThreshold = (int)Math.Floor(data.Count() * threshold);
-        IEnumerable<double> sampleData = data.OrderBy(v => Math.Abs(v)).Take(data.Count() - nThreshold);
-        double median = sampleData.NaNAwareMedian(true);
+        if (ind is null || ind.Count() == 0)
+            ind = data.Select((v, i) => new Tuple<double, int>(v, i)).OrderBy(v => Math.Abs(v.Item1)).Take(nThreshold).Select(v => v.Item2);
+        IEnumerable<double> sampleData = data.Where((_, i) => !ind.Any(ii => ii == i));
+        double median = sampleData.NaNAwareMedian(false);
         double stdev = sampleData.StandardDeviation();
 
         double min = median - 6 * stdev;
