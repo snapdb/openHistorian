@@ -325,7 +325,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
                 // Query event details from database
                 using AdoDataConnection connection = new(ConfigSettings.Instance);
                 TableOperations<EventDetails> eventDetailsTable = new(connection);
-                eventDetails = (eventDetailsTable.QueryRecordWhere("EventID = {0}", eventID) ?? new EventDetails()).Details;
+                eventDetails = (eventDetailsTable.QueryRecordWhere("EventGuid = {0}", eventID) ?? new EventDetails()).Details;
             }
             catch (Exception ex)
             {
@@ -339,6 +339,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
 
         return new EventState
         {
+            EventID = eventID,
             Target = target,
             Details = details,
             Duration = double.NaN,
@@ -395,8 +396,9 @@ public partial struct EventState : IDataSourceValueType<EventState>
         bool alarmed = false;
         Guid eventID = Guid.Empty;
         MeasurementStateFlags flags = MeasurementStateFlags.Normal;
+        const ulong quarterMillisecond = Ticks.PerMillisecond / 4;
 
-        using TreeStream<HistorianKey, HistorianValue> currentValueStream = database.Read(timestamp, timestamp, pointIDs);
+        using TreeStream<HistorianKey, HistorianValue> currentValueStream = database.Read(timestamp - quarterMillisecond, timestamp + quarterMillisecond, pointIDs);
 
         // Interpret current value as alarm state
         if (currentValueStream.Read(key, value))
