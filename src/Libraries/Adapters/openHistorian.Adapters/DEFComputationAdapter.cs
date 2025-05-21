@@ -869,7 +869,7 @@ else
 
         int nfft = Pline.Count();
         int n = (int)(nfft * 0.5D) + 1;
-        IEnumerable<double> f = Enumerable.Range(0, n).Select(d => (double)(d+1) * fs * 0.5D/(double)n);
+        IEnumerable<double> f = Enumerable.Range(0, n).Select(d => (double)(d) * fs * 0.5D/(double)(n-1));
         
         double Fstep = fs / (double)nfft;
         int i_alarmFreq = (int)Math.Floor(AlarmFrequency / Fstep);
@@ -881,10 +881,12 @@ else
         int i_bUP = Math.Min(n, i_alarmFreq + Math.Max(2, (int)Math.Floor(dFb / Fstep)));
         int i_bDOWN = Math.Max(i_Fth, i_alarmFreq - Math.Max(2, (int)Math.Floor(dFb / Fstep)));
 
-        double[] fft = SteadyStateRemoval(Pline, 10000).GetColumn(0);
-        MathNet.Numerics.IntegralTransforms.Fourier.Forward(fft,Pline.Select(d => 0.0D).ToArray(), MathNet.Numerics.IntegralTransforms.FourierOptions.Matlab);
-        IEnumerable<double> S = fft.Select(d => 2.0 * d / nfft);
-        Amax = S.Select((d, i) => Math.Abs(d) / S.Skip(i_bDOWN).Take(i_bUP - i_bDOWN).Max()).Skip(i_sDOWN).Take(i_sUP - i_sDOWN).Max();
+        Complex32[] fft = SteadyStateRemoval(Pline, 10000).Select(d => new Complex32((float)d,0)).ToArray();
+        MathNet.Numerics.IntegralTransforms.Fourier.Forward(fft, MathNet.Numerics.IntegralTransforms.FourierOptions.Matlab);
+        Complex32 factor = new Complex32(2.0f / nfft, 0);
+        IEnumerable<Complex32> S = fft.Select(d => d * factor);
+        double Smax = S.Skip(i_bDOWN).Take(i_bUP - i_bDOWN).Select(d => d.Magnitude).Max();
+        Amax =  S.Select((d, i) => d.Magnitude / Smax).Skip(i_sDOWN).Take(i_sUP - i_sDOWN).Max();
         return true;
     }
 
