@@ -67,18 +67,17 @@ public partial struct EventState
     public string Details;
 
     /// <summary>
-    /// Event duration, in milliseconds, since raised state if cleared; otherwise, <c>double.NaN</c>.
+    /// Event duration, in milliseconds, since raised state if event has cleared; otherwise, <c>double.NaN</c>.
     /// </summary>
     /// <remarks>
-    /// If 'Raised' is 0, then 'Duration' is the time since the event was last raised.
-    /// If 'Raised' is 1, then 'Duration' will be <c>double.NaN</c>, i.e., ongoing.
+    /// Duration will be <c>double.NaN</c> if event is ongoing.
     /// </remarks>
     public double Duration;
 
     /// <summary>
     /// Timestamp, in Unix epoch milliseconds, of queried value. In an event state context, this
-    /// time represents this start of the event when in the range of the the active Grafana query;
-    /// otherwise, this will be the start or the end of the query range.
+    /// time represents this start of the event when in the range of the active Grafana query;
+    /// otherwise, this will be the start of the Grafana query range.
     /// </summary>
     public double Time;
 
