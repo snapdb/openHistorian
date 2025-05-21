@@ -990,7 +990,11 @@ end
     /// remove steady state part of the time series
     /// </summary>
     /// <returns></returns>
-    public Gemstone.Numeric.Matrix<double> SteadyStateRemoval(IEnumerable<double> x, double penalityFactor)
+    public double[] SteadyStateRemoval(IEnumerable<double> x, double penalityFactor)
+    {
+        Gemstone.Numeric.Matrix<double> imf = VariableModeDecomposition.vmd(x, 500, 5, penalityFactor);
+        return imf.GetSubmatrix(0, 0, imf.NRows, imf.NColumns - 1).RowSums;
+    }
     {
         Gemstone.Numeric.Matrix<double> imf = Gemstone.Numeric.Analysis.VariableModeDecomposition.vmd(x, 500, 5, penalityFactor);
         return new Gemstone.Numeric.Matrix<double>(imf.GetSubmatrix(0,0,imf.NRows,imf.NColumns - 1).RowSums,1);
@@ -1226,6 +1230,58 @@ end
         return result;
     }
 
+    private Gemstone.Numeric.Matrix<double> RemoveTrend(Gemstone.Numeric.Matrix<double> series)
+    {
+        switch (RemoveTrendFlag)
+        {
+            case TrendMethod.SubtractAverage:
+                return series.TransformByColumn((col, colIndex) =>
+                {
+                    double averageValue = col.Average();
+                    return col.Select(val => val - averageValue).ToArray();
+                });
+            case TrendMethod.SteadyStateRemoval:
+                return series.TransformByColumn((col, colIndex) => SteadyStateRemoval(col, 10000));
+            case TrendMethod.HighPassFilter:
+                return HighPassFilter(series);
+            default:
+                throw new MissingMethodException($"Method flag type {Enum.GetName(typeof(TrendMethod), RemoveTrendFlag)} not yet implemented.");
+
+        }
+    }
+
+    private Gemstone.Numeric.Matrix<double> HighPassFilter(Gemstone.Numeric.Matrix<double> series) 
+    {
+        // This uses a precalculated 8th order elliptical filter with highpass frequency of 0.06 Hz (GenSet(18)), Attenuation of Stopband of 60 dB, allowed ripple of 0.1 dB
+        /* precalculated gain (this shouldn't matter for our analysis)
+         * 1.35451505239885
+         * 2.59271745340576
+         * 14.5488376541948
+         * 0.0177771674651696
+         */
+        double[][] filtNum = [
+            [1, -1.99909120534373,1],
+            [1,-1.99949340650223,1],
+            [1,-1.99992550744888,1],
+            [1,-1.99890208320654,1]
+        ];
+        double[][] filtDem = [
+            [1, -1.98843962161928, 0.990144977377360],
+            [1, -1.96491293974926, 0.967390343219020],
+            [1, -1.87830020155431, 0.883690790979502],
+            [1, -1.99619138978376, 0.997693111810405]
+        ];
+
+        return series.TransformByColumn((col, ind) =>
+        {
+            double[] newValues = col;
+            for(int i = 0; i < filtNum.GetLength(0); i++)
+            {
+                newValues = DigitalFilter.FiltFilt(filtNum[i], filtDem[i], newValues);
+            }
+            return newValues;
+        });
+    }
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
