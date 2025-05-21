@@ -22,6 +22,8 @@
     <None Remove="GrafanaAdapters\DeviceStateAdapter\main.js" />
     <None Remove="openHistorian.Adapters\LocalOutputAdapter\chunk.js" />
     <None Remove="openHistorian.Adapters\LocalOutputAdapter\main.js" />
+    <None Remove="PowerCalculations\AngleDifferenceCalculator\chunk.js" />
+    <None Remove="PowerCalculations\AngleDifferenceCalculator\main.js" />
     <None Remove="PowerCalculations\ImpedanceCalculator\chunk.js" />
     <None Remove="PowerCalculations\ImpedanceCalculator\main.js" />
     <None Remove="PowerCalculations\ImpedanceCalculator\PowerCalculations.ImpedanceCalculator.js" />
@@ -46,6 +48,8 @@
     <EmbeddedResource Include="GrafanaAdapters\DeviceStateAdapter\main.js" />
     <EmbeddedResource Include="openHistorian.Adapters\LocalOutputAdapter\chunk.js" />
     <EmbeddedResource Include="openHistorian.Adapters\LocalOutputAdapter\main.js" />
+    <EmbeddedResource Include="PowerCalculations\AngleDifferenceCalculator\chunk.js" />
+    <EmbeddedResource Include="PowerCalculations\AngleDifferenceCalculator\main.js" />
     <EmbeddedResource Include="PowerCalculations\ImpedanceCalculator\chunk.js" />
     <EmbeddedResource Include="PowerCalculations\ImpedanceCalculator\main.js" />
     <EmbeddedResource Include="PowerCalculations\PowerCalculator\chunk.js" />
