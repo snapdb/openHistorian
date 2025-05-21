@@ -1296,6 +1296,64 @@ else
             return newValues;
         });
     }
+
+    private double CalculateCumulativePQRatio(Gemstone.Numeric.Matrix<double> realPower, Gemstone.Numeric.Matrix<double> reactivePower, double? frequency = null)
+    {
+        int window = realPower.NRows - 1;
+        int overlap = window - 1;
+        (Gemstone.Numeric.Matrix<ComplexNumber> realCpsd, double[] freqVector) = CPSD(realPower, realPower, window, overlap);
+        freqVector = freqVector.Select(val => val * FramesPerSecond / Math.PI / 2).ToArray();
+        Gemstone.Numeric.Matrix<ComplexNumber> imagCpsd = CPSD(reactivePower, reactivePower, window, overlap).Item1;
+
+        double nearestFind = frequency ?? FrequencyThreshold;
+        double comparitor = double.PositiveInfinity;
+        int closestIndex = -1;
+        for(int index = 0; index < freqVector.Count(); index++)
+        {
+            double comparison = Math.Abs(nearestFind - freqVector[index]);
+            if (comparison < comparitor)
+            {
+                comparitor = comparison;
+                closestIndex = index;
+            }
+        }
+
+        if (frequency is null)
+        {
+            double maxValue = 0;
+            int valueIndex = -1;
+            for (int rowIndex = closestIndex; rowIndex < realCpsd.NRows; rowIndex++)
+            {
+                double pSum = realCpsd.GetRow(rowIndex).Select(c => c.Magnitude).Sum();
+                double qSum = imagCpsd.GetRow(rowIndex).Select(c => c.Magnitude).Sum();
+                if (pSum > maxValue)
+                {
+                    maxValue = pSum;
+                    valueIndex = rowIndex;
+                }
+                if (qSum > maxValue)
+                {
+                    maxValue = qSum;
+                    valueIndex = rowIndex;
+                }
+            }
+            closestIndex = valueIndex;
+        }
+
+        // Calculate cumulatine PQratio from max(max(Magnitude)) to max(sum(Magnitude))
+        double[] aP = realCpsd.GetRow(closestIndex).Select(c => c.Magnitude).OrderDescending().ToArray();
+        double[] aQ = imagCpsd.GetRow(closestIndex).Select(c => c.Magnitude).OrderDescending().ToArray();
+        
+        for(int index = 1; index < aP.Length; index++)
+        {
+            aP[index] += aP[index - 1];
+            aQ[index] += aQ[index - 1];
+        }
+
+        double[] PQcum_cpsd = aP.Zip(aQ, (p, q) => p / q).ToArray();
+        return PQcum_cpsd[Math.Min(NumberOfElementsForSourceIdentification, PQcum_cpsd.Length)];
+    }
+
     private double SelectKFactor(double cumulativePQRatio, double intialKFactor, double frequency)
     {
         if (intialKFactor >= -90) return intialKFactor;
