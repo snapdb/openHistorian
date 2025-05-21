@@ -112,6 +112,20 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         BadData = 2
     }
 
+    private enum TrendMethod
+    {
+        SubtractAverage = 0,
+        HighPassFilter = 1,
+        SteadyStateRemoval = 2
+    }
+
+    private enum DEMethod
+    {
+        CDEF = 0,
+        CPSD = 1,
+        Both = 2
+    }
+
     #endregion
 
     #region [ Constructors ]
@@ -134,9 +148,18 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     public double Cmin_l = 8; //GenSet(6)
     public double Cmin_h = 8; //GenSet(5)
     public double BandThreshold = 0.2; //GenSet(4)
-    public double MminP = 0; // GenSet(2)
-    public double Mmin = 0; // GenSet(3)
+    public double MminP = 1.5001; // GenSet(2)
+    public double Mmin = 0.4; // GenSet(3)
     double Tstep = 2.0D; //GenSet(1)
+    int AllowedNoiseRatio = 200; // GenSet(19)
+    double FrequencyThreshold = 0.07; // GenSet(29)
+    int NumberOfElementsForSourceIdentification = 4; // GenSet(31)
+    double IntialKFactor = -990.2; // GenSet(15)
+    TrendMethod RemoveTrendFlag = TrendMethod.SubtractAverage; // GenSet(18), logic to determine is <0 is steady state, =0 subtract average, >0 highpass
+    DEMethod deMethodFlag = DEMethod.Both; //GenSet(16)
+    bool IsRealData = true; // GenSet(10)
+    double cdefTimeInterval = 0.5; // GenSet(13) 
+
 
     /// <summary>
     /// The maximum size of the Buffer in second
