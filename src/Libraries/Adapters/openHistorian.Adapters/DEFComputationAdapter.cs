@@ -1372,6 +1372,57 @@ else
 
         return kFactor * kFactorScalar;
     }
+
+    // Calculates cross spectrum phase density using welch's method (eq. to matlab CSPD func)
+    private (Complex32[], double[]) CPSD(IEnumerable<Complex32> x, IEnumerable<Complex32> y, int window, int overlap)
+    {
+        if (x.Count() != y.Count()) throw new InvalidOperationException("Cannot calculate CSPD for series of different legnths.");
+        if (x.Count() < window) throw new InvalidOperationException("Window is larger than series length.");
+
+        // hamming window for the data windowing
+        IEnumerable<Complex32> hammingWindow = Enumerable.Range(0, window).Select(n => 
+            new Complex32((float)(0.54 - 0.46 * Math.Cos(2.0D * Math.PI * (double) n / (window - 1))), 0)
+        );
+        double windowNormalization = hammingWindow.Select(d => (float)Math.Pow(d.Real, 2)).Sum();
+
+        // for n-point DFT
+        int nfft = (int)Math.Max(
+            256,
+            Math.Pow(2, Math.Ceiling(Math.Log(window, 2)))
+        );
+        IEnumerable<Complex32> zeros = Enumerable.Repeat(Complex32.Zero, nfft - window);
+
+
+        int numSegments = (int) Math.Round((double)(x.Count() - overlap) / (window - overlap));
+        IEnumerable<int> segmentStartIndices = Enumerable.Range(0, numSegments).Select(n => n * (window - overlap));
+        IEnumerable<Complex32> periodogramAvg = Enumerable.Repeat(Complex32.Zero, nfft);
+        foreach (int index in segmentStartIndices)
+        {
+            // Window signals and append 0's to match nfft length
+            Complex32[] windowedX = x.Skip(index).Take(window).Zip(hammingWindow, (yVal, winVal) => yVal * winVal).Concat(zeros).ToArray();
+            Complex32[] windowedY = y.Skip(index).Take(window).Zip(hammingWindow, (yVal, winVal) => yVal * winVal).Concat(zeros).ToArray();
+            MathNet.Numerics.IntegralTransforms.Fourier.Forward(windowedX, MathNet.Numerics.IntegralTransforms.FourierOptions.Matlab);
+            MathNet.Numerics.IntegralTransforms.Fourier.Forward(windowedY, MathNet.Numerics.IntegralTransforms.FourierOptions.Matlab);
+            // Get Cross Spectrum
+            IEnumerable<Complex32> cs = windowedX.Zip(windowedY, (x, y) => x * y.Conjugate());
+            periodogramAvg = periodogramAvg.Zip(cs, (sum, newVal) => sum + newVal);
+        }
+
+        // Right now we assume a frequency of 2pi, if we change this assumption or allow it to be specified, the rest will need to change
+        // We take just [0,pi], as matlab does
+        int take = nfft / 2 + 1; // No rounding here, nfft is always a power of 2
+        // Our scaling for this is 2/(fs * window normalization) (we also just go ahead and roll in finishing up the avg calculation too, while we're at it)
+        Complex32 scale = new Complex32((float) (numSegments * Math.PI * windowNormalization), 0);
+        periodogramAvg = periodogramAvg.Take(take).Select((val , ind) => {
+            // For some reason, matlab gives half for the first point
+            Complex32 factor = (ind == 0) ? new Complex32(2,0) : Complex32.One;
+            return (val / scale / factor);
+            });
+
+        double fstep = Math.PI / (take-1);
+
+        return (periodogramAvg.ToArray(), Enumerable.Range(0, take).Select(n => n * fstep).ToArray());
+    }
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
