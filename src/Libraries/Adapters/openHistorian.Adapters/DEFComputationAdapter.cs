@@ -942,9 +942,10 @@ else
     {
         int n = data.Count();
         int nStart = (int)Math.Floor(fs*Tstart);
-        int nEnd = (int)Math.Ceiling(fs*Tend);
+        int nEnd = (int)Math.Ceiling(fs*Tend) + 1;
         return data.Skip(nStart).Take(nEnd - nStart);
     }
+
     /// <summary>
     /// Clean PMU data and identify bad PMU data
     /// </summary>
