@@ -159,16 +159,16 @@ public partial struct EventState : IDataSourceValueType<EventState>
             return (0UL, Guid.Empty);
 
         // Get measurement point ID from metadata
-        string pointIDValue = row["ID"].ToString();
-        bool success = ulong.TryParse(pointIDValue, out ulong pointID);
-        Debug.Assert(success, $"Failed to parse measurement point ID '{pointIDValue}' for '{pointTag}'");
+        string measurementKeyValue = row["ID"].ToString();
+        bool success = MeasurementKey.TryParse(measurementKeyValue, out MeasurementKey key);
+        Debug.Assert(success, $"Failed to parse measurement point ID '{measurementKeyValue}' for '{pointTag}'");
 
         // Get measurement signal ID from metadata
         string signalIDValue = row["SignalID"].ToString();
         success = Guid.TryParse(signalIDValue, out Guid signalID);
         Debug.Assert(success, $"Failed to parse measurement signal ID '{signalIDValue}' for '{pointTag}'");
 
-        return (pointID, signalID);
+        return (key.ID, signalID);
     }
 
     readonly TargetIDSet IDataSourceValueType.GetTargetIDSet(DataRow record)
@@ -402,7 +402,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         if (currentValueStream.Read(key, value))
             (alarmed, eventID, flags) = value.AsAlarm;
         else
-            Debug.Fail( $"Failed to read current alarmed state for '{pointID}' at '{time}'");
+            Debug.Fail( $"Failed to read current alarmed state for '{instanceName}:{pointID}' at '{new DateTime((long)timestamp, DateTimeKind.Utc):O}'");
 
         return (eventID, alarmed, flags);
     }
