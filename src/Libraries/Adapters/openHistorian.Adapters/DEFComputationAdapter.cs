@@ -105,10 +105,11 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         public IEnumerable<Ticks> Timestamp;
     }
 
-    private enum DataCleaning 
+    private enum DataStatus 
     { 
         Success = 0,
-        BadData = 1
+        SuspectData = 1,
+        BadData = 2
     }
 
     #endregion
@@ -432,9 +433,11 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         if (!double.TryParse(osc["Hysteresis"].ToString(), out double HysteresisAlarm)) // GenSet(24)
             throw new InvalidDataException("Oscillation Event not formated correctly-  Can not parse \"Hysteresis\"");
 
-        SelTime(Talarm, freqAlarm, HysteresisAlarm, alarmData, out Ticks Tstart, out Ticks Tend, out Ticks Ts, out Ticks Te, out Ticks Ts1, out Ticks Te1, out IEnumerable<double> Pline, out DataCleaning cond);
+        SelTime(Talarm, freqAlarm, HysteresisAlarm, alarmData, out double Tstart, out double Tend, out Ticks Ts, out Ticks Te, out Ticks Ts1, out Ticks Te1, out IEnumerable<double> Pline,
+            out DataStatus timeCond, out DataStatus pmuCond, out DataStatus trippingCond);
 
-        if (cond != DataCleaning.Success)
+        // Todo: Console logs for warning messages based on conds?
+        if (timeCond == DataStatus.BadData || pmuCond == DataStatus.SuspectData || pmuCond == DataStatus.BadData)
         {
             OnStatusMessage(MessageLevel.Warning, "Unable to compute DEF, Possibly false Alarm");
             return;
@@ -519,12 +522,11 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
     private void SelTime(Ticks Talarm, double freqAlarm, double HysteresisAlarm,
         LineData alarmData,
-        out Ticks Tstart, out Ticks Tend, out Ticks Ts, out Ticks Te,out Ticks Ts1, out Ticks Te1,out IEnumerable<double> Pline, out DataCleaning cond) 
+        out double Tstart, out double Tend, out Ticks Ts, out Ticks Te,out Ticks Ts1, out Ticks Te1,out IEnumerable<double> Pline, out DataStatus timeCond, out DataStatus pmuCond, out DataStatus trippingCond) 
     {
         IEnumerable<ComplexNumber> alarmCurrent = alarmData.Current;
         IEnumerable<ComplexNumber> alarmVoltage = alarmData.Voltage;
         IEnumerable<double> alarmFrequency = alarmData.Frequency;
-        IEnumerable<Ticks> t0 = alarmData.Timestamp;
 
         double Twin = Cmin_w / freqAlarm;
         double Tth = (freqAlarm < BandThreshold ? Cmin_l : Cmin_h) / freqAlarm;
@@ -532,16 +534,18 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         Ts = Talarm - (long)((HysteresisAlarm + TimeMargin) * (double)Ticks.PerSecond);
         Te = Talarm + (long)((Tth - HysteresisAlarm + 3.0D * Twin) * (double)Ticks.PerSecond);
 
-        Tstart = Ticks.MinValue;
-        Tend = Ticks.MinValue;
+        Tstart = 0;
+        Tend = 0;
         Pline = new List<double>();
 
-        cond = PMUDataCleaning(alarmVoltage, alarmCurrent, alarmFrequency, false);
+        pmuCond = PMUDataCleaning(alarmVoltage, alarmCurrent, alarmFrequency, false);
+        timeCond = DataStatus.Success;
+        trippingCond = DataStatus.Success;
 
         Ts1 = Talarm; 
         Te1 = Talarm;
 
-        if ( cond != DataCleaning.Success )
+        if ( pmuCond != DataStatus.Success )
             return;
         
 
@@ -556,7 +560,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         if (!VerifyAlarm(Pline, freqAlarm, fs, out Amax) || Amax < (0.7-0.001))
         {
             OnStatusMessage(MessageLevel.Warning, "Alarm is most likely false, Amax must be equal to 1.0 for dominant mode");
-            cond = DataCleaning.BadData;
+            pmuCond = DataStatus.BadData;
             return;
         }
 
