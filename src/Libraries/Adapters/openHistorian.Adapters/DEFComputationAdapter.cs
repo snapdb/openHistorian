@@ -605,7 +605,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         {
             StartTime = Ts,
             EndTime = Te,
-            EventID = oscillation.EventID,
+            EventGuid = oscillation.EventGuid,
             Type = "defOscillation",
             MeasurementID = measurement.AlarmID,
             Details = details.ToString()
