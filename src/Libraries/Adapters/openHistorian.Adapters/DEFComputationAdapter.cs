@@ -1185,6 +1185,65 @@ else
         ButterworthFilter butterFilter = new ButterworthFilter(fStop1, fPass1, fPass2, fStop2, 10, 1, FramesPerSecond);
         return data.TransformByColumn((col, _) => butterFilter.FiltFilt(col));
     }
+
+    private void RemoveTrippedLines(ref Gemstone.Numeric.Matrix<ComplexNumber> power, double threshold, int allowedLowContiguous)
+    {
+        Gemstone.Numeric.Matrix<double> abs_real = power.TransformByValue<double>((value) => Math.Abs(value.Real));
+        for(int j = 0; j < power.NColumns; j++)
+        {
+            int count = 0;
+            for (int i = 0; i < power.NRows; i++)
+            {
+                if (abs_real[i][j] < threshold)
+                {
+                    count++;
+                    if (count > allowedLowContiguous)
+                    {
+                        power.ReplaceSubmatrix(new Gemstone.Numeric.Matrix<ComplexNumber>(power.NRows, [new ComplexNumber(0.00001, 0.00001)]), 0, j);
+                        i = power.NRows; // breaks our loop, since we found our result
+                    }
+                }
+                else count = 0;
+            }
+        }
+    }
+
+    private void RemoveNoisySignals(ref Gemstone.Numeric.Matrix<ComplexNumber> power)
+    {
+        double value = 0.00001;
+        double threshold = 10 * value;
+        RemoveNoisySignals(ref power, value, threshold, true);
+        RemoveNoisySignals(ref power, value, threshold, false);
+    }
+
+    private void RemoveNoisySignals(ref Gemstone.Numeric.Matrix<ComplexNumber> power, double value, double threshold, bool checkReal = true)
+    {
+        int nfft = (int) Math.Floor(power.NRows / 2.0D) + 1;
+        List<double> ffSums = new List<double>();
+        List<int> goodIndices = new List<int>();
+        for (int i = 0; i < power.NColumns; i++)
+        {
+            IEnumerable<double> series = power.GetColumnEnumerable(i).Select(c => checkReal ? c.Real : c.Imaginary);
+            if (Math.Abs(series.Mean()) <= threshold)
+                continue;
+
+            // The case of using series.Imaginary for real here is intentional
+            Complex32[] fft = series.Select(d => new Complex32((float) d, 0)).ToArray();
+            MathNet.Numerics.IntegralTransforms.Fourier.Forward(fft, MathNet.Numerics.IntegralTransforms.FourierOptions.Matlab);
+
+            ffSums.Add(fft.Select(c => c.Magnitude).Take(nfft).Sum());
+            goodIndices.Add(i);
+        }
+        double medianSum = ffSums.Median();
+        goodIndices = ffSums.Zip(goodIndices, (sum, index) => new { sum, index }).Where(o => o.sum / medianSum > AllowedNoiseRatio).Select(o => o.index).ToList();
+
+        power.OperateByColumn((col, i) =>
+        {
+            if (goodIndices.Any(index => index == i))
+                col = col.Select((_) => new ComplexNumber(value,value)).ToArray();
+        });
+    }
+
     private Gemstone.Numeric.Matrix<double> RemoveTrend(Gemstone.Numeric.Matrix<double> series)
     {
         switch (RemoveTrendFlag)
