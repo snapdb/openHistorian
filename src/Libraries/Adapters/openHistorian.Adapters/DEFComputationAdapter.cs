@@ -219,9 +219,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         Ticks Tstart = DateTime.Parse("2025-01-26 08:43:19");
 
         Ticks[] Time = Vm.ToColumnArrays().First().Select((v,i) => (Ticks)(Tstart + (double)i*1/30.0*Ticks.PerSecond)).ToArray();
-
-
-        LineData data = new LineData()
+        List<LineData> lineData = new List<LineData>([
+           new LineData()
         {
             Current = Ia.ToColumnArrays().First().Zip(Im.ToColumnArrays().First(),(f,s) => new ComplexNumber(Angle.FromDegrees(f),s)),
             Frequency = f.ToColumnArrays().First(),
@@ -239,7 +238,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:4")
             },
             FrequencyKey = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:5")
-        };
+           }
+        ]);
 
         EventDetails evt = new EventDetails()
         {
@@ -247,15 +247,51 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             Details = oscillation.ToString()
         };
 
-        m_lines = new List<Line>() { new Line()
-        {
-            Current = data.CurrentKey,
-            Voltage = data.VoltageKey,
-            Frequency = data.FrequencyKey
-        }
-        };
+        string pmuDataFile = "C:\\Users\\gcsantos\\source\\MATLAB\\m-code\\PMUdata2.mat";
+        int phasorForSelTime = 238;
+        // Load EventData
+        MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_Vm = MatlabReader.Read<double>(pmuDataFile, "Vm");
+        MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_Va = MatlabReader.Read<double>(pmuDataFile, "Va");
+        MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_Im = MatlabReader.Read<double>(pmuDataFile, "Im");
+        MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_Ia = MatlabReader.Read<double>(pmuDataFile, "Ia");
+        MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_f = MatlabReader.Read<double>(pmuDataFile, "Fbus");
+        MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_map = MatlabReader.Read<double>(pmuDataFile, "I2U");
 
-        ComputeDEF(evt, new List<LineData>() { data });
+        Ticks[] pmu_time = pmu_Vm.ToColumnArrays().First().Select((_, i) => (Ticks)(Tstart + (double)i * 1 / 30.0 * Ticks.PerSecond)).ToArray();
+        for (int ind =0; ind < pmu_map.RowCount; ind++)
+        {
+            int[] mapVector = pmu_map.Row(ind).Select(i =>(int) i -1).ToArray();
+            lineData.Add(new LineData()
+            {
+                Current = pmu_Ia.Column(mapVector[0]).Zip(pmu_Im.Column(mapVector[0]), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)),
+                Frequency = pmu_f.Column(mapVector[1]),
+                Voltage = pmu_Va.Column(mapVector[1]).Zip(pmu_Vm.Column(mapVector[1]), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)),
+                Timestamp = pmu_time,
+
+
+                CurrentKey = new PhasorKey()
+                {
+                    Magnitude = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:1"),
+                    Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:2")
+                },
+                VoltageKey = new PhasorKey()
+                {
+                    Magnitude = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:3"),
+                    Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:4")
+                },
+                FrequencyKey = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:5")
+            });
+        }
+
+        m_lines = lineData.Select(d => new Line()
+        {
+            Current = d.CurrentKey,
+            Voltage = d.VoltageKey,
+            Frequency = d.FrequencyKey
+        }).ToList();
+
+
+        ComputeDEF(evt, lineData);
 
     }
 
@@ -437,7 +473,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             ComputeDEF(oscillation.Item1, oscillation.Item2);
     }
 
-    private void ComputeDEF(EventDetails oscillation, IEnumerable<LineData> data)
+    private async Task ComputeDEF(EventDetails oscillation, IEnumerable<LineData> data)
     {
         JObject osc = JObject.Parse(oscillation.Details);
 
@@ -466,10 +502,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             return;
         }
 
-        double Twin = Cmin_w / freqAlarm;
-        double Tth = (freqAlarm < BandThreshold? Cmin_l : Cmin_h)/freqAlarm;
-        PhasorKey PhasorVAlarm = new PhasorKey();
-        PhasorKey PhasorIAlarm = new PhasorKey();
 
 
         Tstart = Talarm - (long)(HysteresisAlarm + TimeMargin) * Ticks.PerSecond;
