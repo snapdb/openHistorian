@@ -624,18 +624,21 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
         double m_th = Math.Max(MminP, Mmin*mm.Max());
         List<double> mm1 = mm.Select(d => d - m_th).ToList();
+
+        double Ttrip = 0;
+        {
         int ii;
-        List<double> st = new List<double>();
-        List<double> en = new List<double>();
+            List<int> st = new List<int>(new int[nScans]);
+            List<int> en = new List<int>(new int[nScans]);
 
         if (mm1.First() > 0)
         {
-            ii = 1;
-            st.Add(1);
+                ii = 0;
+                st[0] = 1;
         }
         else
         {
-            ii = 0;
+                ii = -1;
         }
 
         for (int i = 1; i < nScans; i++)
@@ -644,19 +647,22 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             {
                 if (mm1[i - 1] < 0)
                 {
-                    ii = ii + 1;
-                    st.Add(i);
+                        ii++;
+                        st[ii] = i + 1;
                 }
             }
             else
             {
                 if (mm1[i - 1] > 0)
-                    en.Add(i);
+                        en[ii] = i + 1;
                 
             }
-            if (i == nScans && mm1[i] > 0)
-                en.Add(i);
+                if (i == nScans - 1 && mm1[i] > 0)
+                    en[ii] = i + 1;
         }
+
+            st = st.Take(ii + 1).ToList();
+            en = en.Take(ii + 1).ToList();
 
         // ii is the number of intervals with magnitude GT than threshold
         if (ii > 0)
