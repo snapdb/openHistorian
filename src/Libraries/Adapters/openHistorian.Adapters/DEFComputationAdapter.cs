@@ -593,13 +593,15 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         }
 
         // Save Results in Table Form as appropriate
+        await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        TableOperations<AlarmMeasurement> tableOperationsAlarm = new(connection);
         AlarmMeasurement measurement = new AlarmMeasurement
         {
             Timestamp = Ts1,
             Value = 1,
             AlarmID = new Guid()
         };
-        await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        tableOperationsAlarm.AddNewRecord(measurement);
         TableOperations<EventDetails> tableOperations = new(connection);
         tableOperations.AddNewRecord(new EventDetails()
         {
