@@ -1534,6 +1534,130 @@ else
 
         return (DE_cpsd, fCpsd);
     }
+
+    private void CDEF(
+        Gemstone.Numeric.Matrix<double> realPower,
+        Gemstone.Numeric.Matrix<double> reactivePower,
+        Gemstone.Numeric.Matrix<double> vMagnitude,
+        Gemstone.Numeric.Matrix<double> vAngle,
+        Gemstone.Numeric.Matrix<double> fBus,
+        double[] vMean,
+        double kfactor,
+        out Gemstone.Numeric.Matrix<double> DE_ranked,
+        out double[] DE_time,
+        out Gemstone.Numeric.Matrix<double> DE_curve,
+        out Gemstone.Numeric.Matrix<double> DE_curveP,
+        out Gemstone.Numeric.Matrix<double> DE_curveQ,
+        out Gemstone.Numeric.Matrix<double> DE_curveQF, 
+        out Gemstone.Numeric.Matrix<double> DE_curvePV
+    )
+    {
+        List<double> time = Enumerable.Range(0, vMagnitude.NRows).Select(n => (double) n / FramesPerSecond).ToList();
+        // Select middle part of interval to be used
+        int startInd = time.FindIndex(t => t > time.First() + Math.Floor((time.Last() - time.First()) * (1 - cdefTimeInterval) / 2));
+        if (startInd > 0) startInd--;
+        int endInd = time.FindIndex(t => t > time.First() + Math.Floor((time.Last() - time.First()) * (1 + cdefTimeInterval) / 2));
+        if (endInd == -1) endInd = time.Count - 1;
+
+
+        time = time.Skip(startInd).Take(endInd - startInd + 1).ToList();
+        realPower = realPower.GetSubmatrix(startInd, 0, endInd - startInd + 1, realPower.NColumns);
+        reactivePower = reactivePower.GetSubmatrix(startInd, 0, endInd - startInd + 1, reactivePower.NColumns);
+        vMagnitude = vMagnitude.GetSubmatrix(startInd, 0, endInd - startInd + 1, vMagnitude.NColumns);
+
+        Gemstone.Numeric.Matrix<double> usedData;
+        if (IsRealData)
+        {
+            usedData = fBus.GetSubmatrix(startInd, 0, endInd - startInd + 1, fBus.NColumns);
+        }
+        else
+        {
+            usedData = vAngle.GetSubmatrix(startInd, 0, endInd - startInd + 1, vAngle.NColumns);
+        }
+
+        int nn = 2;
+        (int start, int end) = GetStartEndNumericalDerivative(vMagnitude.NRows, nn);
+        DE_time = time.Skip(start).Take(end - start + 1).ToArray();
+        // We're gonna use this in a lambda, so we need to make it not out yet
+        Gemstone.Numeric.Matrix<double> DE_curve_temp = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        DE_curveP = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        DE_curveQ = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        DE_curveQF = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
+        DE_curvePV = new Gemstone.Numeric.Matrix<double>(end - start + 1, realPower.NColumns, 0);
+
+        for (int col = 0; col < realPower.NColumns; col++)
+        {
+            double[] ddV = NumericalDerivative(vMagnitude.GetColumn(col).ToArray(), nn);
+
+            IEnumerable<double> usedMulti;
+            if (!IsRealData) usedMulti = NumericalDerivative(usedData.GetColumn(col).ToArray(), nn).Select(v => v * Math.PI / 180);
+            else usedMulti = usedData.GetColumn(col).Skip(start).Take(end - start + 1).Select(v => v * 2 * Math.PI);
+
+            IEnumerable<double> realPowerCol = realPower.GetColumn(col).Skip(start).Take(end - start + 1);
+            IEnumerable<double> reactivePowerCol = realPower.GetColumn(col).Skip(start).Take(end - start + 1);
+            IEnumerable<double> voltageMagCol = vMagnitude.GetColumn(col).Skip(start).Take(end - start + 1);
+            double[] tempP = realPowerCol.Zip(usedMulti, (p, m) => p * m).ToArray();
+            double[] tempQF = reactivePowerCol.Zip(usedMulti, (p, m) => -p * m).ToArray();
+            double[] tempQ = reactivePowerCol.Zip(ddV, (p, v) => p * v).Zip(voltageMagCol, (val, vm) => val / (vMean[col] + vm)).ToArray();
+            double[] tempPV = realPowerCol.Zip(ddV, (p, v) => p * v).Zip(voltageMagCol, (val, vm) => val / (vMean[col] + vm)).ToArray();
+
+            double[] dPdF = new double[end - start + 1];
+            double[] dQdV = new double[end - start + 1];
+            double[] dQdF = new double[end - start + 1];
+            double[] dPdV = new double[end - start + 1];
+            // sum
+            dPdF[0] = tempP[0];
+            dQdV[0] = tempQ[0];
+            // sum_plus
+            dQdF[0] = tempQF[0];
+            dPdV[0] = tempPV[0];
+            for (int row = 1; row < dPdF.Length; row++)
+            {
+                dPdF[row] = dPdF[row-1] + tempP[row];
+                dQdV[row] = dQdV[row - 1] + tempQ[row];
+                dQdF[row] = dQdF[row - 1] + tempQF[row];
+                dPdV[row] = dPdV[row - 1] + tempPV[row];
+            }
+
+            double divsor = Math.Sqrt(1 + kfactor * kfactor);
+            for (int row = 0; row < DE_curve_temp.NRows; row++)
+            {
+                double sum = dPdF[row] + dQdV[row];
+                double sum_plus = dQdF[row] + dPdV[row];
+                DE_curve_temp[row][col] = (sum + sum_plus * kfactor) / divsor;
+                DE_curveP[row][col] = dPdF[row] / divsor;
+                DE_curveQ[row][col] = dQdV[row] / divsor;
+                DE_curveQF[row][col] = dQdF[row] * kfactor / divsor;
+                DE_curvePV[row][col] = dPdV[row] * kfactor / divsor;
+            }
+        }
+
+        Gemstone.Numeric.Matrix<double> Amatrix = new Gemstone.Numeric.Matrix<double>(DE_time, 2);
+        for (int row = 0; row < Amatrix.NRows; row++) Amatrix[row][1] = 1;
+
+        DE_ranked = new Gemstone.Numeric.Matrix<double>(DE_curve_temp.NColumns, 7, 0);
+        IEnumerable<Tuple<double, int>> sortOrder = Enumerable
+            .Range(0, DE_ranked.NRows)
+            .Select(ind => new Tuple<double, int>(GetSlopeCurve(Amatrix, DE_curve_temp.GetColumn(ind)), ind))
+            .OrderByDescending(tuple => Math.Abs(tuple.Item1));
+        double maxDECurve = Math.Abs(sortOrder.First().Item1);
+        int index = 0;
+        foreach(Tuple<double, int> tupe in sortOrder)
+        {
+            int row = tupe.Item2;
+            double deCurve = tupe.Item1;
+            DE_ranked[index][0] = row;
+            DE_ranked[index][1] = deCurve / maxDECurve;
+            DE_ranked[index][2] = GetSlopeCurve(Amatrix, DE_curveP.GetColumn(row)) / maxDECurve;
+            DE_ranked[index][3] = GetSlopeCurve(Amatrix, DE_curveQ.GetColumn(row)) / maxDECurve;
+            DE_ranked[index][4] = GetSlopeCurve(Amatrix, DE_curveQF.GetColumn(row)) / maxDECurve;
+            DE_ranked[index][5] = GetSlopeCurve(Amatrix, DE_curvePV.GetColumn(row)) / maxDECurve;
+            DE_ranked[index][6] = deCurve;
+            index++;
+        }
+        DE_curve = DE_curve_temp;
+    }
+
     private double GetSlopeCurve(Gemstone.Numeric.Matrix<double> timeMatrix, double[] vector)
     {
         Gemstone.Numeric.Matrix<double> paraMatrix = timeMatrix.GetLeastSquares(vector);
