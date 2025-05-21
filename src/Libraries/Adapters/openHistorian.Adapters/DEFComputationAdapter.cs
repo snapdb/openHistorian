@@ -1296,6 +1296,24 @@ else
             return newValues;
         });
     }
+    private double SelectKFactor(double cumulativePQRatio, double intialKFactor, double frequency)
+    {
+        if (intialKFactor >= -90) return intialKFactor;
+
+        double[][] rPQ = [[0, 0.4, 0.8, 1, 1.2, 1.5, 2, 3, 4, 1e18], [0.4, 0.35, 0.21, 0.2, 0.19, 0.15, 0.08, 0.02, 0.00, 0]]; // PQ rapper points
+
+        int indexPq = rPQ[0].IndexOf(v => v > cumulativePQRatio);
+        double slopePq = (rPQ[1][indexPq-1] - rPQ[1][indexPq]) / (rPQ[0][indexPq - 1] - rPQ[0][indexPq]);
+        double kFactor = rPQ[1][indexPq] + slopePq * (cumulativePQRatio - rPQ[0][indexPq]);
+
+        double[][] rF = [[0, 2, 4, 6, 10, 20, 40, 1e18], [1, 1, 0.85, 0.6, 0.25, 0.12, 0.07, 0.05]];
+
+        int indexF = rF[0].IndexOf(v => v > frequency);
+        double slopeF = (rF[1][indexF - 1] - rF[1][indexF]) / (rF[0][indexF - 1] - rF[0][indexF]);
+        double kFactorScalar = rF[1][indexF] + slopeF * (frequency - rF[0][indexF]);
+
+        return kFactor * kFactorScalar;
+    }
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
