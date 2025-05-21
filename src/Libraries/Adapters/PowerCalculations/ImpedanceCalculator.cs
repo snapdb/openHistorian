@@ -22,15 +22,23 @@
 //******************************************************************************************************
 // ReSharper disable InconsistentNaming
 
+using System;
 using System.ComponentModel;
+using System.Data;
 using System.Text;
+using Gemstone.Configuration;
+using Gemstone.Data.Model;
 using Gemstone.Numeric;
 using Gemstone.Numeric.EE;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using PhasorProtocolAdapters;
+using static System.Net.Mime.MediaTypeNames;
+using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
+using MeasurementRecord = Gemstone.Timeseries.Model.Measurement;
 
 namespace PowerCalculations;
 
@@ -56,10 +64,8 @@ public class ImpedanceCalculator : CalculatedMeasurementBase
     private double m_lastLineImpedanceAngle;
     private double m_lastLineAdmittance;
     private double m_lastLineAdmittanceAngle;
-    private MeasurementKey[]? m_voltageAngles;
-    private MeasurementKey[]? m_voltageMagnitudes;
-    private MeasurementKey[]? m_currentAngles;
-    private MeasurementKey[]? m_currentMagnitudes;
+    private VISet[] m_VISets;
+    private Dictionary<Output,IMeasurement> m_OutputMap;
 
     // Important: Make sure output definition defines points in the following order
     private enum Output
@@ -77,6 +83,15 @@ public class ImpedanceCalculator : CalculatedMeasurementBase
         LineAdmittanceAngle
     }
 
+    private class VISet
+    {
+        public MeasurementKey CurrentAngle { get; set; }
+        public MeasurementKey CurrentMagnitude { get; set; }
+        public MeasurementKey[] VoltageAngle { get; set; }
+        public MeasurementKey[] VoltageMagnitude { get; set; }
+
+    }
+
     #endregion
 
     #region [ Properties ]
@@ -90,6 +105,60 @@ public class ImpedanceCalculator : CalculatedMeasurementBase
     public bool ApplyLineToLineAdjustment { get; set; }
 
     /// <summary>
+    /// Gets or sets the Current Magnitude PointTag to be used.
+    /// </summary>
+    [ConnectionStringParameter]
+    [Description("Defines the Current Magnitude to be used.")]
+    [DefaultValue("")]
+    public string CurrentMagnitude { get; set; }
+
+
+    [ConnectionStringParameter]
+    [Description("Defines the Voltage Magnitude to be used. If not supplied the system will use Primary or Secondary Voltage associated with the Current Phasor.")]
+    [DefaultValue("")]
+    public string VoltageMagnitude { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Resistance.")]
+    [DefaultValue("")]
+    public IMeasurement Resistance { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Reactance.")]
+    [DefaultValue("")]
+    public IMeasurement Reactance { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Conductance.")]
+    [DefaultValue("")]
+    public IMeasurement Conductance { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Susceptance.")]
+    [DefaultValue("")]
+    public IMeasurement Susceptance { get; set; }
+
+    // Polar Values
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for LineImpedance.")]
+    [DefaultValue("")]
+    public IMeasurement LineImpedance { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for LineImpedanceAngle.")]
+    [DefaultValue("")]
+    public IMeasurement LineImpedanceAngle { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for LineAdmittance.")]
+    [DefaultValue("")]
+    public IMeasurement LineAdmittance { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for LineAdmittanceAngle.")]
+    [DefaultValue("")]
+    public IMeasurement LineAdmittanceAngle { get; set; }
+
     /// Returns the detailed status of the <see cref="ImpedanceCalculator"/> monitor.
     /// </summary>
     public override string Status
@@ -125,43 +194,163 @@ public class ImpedanceCalculator : CalculatedMeasurementBase
     {
         base.Initialize();
 
-        if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
-            throw new InvalidOperationException("No input measurements were specified for the impedance calculator.");
+        // Parse Current Input
+        if (string.IsNullOrEmpty(CurrentMagnitude))
+            throw new InvalidOperationException("A Current Magnitude must be specified.");
 
-        // Load needed phase angle and magnitude measurement keys from defined InputMeasurementKeys
-        m_voltageAngles = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.VPHA).ToArray();
-        m_voltageMagnitudes = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.VPHM).ToArray();
-        m_currentAngles = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.IPHA).ToArray();
-        m_currentMagnitudes = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.IPHM).ToArray();
+        if (!string.IsNullOrEmpty(CurrentMagnitude))
+            ParsePhasors(CurrentMagnitude, VoltageMagnitude);
+        else
+        {
+            if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
+                throw new InvalidOperationException("No input measurements were specified for the impedance calculator.");
 
-        if (m_voltageAngles.Length != m_voltageMagnitudes.Length)
-            throw new InvalidOperationException("A different number of voltage magnitude and angle input measurement keys were supplied - the angles and magnitudes must be supplied in pairs, i.e., one voltage magnitude input measurement must be supplied for each voltage angle input measurement in a consecutive sequence (e.g., VA1;VM1; VA2;VM2)");
+            MeasurementKey[] voltageAngles = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == Gemstone.Numeric.EE.SignalType.VPHA).ToArray();
+            MeasurementKey[] voltageMagnitudes = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == Gemstone.Numeric.EE.SignalType.VPHM).ToArray();
+            MeasurementKey[] currentAngles = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == Gemstone.Numeric.EE.SignalType.IPHA).ToArray();
+            MeasurementKey[] currentMagnitudes = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == Gemstone.Numeric.EE.SignalType.IPHM).ToArray();
 
-        if (m_currentAngles.Length != m_currentMagnitudes.Length)
-            throw new InvalidOperationException("A different number of current magnitude and angle input measurement keys were supplied - the angles and magnitudes must be supplied in pairs, i.e., one current magnitude input measurement must be supplied for each current angle input measurement in a consecutive sequence (e.g., IA1;IM1; IA2;IM2)");
+            if (voltageAngles.Length != voltageMagnitudes.Length)
+                throw new InvalidOperationException("A different number of voltage magnitude and angle input measurement keys were supplied - the angles and magnitudes must be supplied in pairs, i.e., one voltage magnitude input measurement must be supplied for each voltage angle input measurement in a consecutive sequence (e.g., VA1;VM1; VA2;VM2)");
 
-        if (m_voltageAngles.Length != 2)
-            throw new InvalidOperationException("Exactly two voltage angle input measurements are required for the impedance calculator, note that \"Vs\" angle/magnitude pair should be specified first followed by \"Vr\" angle/magnitude pair second.");
+            if (currentAngles.Length != currentMagnitudes.Length)
+                throw new InvalidOperationException("A different number of current magnitude and angle input measurement keys were supplied - the angles and magnitudes must be supplied in pairs, i.e., one current magnitude input measurement must be supplied for each current angle input measurement in a consecutive sequence (e.g., IA1;IM1; IA2;IM2)");
 
-        if (m_voltageMagnitudes.Length != 2)
-            throw new InvalidOperationException("Exactly two voltage magnitude input measurements are required for the impedance calculator, note that \"Vs\" angle/magnitude pair should be specified first followed by \"Vr\" angle/magnitude pair second.");
+            if (voltageAngles.Length != 2)
+                throw new InvalidOperationException("Exactly two voltage angle input measurements are required for the impedance calculator, note that \"Vs\" angle/magnitude pair should be specified first followed by \"Vr\" angle/magnitude pair second.");
 
-        if (m_currentAngles.Length != 2)
-            throw new InvalidOperationException("Exactly two current angle input measurements are required for the impedance calculator, note that \"Is\" angle/magnitude pair should be specified first followed by \"Ir\" angle/magnitude pair second.");
+            if (voltageMagnitudes.Length != 2)
+                throw new InvalidOperationException("Exactly two voltage magnitude input measurements are required for the impedance calculator, note that \"Vs\" angle/magnitude pair should be specified first followed by \"Vr\" angle/magnitude pair second.");
 
-        if (m_currentMagnitudes.Length != 2)
-            throw new InvalidOperationException("Exactly two current magnitude input measurements are required for the impedance calculator, note that \"Is\" angle/magnitude pair should be specified first followed by \"Ir\" angle/magnitude pair second.");
+            if (currentAngles.Length != 2)
+                throw new InvalidOperationException("Exactly two current angle input measurements are required for the impedance calculator, note that \"Is\" angle/magnitude pair should be specified first followed by \"Ir\" angle/magnitude pair second.");
 
-        // Make sure only these phasor measurements are used as input
-        InputMeasurementKeys = m_voltageAngles.Concat(m_voltageMagnitudes).Concat(m_currentAngles).Concat(m_currentMagnitudes).ToArray();
+            if (currentMagnitudes.Length != 2)
+                throw new InvalidOperationException("Exactly two current magnitude input measurements are required for the impedance calculator, note that \"Is\" angle/magnitude pair should be specified first followed by \"Ir\" angle/magnitude pair second.");
+
+            m_VISets = new VISet[] {
+                new() 
+                {
+                    CurrentAngle = currentAngles[0],
+                    CurrentMagnitude = currentMagnitudes[0],
+                    VoltageAngle = voltageAngles[0..0],
+                    VoltageMagnitude = voltageMagnitudes[0..0]
+                },
+                new()
+                {
+                    CurrentAngle = currentAngles[1],
+                    CurrentMagnitude = currentMagnitudes[1],
+                    VoltageAngle = voltageAngles[1..1],
+                    VoltageMagnitude = voltageMagnitudes[1..1]
+                }
+            };
+            InputMeasurementKeys = m_VISets.SelectMany((s) => s.VoltageMagnitude.Concat(s.VoltageAngle).Concat(new MeasurementKey[] { s.CurrentMagnitude, s.CurrentAngle })).ToArray();
+        }
 
         // Validate output measurements
-        if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
-            throw new InvalidOperationException("Not enough output measurements were specified for the impedance calculator, expecting measurements for the \"Resistance\", \"Reactance\", \"Conductance\", \"Susceptance\", \"LineImpedance\", \"LineImpedanceAngle\", \"LineAdmittance\" and \"LineAdmittanceAngle\" - in this order.");
+        ValidateOutputMeasurements();
 
         Dictionary<string, string> settings = Settings;
 
         ApplyLineToLineAdjustment = !settings.TryGetValue(nameof(ApplyLineToLineAdjustment), out string? setting) || setting.ParseBoolean();
+    }
+
+    private void ParsePhasors(string current, string voltage)
+    {
+        Func<DataRow, MeasurementRecord?> loadMeasurement = TableOperations<MeasurementRecord>.LoadRecordFunction();
+        Func<DataRow, PhasorRecord?> loadPhasor = TableOperations<PhasorRecord>.LoadRecordFunction();
+
+        MeasurementKey[] currents = AdapterBase.ParseInputMeasurementKeys(DataSource, true, current);
+
+        PhasorRecord[] currentPhasors = currents.Select((meas) => loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={meas.SignalID}")[0]))
+        .Select((meas) => loadPhasor(DataSource.Tables["Phasor"].Select($"DeviceID={meas?.DeviceID ?? 0} AND SourceIndex = {meas?.PhasorSourceIndex ?? 0}")[0]))
+        .DistinctBy((phasor) => phasor?.ID ?? 0).ToArray();
+
+        if (currentPhasors.Length != 2)
+            throw new InvalidOperationException("Exactly two current phasors needs to be specified.");
+
+        m_VISets = currentPhasors.Select((i) => new VISet() {
+            CurrentAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={i.SourceIndex} AND DeviceID={i.DeviceID} AND SignalTYPE LIKE 'IPHA'").FirstOrDefault(),
+            CurrentMagnitude = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={i.SourceIndex} AND DeviceID={i.DeviceID} AND SignalTYPE LIKE 'IPHM'").FirstOrDefault(),
+            VoltageAngle = new MeasurementKey[2],
+            VoltageMagnitude = new MeasurementKey[2]
+        }).ToArray() ;
+
+        if (string.IsNullOrEmpty(voltage))
+        {
+            int index = 0;
+            foreach (VISet set in m_VISets)
+            {
+                PhasorRecord[] v = new PhasorRecord[2];
+                if (currentPhasors[index].PrimaryVoltageID is not null)
+                    v[0] = loadPhasor(DataSource.Tables["Phasor"].Select($"ID={currentPhasors[index].PrimaryVoltageID}")[0]);
+
+                if (currentPhasors[index].SecondaryVoltageID is not null)
+                    v[1] = loadPhasor(DataSource.Tables["Phasor"].Select($"ID={currentPhasors[index].SecondaryVoltageID}")[0]);
+
+                if (v.Length < 1)
+                    throw new InvalidOperationException($"Unable to identify the voltage phasor based on the current. A set of voltage phasors must be specified.");
+
+                set.VoltageAngle = v.SelectMany((volt) => AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={volt.SourceIndex} AND DeviceID={volt.DeviceID} AND SignalTYPE LIKE 'VPHA'")).ToArray();
+                set.VoltageMagnitude = v.SelectMany((volt) => AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={volt.SourceIndex} AND DeviceID={volt.DeviceID} AND SignalTYPE LIKE 'VPHM'")).ToArray();
+                index++;
+            }
+
+        }
+        else
+        {
+            MeasurementKey[] voltages = AdapterBase.ParseInputMeasurementKeys(DataSource, true, voltage);
+            if (voltages.Length != 2)
+                throw new InvalidOperationException("Exactly two voltage phasors needs to be specified.");
+
+            PhasorRecord[] voltagePhasors = voltages.Select((meas) => loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={meas.SignalID}")[0]))
+                .Select((meas) => loadPhasor(DataSource.Tables["Phasor"].Select($"DeviceID={meas?.DeviceID ?? 0} AND SourceIndex = {meas?.PhasorSourceIndex ?? 0}")[0]))
+                .ToArray();
+
+            int index = 0;
+            foreach (VISet set in m_VISets)
+            {
+                set.VoltageAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={voltagePhasors[index].SourceIndex} AND DeviceID={voltagePhasors[index].DeviceID} AND SignalTYPE LIKE 'VPHA'");
+                set.VoltageAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={voltagePhasors[index].SourceIndex} AND DeviceID={voltagePhasors[index].DeviceID} AND SignalTYPE LIKE 'VPHA'");
+                index++;
+            }
+        }
+
+        InputMeasurementKeys = m_VISets.SelectMany((s) => s.VoltageMagnitude.Concat(s.VoltageAngle).Concat(new MeasurementKey[] { s.CurrentMagnitude, s.CurrentAngle })).ToArray();
+    }
+
+    private void ValidateOutputMeasurements()
+    {
+        List<IMeasurement> measurementKeys = new();
+        Dictionary<string, string> settings = Settings;
+
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (settings.TryGetValue(Enum.GetNames<Output>()[i], out string setting))
+                measurementKeys.Add(AdapterBase.ParseOutputMeasurements(DataSource, true, setting).FirstOrDefault());
+            else
+                measurementKeys.Add(null);
+        }
+
+        if (!measurementKeys.Any(item => item is not null))
+        {
+            if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
+                throw new InvalidOperationException("Not enough output measurements were specified for the impedance calculator, expecting measurements for the \"Resistance\", \"Reactance\", \"Conductance\", \"Susceptance\", \"LineImpedance\", \"LineImpedanceAngle\", \"LineAdmittance\" and \"LineAdmittanceAngle\" - in this order.");
+
+            m_OutputMap = new Dictionary<Output, IMeasurement>();
+
+            foreach (Output o in Enum.GetValues<Output>())
+            {
+                m_OutputMap.Add(o, OutputMeasurements[(int)o]);
+            }
+            return;
+        }
+        m_OutputMap = new Dictionary<Output, IMeasurement>();
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (measurementKeys[i] is not null)
+                m_OutputMap.Add((Output)i, measurementKeys[i]);
+        }
     }
 
     /// <summary>
@@ -180,7 +369,25 @@ public class ImpedanceCalculator : CalculatedMeasurementBase
         // Get voltage magnitude and angle pairs
         for (int i = 0; i < 2; i++)
         {
-            if (!measurements.TryGetValue(m_voltageMagnitudes![i], out magnitude) || !measurements.TryGetValue(m_voltageAngles![i], out angle))
+            if (!measurements.TryGetValue(m_VISets![i].CurrentMagnitude, out magnitude) || !measurements.TryGetValue(m_VISets![i].CurrentAngle, out angle))
+                continue;
+
+            if (i == 0)
+                Is = new ComplexNumber(Angle.FromDegrees(angle.AdjustedValue), magnitude.AdjustedValue);
+            else
+                Ir = new ComplexNumber(Angle.FromDegrees(angle.AdjustedValue), magnitude.AdjustedValue) * -1;
+
+            bool foundV = false;
+            for (int j = 0; j < m_VISets![i].VoltageMagnitude.Length; j++)
+            {
+                if (!measurements.TryGetValue(m_VISets![i].VoltageMagnitude[j], out magnitude) || !measurements.TryGetValue(m_VISets![i].VoltageAngle[j], out angle))
+                    continue;
+                if (double.IsNaN(magnitude.AdjustedValue) || double.IsNaN(angle.AdjustedValue))
+                    continue;
+                foundV = true;
+            }
+
+            if (!foundV)
                 continue;
 
             double voltageMagnitude = magnitude.AdjustedValue;
@@ -196,22 +403,8 @@ public class ImpedanceCalculator : CalculatedMeasurementBase
             count++;
         }
 
-        // Get current magnitude and angle pairs
-        for (int i = 0; i < 2; i++)
-        {
-            if (!measurements.TryGetValue(m_currentMagnitudes![i], out magnitude) || !measurements.TryGetValue(m_currentAngles![i], out angle))
-                continue;
-
-            if (i == 0)
-                Is = new ComplexNumber(Angle.FromDegrees(angle.AdjustedValue), magnitude.AdjustedValue);
-            else
-                Ir = new ComplexNumber(Angle.FromDegrees(angle.AdjustedValue), magnitude.AdjustedValue) * -1;
-
-            count++;
-        }
-
         // Exit if all measurements were not available for calculation
-        if (count != 4)
+        if (count != 2)
             return;
 
         // Calculate resistance and reactance
@@ -227,38 +420,45 @@ public class ImpedanceCalculator : CalculatedMeasurementBase
             Yl *= SqrtOf3;
 
         // Provide calculated measurements for external consumption
-        IMeasurement[] outputMeasurements = OutputMeasurements!;
+        Measurement[] outputMeasurements = new Measurement[Enum.GetValues(typeof(Output)).Length];
 
-        Measurement resistanceMeasurement = Measurement.Clone(outputMeasurements[(int)Output.Resistance], Zl.Real, frame.Timestamp);
-        Measurement reactanceMeasurement = Measurement.Clone(outputMeasurements[(int)Output.Reactance], Zl.Imaginary, frame.Timestamp);
-        Measurement conductanceMeasurement = Measurement.Clone(outputMeasurements[(int)Output.Conductance], Yl.Real, frame.Timestamp);
-        Measurement susceptanceMeasurement = Measurement.Clone(outputMeasurements[(int)Output.Susceptance], Yl.Imaginary, frame.Timestamp);
-        Measurement lineImpedanceMeasurement = Measurement.Clone(outputMeasurements[(int)Output.LineImpedance], Zl.Magnitude, frame.Timestamp);
-        Measurement lineImpedanceAngleMeasurement = Measurement.Clone(outputMeasurements[(int)Output.LineImpedanceAngle], Zl.Angle.ToDegrees(), frame.Timestamp);
-        Measurement lineAdmittanceMeasurement = Measurement.Clone(outputMeasurements[(int)Output.LineAdmittance], Yl.Magnitude, frame.Timestamp);
-        Measurement lineAdmittanceAngleMeasurement = Measurement.Clone(outputMeasurements[(int)Output.LineAdmittanceAngle], Yl.Angle.ToDegrees(), frame.Timestamp);
+        if (m_OutputMap.TryGetValue(Output.Resistance, out IMeasurement output))
+            outputMeasurements[(int)Output.Resistance] = Measurement.Clone(output, Zl.Real, frame.Timestamp);
 
-        OnNewMeasurements(
-        [
-            resistanceMeasurement,
-            reactanceMeasurement,
-            conductanceMeasurement,
-            susceptanceMeasurement,
-            lineImpedanceMeasurement,
-            lineImpedanceAngleMeasurement,
-            lineAdmittanceMeasurement,
-            lineAdmittanceAngleMeasurement
-        ]);
+        if (m_OutputMap.TryGetValue(Output.Reactance, out output))
+            outputMeasurements[(int)Output.Reactance] = Measurement.Clone(output, Zl.Imaginary, frame.Timestamp);
+
+        if (m_OutputMap.TryGetValue(Output.Conductance, out output))
+            outputMeasurements[(int)Output.Conductance] = Measurement.Clone(output, Yl.Real, frame.Timestamp);
+
+        if (m_OutputMap.TryGetValue(Output.Susceptance, out output))
+            outputMeasurements[(int)Output.Susceptance] = Measurement.Clone(output, Yl.Imaginary, frame.Timestamp);
+
+        if (m_OutputMap.TryGetValue(Output.LineImpedance, out output))
+            outputMeasurements[(int)Output.LineImpedance] = Measurement.Clone(output, Zl.Magnitude, frame.Timestamp);
+
+        if (m_OutputMap.TryGetValue(Output.LineImpedanceAngle, out output))
+            outputMeasurements[(int)Output.LineImpedanceAngle] = Measurement.Clone(output, Zl.Angle.ToDegrees(), frame.Timestamp);
+
+        if (m_OutputMap.TryGetValue(Output.LineAdmittance, out output))
+            outputMeasurements[(int)Output.LineAdmittance] = Measurement.Clone(output, Yl.Magnitude, frame.Timestamp);
+
+        if (m_OutputMap.TryGetValue(Output.LineAdmittanceAngle, out output))
+            outputMeasurements[(int)Output.LineAdmittanceAngle] = Measurement.Clone(output, Yl.Angle.ToDegrees(), frame.Timestamp);
+
+        
+
+        OnNewMeasurements(outputMeasurements);
 
         // Track last calculated values...
-        m_lastResistance = resistanceMeasurement.AdjustedValue;
-        m_lastReactance = reactanceMeasurement.AdjustedValue;
-        m_lastConductance = conductanceMeasurement.AdjustedValue;
-        m_lastSusceptance = susceptanceMeasurement.AdjustedValue;
-        m_lastLineImpedance = lineImpedanceMeasurement.AdjustedValue;
-        m_lastLineImpedanceAngle = lineImpedanceAngleMeasurement.AdjustedValue;
-        m_lastLineAdmittance = lineAdmittanceMeasurement.AdjustedValue;
-        m_lastLineAdmittanceAngle = lineAdmittanceAngleMeasurement.AdjustedValue;
+        m_lastResistance = Zl.Real;
+        m_lastReactance = Zl.Imaginary;
+        m_lastConductance = Yl.Real;
+        m_lastSusceptance = Yl.Imaginary;
+        m_lastLineImpedance = Zl.Magnitude;
+        m_lastLineImpedanceAngle = Zl.Angle.ToDegrees();
+        m_lastLineAdmittance = Yl.Magnitude;
+        m_lastLineAdmittanceAngle = Yl.Angle.ToDegrees();
     }
 
     #endregion
