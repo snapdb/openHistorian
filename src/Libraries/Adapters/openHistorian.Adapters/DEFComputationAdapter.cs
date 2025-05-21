@@ -503,9 +503,21 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         }
 
 
+        Gemstone.Numeric.Matrix<ComplexNumber> complexPower;
+        Gemstone.Numeric.Matrix<double> voltageMagnitude;
+        Gemstone.Numeric.Matrix<double> voltageAngle;
+        Gemstone.Numeric.Matrix<double> frequencyBus;
+        double[] voltageMean;
+        {
+            // ToDo: this might be an artifact of loading data strangely in OSL
+            List<LineData> pmuData = data.Where(d => d.VoltageKey.Magnitude.SignalID.ToString() != alarmKey).ToList();
+            IEnumerable<IEnumerable<double>> voltageM = pmuData.Select(d => d.Voltage.Select(v => v.Magnitude));
+            IEnumerable<IEnumerable<double>> voltageA = pmuData.Select(d => d.Voltage.Select(v => v.Angle.ToDegrees()));
+            IEnumerable<IEnumerable<double>> currentM = pmuData.Select(d => d.Current.Select(c => c.Magnitude));
+            IEnumerable<IEnumerable<double>> currentA = pmuData.Select(d => d.Current.Select(c => c.Angle.ToDegrees()));
+            IEnumerable<IEnumerable<double>> fBus = pmuData.Select(d => d.Frequency);
 
-        Tstart = Talarm - (long)(HysteresisAlarm + TimeMargin) * Ticks.PerSecond;
-        Tend = Talarm + (long)(Tth - HysteresisAlarm + 3.0*Twin) * Ticks.PerSecond;
+            PMUDataCleaning(ref voltageM, ref voltageA, ref currentM, ref currentA, ref fBus, true);
 
        
 
@@ -526,50 +538,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         //Calculate Pline 3 Phase MW Flow
 
 
-
-
-        // Get Data From Queue
-        //if (!TrigggerCondition())
-        //return;
-
-        //RemoveGarbagePMU
-        //DataClean
-
-        // RemoveTrend
-
-        //IdentifySourceType
-
-        // SelectKfactor - optional
-
-        //  %====== Apply CPSD method for DE calculation ================
-        /*  if GenSet(16) > 0
-             % ---Remove trend in Vm,Va(not Fbus) signals
-             [Vm11] = RemoveTrend(Vm, GenSet);
-         Write_msg(ff{ 1}, [ff{ 16}
-         '...Removed trend from Vm' ],GenSet(20),GenSet(20),0);
-         [Va11] = RemoveTrend(Va, GenSet);
-         Write_msg(ff{ 1}, [ff{ 16}
-         '...Removed trend from Va ' ],GenSet(20),GenSet(20),0);
-         % ---Apply CPSD method
-         [DE_cpsd, Fcpsd] = CPSD(pmu.I2U, Pl11, Ql11, Vm11, Va11, GenSet, Vmagn);
-         Write_msg(ff{ 1}, [ff{ 16}
-         '...Completed CPSD analysis' ],GenSet(20),GenSet(20),0);
-         clear Vm11 Va11 % Clean memory */
-
-        // Run BandpassFilter
-
-        /*
-         *  %============ Apply CDEF method for DE calculation ==================
-    if GenSet(16)==0 | GenSet(16)==2
-        [DE_cdef,DE_time,DE_curve,DE_curveP,DE_curveQ,DE_curveQF,DE_curvePV] ...
-                    = CDEF(pmu.I2U,Pl,Ql,Vm,Fbus,Va,GenSet,Vmagn);
-        Write_msg(ff{1}, [ff{16} '...Completed DE calculation by CDEF method' ],GenSet(20),GenSet(20),0);
-        %---- Reporting CDEF results
-        Reporting_4(ff,GenSet,DE_cdef,DE_time,DE_curveP,DE_curveQ,...
-            DE_curveQF,DE_curvePV,pmu);
-    end
-        */
-         
 
         // Save Results in Table Form as appropriate
     }
@@ -1044,9 +1012,9 @@ end
     /// <param name="epsilon2"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    private IEnumerable<IEnumerable<double>> PMU_Cleaning(IEnumerable<IEnumerable<double>> data, double TNaN, double epsilon1, double epsilon2, bool cleanOutlier, out DataCleaning condition)
+    private IEnumerable<IEnumerable<double>> PMU_Cleaning(IEnumerable<IEnumerable<double>> data, double TNaN, double epsilon1, double epsilon2, bool cleanOutlier, out DataStatus condition)
     {
-        condition = DataCleaning.Success;
+        condition = DataStatus.Success;
         int nVariables = data.Count();
         int nSamples = data.First().Count();
 
@@ -1072,7 +1040,7 @@ end
 
             if (Math.Abs(min - max) < 0.00005)
             {
-                condition = DataCleaning.BadData;
+                condition = DataStatus.BadData;
                 return data;
             }
 
@@ -1112,7 +1080,7 @@ end
             return d.Select((v, i) => ((d.Count() - i - 1) <= n ? a * (d.Count() - i - 1) + b : v));
         });
 
-        cleanedData = cleanedData.Select((d) =>
+        cleanedData = cleanedData.Select((d,i) =>
         {
             if (!d.Any(v => !double.IsNaN(v)))
                 return d.Select((v) => 0.0001);
@@ -1172,35 +1140,84 @@ end
         });
     }
 
-    private DataCleaning PMUDataCleaning(IEnumerable<ComplexNumber> V, IEnumerable<ComplexNumber> I, IEnumerable<double> f, bool CleanOutlier)
-    { 
-        DataCleaning result = DataCleaning.Success;
+    private DataStatus PMUDataCleaning(
+        ref IEnumerable<IEnumerable<double>> Vm,
+        ref IEnumerable<IEnumerable<double>> Va,
+        ref IEnumerable<IEnumerable<double>> Im,
+        ref IEnumerable<IEnumerable<double>> Ia,
+        ref IEnumerable<IEnumerable<double>> Fbus,
+        bool CleanOutlier)
+    {
+        DataStatus result = DataStatus.Success;
 
-        DataCleaning code;
+        double[] medianMagnitude = Im.Select(p => p.NaNAwareMedian()).ToArray();
+        double medianOfMedians = medianMagnitude.NaNAwareMedian();
+
+        Im = Im.Select((d, i) =>
+        {
+            if (medianMagnitude[i] / medianOfMedians > 100)
+                return d.Select(_ => double.NaN);
+            return d;
+        });
+
+        DataStatus code;
+        Vm = PMU_Cleaning(Vm, 0.5, 100, 2, CleanOutlier, out code);
+
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
+
+        Va = PMU_Cleaning(Va, 0.5, 1, 0.05, CleanOutlier, out code);
+
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
+
+        Im = PMU_Cleaning(Im, 0.5, 3, 0.05, CleanOutlier, out code);
+
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
+
+        Ia = PMU_Cleaning(Ia, 0.5, 1, 0.05, CleanOutlier, out code);
+
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
+
+        Fbus = PMU_Cleaning(Fbus, 0.5, 48, 0.00005, CleanOutlier, out code);
+
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
+
+        return result;
+    }
+
+    private DataStatus PMUDataCleaning(IEnumerable<ComplexNumber> V, IEnumerable<ComplexNumber> I, IEnumerable<double> f, bool CleanOutlier)
+    { 
+        DataStatus result = DataStatus.Success;
+
+        DataStatus code;
         IEnumerable<double> Vm = PMU_Cleaning(new List<IEnumerable<double>>() { V.Select(p => p.Magnitude) },0.5,100,2,CleanOutlier,out code).First();
 
-        if (code == DataCleaning.BadData || result == DataCleaning.BadData)
-            result = DataCleaning.BadData;
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
 
         IEnumerable<double> Va = PMU_Cleaning(new List<IEnumerable<double>>() { V.Select(p => p.Angle).Unwrap().Select(a => a.ToDegrees()) }, 0.5, 1, 0.05, CleanOutlier, out code).First();
 
-        if (code == DataCleaning.BadData || result == DataCleaning.BadData)
-            result = DataCleaning.BadData;
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
 
         IEnumerable<double> Im = PMU_Cleaning(new List<IEnumerable<double>>() { I.Select(p => p.Magnitude) }, 0.5, 3, 0.05, CleanOutlier, out code).First();
 
-        if (code == DataCleaning.BadData || result == DataCleaning.BadData)
-            result = DataCleaning.BadData;
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
 
         IEnumerable<double> Ia = PMU_Cleaning(new List<IEnumerable<double>>() { I.Select(p => p.Angle).Unwrap().Select(a => a.ToDegrees()) }, 0.5, 1, 0.05, CleanOutlier, out code).First();
 
-        if (code == DataCleaning.BadData || result == DataCleaning.BadData)
-            result = DataCleaning.BadData;
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
 
         IEnumerable<double> Fbus = PMU_Cleaning(new List<IEnumerable<double>>() { f }, 0.5, 48, 0.00005, CleanOutlier, out code).First();
 
-        if (code == DataCleaning.BadData || result == DataCleaning.BadData)
-            result = DataCleaning.BadData;
+        if (code == DataStatus.BadData || result == DataStatus.BadData)
+            result = DataStatus.BadData;
 
         V = Vm.Zip(Va, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m));
         I = Im.Zip(Ia, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m));
