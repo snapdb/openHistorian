@@ -588,9 +588,11 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         }
 
         // ### Sliding Window
+        IEnumerable<double> t0 = Enumerable.Range(0, alarmVoltage.Count())
+            .Select(d => d / fs);
         int nScans = (int)Math.Floor((t0.Last() - Twin) / Tstep);
-        IEnumerable<double> Fint = new List<double>();
-        IEnumerable<double> mm = new List<double>();
+        List<double> Fint = new List<double>();
+        List<double> mm = new List<double>();
 
         for (int i = 0; i < nScans; i++)
         {
@@ -599,23 +601,25 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             IEnumerable<double> PlineWindow = CutPeriod(Tdstart,Tdend,Pline,fs);
             int nfft = PlineWindow.Count();
 
-            double[] fft = Pline.ToArray();
-            MathNet.Numerics.IntegralTransforms.Fourier.Forward(fft, Pline.Select(d => 0.0D).ToArray(), MathNet.Numerics.IntegralTransforms.FourierOptions.Matlab);
-            IEnumerable<double> S = fft.Select(d => 2.0 * d / nfft);
+            Complex32[] fft = PlineWindow.Select(n => new Complex32((float) n, 0)).ToArray();
+            MathNet.Numerics.IntegralTransforms.Fourier.Forward(fft, MathNet.Numerics.IntegralTransforms.FourierOptions.Matlab);
+            Complex32 factor = new Complex32(2.0f / nfft, 0);
+            IEnumerable<Complex32> S = fft.Select(d => d * factor);
 
-            List<double> f = Enumerable.Range(0, (int)Math.Floor(nfft * 0.5D) + 1).Select(d => (double)d * fs * 0.5).ToList();
-            List<double> m = S.Select(d => Math.Abs(d)).ToList();
-            int ix = 0;
-            double currentF = double.MaxValue;
+            List<double> f = Enumerable.Range(0, (int)Math.Floor(nfft * 0.5D) + 1).Select(d => (double)(d) * fs / (double)(nfft - 1)).ToList();
+            List<double> m = S.Select(d => (double) d.Magnitude).ToList();
 
-            while (currentF > Math.Abs(f[ix] - freqAlarm))
+            int currentF = 0;
+            for (int ix = 1; ix < f.Count(); ix++)
             {
-                ix++;
-                currentF = Math.Abs(f[ix] - freqAlarm);
+                double comparitor = Math.Abs(f[currentF] - freqAlarm);
+                double val = Math.Abs(f[ix] - freqAlarm);
+                if (val < comparitor)
+                    currentF = ix;
             }
 
-            Fint.Append(f[ix]);
-            mm.Append(m[ix]);
+            Fint.Add(f[currentF]);
+            mm.Add(m[currentF]);
         }
 
         double m_th = Math.Max(MminP, Mmin*mm.Max());
