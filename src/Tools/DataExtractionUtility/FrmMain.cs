@@ -394,7 +394,7 @@ namespace DataExtractionUtility
                             m_readIndex++;
                             while (fillAdapter.Fill(FillData))
                             {
-                                csvStream.Write(fillAdapter.FrameTime.ToString("MM/dd/yyyy hh:mm:ss.fffffff"));
+                                csvStream.Write(fillAdapter.FrameTime.ToString("MM/dd/yyyy HH:mm:ss.fffffff"));
                                 csvStream.Write(',');
 
                                 foreach (Measurements signal in m_measurementsInOrder)
