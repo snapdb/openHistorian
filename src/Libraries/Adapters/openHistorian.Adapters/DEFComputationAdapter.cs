@@ -1539,6 +1539,41 @@ else
         Gemstone.Numeric.Matrix<double> paraMatrix = timeMatrix.GetLeastSquares(vector);
         return paraMatrix[0][0];
     }
+
+    private double[] NumericalDerivative(double[] values, int nn)
+    {
+        (int start, int end) = GetStartEndNumericalDerivative(values.Length, nn);
+        double[] derivative = new double[end - start + 1];
+        for(int i = start; i <= end; i++)
+        {
+            double[] valueArray = new double[nn];
+            for (int j = 0; j < nn; j++)
+            {
+                int indexDifference = (int) Math.Pow(2, j);
+                double divisor = Math.Pow(2, j + 1);
+                valueArray[j] = (values[i + indexDifference] - values[i - indexDifference]) / divisor;
+            }
+            while (valueArray.Length > 1)
+            {
+                double[] newValueArray = new double[valueArray.Length - 1];
+                double divisor = Math.Pow(4, nn - newValueArray.Length) - 1;
+                for (int j = 0; j < newValueArray.Length; j++)
+                {
+                    newValueArray[j] = valueArray[j] + (valueArray[j+1] - valueArray[j]) / divisor;
+                }
+                valueArray = newValueArray;
+            }
+            derivative[i - start] = valueArray[0];
+        }
+        return derivative;
+    }
+
+    private (int, int) GetStartEndNumericalDerivative(int length, int nn)
+    {
+        int start = (int)Math.Pow(2, nn - 1);
+        return (start, length - start - 1);
+    }
+
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
