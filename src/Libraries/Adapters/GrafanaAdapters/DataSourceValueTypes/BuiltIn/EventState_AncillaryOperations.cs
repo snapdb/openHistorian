@@ -273,7 +273,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
 
         double queryStartTime = ConvertToGrafanaTimestamp((ulong)queryParameters.StartTime.Ticks);
 
-        // Find all ongoing events that are raised and occured before the current Grafana query range
+        // Find all ongoing raised events that occured before the current Grafana query range
         QueryLastEventRaisedStates(instanceName, timeValueMaps, existingPointIDs, metadata, queryStartTime);
 
         // Complete duration calculations on all event states
@@ -550,7 +550,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         {
             string target = pointIDTargets[pointID];
             SortedList<double, EventState> timeValueMap = timeValueMaps.GetOrAdd(target, _ => []);
-            EventState eventState = CreateEventState(instanceName, timeValueMap, target, pointID, flags, eventID, startTime, queryStartTime);
+            EventState eventState = CreateEventState(instanceName, timeValueMap, target, pointID, flags, eventID, ConvertToGrafanaTimestamp(startTime), queryStartTime);
             timeValueMap[eventState.Time] = eventState;
         }
     }
