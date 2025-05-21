@@ -1172,6 +1172,19 @@ else
         return result;
     }
 
+    private Gemstone.Numeric.Matrix<double> BandPassFilter(Gemstone.Numeric.Matrix<double> data, double fDominant)
+    {
+        // fs = FramesPerSecond Genset 12
+        // ddF = BandThreshold Genset 4
+
+        double dF = BandThreshold * fDominant;
+        double fStop1 = fDominant * (1 - 2 * BandThreshold);
+        double fPass1 = fDominant * (1 - BandThreshold);
+        double fStop2 = fDominant * (1 + 2 * BandThreshold);
+        double fPass2 = fDominant * (1 + BandThreshold);
+        ButterworthFilter butterFilter = new ButterworthFilter(fStop1, fPass1, fPass2, fStop2, 10, 1, FramesPerSecond);
+        return data.TransformByColumn((col, _) => butterFilter.FiltFilt(col));
+    }
     private Gemstone.Numeric.Matrix<double> RemoveTrend(Gemstone.Numeric.Matrix<double> series)
     {
         switch (RemoveTrendFlag)
