@@ -1423,6 +1423,117 @@ else
 
         return (periodogramAvg.ToArray(), Enumerable.Range(0, take).Select(n => n * fstep).ToArray());
     }
+
+    private (Gemstone.Numeric.Matrix<ComplexNumber>, double[]) CPSD(Gemstone.Numeric.Matrix<double> x, Gemstone.Numeric.Matrix<double> y, int window, int overlap)
+    {
+        if (x.NColumns != y.NColumns) throw new InvalidOperationException("CPSD of matrices of different dimensions not supported.");
+
+        double[] freqVector = [];
+        Gemstone.Numeric.Matrix<ComplexNumber> cpsdOut;
+
+        for (int colIndex = 0; colIndex < x.NColumns; colIndex++)
+        {
+            IEnumerable<Complex32> xVector = x.GetColumn(colIndex).Select(v => new Complex32((float)v, 0));
+            IEnumerable<Complex32> yVector = y.GetColumn(colIndex).Select(v => new Complex32((float)v, 0));
+            if (colIndex == 0)
+            {
+                // Frequency vector is the same for all results for this calculation
+                (Complex32[] cpsd, freqVector) = CPSD(xVector, yVector, window, overlap);
+                cpsdOut = new Gemstone.Numeric.Matrix<ComplexNumber>(cpsd.Select(c => new ComplexNumber((double)c.Real, c.Imaginary)).ToArray(), x.NColumns);
+            }
+            else
+            {
+                Complex32[] cpsd = CPSD(xVector, yVector, window, overlap).Item1;
+                for (int rowIndex = 0; rowIndex < cpsd.Length; rowIndex++)
+                {
+                    cpsdOut[rowIndex][colIndex] = new ComplexNumber((double)cpsd[rowIndex].Real, cpsd[rowIndex].Imaginary);
+                }
+            }
+        }
+        return (cpsdOut, freqVector);
+    }
+
+    private (Gemstone.Numeric.Matrix<double>, double) DE_CPSD(
+        Gemstone.Numeric.Matrix<double> realPower,
+        Gemstone.Numeric.Matrix<double> reactivePower,
+        Gemstone.Numeric.Matrix<double> voltageMagnitude,
+        Gemstone.Numeric.Matrix<double> voltageAngle,
+        double[] voltageAverage,
+        double kFactor,
+        double frequency
+    )
+    {
+        // Transform to radians
+        voltageAngle = voltageAngle.TransformByValue(v => v * Math.PI / 180);
+        // Normalize power  and voltage magnitude
+        realPower = realPower.TransformByValue(v => v / 3e8);
+        reactivePower = reactivePower.TransformByValue(v => v / 3e8);
+        voltageMagnitude = voltageMagnitude.TransformByColumn((col, colIndex) => col.Select(v => v / voltageAverage[colIndex]).ToArray());
+
+        int window = realPower.NRows - 1;
+        int overlap = window - 1;
+
+        Gemstone.Numeric.Matrix<ComplexNumber> cP;
+        IEnumerable<double> wP;
+        {
+            Gemstone.Numeric.Matrix<double> pq = new(realPower.NRows, 2*realPower.NColumns, 0);
+            for(int colIndex = 0; colIndex < pq.NColumns; colIndex++)
+            {
+                int pqColIndex = colIndex % realPower.NColumns;
+                bool useReal = pqColIndex == colIndex;
+                for(int rowIndex = 0; rowIndex < pq.NRows; rowIndex++)
+                    pq[rowIndex][colIndex] = (useReal ? realPower : reactivePower)[rowIndex][pqColIndex];
+            }
+            (cP, wP) = CPSD(pq, pq, window, overlap);
+            wP = wP.Select(v => v * FramesPerSecond / Math.PI / 2);
+        }
+
+        int fMaxEnergyOscInd = wP.Select((freq, ind) => new { freq, ind }).OrderBy(o => Math.Abs(o.freq-frequency)).First().ind;
+        int maxIndex = -1;
+        double comparitor = -1;
+        for (int rowIndex = fMaxEnergyOscInd; rowIndex < cP.NRows; rowIndex++)
+        {
+            double magSum = cP.GetRow(rowIndex).Select(v => v.Magnitude).Sum();
+            if (magSum > comparitor)
+            {
+                maxIndex = rowIndex;
+                comparitor = magSum;
+            }
+        }
+
+        double fCpsd = wP.ElementAt(maxIndex); // rectified studied requency
+
+        // 1 original index, 2 sum of rest, 3 mPVa, 4 mQV, 5 mPV, 6 mQVA
+        Gemstone.Numeric.Matrix<double> DE_cpsd = new Gemstone.Numeric.Matrix<double>(realPower.NColumns, 6, 0);
+        double realScale = 1 / Math.Sqrt(1 + Math.Pow(kFactor, 2));
+        double reactiveScale = realScale * kFactor;
+        Gemstone.Numeric.Matrix<ComplexNumber> mPVa = CPSD(realPower, voltageAngle, window, overlap).Item1;
+        Gemstone.Numeric.Matrix<ComplexNumber> mQV = CPSD(reactivePower, voltageMagnitude, window, overlap).Item1;
+        Gemstone.Numeric.Matrix<ComplexNumber> mPV = CPSD(realPower, voltageMagnitude, window, overlap).Item1;
+        Gemstone.Numeric.Matrix<ComplexNumber> mQVa = CPSD(reactivePower, voltageAngle, window, overlap).Item1.TransformByValue(v => -v);
+        double[] mPVaRow = mPVa.GetRow(maxIndex).Select(v => (v * realScale).Imaginary).ToArray();
+        double[] mQVRow = mQV.GetRow(maxIndex).Select(v => (v * realScale).Imaginary).ToArray();
+        double[] mQVaRow = mQVa.GetRow(maxIndex).Select(v => (v * reactiveScale).Imaginary).ToArray();
+        double[] mPVRow = mPV.GetRow(maxIndex).Select(v => (v * reactiveScale).Imaginary).ToArray();
+        Tuple<int, double>[] sums = Enumerable.Range(0, realPower.NColumns).Select(i => {
+            double sum = mPVaRow[i] + mQVRow[i] + mQVaRow[i] + mPVRow[i];
+            return new Tuple<int, double>(i, sum);
+        }).OrderByDescending(tupe => Math.Abs(tupe.Item2)).ToArray();
+
+        double normalizer = Math.Abs(sums.First().Item2);
+        for(int rowIndex = 0; rowIndex < DE_cpsd.NRows; rowIndex++)
+        {
+            int sumIndex = sums[rowIndex].Item1;
+            DE_cpsd[rowIndex][0] = sumIndex;
+            DE_cpsd[rowIndex][1] = sums[rowIndex].Item2 / normalizer;
+            DE_cpsd[rowIndex][2] = mPVaRow[sumIndex] / normalizer;
+            DE_cpsd[rowIndex][3] = mQVRow[sumIndex] / normalizer;
+            DE_cpsd[rowIndex][4] = mQVaRow[sumIndex] / normalizer;
+            DE_cpsd[rowIndex][5] = mPVRow[sumIndex] / normalizer;
+        }
+
+        return (DE_cpsd, fCpsd);
+    }
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
