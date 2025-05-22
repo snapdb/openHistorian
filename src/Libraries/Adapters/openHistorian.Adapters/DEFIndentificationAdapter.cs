@@ -173,7 +173,6 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         ComputeRank(osc);
     }
 
-
     private async Task ComputeRank()
     {
         while (m_computationQueue.TryDequeue(out EventDetails oscillation))
@@ -184,13 +183,24 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     {
         JObject osc = JObject.Parse(oscillation.Details);
 
-        // This should come from the Event
-        Gemstone.Numeric.Matrix<double> DE = new Gemstone.Numeric.Matrix<double>(1, 1, 30);
+        Gemstone.Numeric.Matrix<double> cdef = ParseDE(
+            ["CDEF_LineNumber", "CDEF_DECurve", "CDEF_DECurvePF", "CDEF_DECurveQV", "CDEF_DECurveQF", "CDEF_DECurvePV"],
+            osc
+        );
+        Gemstone.Numeric.Matrix<double> cpsd = ParseDE(
+            ["CPSD_LineNumber", "CPSD_Summation", "CPSD_RealPower_VoltageAngle", "CPSD_ReactivePower_VoltageMagnitude", "CPSD_ReactivePower_VoltageAngle", "CPSD_RealPower_VoltageMagnitude"],
+            osc
+        );
 
-        // This should also come from the Event
-        List<string> PointTags = new List<string>();
+        List<string> labels = JsonConvert.DeserializeObject<List<string>>(osc["LineLabels"].ToString());
 
+        ComputeRank(cpsd, labels, out double rankProbCpsd, out string rankAreaCpsd, out string rankMsgCpsd, out int rankNSubCpsd);
 
+        ComputeRank(cdef, labels, out double rankProbCdef, out string rankAreaCdef, out string rankMsgCdef, out int rankNSubCdef);
+    }
+
+    private void ComputeRank(Gemstone.Numeric.Matrix<double> DE, List<string> PointTags, out double RankProb, out string RankArea, out string RankMsg, out int RankNSub)
+    {
         double[] Correlation = new double[m_DeLabels.Count()];
         double[] Rank = new double[m_DeLabels.Count()];
 
