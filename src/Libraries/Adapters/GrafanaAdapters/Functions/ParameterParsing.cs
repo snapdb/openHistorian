@@ -356,7 +356,7 @@ internal static class ParameterParsing
                     continue;
 
                 // Get target value from time-series value array
-                double seriesValue = sourceResult.TimeSeriesValue[default(TDataSourceValue).ValueIndex];
+                double seriesValue = (double)sourceResult.TimeSeriesValue[default(TDataSourceValue).ValueIndex];
 
                 result = parameter.Type.IsNumeric() ?
                     Convert.ChangeType(seriesValue, parameter.Type) :
