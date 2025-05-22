@@ -82,7 +82,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
         public DELabel(string[] row)
         {
-            Enabled = bool.Parse(row[0]);
+            Enabled = row[0] == "1";
             Area = row[1];
             SourceSubstation = row[2];
             SourceGenerator = row[3];
