@@ -67,7 +67,11 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     private readonly TaskSynchronizedOperation m_computeRank;
     private readonly ConcurrentQueue<EventDetails> m_computationQueue;
 
+    private double m_minRank = 0.2; // genset(25)
+    private double m_rankRange = 0.3; // genset(26)
+    private int m_maxSubstations = 5; // genset(27)
     private int m_numDEComponents = 15; // GENSET_28
+    private double m_CorrThresholdMin = 0.6; // genset(30)
 
     private Gemstone.Numeric.Matrix<double> m_DeNum;
     private List<DELabel> m_DeLabels;
@@ -135,7 +139,6 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
         // Load File For Rank Idneitfication
         LoadClassificationFile();
-
     }
 
     private void LoadClassificationFile()
