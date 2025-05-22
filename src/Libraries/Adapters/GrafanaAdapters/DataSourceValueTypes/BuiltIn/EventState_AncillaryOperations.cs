@@ -46,6 +46,7 @@ using System.Linq;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using Measurement = Gemstone.Timeseries.Measurement;
 using SignalType = Gemstone.Numeric.EE.SignalType;
+using System.Text.Json;
 
 namespace GrafanaAdapters.DataSourceValueTypes.BuiltIn;
 
@@ -344,14 +345,33 @@ public partial struct EventState : IDataSourceValueType<EventState>
             }
         }
 
-        string details = $"{(string.IsNullOrWhiteSpace(eventDetails) ? "No details were recorded for event" : eventDetails)}" +
-                         $" [{eventID}]<br/><br/>Alarm measurement: '{instanceName}:{pointID}' [{target}]";
+        // Parse eventDetails as a generic JSON object
+        JsonElement? details;
+
+        if (string.IsNullOrWhiteSpace(eventDetails))
+        {
+            using JsonDocument doc = JsonDocument.Parse("{\"error\":\"No details were recorded for event.\"}");
+            details = doc.RootElement.Clone();
+        }
+        else
+        {
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(eventDetails);
+                details = doc.RootElement.Clone();
+            }
+            catch (JsonException)
+            {
+                using JsonDocument doc = JsonDocument.Parse($"{{\"error\":{JsonSerializer.Serialize(eventDetails)}}}");
+                details = doc.RootElement.Clone();
+            }
+        }
 
         return new EventState
         {
             EventID = eventID,
             Target = target,
-            Details = details,
+            Details = details.ToString(),
             StartTime = startTime,  // Actual start time of event
             Duration = double.NaN,
             Time = instanceTime,    // Time of event state in context of Grafana query range
