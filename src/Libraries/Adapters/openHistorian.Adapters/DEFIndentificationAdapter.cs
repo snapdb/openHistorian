@@ -197,6 +197,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         ComputeRank(cpsd, labels, out double rankProbCpsd, out string rankAreaCpsd, out string rankMsgCpsd, out int rankNSubCpsd);
 
         ComputeRank(cdef, labels, out double rankProbCdef, out string rankAreaCdef, out string rankMsgCdef, out int rankNSubCdef);
+        // ToDo: Record results
     }
 
     private void ComputeRank(Gemstone.Numeric.Matrix<double> DE, List<string> PointTags, out double RankProb, out string RankArea, out string RankMsg, out int RankNSub)
@@ -235,8 +236,117 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
         }
 
-        double rankMax = Rank.Max();
-        int[] = Rank.FindIndex()
+        Tuple<double, int>? rankMax = Rank.Select((r, i) => new Tuple<double, int>(r, i)).MaxBy(tupe => tupe.Item1);
+        if (rankMax is null)
+            throw new IndexOutOfRangeException("Could not resolve max value index to an accesible index of the array.");
+
+        double rankCorr = Correlation[rankMax.Item2];
+
+        RankProb = 0;
+        RankArea = "N/A";
+
+        // Rank is below threshold; no certain identification
+        if (rankMax.Item1 < m_minRank)
+        {
+            RankMsg = "Source: cannot be reasonably localized";
+            RankNSub = 0;
+        }
+        else
+        {
+            // rank, rank index
+            IEnumerable<Tuple<double, int>> rankDescSort = Rank
+                .Select((r, i) => new Tuple<double, int>(r, i))
+                .OrderByDescending(tupe => tupe.Item1);
+            double[] sortedRanks = rankDescSort.Select(t => t.Item1).ToArray();
+
+            // finding take so we get all elements that meet the criteria
+            int take = -1;
+            for (int index = 0; index < sortedRanks.Length; index++)
+            {
+                if (sortedRanks[index] <= sortedRanks[0] * (1 - m_rankRange))
+                {
+                    take = index;
+                    break;
+                }
+            }
+
+            // label, rank index
+            IEnumerable<Tuple<string, int>> area = m_DeLabels
+                .Select(l => l.Area)
+                .Zip(rankDescSort, (label, rankTupe) => new Tuple<string, int>(label, rankTupe.Item2))
+                .OrderBy(tupe => tupe.Item2);
+
+            // label, rank index
+            List<Tuple<string, int>> substationsUnique = m_DeLabels
+                .Select(l => l.SourceSubstation)
+                .Zip(rankDescSort, (label, rankTupe) => new Tuple<string, int>(label, rankTupe.Item2))
+                .OrderBy(tupe => tupe.Item2)
+                .Take(take)
+                .GroupBy(label => label.Item1)
+                .Select(labelGroup => labelGroup.OrderBy(g => g.Item2).First())
+                .ToList();
+
+            RankNSub = take;
+
+            // Definite identification
+            if (take == 1)
+            {
+                DELabel label = m_DeLabels[rankDescSort.First().Item2];
+                RankArea = label.Area;
+                RankProb = 1;
+                RankMsg = $"Source: Area={RankArea} (confidence=100%); Station={label.SourceSubstation}; Unit={label.SourceGenerator}";
+            }
+            else
+            {
+                // label, rank index, count
+                IEnumerable<Tuple<string, int, int>> areasUnique = area
+                    .Where((a, i) => substationsUnique.FindIndex(s => s.Item2 == i) != -1)
+                    .GroupBy(label => label.Item1)
+                    .Select(labelGroup =>
+                    {
+                        Tuple<string, int> first = labelGroup.OrderBy(g => g.Item2).First();
+                        return new Tuple<string, int, int>(first.Item1, first.Item2, labelGroup.Count());
+                    });
+
+                if (areasUnique.Count() == 1)
+                {
+                    RankArea = areasUnique.First().Item1;
+                    RankProb = 1;
+                }
+                else
+                {
+                    Tuple<string, int, int> primeArea = areasUnique.MaxBy(area => area.Item3);
+                    RankArea = primeArea.Item1;
+                    RankProb = (double)primeArea.Item3 / areasUnique.Sum(a => a.Item3);
+                }
+
+                if (substationsUnique.Count() == 1)
+                {
+                    RankMsg = $"Source: Area={RankArea} (confidence={Math.Round(RankProb * 100)}%); Station={substationsUnique.First().Item1}";
+                }
+                else
+                {
+                    int subTake = Math.Min(substationsUnique.Count(), m_maxSubstations);
+                    string buf = string.Join(',', substationsUnique.Take(subTake).Select(s => s.Item1));
+                    if (RankNSub > m_maxSubstations + 3)
+                    {
+                        RankMsg = $"Source: Area={RankArea} (confidence={Math.Round(RankProb * 100)}%); station cannot be reasonably localized";
+                    }
+                    else if (RankNSub > m_maxSubstations && RankNSub <= m_maxSubstations + 3)
+                    {
+                        RankMsg = $"Source: Area={RankArea} (confidence={Math.Round(RankProb * 100)}%); uncertain localization within multiple substations: {buf}...";
+                    }
+                    else
+                    {
+                        RankMsg = $"Source: Area={RankArea} (confidence={Math.Round(RankProb * 100)}%); likely localized within substations: {buf}...";
+                    }
+                }
+            }
+
+        }
+
+        if (rankCorr < m_CorrThresholdMin)
+            RankMsg = "Source: cannot be reasonably localized";
 
         return;
     }
