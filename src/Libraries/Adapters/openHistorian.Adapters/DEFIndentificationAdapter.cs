@@ -21,36 +21,22 @@
 //       Generated original version of source code.
 //******************************************************************************************************
 
-using Gemstone;
-using Gemstone.Collections.CollectionExtensions;
-using Gemstone.Data;
-using Gemstone.Data.Model;
-using Gemstone.Diagnostics;
-using Gemstone.Numeric.Analysis;
-using Gemstone.Numeric.EE;
-using Gemstone.StringExtensions;
-using Gemstone.Threading.SynchronizedOperations;
-using Gemstone.Timeseries;
-using Gemstone.Timeseries.Adapters;
-using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Data;
-using MathNet.Numerics.Data.Matlab;
-using Gemstone.Numeric;
-using Gemstone.Numeric.Interpolation;
-using Gemstone.Numeric.UnitExtensions;
-using Gemstone.Units;
-using MathNet.Numerics.Statistics;
-using SignalType = Gemstone.Numeric.EE.SignalType;
-using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
-using ConfigSettings = Gemstone.Configuration.Settings;
-using MathNet.Numerics.LinearAlgebra;
-using PhasorProtocolAdapters;
+using Gemstone.Data;
+using Gemstone.Data.Model;
+using Gemstone.Diagnostics;
+using Gemstone.Threading.SynchronizedOperations;
+using Gemstone.Timeseries;
+using Gemstone.Timeseries.Adapters;
 using Gemstone.Timeseries.Model;
-using MathNet.Numerics.LinearAlgebra.Factorization;
-using System.Drawing;
-using System.Reflection.Emit;
+using MathNet.Numerics.Statistics;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using PhasorProtocolAdapters;
+using ConfigSettings = Gemstone.Configuration.Settings;
+using SignalType = Gemstone.Numeric.EE.SignalType;
 
 namespace DataQualityMonitoring;
 
@@ -100,7 +86,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         public int IndexDE { get; set; }
         public int IndexLabel { get; set; }
     }
-        #endregion
+    #endregion
 
     #region [ Constructors ]
 
@@ -215,9 +201,9 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
             var tags = m_DeLabels[i].Label.Take(nt).Intersect(PointTags).Select((t) => new LabelMatch()
             {
-               Label = t,
-               IndexLabel = m_DeLabels[i].Label.TakeWhile((l) => l != t).Count(),
-               IndexDE = PointTags.TakeWhile((l) => l != t).Count()
+                Label = t,
+                IndexLabel = m_DeLabels[i].Label.TakeWhile((l) => l != t).Count(),
+                IndexDE = PointTags.TakeWhile((l) => l != t).Count()
             });
 
             if (tags.Count() == 0)
