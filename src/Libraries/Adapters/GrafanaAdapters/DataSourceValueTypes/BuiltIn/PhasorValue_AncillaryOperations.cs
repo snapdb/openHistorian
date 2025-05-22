@@ -70,7 +70,7 @@ public partial struct PhasorValue : IDataSourceValueType<PhasorValue>
         init => Flags = value;
     }
 
-    readonly double[] IDataSourceValueType.TimeSeriesValue => [Magnitude, Angle, Time];
+    readonly object[] IDataSourceValueType.TimeSeriesValue => [Magnitude, Angle, Time];
 
     readonly string[] IDataSourceValueType.TimeSeriesValueDefinition => [nameof(Magnitude), nameof(Angle), nameof(Time)];
 

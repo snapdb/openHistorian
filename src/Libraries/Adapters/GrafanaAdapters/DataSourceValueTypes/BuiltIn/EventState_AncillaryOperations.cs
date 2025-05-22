@@ -86,9 +86,9 @@ public partial struct EventState : IDataSourceValueType<EventState>
     // event state in context of Grafana query range. For example, the 'Time' will be at the start
     // of the Grafana query range if the event state started before the query range and is ongoing
     // so that ongoing events will be displayed in the Grafana UI for a given query range.
-    readonly double[] IDataSourceValueType.TimeSeriesValue => [StartTime, Duration, Time];
+    readonly object[] IDataSourceValueType.TimeSeriesValue => [EventID.ToString(), Details, StartTime, Duration, Time];
 
-    readonly string[] IDataSourceValueType.TimeSeriesValueDefinition => [nameof(StartTime), nameof(Duration), nameof(Time)];
+    readonly string[] IDataSourceValueType.TimeSeriesValueDefinition => [nameof(EventID), nameof(Details), nameof(StartTime), nameof(Duration), nameof(Time)];
 
     readonly int IDataSourceValueType.ValueIndex => (int)PrimaryValueTarget;
 
@@ -284,6 +284,8 @@ public partial struct EventState : IDataSourceValueType<EventState>
         // Complete duration calculations on all event states
         foreach ((string target, SortedList<double, EventState> timeValueMap) in timeValueMaps)
         {
+            Dictionary<double, double> durationUpdates = [];
+
             foreach ((double timestamp, EventState eventState) in timeValueMap)
             {
                 if (!double.IsNaN(eventState.Duration))
@@ -299,11 +301,15 @@ public partial struct EventState : IDataSourceValueType<EventState>
                 if (clearedTime <= 0.0D)
                     continue;
 
-                // Update event state with computed event duration
-                timeValueMap[eventState.Time] = eventState with
-                {
-                    Duration = ComputeDuration(eventState.StartTime, clearedTime, eventState.EventID, target)
-                };
+                // Mark event state for update with computed event duration
+                durationUpdates[timestamp] = ComputeDuration(eventState.StartTime, clearedTime, eventState.EventID, target);
+            }
+
+            // Update event states with computed event duration
+            foreach ((double timestamp, double duration) in durationUpdates)
+            {
+                if (timeValueMap.TryGetValue(timestamp, out EventState eventState))
+                    timeValueMap[timestamp] = eventState with { Duration = duration };
             }
         }
     }

@@ -72,7 +72,7 @@ public interface IDataSourceValueType
     /// precede single time value. Time is always the last value in the array.
     /// Time value should be in Unix epoch milliseconds.
     /// </remarks>
-    double[] TimeSeriesValue { get; }
+    object[] TimeSeriesValue { get; }
 
     /// <summary>
     /// Gets the format definition of a time-series array value, e.g., ["Value", "Time"].
@@ -88,6 +88,7 @@ public interface IDataSourceValueType
     /// </summary>
     /// <remarks>
     /// If data source value type has multiple targets, this should be the value index of the primary target.
+    /// Note that value data type is always expected to be a <c>double</c> data type.
     /// </remarks>
     int ValueIndex { get; }
 
