@@ -95,6 +95,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
     class LineData 
     {
+        public string Label;
         public PhasorKey VoltageKey;
         public PhasorKey CurrentKey;
         public MeasurementKey FrequencyKey;
@@ -257,6 +258,18 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_f = MatlabReader.Read<double>(pmuDataFile, "Fbus");
         MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_map = MatlabReader.Read<double>(pmuDataFile, "I2U");
 
+        string[] labels = new string[pmu_Vm.RowCount];
+        int index = 0;
+        string labelFile = "C:\\Users\\gcsantos\\Downloads\\DataAlarmLineLabels.csv";
+        using (StreamReader reader = new(labelFile))
+        {
+            while (!reader.EndOfStream)
+            {
+                labels[index] = reader.ReadLine().Trim();
+                index++;
+            }
+        }
+
         Ticks[] pmu_time = pmu_Vm.ToColumnArrays().First().Select((_, i) => (Ticks)(Tstart + (double)i * 1 / 30.0 * Ticks.PerSecond)).ToArray();
         for (int ind =0; ind < pmu_map.RowCount; ind++)
         {
@@ -279,7 +292,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     Magnitude = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:3"),
                     Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:4")
                 },
-                FrequencyKey = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:5")
+                FrequencyKey = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:5"),
+                Label = labels[index]
             });
         }
 
@@ -521,6 +535,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         Matrix<double> voltageAngle;
         Matrix<double> frequencyBus;
         double[] voltageMean;
+        JObject details = new JObject();
         {
             // ToDo: this might be an artifact of loading data strangely in OSL
             List<LineData> pmuData = data.Where(d => d.VoltageKey.Magnitude.SignalID.ToString() != alarmKey).ToList();
@@ -529,6 +544,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             IEnumerable<IEnumerable<double>> currentM = pmuData.Select(d => d.Current.Select(c => c.Magnitude));
             IEnumerable<IEnumerable<double>> currentA = pmuData.Select(d => d.Current.Select(c => c.Angle.ToDegrees()));
             IEnumerable<IEnumerable<double>> fBus = pmuData.Select(d => d.Frequency);
+            string [] labels = pmuData.Select(v => v.Label).ToArray();
+            details.Add("LineLabels", JsonConvert.SerializeObject(labels));
 
             PMUDataCleaning(ref voltageM, ref voltageA, ref currentM, ref currentA, ref fBus, true);
 
@@ -553,7 +570,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
         RemoveNoisySignals(ref complexPower);
 
-        JObject details = new JObject();
         double kFactor;
         {
             Matrix<double> realPowerTrendless = RemoveTrend(complexPower.TransformByValue(v => v.Real));
@@ -1821,6 +1837,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
             foreach (IFrame f in m_frameQueue)
             {
+                // ToDo: we need to add a label to line here, how do we get it?
                 foreach (LineData line in lineData)
                 {
                     ComplexNumber V = new ComplexNumber(double.NaN, double.NaN);
