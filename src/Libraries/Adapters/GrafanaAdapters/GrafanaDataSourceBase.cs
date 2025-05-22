@@ -29,7 +29,6 @@ using GrafanaAdapters.Functions;
 using GrafanaAdapters.Functions.BuiltIn;
 using GrafanaAdapters.Metadata;
 using GrafanaAdapters.Model.Common;
-using Gemstone.Collections;
 using Gemstone.Diagnostics;
 using Gemstone.Numeric.Analysis;
 using Gemstone.Timeseries;
@@ -45,7 +44,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using openHistorian.Adapters;
-using GrafanaAdapters.DataSourceValueTypes.BuiltIn;
 
 namespace GrafanaAdapters;
 

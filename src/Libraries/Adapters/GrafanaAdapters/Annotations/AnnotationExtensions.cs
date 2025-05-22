@@ -97,12 +97,12 @@ public static class AnnotationRequestExtensions
     /// <param name="type">Annotation type.</param>
     /// <param name="datapoint">Time series values data point.</param>
     /// <returns><c>true</c> if the data point is applicable for specified annotation <paramref name="type"/>; otherwise, <c>false</c>.</returns>
-    public static bool IsApplicable(this AnnotationType type, double[] datapoint)
+    public static bool IsApplicable(this AnnotationType type, object[] datapoint)
     {
         if (datapoint is null)
             throw new ArgumentNullException(nameof(datapoint));
 
-        double value = datapoint[MeasurementValue.ValueIndex];
+        double value = (double)datapoint[MeasurementValue.ValueIndex];
 
         return type switch
         {
@@ -123,7 +123,7 @@ public static class AnnotationRequestExtensions
     /// <param name="datapoint">Time series values data point for response.</param>
     /// <param name="source">Metadata of source definitions.</param>
     /// <returns>Populates an annotation response title, text and tags for specified annotation <paramref name="type"/>.</returns>
-    public static void PopulateResponse(this AnnotationType type, AnnotationResponse response, string target, DataRow definition, double[] datapoint, DataSet source)
+    public static void PopulateResponse(this AnnotationType type, AnnotationResponse response, string target, DataRow definition, object[] datapoint, DataSet source)
     {
         if (response is null)
             throw new ArgumentNullException(nameof(response));

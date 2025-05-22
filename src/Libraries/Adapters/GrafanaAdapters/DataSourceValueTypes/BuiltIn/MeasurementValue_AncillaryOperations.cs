@@ -68,7 +68,7 @@ public partial struct MeasurementValue : IDataSourceValueType<MeasurementValue>
         init => Flags = value;
     }
 
-    readonly double[] IDataSourceValueType.TimeSeriesValue => [Value, Time];
+    readonly object[] IDataSourceValueType.TimeSeriesValue => [Value, Time];
 
     readonly string[] IDataSourceValueType.TimeSeriesValueDefinition => [nameof(Value), nameof(Time)];
 

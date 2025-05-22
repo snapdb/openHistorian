@@ -416,7 +416,7 @@ partial class GrafanaDataSourceBase
 
             int index = 0;
 
-            foreach (double[] datapoint in values.datapoints)
+            foreach (object[] datapoint in values.datapoints)
             {
                 if (!type.IsApplicable(datapoint))
                 {
@@ -430,16 +430,16 @@ partial class GrafanaDataSourceBase
                 {
                     response = new AnnotationResponse
                     {
-                        time = datapoint[MeasurementValue.TimeIndex],
-                        endTime = datapoint[MeasurementValue.TimeIndex]
+                        time = (double)datapoint[MeasurementValue.TimeIndex],
+                        endTime = (double)datapoint[MeasurementValue.TimeIndex]
                     };
                 }
                 else
                 {
                     response = new AnnotationResponse
                     {
-                        time = datapoint[MeasurementValue.TimeIndex],
-                        endTime = values.datapoints[index + 1][MeasurementValue.TimeIndex]
+                        time = (double)datapoint[MeasurementValue.TimeIndex],
+                        endTime = (double)values.datapoints[index + 1][MeasurementValue.TimeIndex]
                     };
                 }
 

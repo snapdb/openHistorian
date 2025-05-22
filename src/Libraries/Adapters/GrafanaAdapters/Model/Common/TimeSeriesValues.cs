@@ -91,7 +91,5 @@ public class TimeSeriesValues
     /// </para>
     /// </remarks>
     [JsonInclude]
-    public double[][] datapoints;
-
-
+    public object[][] datapoints;
 }
