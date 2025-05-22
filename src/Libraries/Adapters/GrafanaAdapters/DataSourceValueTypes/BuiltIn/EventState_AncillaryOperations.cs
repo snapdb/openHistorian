@@ -167,10 +167,16 @@ public partial struct EventState : IDataSourceValueType<EventState>
         bool success = MeasurementKey.TryParse(measurementKeyValue, out MeasurementKey key);
         Debug.Assert(success, $"Failed to parse measurement point ID '{measurementKeyValue}' for '{pointTag}'");
 
-        // Get measurement signal ID from metadata
-        string signalIDValue = row["SignalID"].ToString();
-        success = Guid.TryParse(signalIDValue, out Guid signalID);
-        Debug.Assert(success, $"Failed to parse measurement signal ID '{signalIDValue}' for '{pointTag}'");
+        // SignalID is also normally cached in measurement key as well, TryParse looks up value
+        Guid signalID = key.SignalID;
+
+        if (signalID == Guid.Empty)
+        {
+            // Fallback on getting measurement signal ID from metadata
+            string signalIDValue = row["SignalID"].ToString();
+            success = Guid.TryParse(signalIDValue, out signalID);
+            Debug.Assert(success, $"Failed to parse measurement signal ID '{signalIDValue}' for '{pointTag}'");
+        }
 
         return (key.ID, signalID);
     }
@@ -391,7 +397,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         bool alarmed = false;
         Guid eventID = Guid.Empty;
         MeasurementStateFlags flags = MeasurementStateFlags.Normal;
-        const ulong QuarterMillisecond = Ticks.PerMillisecond / 4;
+        const ulong QuarterMillisecond = Ticks.PerMillisecond / 4L;
 
         using TreeStream<HistorianKey, HistorianValue> currentValueStream = database.Read(timestamp - QuarterMillisecond, timestamp + QuarterMillisecond, pointIDs);
 
@@ -420,7 +426,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         bool alarmed = false;
 
         // Query for last alarm change state prior to current time
-        using TreeStream<HistorianKey, HistorianValue> lastValueStream = database.Read(timestamp - s_alarmSearchLimit, timestamp - 1, pointIDs);
+        using TreeStream<HistorianKey, HistorianValue> lastValueStream = database.Read(timestamp - s_alarmSearchLimit, timestamp - 1UL, pointIDs);
 
         // Scan to last value for event ID
         while (lastValueStream.Read(key, value))
@@ -460,7 +466,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         bool alarmed = false;
 
         // Query for next alarm change state after current time
-        using TreeStream<HistorianKey, HistorianValue> nextValueStream = database.Read(timestamp + 1, timestamp + s_alarmSearchLimit, pointIDs);
+        using TreeStream<HistorianKey, HistorianValue> nextValueStream = database.Read(timestamp + 1UL, timestamp + s_alarmSearchLimit, pointIDs);
 
         // Scan to next value for event ID
         while (nextValueStream.Read(key, value))
@@ -520,7 +526,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
             .ToHashSet();
 
         // Query for last alarm change states prior to query start time
-        using TreeStream<HistorianKey, HistorianValue> lastValuesStream = database.Read(timestamp - s_alarmSearchLimit, timestamp - 1, pointIDs);
+        using TreeStream<HistorianKey, HistorianValue> lastValuesStream = database.Read(timestamp - s_alarmSearchLimit, timestamp - 1UL, pointIDs);
 
         Dictionary<Guid, (ulong, ulong, MeasurementStateFlags)> eventRaisedStates = [];
 
@@ -664,7 +670,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
 
                 // Event state metadata is simply a reduced field set of active measurements filtered to alarm signal types
                 DataTable activeMeasurements = metadata.Tables[MeasurementValue.MetadataTableName]!;
-                DataRow[] alarmRows = activeMeasurements.Select("SignalType = 'ALRM'");
+                DataRow[] alarmRows = activeMeasurements.Select($"SignalType = '{nameof(SignalType.ALRM)}'");
 
                 // Create new metadata table for event state values - this becomes a filterable data source table that can be queried
                 DataTable eventStates = metadata.Tables.Add(MetadataTableName);
