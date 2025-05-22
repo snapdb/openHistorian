@@ -476,7 +476,22 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     private async Task ComputeDEF(EventDetails oscillation, IEnumerable<LineData> data)
     {
         JObject osc = JObject.Parse(oscillation.Details);
+        Ticks Talarm = oscillation.StartTime; // ff{15}
 
+        Tuple<AlarmMeasurement, EventDetails>? details = await ComputeDEF(osc, oscillation.EventGuid, Talarm, data);
+
+        if (details is null) return;
+
+        // Save Results in Table Form as appropriate
+        await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        TableOperations<AlarmMeasurement> tableOperationsAlarm = new(connection);
+        tableOperationsAlarm.AddNewRecord(details.Item1);
+        TableOperations<EventDetails> tableOperations = new(connection);
+        tableOperations.AddNewRecord(details.Item2);
+    }
+
+    private async Task<Tuple<AlarmMeasurement, EventDetails>?> ComputeDEF(JObject osc, Guid eventGuid, Ticks Talarm, IEnumerable<LineData> data)
+    {
         string alarmKey = osc["VoltageSignalID"].ToString();
         LineData alarmData = data.Where(d => d.VoltageKey.Magnitude.SignalID.ToString() == alarmKey).FirstOrDefault();
 
@@ -484,7 +499,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         IEnumerable<ComplexNumber> alarmCurrent = new List<ComplexNumber>();
         IEnumerable<ComplexNumber> alarmVoltage = new List<ComplexNumber>();
 
-        Ticks Talarm = oscillation.StartTime; // ff{15}
 
         if (!double.TryParse(osc["Frequency"].ToString(), out double freqAlarm)) //GenSet(23)
             throw new InvalidDataException("Oscillation Event not formated correctly - Can not parse \"Frequency\"");
@@ -499,9 +513,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         if (timeCond == DataStatus.BadData || pmuCond == DataStatus.SuspectData || pmuCond == DataStatus.BadData)
         {
             OnStatusMessage(MessageLevel.Warning, "Unable to compute DEF, Possibly false Alarm");
-            return;
+            return null;
         }
-
 
         Matrix<ComplexNumber> complexPower;
         Matrix<double> voltageMagnitude;
@@ -592,28 +605,23 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             details.Add("CDEF_DECurvePV", JsonConvert.SerializeObject(DE_ranked.GetColumn(5)));
         }
 
-        // Save Results in Table Form as appropriate
-        await using AdoDataConnection connection = new(ConfigSettings.Instance);
-        TableOperations<AlarmMeasurement> tableOperationsAlarm = new(connection);
         AlarmMeasurement measurement = new AlarmMeasurement
         {
             Timestamp = Ts1,
             Value = 1,
             AlarmID = new Guid()
         };
-        tableOperationsAlarm.AddNewRecord(measurement);
-        TableOperations<EventDetails> tableOperations = new(connection);
-        tableOperations.AddNewRecord(new EventDetails()
+        EventDetails eventDetails = new EventDetails()
         {
             StartTime = Ts,
             EndTime = Te,
-            EventGuid = oscillation.EventGuid,
+            EventGuid = eventGuid,
             Type = "defOscillation",
             MeasurementID = measurement.AlarmID,
             Details = details.ToString()
-        });
+        };
 
-        return;
+        return new Tuple<AlarmMeasurement, EventDetails>(measurement, eventDetails);
     }
 
 
