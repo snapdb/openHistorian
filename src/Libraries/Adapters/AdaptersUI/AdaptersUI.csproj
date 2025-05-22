@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="GrafanaAdapters\**" />
+    <EmbeddedResource Remove="GrafanaAdapters\**" />
+    <None Remove="GrafanaAdapters\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="CSVAdapters\CSVInputAdapter\CSVAdapters.CSVInputAdapter.js" />
     <None Remove="CSVAdapters\CSVInputAdapter\main.js" />
     <None Remove="CSVAdapters\CSVInputAdapter\openHistorian.Adapters.CsvInputAdapter.js" />
@@ -18,8 +24,6 @@
     <None Remove="FileAdapters\ProcessLauncher\main.js" />
     <None Remove="Gemstone\Timeseries\StatisticsEngine\Gemstone.Timeseries.Statistics.StatisticsEngine.js" />
     <None Remove="Gemstone\Timeseries\StatisticsEngine\main.js" />
-    <None Remove="GrafanaAdapters\DeviceStateAdapter\GrafanaAdapters.DeviceAlarmStateAdapter.js" />
-    <None Remove="GrafanaAdapters\DeviceStateAdapter\main.js" />
     <None Remove="openHistorian.Adapters\LocalOutputAdapter\chunk.js" />
     <None Remove="openHistorian.Adapters\LocalOutputAdapter\main.js" />
     <None Remove="PowerCalculations\AngleDifferenceCalculator\chunk.js" />
@@ -43,9 +47,7 @@
     <EmbeddedResource Include="FileAdapters\ProcessLauncher\chunk.js" />
     <EmbeddedResource Include="FileAdapters\ProcessLauncher\main.js" />
     <EmbeddedResource Include="Gemstone\Timeseries\StatisticsEngine\main.js" />
-    <EmbeddedResource Include="GrafanaAdapters\DeviceStateAdapter\chunk.js" />
     <EmbeddedResource Include="Gemstone\Timeseries\StatisticsEngine\chunk.js" />
-    <EmbeddedResource Include="GrafanaAdapters\DeviceStateAdapter\main.js" />
     <EmbeddedResource Include="openHistorian.Adapters\LocalOutputAdapter\chunk.js" />
     <EmbeddedResource Include="openHistorian.Adapters\LocalOutputAdapter\main.js" />
     <EmbeddedResource Include="PowerCalculations\AngleDifferenceCalculator\chunk.js" />
