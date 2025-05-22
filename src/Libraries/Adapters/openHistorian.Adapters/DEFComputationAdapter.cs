@@ -200,7 +200,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
     }
 
-    public void LoadFile()
+    public Task<Tuple<AlarmMeasurement, EventDetails>?> LoadFile()
     {
         FramesPerSecond = 30;
 
@@ -258,7 +258,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_f = MatlabReader.Read<double>(pmuDataFile, "Fbus");
         MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_map = MatlabReader.Read<double>(pmuDataFile, "I2U");
 
-        string[] labels = new string[pmu_Vm.RowCount];
+        string[] labels = new string[pmu_map.RowCount];
         int index = 0;
         string labelFile = "C:\\Users\\gcsantos\\Downloads\\DataAlarmLineLabels.csv";
         using (StreamReader reader = new(labelFile))
@@ -293,7 +293,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:4")
                 },
                 FrequencyKey = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:5"),
-                Label = labels[index]
+                Label = labels[ind]
             });
         }
 
@@ -304,9 +304,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             Frequency = d.FrequencyKey
         }).ToList();
 
-
-        ComputeDEF(evt, lineData);
-
+        return ComputeDEF(oscillation, evt.EventGuid, evt.StartTime, lineData);
     }
 
     /// <summary>

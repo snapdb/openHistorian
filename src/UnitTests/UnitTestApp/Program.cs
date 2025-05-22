@@ -3,6 +3,8 @@
 using DataQualityMonitoring;
 using Gemstone.Configuration;
 using Gemstone.Diagnostics;
+using Gemstone.Timeseries;
+using Gemstone.Timeseries.Model;
 using Microsoft.Extensions.Configuration;
 
 Settings settings = new()
@@ -20,6 +22,15 @@ settings.Bind(new ConfigurationBuilder().ConfigureGemstoneDefaults(settings));
 Console.WriteLine("Starting application...");
 
 DEFComputationAdapter adapter = new DEFComputationAdapter();
-adapter.LoadFile();
+Task<Tuple<AlarmMeasurement, EventDetails>?> adapterTask = adapter.LoadFile();
+
+DEFIdentificationAdapter idAdapter = new DEFIdentificationAdapter();
+await adapterTask.ContinueWith(tupe => {
+    EventDetails computationDetail = tupe.Result.Item2;
+    if (computationDetail is null)
+        Console.WriteLine("Computation adapter could not resolve event details.");
+    else
+        idAdapter.TestEventDetail(tupe.Result.Item2);
+});
 
 Console.WriteLine("Application Completed...");

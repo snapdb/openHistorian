@@ -163,38 +163,13 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         m_DeNum = new Gemstone.Numeric.Matrix<double>(numbers.ToArray());
 
     }
-    public void LoadFile()
+
+    public void TestEventDetail(EventDetails osc)
     {
         FramesPerSecond = 30;
-
-        JObject oscillation = new JObject();
-        oscillation.Add("VoltageSignalID", Guid.NewGuid());
-        oscillation.Add("Frequency", "1.343");
-        oscillation.Add("Hysteresis", "20");
-
-        string dataFile = "C:\\Users\\clackner\\Downloads\\DataAlarmLine.mat";
-        // Load EventData
-        MathNet.Numerics.LinearAlgebra.Matrix<double> Vm = MatlabReader.Read<double>(dataFile, "Vm");
-        MathNet.Numerics.LinearAlgebra.Matrix<double> Va = MatlabReader.Read<double>(dataFile, "Va");
-        MathNet.Numerics.LinearAlgebra.Matrix<double> Im = MatlabReader.Read<double>(dataFile, "Im");
-        MathNet.Numerics.LinearAlgebra.Matrix<double> Ia = MatlabReader.Read<double>(dataFile, "Ia");
-        MathNet.Numerics.LinearAlgebra.Matrix<double> f = MatlabReader.Read<double>(dataFile, "Fbus");
-
-        Ticks Tstart = DateTime.Parse("2025-01-26 08:43:19");
-
-        Ticks[] Time = Vm.ToColumnArrays().First().Select((v,i) => (Ticks)(Tstart + (double)i*1/30.0*Ticks.PerSecond)).ToArray();
-
-
-       
-
-        EventDetails evt = new EventDetails()
-        {
-            StartTime = DateTime.Parse("2025-01-26 08:46:19"),
-            Details = oscillation.ToString()
-        };
-
-        ComputeRank(evt, new List<LineData>() { data });
-
+        ClassificationFile = "C:\\Users\\gcsantos\\source\\MATLAB\\m-code\\data\\DEpatternTemplate5-30-2024.csv";
+        LoadClassificationFile();
+        ComputeRank(osc);
     }
 
 
