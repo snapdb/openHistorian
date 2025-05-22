@@ -241,6 +241,20 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         return;
     }
 
+    private Gemstone.Numeric.Matrix<double> ParseDE(string[] order, JObject osc)
+    {
+        double[] buf = JsonConvert.DeserializeObject<double[]>(osc[order[0]].ToString());
+        Gemstone.Numeric.Matrix<double> DE = new(buf.Count(), order.Length, 0);
+        for (int col = 0; col < DE.NColumns; col++)
+        {
+            if (col != 0)
+                buf = JsonConvert.DeserializeObject<double[]>(osc[order[col]].ToString());
+            for (int row = 0; row < DE.NRows; row++)
+                DE[row][col] = buf[row];
+        }
+        return DE;
+    }
+
     private Gemstone.Numeric.Matrix<double> Corr(Gemstone.Numeric.Matrix<double> X, Gemstone.Numeric.Matrix<double> Y)
     {
         // ToDo: Verifiy this function does what its supposed to, probably also change args to arrays
