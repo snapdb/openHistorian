@@ -140,28 +140,26 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
     private void LoadClassificationFile()
     {
-        int numLabels = 0;
         List<double[]> numbers = new();
         m_DeLabels = new List<DELabel>();
 
         using (StreamReader reader = new(ClassificationFile))
         {
+            // skip header and get num labels
+            int numLabels = 0;
+            if (!reader.EndOfStream)
+                numLabels = (reader.ReadLine().Split(",").Count() - 5) / 2;
+
             while (!reader.EndOfStream)
             {
                 string line = reader.ReadLine();
                 string[] cells = line.Split(",");
 
-                if (numLabels == 0)
-                {
-                    numLabels = (cells.Count() - 5) / 2;
-                }
-
                 numbers.Add(cells.Skip(5 + numLabels).Select(c => double.Parse(c)).ToArray());
-                m_DeLabels.Add(new DELabel(cells.Skip(1).Take(4 + numLabels).ToArray());
+                m_DeLabels.Add(new DELabel(cells.Skip(1).Take(4 + numLabels).ToArray()));
             }
         }
         m_DeNum = new Gemstone.Numeric.Matrix<double>(numbers.ToArray());
-
     }
 
     public void TestEventDetail(EventDetails osc)
