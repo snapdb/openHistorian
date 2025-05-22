@@ -203,9 +203,6 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     {
         double[] Correlation = new double[m_DeLabels.Count()];
         double[] Rank = new double[m_DeLabels.Count()];
-
-        Gemstone.Numeric.Matrix<double> rank = null;
-
         int nt = Math.Min(m_numDEComponents, m_DeNum.NColumns);
 
         for (int i = 0; i < m_DeLabels.Count(); i++)
@@ -215,7 +212,8 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             if (m_DeLabels[i].Enabled == false)
                 continue;
 
-            var tags = m_DeLabels[i].Label.Take(nt).Intersect(PointTags).Select((t) => new LabelMatch() {
+            var tags = m_DeLabels[i].Label.Take(nt).Intersect(PointTags).Select((t) => new LabelMatch()
+            {
                Label = t,
                IndexLabel = m_DeLabels[i].Label.TakeWhile((l) => l != t).Count(),
                IndexDE = PointTags.TakeWhile((l) => l != t).Count()
@@ -228,8 +226,8 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             }
             else
             {
-                Gemstone.Numeric.Matrix<double> labelMatrix = new(1,tags.Select((k) => m_DeNum[i][k.IndexLabel]).ToArray());
-                Gemstone.Numeric.Matrix<double> deMatrix = new(1,tags.Select((k) => DE[1][k.IndexDE]).ToArray());
+                Gemstone.Numeric.Matrix<double> labelMatrix = new(1, tags.Select((k) => m_DeNum[i][k.IndexLabel]).ToArray());
+                Gemstone.Numeric.Matrix<double> deMatrix = new(1, tags.Select((k) => DE[k.IndexDE][1]).ToArray());
 
                 Correlation[i] = Corr(labelMatrix, deMatrix)[0][0];
                 Rank[i] = tags.Sum((t) => DE[t.IndexDE].Sum(v => v * m_DeNum[i][t.IndexLabel]));
@@ -245,7 +243,16 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
     private Gemstone.Numeric.Matrix<double> Corr(Gemstone.Numeric.Matrix<double> X, Gemstone.Numeric.Matrix<double> Y)
     {
+        // ToDo: Verifiy this function does what its supposed to, probably also change args to arrays
         Gemstone.Numeric.Matrix<double> rho = new(X.NColumns,Y.NColumns, 0.0D);
+        double Xmean = 0;
+        for (int row = 0; row < X.NRows; row++)
+            Xmean += X.GetRow(row).Mean();
+        Xmean /= X.NRows;
+        double Ymean = 0;
+        for (int row = 0; row < Y.NRows; row++)
+            Ymean += Y.GetRow(row).Mean();
+        Ymean /= Y.NRows;
 
         for (int j = 0; j < X.NColumns; j++)
         {
@@ -258,8 +265,6 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
                 double[] colX = X.GetColumn(j);
                 double[] colY = Y.GetColumn(k);
 
-                double Xmean = colX.Mean();
-                double Ymean = colY.Mean();
 
                
                 for (int i = 0; i < X.NRows; i++)
