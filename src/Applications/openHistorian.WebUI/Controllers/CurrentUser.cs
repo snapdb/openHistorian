@@ -13,7 +13,7 @@ using System.Text.Json;
 
 namespace openHistorian.WebUI.Controllers;
 
-[Route("api/[controller]/[action]")]
+[Route("api/[controller]")]
 public class CurrentUserController : Controller
 {
 
@@ -21,7 +21,7 @@ public class CurrentUserController : Controller
     /// Returns the user specific settings
     /// </summary>
     /// <returns></returns>
-    [HttpGet]
+    [HttpGet, Route("settings")]
     public IActionResult GetSettings()
     {
         JObject defaults = LoadDefaults();
@@ -33,7 +33,7 @@ public class CurrentUserController : Controller
     /// Updates the user specific settings
     /// </summary>
     /// <returns></returns>
-    [HttpPatch, Route("/settings")]
+    [HttpPatch, Route("settings")]
     public IActionResult UpdateSettings(JObject settings)
     {
         SaveUserSettings("user", "auth", settings);
