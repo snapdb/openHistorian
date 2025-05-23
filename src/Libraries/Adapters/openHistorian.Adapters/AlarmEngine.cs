@@ -71,6 +71,7 @@ public class AlarmEngine : FacileActionAdapterBase
         public required FrameQueue FrameQueue;
         public required Alarm Alarm;
         public required double LagTime;
+
         public Ticks LastProcessed;
         public int ExpectedMeasurements;
         private bool m_disposed;
@@ -194,6 +195,9 @@ public class AlarmEngine : FacileActionAdapterBase
         public double SetPoint;
         public int AlarmID;
         public Guid MeasurementID;
+        public string Name;
+        public double Threshold;
+        public string[] Tags;
 
         /// <summary>
         /// Deserializes the <see cref="AlarmEvent"/> from a <see cref="Stream"/>.
@@ -214,7 +218,10 @@ public class AlarmEngine : FacileActionAdapterBase
                 Operation = (AlarmOperation)reader.ReadInt32(),
                 SetPoint = reader.ReadDouble(),
                 AlarmID = reader.ReadInt32(),
-                MeasurementID = new Guid(reader.ReadBytes(16))
+                MeasurementID = new Guid(reader.ReadBytes(16)),
+                Name = reader.ReadString(),
+                Threshold = reader.ReadDouble(),
+                Tags = reader.ReadString().Split(';'),
             };
         }
 
@@ -240,6 +247,9 @@ public class AlarmEngine : FacileActionAdapterBase
             writer.Write(instance.SetPoint);
             writer.Write(instance.AlarmID);
             writer.Write(instance.MeasurementID.ToByteArray());
+            writer.Write(instance.Name);
+            writer.Write(instance.Threshold);
+            writer.Write(string.Join(";", instance.Tags));
         }
     }
 
@@ -271,6 +281,8 @@ public class AlarmEngine : FacileActionAdapterBase
     private bool m_disposed;
     private bool m_disposing;
 
+
+    private Dictionary<Guid, double[]> m_latLongLookup;
     #endregion
 
     #region [ Constructors ]
@@ -289,7 +301,7 @@ public class AlarmEngine : FacileActionAdapterBase
 
         m_eventDetailsQueue = new ConcurrentQueue<AlarmEvent>();
         m_eventDetailsOperation = new TaskSynchronizedOperation(ProcessAlarmEvents, ex => OnProcessException(MessageLevel.Warning, ex));
-
+        m_latLongLookup = new();
         Default = this;
     }
 
@@ -578,7 +590,7 @@ public class AlarmEngine : FacileActionAdapterBase
             // Get the latest version of the table of defined alarms
             DataSet alarmDataSet = new();
             alarmDataSet.Tables.Add(dataSource.Tables["Alarms"]!.Copy());
-
+            
             // Compare the latest alarm table with the previous
             // alarm table to determine if anything needs to be done
             if (DataSetEqualityComparer.Default.Equals(m_alarmDataSet, alarmDataSet))
@@ -692,6 +704,11 @@ public class AlarmEngine : FacileActionAdapterBase
             // Publish new alarm measurements
             if (alarmEvents.Count > 0)
                 OnNewMeasurements(alarmEvents);
+
+            // Update Lat/Long 
+            m_latLongLookup = dataSource.Tables["ActiveMeasurements"].Select().Where(row => InputMeasurementKeys.Contains(MeasurementKey.LookUpBySignalID(row.ConvertField<Guid>("SignalID"))))
+                .ToDictionary(row => row.ConvertField<Guid>("SignalID"), row => new double[] { row.ConvertField<double>("Latitude"), row.ConvertField<double>("Longitude") });
+
         });
     }
 
@@ -902,6 +919,9 @@ public class AlarmEngine : FacileActionAdapterBase
             SetPoint = alarm.SetPoint ?? 0,
             Severity = alarm.Severity,
             SignalTag = alarm.InputMeasurementKeys,
+            Name = alarm.TagName ?? string.Empty,
+            Threshold = alarm.SetPoint ?? 0,
+            Tags = alarm?.ActiveTags.Select((tag) => tag.SignalID.ToString()).ToArray() ?? new string[0],
         };
 
         IMeasurement measurement = new AlarmMeasurement
@@ -920,6 +940,15 @@ public class AlarmEngine : FacileActionAdapterBase
     {
         alarmEvent.EndTime = timestamp;
 
+        // Combine Tags to ensure any tags causing alarms in previous instance of Service (after restart) are not lost
+        HashSet<string> tags = new HashSet<string>(alarmEvent.Tags);
+
+        foreach (string tag in alarm?.ActiveTags.Select(t => t.SignalID.ToString()))
+        {
+            tags.Add(tag);
+        }
+        alarmEvent.Tags = tags.ToArray();
+
         IMeasurement measurement = new AlarmMeasurement
         {
             Timestamp = timestamp,
@@ -932,7 +961,7 @@ public class AlarmEngine : FacileActionAdapterBase
         return measurement;
     }
 
-    private static EventDetails GenerateAlarmDetails(AlarmEvent alarmEvent)
+    private EventDetails GenerateAlarmDetails(AlarmEvent alarmEvent)
     {
         return new EventDetails
         {
@@ -947,7 +976,11 @@ public class AlarmEngine : FacileActionAdapterBase
                 alarmEvent.SetPoint,
                 alarmEvent.SignalTag,
                 alarmEvent.Severity,
-                alarmEvent.Operation
+                alarmEvent.Operation,
+                alarmEvent.Name,
+                alarmEvent.Threshold,
+                alarmEvent.Tags,
+                LatLong = alarmEvent.Tags.Select((t) => m_latLongLookup.TryGetValue(Guid.Parse(t), out double[]? latLong) ? latLong : new[] { 0.0D, 0.0D }).ToArray()
             })
         };
     }
