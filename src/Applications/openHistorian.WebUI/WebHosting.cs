@@ -75,6 +75,7 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
     public void Initialize()
     {
         LoadSettings();
+        Default ??= this;
     }
 
     /// <inheritdoc />
@@ -180,4 +181,9 @@ public class WebHosting : ISupportLifecycle, IPersistSettings
         section.WebRoot = (FilePath.GetAbsolutePath(DefaultWebRoot), "Root directory for the web server.", "-r", "--WebRoot");
     #endif
     }
+
+    /// <summary>
+    /// Gets default (initial) instance of <see cref="WebHosting"/> class.
+    /// </summary>
+    public static WebHosting? Default { get; private set; }
 }
