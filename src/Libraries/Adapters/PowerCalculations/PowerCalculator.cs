@@ -33,6 +33,7 @@ using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
 using PhasorProtocolAdapters;
+using static PowerCalculations.SequenceCalculator;
 
 namespace PowerCalculations;
 
@@ -42,7 +43,7 @@ namespace PowerCalculations;
 [Description("Power Calculator: Calculates power and reactive power for synchrophasor measurements")]
 [UIResource("AdaptersUI", $".PowerCalculations.PowerCalculator.main.js")]
 [UIResource("AdaptersUI", $".PowerCalculations.PowerCalculator.chunk.js")]
-public class PowerCalculator : CalculatedMeasurementBase
+public class PowerCalculator : VICalculatedMeasurementBase
 {
     #region [ Members ]
 
@@ -50,17 +51,14 @@ public class PowerCalculator : CalculatedMeasurementBase
     private const double SqrtOf3 = 1.7320508075688772935274463415059D;
 
     // Fields
-    private MeasurementKey? m_voltageAngle;
-    private MeasurementKey? m_voltageMagnitude;
-    private MeasurementKey? m_currentAngle;
-    private MeasurementKey? m_currentMagnitude;
     private readonly List<double> m_powerSample = [];
     private readonly List<double> m_reactivePowerSample = [];
+    private Dictionary<Output, IMeasurement> m_OutputMap;
 
     // Important: Make sure output definition defines points in the following order
     private enum Output
     {
-        Power,
+        ActivePower,
         ReactivePower
     }
 
@@ -83,6 +81,17 @@ public class PowerCalculator : CalculatedMeasurementBase
     [Description("Define the sample size of the data to be monitored.")]
     [DefaultValue(5)]
     public int SampleSize { get; set; }
+
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Active Power.")]
+    [DefaultValue("")]
+    public IMeasurement ActivePower { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Reactive Power.")]
+    [DefaultValue("")]
+    public IMeasurement ReactivePower { get; set; }
 
     /// <summary>
     /// Gets the flag indicating if this adapter supports temporal processing.
@@ -144,43 +153,54 @@ public class PowerCalculator : CalculatedMeasurementBase
 
         Dictionary<string, string> settings = Settings;
 
+        if (m_VISets.Length != 1)
+            throw new InvalidOperationException("Exactly one VI phasor pair is required for the power calculator.");
+
+        // Validate output measurements
+        ValidateOutputMeasurements();
         // Load parameters
         TrackRecentValues = !settings.TryGetValue(nameof(TrackRecentValues), out string? setting) || setting.ParseBoolean();
 
         // Data sample size to monitor, in seconds
         SampleSize = settings.TryGetValue(nameof(SampleSize), out setting) ? int.Parse(setting) : 5;
 
-        if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
-            throw new InvalidOperationException("No input measurements were specified for the power calculator.");
-
-        // Load needed phase angle and magnitude measurement keys from defined InputMeasurementKeys
-        m_voltageAngle = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.VPHA).FirstOrDefault();
-        m_voltageMagnitude = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.VPHM).FirstOrDefault();
-        m_currentAngle = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.IPHA).FirstOrDefault();
-        m_currentMagnitude = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.IPHM).FirstOrDefault();
-
-        if (m_voltageAngle == null || m_voltageAngle.ID == 0)
-            throw new InvalidOperationException("No voltage angle input was defined - one voltage angle input measurement is required for the power calculator.");
-
-        if (m_voltageMagnitude == null || m_voltageMagnitude.ID == 0)
-            throw new InvalidOperationException("No voltage magnitude input was defined - one voltage magnitude input measurement is required for the power calculator.");
-
-        if (m_currentAngle == null || m_currentAngle.ID == 0)
-            throw new InvalidOperationException("No current angle input was defined - one current angle input measurement is required for the power calculator.");
-
-        if (m_currentMagnitude == null || m_currentMagnitude.ID == 0)
-            throw new InvalidOperationException("No current magnitude input measurement was defined - one current magnitude input measurement is required for the power calculator.");
-
-        // Make sure only these four phasor measurements are used as input (any others will be ignored)
-        InputMeasurementKeys = [m_voltageAngle, m_voltageMagnitude, m_currentAngle, m_currentMagnitude];
-
-        // Validate output measurements
-        if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
-            throw new InvalidOperationException("Not enough output measurements were specified for the power calculator, expecting measurements for the \"Calculated Power\" and the \"Calculated Reactive Power\" - in this order.");
-
         // Assign a default adapter name to be used if power calculator is loaded as part of automated collection
         if (string.IsNullOrWhiteSpace(Name))
-            Name = $"PC!{OutputMeasurements[(int)Output.Power].Key}";
+            Name = $"PC!{m_OutputMap[Output.ActivePower].Key}";
+    }
+
+    private void ValidateOutputMeasurements()
+    {
+        List<IMeasurement> measurementKeys = new();
+        Dictionary<string, string> settings = Settings;
+
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (settings.TryGetValue(Enum.GetNames<Output>()[i], out string setting))
+                measurementKeys.Add(AdapterBase.ParseOutputMeasurements(DataSource, true, setting).FirstOrDefault());
+            else
+                measurementKeys.Add(null);
+        }
+
+        if (!measurementKeys.Any(item => item is not null))
+        {
+            if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
+                throw new InvalidOperationException("Not enough output measurements were specified for the power calculator, expecting measurements for the \"ActivePower\" and \"ReactivePower\" - in this order.");
+
+            m_OutputMap = new Dictionary<Output, IMeasurement>();
+
+            foreach (Output o in Enum.GetValues<Output>())
+            {
+                m_OutputMap.Add(o, OutputMeasurements[(int)o]);
+            }
+            return;
+        }
+        m_OutputMap = new Dictionary<Output, IMeasurement>();
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (measurementKeys[i] is not null)
+                m_OutputMap.Add((Output)i, measurementKeys[i]);
+        }
     }
 
     /// <summary>
@@ -196,32 +216,36 @@ public class PowerCalculator : CalculatedMeasurementBase
         {
             ConcurrentDictionary<MeasurementKey, IMeasurement> measurements = frame.Measurements;
             double voltageMagnitude = 0.0D, voltageAngle = 0.0D, currentMagnitude = 0.0D, currentAngle = 0.0D;
+            IMeasurement magnitude = null, angle = null;
             bool allValuesReceived = false;
 
+            bool foundV = false;
+            for (int j = 0; j < m_VISets![0].VoltageMagnitude.Length; j++)
+            {
+                if (!measurements.TryGetValue(m_VISets![0].VoltageMagnitude[j], out magnitude) || !measurements.TryGetValue(m_VISets![0].VoltageAngle[j], out angle))
+                    continue;
+                if (double.IsNaN(magnitude.AdjustedValue) || double.IsNaN(angle.AdjustedValue) || !angle.ValueQualityIsGood() || ! magnitude.ValueQualityIsGood())
+                    continue;
+                foundV = true;
+            }
+
+
             // Get each needed value from this frame
-            if (measurements.TryGetValue(m_voltageMagnitude!, out IMeasurement? measurement) && measurement.ValueQualityIsGood())
+            if (foundV)
             {
                 // Get voltage magnitude value
-                voltageMagnitude = measurement.AdjustedValue;
+                voltageMagnitude = magnitude.AdjustedValue;
+                voltageAngle = angle.AdjustedValue;
 
-                if (measurements.TryGetValue(m_voltageAngle!, out measurement) && measurement.ValueQualityIsGood())
-                {
-                    // Get voltage angle value
-                    voltageAngle = measurement.AdjustedValue;
+                if (!measurements.TryGetValue(m_VISets![0].CurrentMagnitude, out magnitude) || !measurements.TryGetValue(m_VISets![0].CurrentAngle, out angle))
+                    return;
+                if (double.IsNaN(magnitude.AdjustedValue) || double.IsNaN(angle.AdjustedValue) || !angle.ValueQualityIsGood() || !magnitude.ValueQualityIsGood())
+                    return;
 
-                    if (measurements.TryGetValue(m_currentMagnitude!, out measurement) && measurement.ValueQualityIsGood())
-                    {
-                        // Get current magnitude value
-                        currentMagnitude = measurement.AdjustedValue;
+                currentMagnitude = magnitude.AdjustedValue;
+                currentAngle = angle.AdjustedValue;
 
-                        if (measurements.TryGetValue(m_currentAngle!, out measurement) && measurement.ValueQualityIsGood())
-                        {
-                            // Get current angle value
-                            currentAngle = measurement.AdjustedValue;
-                            allValuesReceived = true;
-                        }
-                    }
-                }
+                allValuesReceived = true;
             }
 
             if (!allValuesReceived)
@@ -267,13 +291,16 @@ public class PowerCalculator : CalculatedMeasurementBase
         }
         finally
         {
+            List<IMeasurement> outputMeasurements = new();
 
-            IMeasurement[] outputMeasurements = OutputMeasurements!;
-            Measurement powerMeasurement = Measurement.Clone(outputMeasurements[(int)Output.Power], power, frame.Timestamp);
-            Measurement stdevMeasurement = Measurement.Clone(outputMeasurements[(int)Output.ReactivePower], reactivePower, frame.Timestamp);
+            if (m_OutputMap.TryGetValue(Output.ActivePower, out IMeasurement output))
+                outputMeasurements.Add(Measurement.Clone(output, power, frame.Timestamp));
+
+            if (m_OutputMap.TryGetValue(Output.ReactivePower, out output))
+                outputMeasurements.Add(Measurement.Clone(output, reactivePower, frame.Timestamp));
 
             // Provide calculated measurements for external consumption
-            OnNewMeasurements([powerMeasurement, stdevMeasurement]);
+            OnNewMeasurements(outputMeasurements.ToArray());
         }
     }
 
