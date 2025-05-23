@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging.EventLog;
 
 using Gemstone.Threading;
 using Gemstone.Timeseries;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using openHistorian.Utility;
 
 namespace openHistorian;
@@ -35,11 +37,14 @@ internal partial class Program
             // Define settings for service components
             ServiceHost.DefineSettings(settings);
             DefineGeoSpatialDisplaySettings(settings);
+            DefineUserSpecificSettings(settings);
 
             // Bind settings to configuration sources
             settings.Bind(new ConfigurationBuilder()
                 .ConfigureGemstoneDefaults(settings)
                 .AddCommandLine(args, settings.SwitchMappings));
+
+            GenerateUserDefaults(settings);
 
             FailoverModule.PreventStartup();
 
@@ -94,6 +99,124 @@ internal partial class Program
         section.DefaultLongitude = (-85.3094, "Defines the default center longitude on the maps in the user interfaces.");
 
     }
+
+    private static void DefineUserSpecificSettings(Settings settings)
+    {
+        dynamic userSpecificSettings = settings["UserSettings"];
+        userSpecificSettings.ConfigFile = ("UserDefaultSettings.json", "Defines a JSON file used to load the user specific settings if the user has not changed them.");
+    }
+
+    private static void GenerateUserDefaults(Settings settings)
+    {
+        dynamic userSpecificSettings = settings["UserSettings"];
+
+        Environment.SpecialFolder specialFolder = Environment.SpecialFolder.CommonApplicationData;
+        string appDataPath = Environment.GetFolderPath(specialFolder);
+        string fullPath = Path.Combine(appDataPath, Common.ApplicationName, userSpecificSettings.ConfigFile);
+
+        if (System.IO.File.Exists(fullPath))
+            return;
+
+        JObject defaults = new JObject();
+
+        JObject general = new JObject();
+
+        general.Add("HomePage","System");
+        general.Add("TimeFormat", "YYYY-MM-DDTHH:mm:ss");
+        general.Add("ReloadInterval", 30);
+        general.Add("DefaultDuration", 30);
+        general.Add("DefaultDateTimeSetting", "startEnd");
+        general.Add("ThemeID", 1);
+        general.Add("UseAngleRef", false);
+        general.Add("RefAnglePointTag", "");
+        
+        defaults.Add("General", general);
+
+        JObject export = new JObject();
+
+        export.Add("FrameRate", 30);
+        export.Add("FrameRateUnit", "frames-per-second");
+        export.Add("ColumnHeaderTemplate", "{PointTag}");
+
+        defaults.Add("ExportData", export);
+
+        JObject tutorials = new JObject();
+        tutorials.Add("UseTutorials", true);
+
+        defaults.Add("Tutorials", tutorials);
+
+        JArray systemStatusWidgets = new JArray();
+
+        var systemWdgets = new[] {
+            new { Label = "Active Alarms", Enabled = true, ID = "Active Alarms" },
+            new { Label = "Frequency", Enabled = true, ID = "Frequency Graph" },
+            new { Label = "Device Status", Enabled = false, ID = "Device Status" },
+            new { Label = "Device Status", Enabled = true, ID = "Status Map" },
+            new { Label = "Frequency", Enabled = true, ID = "Frequency Map" },
+            new { Label = "Phasor Chart", Enabled = false, ID = "Phasor Chart" },
+            new { Label = "Failover Status", Enabled = false, ID = "Failover Status" } 
+        };
+
+        foreach (var widget in systemWdgets)
+        {
+            JObject jsonWidget = new JObject();
+            jsonWidget.Add("Label", widget.Label);
+            jsonWidget.Add("Enabled", widget.Enabled);
+            jsonWidget.Add("Setting", new JObject());
+            jsonWidget.Add("ID",widget.ID);
+            systemStatusWidgets.Add(jsonWidget);
+        }
+
+        defaults.Add("SystemStatusWidgets", systemStatusWidgets);
+
+        JArray deviceCards = new JArray();
+
+        var deviceCard = new[] {
+            new { Label = "Settings", IsOpenOnLoad = true, Type = "GeneralSettings" },
+            new { Label = "Measurement", IsOpenOnLoad = false, Type = "Measurement" },
+            new { Label = "Measurement Data", IsOpenOnLoad = false, Type = "MeasurementData" },
+            new { Label = "Phasor", IsOpenOnLoad = false, Type = "Phasor" },
+            new { Label = "Phasor Data", IsOpenOnLoad = false, Type = "PhasorData" },
+            new { Label = "Stats", IsOpenOnLoad = false, Type = "Stats" }
+        };
+
+        foreach (var card in deviceCard)
+        {
+            JObject jsonCard = new JObject();
+            jsonCard.Add("Label", card.Label);
+            jsonCard.Add("IsOpenOnLoad", card.IsOpenOnLoad);
+            jsonCard.Add("Type", card.Type);
+            deviceCards.Add(jsonCard);
+        }
+
+        defaults.Add("DeviceCards", deviceCards);
+
+        JArray adapterCards = new JArray();
+
+        var adapterCard = new[] {
+            new { Label = "Settings", IsOpenOnLoad = true, Type = "Settings", Enabled = true },
+            new { Label = "Status", IsOpenOnLoad = true, Type = "Status", Enabled = true },
+            new { Label = "Connection String", IsOpenOnLoad = true, Type = "ConnectionString", Enabled = true },
+            new { Label = "Input", IsOpenOnLoad = true, Type = "Input", Enabled = true },
+            new { Label = "Output", IsOpenOnLoad = true, Type = "Output", Enabled = true },
+        };
+
+        foreach (var card in adapterCard)
+        {
+            JObject jsonCard = new JObject();
+            jsonCard.Add("Label", card.Label);
+            jsonCard.Add("IsOpenOnLoad", card.IsOpenOnLoad);
+            jsonCard.Add("Type", card.Type);
+            jsonCard.Add("Enabled", card.Enabled);
+            adapterCards.Add(jsonCard);
+        }
+
+        defaults.Add("AdapterCards", adapterCards);
+
+        File.WriteAllText(fullPath, defaults.ToString());
+
+    }
+
     internal static void ConfigureLogging(ILoggingBuilder builder)
     {
         builder.ClearProviders();
