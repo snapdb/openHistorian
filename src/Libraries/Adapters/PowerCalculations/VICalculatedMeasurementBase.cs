@@ -160,22 +160,13 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
             if (currentAngles.Length != voltageAngles.Length)
                 throw new InvalidOperationException("A different number of current and voltage input measurement keys were supplied - the angles and magnitudes must be supplied in pairs, i.e., one current input measurement must be supplied for each voltage  input measurement");
 
-            m_VISets = new VISet[] {
-                new() 
-                {
-                    CurrentAngle = currentAngles[0],
-                    CurrentMagnitude = currentMagnitudes[0],
-                    VoltageAngle = voltageAngles[0..0],
-                    VoltageMagnitude = voltageMagnitudes[0..0]
-                },
-                new()
-                {
-                    CurrentAngle = currentAngles[1],
-                    CurrentMagnitude = currentMagnitudes[1],
-                    VoltageAngle = voltageAngles[1..1],
-                    VoltageMagnitude = voltageMagnitudes[1..1]
-                }
-            };
+            m_VISets = currentAngles.Select((angI,i) => new VISet()
+            {
+                CurrentAngle = angI,
+                CurrentMagnitude = currentMagnitudes[i],
+                VoltageAngle = voltageAngles[i..i],
+                VoltageMagnitude = voltageMagnitudes[i..i]
+            }).ToArray();
             InputMeasurementKeys = m_VISets.SelectMany((s) => s.VoltageMagnitude.Concat(s.VoltageAngle).Concat(new MeasurementKey[] { s.CurrentMagnitude, s.CurrentAngle })).ToArray();
         }
 
