@@ -65,7 +65,7 @@ public class AdapterCommandControllerBase<TIAdapter> :
         if (!AdapterCache<TIAdapter>.AdapterCommands.TryGetValue(adapterType, out AdapterCommandInfo? commandInfo))
             return NotFound();
 
-        return Ok(commandInfo.MethodAttributes.Where(item => item.attribute.UIAcessible)
+        return Ok(commandInfo.MethodAttributes.Where(item => item.attribute.UIAccessible)
             .Select(item => new
             {
                 Description = item.attribute.Description,
