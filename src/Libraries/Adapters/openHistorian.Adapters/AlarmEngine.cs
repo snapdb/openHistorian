@@ -196,7 +196,6 @@ public class AlarmEngine : FacileActionAdapterBase
         public int AlarmID;
         public Guid MeasurementID;
         public string Name;
-        public double Threshold;
         public string[] Tags;
 
         /// <summary>
@@ -220,7 +219,6 @@ public class AlarmEngine : FacileActionAdapterBase
                 AlarmID = reader.ReadInt32(),
                 MeasurementID = new Guid(reader.ReadBytes(16)),
                 Name = reader.ReadString(),
-                Threshold = reader.ReadDouble(),
                 Tags = reader.ReadString().Split(';'),
             };
         }
@@ -248,7 +246,6 @@ public class AlarmEngine : FacileActionAdapterBase
             writer.Write(instance.AlarmID);
             writer.Write(instance.MeasurementID.ToByteArray());
             writer.Write(instance.Name);
-            writer.Write(instance.Threshold);
             writer.Write(string.Join(";", instance.Tags));
         }
     }
@@ -920,7 +917,6 @@ public class AlarmEngine : FacileActionAdapterBase
             Severity = alarm.Severity,
             SignalTag = alarm.InputMeasurementKeys,
             Name = alarm.TagName ?? string.Empty,
-            Threshold = alarm.SetPoint ?? 0,
             Tags = alarm?.ActiveTags.Select((tag) => tag.SignalID.ToString()).ToArray() ?? new string[0],
         };
 
@@ -978,7 +974,6 @@ public class AlarmEngine : FacileActionAdapterBase
                 alarmEvent.Severity,
                 alarmEvent.Operation,
                 alarmEvent.Name,
-                alarmEvent.Threshold,
                 alarmEvent.Tags,
                 LatLong = alarmEvent.Tags.Select((t) => m_latLongLookup.TryGetValue(Guid.Parse(t), out double[]? latLong) ? latLong : new[] { 0.0D, 0.0D }).ToArray()
             })
