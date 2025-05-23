@@ -37,8 +37,6 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
-using System.Web.Http;
-using System.Web.Http.Results;
 using Gemstone;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Configuration;
@@ -57,6 +55,7 @@ using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 using AcceptVerbsAttribute = Microsoft.AspNetCore.Mvc.AcceptVerbsAttribute;
 using CancellationToken = System.Threading.CancellationToken;
 using Http = System.Net.WebRequestMethods.Http;
+using Azure;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -139,9 +138,9 @@ public class GrafanaAuthProxyController : ControllerBase, IDefineSettings
     [AcceptVerbs(Http.Get, Http.Head, Http.Post, Http.Put, Http.MkCol), Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.HttpPatch]
     [Route("")]
     //[EnableCors]
-    public async Task<HttpResponseMessage> ProxyRoot(CancellationToken cancellationToken)
+    public Task ProxyRoot(CancellationToken cancellationToken)
     {
-        return await ProxyPage("", cancellationToken);
+        return ProxyPage("", cancellationToken);
     }
 
     /// <summary>
@@ -153,105 +152,156 @@ public class GrafanaAuthProxyController : ControllerBase, IDefineSettings
     [AcceptVerbs(Http.Get, Http.Head, Http.Post, Http.Put, Http.MkCol), Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.HttpPatch]
     [Route("{*url}")]
     //[EnableCors]
-    public async Task<HttpResponseMessage> ProxyPage(string url, CancellationToken cancellationToken)
+    public async Task ProxyPage(string url, CancellationToken cancellationToken)
     {
         //HACK: Convert all calls to use HttpRequest instead of converted HttpRequestMessage
-        HttpRequestMessage request = await ConvertHTTPRequestAsync(Request, cancellationToken);
+        using HttpRequestMessage request = await ConvertHTTPRequestAsync(Request, cancellationToken);
+        HttpResponseMessage? response = null;
 
         // Handle special URL commands
         switch (url.ToLowerInvariant())
         {
             case "syncusers":
-                return HandleSynchronizeUsersRequest(request, User.Identity?.Name);
+                response = HandleSynchronizeUsersRequest(request, User.Identity?.Name);
+                break;
             case "servertime":
-                return HandleServerTimeRequest(request);
+                response = HandleServerTimeRequest(request);
+                break;
             case "logout":
-                return HandleGrafanaLogoutRequest(request);
+                response = HandleGrafanaLogoutRequest(request);
+                break;
             case "api/login/ping":
-                return HandleGrafanaLoginPingRequest(request, User.Identity?.Name);
+                response = HandleGrafanaLoginPingRequest(request, User.Identity?.Name);
+                break;
         }
 
-        if (url.StartsWith("servervar/", StringComparison.Ordinal))
-            return HandleServerVarRequest(request);
-
-        if (url.StartsWith("avatar/", StringComparison.OrdinalIgnoreCase))
-            return HandleGrafanaAvatarRequest(request);
-
-        if (url.StartsWith("keycoordinates", StringComparison.OrdinalIgnoreCase))
-            return HandleKeyCoordinatesRequest(request);
-
-        // Proxy all other requests
-        //SecurityPrincipal? securityPrincipal = RequestContext.Principal as SecurityPrincipal;
-
-        //if (securityPrincipal?.Identity is null)
-        //    throw new SecurityException($"User \"{RequestContext.Principal?.Identity?.Name}\" is unauthorized.");
-
-    #if ProxyCookies
-        // Forward any cookies from client request to Grafana
-        if (Request.Headers.Contains("Cookie"))
+        if (response is null)
         {
-            Request.Headers.Remove("Cookie");
-            Request.Headers.Add("Cookie", Request.Headers.GetCookies().Select(c => c.ToString()));
-        }
-    #endif
-
-        request.Headers.Add(s_authProxyHeaderName, User.Identity?.Name ?? "admin");
-        request.Headers.ConnectionClose = true;
-        request.RequestUri = new Uri($"{s_baseUrl}/{url}{request.RequestUri!.Query}");
-
-        if (request.Method == HttpMethod.Get)
-            request.Content = null;
-
-        HttpResponseMessage response = await s_http.SendAsync(request, cancellationToken);
-
-    #if ProxyCookies
-        // Forward any Set-Cookie headers from Grafana back to client
-        if (response.Headers.Contains("Set-Cookie"))
-        {
-            IEnumerable<string> cookies = response.Headers.GetValues("Set-Cookie");
-            response.Headers.Remove("Set-Cookie");
-
-            foreach (string cookie in cookies)
-                response.Headers.Add("Set-Cookie", cookie);
-        }
-    #endif
-
-        HttpStatusCode statusCode = response.StatusCode;
-
-        if (statusCode is HttpStatusCode.NotFound or HttpStatusCode.Unauthorized)
-        {
-            ThreadPool.QueueUserWorkItem(state =>
+            if (url.StartsWith("servervar/", StringComparison.Ordinal))
             {
-                string? userName = (state as ClaimsPrincipal)!.Identity?.Name;
+                response = HandleServerVarRequest(request);
+            }
+            else if (url.StartsWith("avatar/", StringComparison.OrdinalIgnoreCase))
+            {
+                response = HandleGrafanaAvatarRequest(request);
+            }
+            else if (url.StartsWith("keycoordinates", StringComparison.OrdinalIgnoreCase))
+            {
+                response = HandleKeyCoordinatesRequest(request);
+            }
+            else
+            {
+                // Proxy all other requests
+                //SecurityPrincipal? securityPrincipal = RequestContext.Principal as SecurityPrincipal;
 
-                if (string.IsNullOrEmpty(userName))
-                    return;
+                //if (securityPrincipal?.Identity is null)
+                //    throw new SecurityException($"User \"{RequestContext.Principal?.Identity?.Name}\" is unauthorized.");
+
+            #if ProxyCookies
+                // Forward any cookies from client request to Grafana
+                if (Request.Headers.Contains("Cookie"))
+                {
+                    Request.Headers.Remove("Cookie");
+                    Request.Headers.Add("Cookie", Request.Headers.GetCookies().Select(c => c.ToString()));
+                }
+            #endif
+
+                request.Headers.Add(s_authProxyHeaderName, User.Identity?.Name ?? "admin");
+                request.Headers.ConnectionClose = true;
+                request.RequestUri = new Uri($"{s_baseUrl}/{url}{request.RequestUri!.Query}");
+
+                if (request.Method == HttpMethod.Get)
+                    request.Content = null;
 
                 try
                 {
-                    // Validate user has a role defined in latest security context
-                    Dictionary<string, string[]> securityContext = s_latestSecurityContext ?? StartUserSynchronization(userName);
-
-                    //if (securityContext is null)
-                    //    throw new InvalidOperationException("Failed to load security context");
-
-                    string newUserMessage = securityContext.ContainsKey(userName) ? "" : $"New user \"{userName}\" encountered. ";
-
-                    OnStatusMessage($"{newUserMessage}Security context with {securityContext.Count:N0} users and associated roles queued for Grafana user synchronization.");
+                    response = await s_http.SendAsync(request, cancellationToken);
                 }
-                catch (Exception ex)
+                catch (HttpRequestException) {}
+                catch (ObjectDisposedException) {}
+
+            #if ProxyCookies
+                // Forward any Set-Cookie headers from Grafana back to client
+                if (response.Headers.Contains("Set-Cookie"))
                 {
-                    OnStatusMessage($"ERROR: Failed while queuing Grafana user synchronization for new user \"{userName}\": {ex.Message}");
+                    IEnumerable<string> cookies = response.Headers.GetValues("Set-Cookie");
+                    response.Headers.Remove("Set-Cookie");
+
+                    foreach (string cookie in cookies)
+                        response.Headers.Add("Set-Cookie", cookie);
                 }
-            },
-            User.Identity);
+            #endif
+            }
         }
 
-        // Always keep last visited Grafana dashboard in a client session cookie
-        if (url.StartsWith("api/dashboards/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(request.Headers.Referrer?.AbsolutePath))
-            response.Headers.AddCookies([new CookieHeaderValue(s_lastDashboardCookieName, $"{request.Headers.Referrer.AbsolutePath}") { Path = "/" }]);
+        if (response is null)
+            return;
 
-        return response;
+        try
+        {
+            HttpStatusCode statusCode = response.StatusCode;
+
+            if (statusCode is HttpStatusCode.NotFound or HttpStatusCode.Unauthorized)
+            {
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    string? userName = (state as ClaimsPrincipal)?.Identity?.Name;
+
+                    if (string.IsNullOrEmpty(userName))
+                        return;
+
+                    try
+                    {
+                        // Validate user has a role defined in latest security context
+                        Dictionary<string, string[]> securityContext = s_latestSecurityContext ?? StartUserSynchronization(userName);
+
+                        //if (securityContext is null)
+                        //    throw new InvalidOperationException("Failed to load security context");
+
+                        string newUserMessage = securityContext.ContainsKey(userName) ? "" : $"New user \"{userName}\" encountered. ";
+
+                        OnStatusMessage($"{newUserMessage}Security context with {securityContext.Count:N0} users and associated roles queued for Grafana user synchronization.");
+                    }
+                    catch (Exception ex)
+                    {
+                        OnStatusMessage($"ERROR: Failed while queuing Grafana user synchronization for new user \"{userName}\": {ex.Message}");
+                    }
+                },
+                User.Identity);
+            }
+
+            // Always keep last visited Grafana dashboard in a client session cookie
+            if (url.StartsWith("api/dashboards/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(request.Headers.Referrer?.AbsolutePath))
+                response.Headers.AddCookies([new CookieHeaderValue(s_lastDashboardCookieName, $"{request.Headers.Referrer.AbsolutePath}") { Path = "/" }]);
+
+            foreach (KeyValuePair<string, IEnumerable<string>> header in response.Headers)
+                HttpContext.Response.Headers[header.Key] = header.Value.ToArray();
+
+            foreach (KeyValuePair<string, IEnumerable<string>> header in response.Content.Headers)
+                HttpContext.Response.Headers[header.Key] = header.Value.ToArray();
+
+            // Prevent ASP.NET Core from writing its own headers
+            HttpContext.Response.Headers.Remove("transfer-encoding");
+
+            // Set content type
+            if (response.Content.Headers.ContentType != null)
+                HttpContext.Response.ContentType = response.Content.Headers.ContentType.ToString();
+
+            if (response.Content.Headers.ContentLength.GetValueOrDefault() > 0)
+            {
+                try
+                {
+                    await response.Content.CopyToAsync(HttpContext.Response.Body, cancellationToken);
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+            }
+        }
+        finally
+        {
+            response.Dispose();
+        }
     }
 
     #endregion
@@ -1020,8 +1070,15 @@ public class GrafanaAuthProxyController : ControllerBase, IDefineSettings
             return requestMessage;
 
         using MemoryStream stream = new();
-        
-        await request.Body.CopyToAsync(stream, cancellationToken);
+
+        try
+        {
+            await request.Body.CopyToAsync(stream, cancellationToken);
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
         stream.Position = 0;
         requestMessage.Content = new StreamContent(stream);
 
