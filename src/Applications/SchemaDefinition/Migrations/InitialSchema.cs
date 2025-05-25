@@ -112,7 +112,6 @@ public class InitialSchema : Migration
         Execute.DeleteView("IaonInputAdapter");
         Execute.DeleteView("IaonActionAdapter");
         Execute.DeleteView("IaonFilterAdapter");
-        Execute.DeleteView("CurrentAlarmState");
         Execute.DeleteView("IaonTreeView");
         Execute.DeleteView("DeviceStatusView");
         Execute.DeleteView("NEW_GUID");
@@ -620,10 +619,10 @@ public class InitialSchema : Migration
                     NULLIF(TRIM(Historian.TypeName), ''), 
                     CASE WHEN IsLocal = 1 THEN 'HistorianAdapters.LocalOutputAdapter' ELSE 'HistorianAdapters.RemoteOutputAdapter' END
                 ) AS TypeName, 
-                COALESCE(Historian.ConnectionString || ';', '') ||
-                COALESCE('instanceName=' || Historian.Acronym || ';', '') ||
-                COALESCE('sourceids=' || Historian.Acronym || ';', '') ||
-                COALESCE('measurementReportingInterval=' || Historian.MeasurementReportingInterval, '') AS ConnectionString
+                CONCAT(COALESCE(CONCAT(Historian.ConnectionString, ';'), ''),
+                COALESCE(CONCAT('instanceName=', Historian.Acronym, ';'), ''),
+                COALESCE(CONCAT('sourceids=', Historian.Acronym, ';'), ''),
+                COALESCE(CONCAT('measurementReportingInterval=', Historian.MeasurementReportingInterval), '')) AS ConnectionString
             FROM 
                 Historian
                 LEFT OUTER JOIN Runtime 
@@ -638,11 +637,11 @@ public class InitialSchema : Migration
         this.AddView("RuntimeDevice", @"
                 Runtime.ID,
                 Device.Acronym AS AdapterName,
-                COALESCE(Device.ConnectionString || ';', '') ||
-                COALESCE('isConcentrator=' || Device.IsConcentrator || ';', '') ||
-                COALESCE('accessID=' || Device.AccessID || ';', '') ||
-                COALESCE('timeZone=' || Device.TimeZone || ';', '') ||
-                COALESCE('timeAdjustmentTicks=' || Device.TimeAdjustmentTicks || ';', '') AS ConnectionString
+                CONCAT(COALESCE(CONCAT(Device.ConnectionString, ';'), ''),
+                COALESCE(CONCAT('isConcentrator=', Device.IsConcentrator, ';'), ''),
+                COALESCE(CONCAT('accessID=', Device.AccessID, ';'), ''),
+                COALESCE(CONCAT('timeZone=', Device.TimeZone, ';'), ''),
+                COALESCE(CONCAT('timeAdjustmentTicks=', Device.TimeAdjustmentTicks, ';'), '')) AS ConnectionString
             FROM 
                 Device
                 LEFT OUTER JOIN Runtime 
@@ -760,29 +759,29 @@ public class InitialSchema : Migration
                     WHEN 2 THEN 'PhasorProtocolAdapters.Iec61850_90_5.Concentrator'
                     ELSE 'PhasorProtocolAdapters.IeeeC37_118.Concentrator'
                 END AS TypeName,
-                COALESCE(OutputStream.ConnectionString || ';', '') ||
-                COALESCE('dataChannel={' || OutputStream.DataChannel || '};', '') ||
-                COALESCE('commandChannel={' || OutputStream.CommandChannel || '};', '') ||
-                COALESCE('idCode=' || OutputStream.IDCode || ';', '') ||
-                COALESCE('autoPublishConfigFrame=' || OutputStream.AutoPublishConfigFrame || ';', '') ||
-                COALESCE('autoStartDataChannel=' || OutputStream.AutoStartDataChannel || ';', '') ||
-                COALESCE('nominalFrequency=' || OutputStream.NominalFrequency || ';', '') ||
-                COALESCE('lagTime=' || OutputStream.LagTime || ';', '') ||
-                COALESCE('leadTime=' || OutputStream.LeadTime || ';', '') ||
-                COALESCE('framesPerSecond=' || OutputStream.FramesPerSecond || ';', '') ||
-                COALESCE('useLocalClockAsRealTime=' || OutputStream.UseLocalClockAsRealTime || ';', '') ||
-                COALESCE('allowSortsByArrival=' || OutputStream.AllowSortsByArrival || ';', '') ||
-                COALESCE('ignoreBadTimestamps=' || OutputStream.IgnoreBadTimeStamps || ';', '') ||
-                COALESCE('timeResolution=' || OutputStream.TimeResolution || ';', '') ||
-                COALESCE('allowPreemptivePublishing=' || OutputStream.AllowPreemptivePublishing || ';', '') ||
-                COALESCE('downsamplingMethod=' || OutputStream.DownsamplingMethod || ';', '') ||
-                COALESCE('dataFormat=' || OutputStream.DataFormat || ';', '') ||
-                COALESCE('coordinateFormat=' || OutputStream.CoordinateFormat || ';', '') ||
-                COALESCE('currentScalingValue=' || OutputStream.CurrentScalingValue || ';', '') ||
-                COALESCE('voltageScalingValue=' || OutputStream.VoltageScalingValue || ';', '') ||
-                COALESCE('analogScalingValue=' || OutputStream.AnalogScalingValue || ';', '') ||
-                COALESCE('performTimestampReasonabilityCheck=' || OutputStream.PerformTimeReasonabilityCheck || ';', '') ||
-                COALESCE('digitalMaskValue=' || OutputStream.DigitalMaskValue, '') AS ConnectionString
+                CONCAT(COALESCE(CONCAT(OutputStream.ConnectionString, ';'), ''),
+                COALESCE(CONCAT('dataChannel={', OutputStream.DataChannel, '};'), ''),
+                COALESCE(CONCAT('commandChannel={', OutputStream.CommandChannel, '};'), ''),
+                COALESCE(CONCAT('idCode=', OutputStream.IDCode, ';'), ''),
+                COALESCE(CONCAT('autoPublishConfigFrame=', OutputStream.AutoPublishConfigFrame, ';'), ''),
+                COALESCE(CONCAT('autoStartDataChannel=', OutputStream.AutoStartDataChannel, ';'), ''),
+                COALESCE(CONCAT('nominalFrequency=', OutputStream.NominalFrequency, ';'), ''),
+                COALESCE(CONCAT('lagTime=', OutputStream.LagTime, ';'), ''),
+                COALESCE(CONCAT('leadTime=', OutputStream.LeadTime, ';'), ''),
+                COALESCE(CONCAT('framesPerSecond=', OutputStream.FramesPerSecond, ';'), ''),
+                COALESCE(CONCAT('useLocalClockAsRealTime=', OutputStream.UseLocalClockAsRealTime, ';'), ''),
+                COALESCE(CONCAT('allowSortsByArrival=', OutputStream.AllowSortsByArrival, ';'), ''),
+                COALESCE(CONCAT('ignoreBadTimestamps=', OutputStream.IgnoreBadTimeStamps, ';'), ''),
+                COALESCE(CONCAT('timeResolution=', OutputStream.TimeResolution, ';'), ''),
+                COALESCE(CONCAT('allowPreemptivePublishing=', OutputStream.AllowPreemptivePublishing, ';'), ''),
+                COALESCE(CONCAT('downsamplingMethod=', OutputStream.DownsamplingMethod, ';'), ''),
+                COALESCE(CONCAT('dataFormat=', OutputStream.DataFormat, ';'), ''),
+                COALESCE(CONCAT('coordinateFormat=', OutputStream.CoordinateFormat, ';'), ''),
+                COALESCE(CONCAT('currentScalingValue=', OutputStream.CurrentScalingValue, ';'), ''),
+                COALESCE(CONCAT('voltageScalingValue=', OutputStream.VoltageScalingValue, ';'), ''),
+                COALESCE(CONCAT('analogScalingValue=', OutputStream.AnalogScalingValue, ';'), ''),
+                COALESCE(CONCAT('performTimestampReasonabilityCheck=', OutputStream.PerformTimeReasonabilityCheck, ';'), ''),
+                COALESCE(CONCAT('digitalMaskValue=', OutputStream.DigitalMaskValue), '')) AS ConnectionString
             FROM 
                 OutputStream
                 LEFT OUTER JOIN Runtime 
@@ -812,7 +811,7 @@ public class InitialSchema : Migration
         ");
 
         this.AddView("ActiveMeasurement", @"
-                COALESCE(Historian.Acronym, '__') || ':' || Measurement.PointID AS ID,
+                CONCAT(COALESCE(Historian.Acronym, '__'), ':', Measurement.PointID) AS ID,
                 Measurement.SignalID,
                 Measurement.PointTag,
                 Measurement.AlternateTag,
@@ -949,16 +948,6 @@ public class InitialSchema : Migration
             FROM RuntimeCustomFilterAdapter AS RCFA;
         ");
 
-        this.AddView("CurrentAlarmState", @"
-                Alarm.ID,
-                Alarm.Acronym,
-                Alarm.Type,
-                Alarm.State,
-                Alarm.ActiveSince,
-                Alarm.ActiveUntil
-            FROM Alarm;
-        ");
-
         this.AddView("DeviceStatusView", @"
                 DeviceStatus.ID,
                 Device.Name,
@@ -973,19 +962,6 @@ public class InitialSchema : Migration
                     ON DeviceStatus.StateID = DeviceState.ID
                 INNER JOIN Device
                     ON DeviceStatus.DeviceID = Device.ID;
-        ");
-
-        this.AddView("IaonTreeView", @"
-                Device.Acronym AS DeviceAcronym,
-                Device.Name AS DeviceName,
-                Device.ID AS DeviceID,
-                Device.Type AS DeviceType,
-                ParentDevice.Acronym AS ParentDeviceAcronym,
-                ParentDevice.Name AS ParentDeviceName,
-                ParentDevice.ID AS ParentDeviceID
-            FROM Device
-            LEFT OUTER JOIN Device AS ParentDevice 
-                ON Device.ParentID = ParentDevice.ID;
         ");
 
         this.AddView("FailoverNodeView", @"
@@ -1093,7 +1069,7 @@ public class InitialSchema : Migration
                 Measurement.SignalName, 
                 Measurement.SignalTypeSuffix,
                 Measurement.Label,
-                (COALESCE(Historian.Acronym, Device.Acronym, '__') || ':' || Measurement.PointID) AS ID,
+                CONCAT(COALESCE(Historian.Acronym, Device.Acronym, '__'), ':', Measurement.PointID) AS ID,
                 Device.CompanyID,
                 Device.CompanyName, 
                 Historian.Name AS HistorianName,
@@ -1143,6 +1119,11 @@ public class InitialSchema : Migration
                     substr('AB89', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 2) || '-' ||
                     hex(randomblob(6))
                 );
+        ");
+
+        IfDatabase(ProcessorId.SqlServer).Execute.Sql(@"
+            CREATE VIEW NEW_GUID AS
+                SELECT NEWID();
         ");
 
         this.AddGuidGeneration("Measurement", "SignalID");

@@ -143,5 +143,12 @@ public static class FluentExtension
                 UPDATE {0} SET {1} = (SELECT * FROM NEW_GUID) WHERE ROWID = NEW.ROWID AND {1} IS NULL;
             END;
         ", tableName, collumnName));
+
+        baseClass.IfDatabase(ProcessorId.SqlServer).Execute.Sql(string.Format(@"CREATE TRIGGER {0}_InsertDefault ON {0}
+            AFTER INSERT AS
+            BEGIN
+                UPDATE {0} SET {1} = NEWID() WHERE {1} IS NULL
+            END;
+        ", tableName, collumnName));
     }
 }
