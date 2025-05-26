@@ -13,15 +13,17 @@
     <AssemblyTitle>GrafanaAdapters</AssemblyTitle>
     <Configurations>Debug;Release;Development</Configurations>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputPath>..\..\..\build\$(Configuration)\Libraries\$(AssemblyName)</OutputPath>
+    <DocumentationFile>..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+  
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>..\..\..\..\Build\Output\$(Configuration)\Libraries\</OutputPath>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).XML</DocumentationFile>
     <NoWarn>NU5128; IDE0028</NoWarn>
     <Configuration>Debug Build</Configuration>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>..\..\..\..\Build\Output\$(Configuration)\Libraries\</OutputPath>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).XML</DocumentationFile>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Configuration>Debug Build</Configuration>
@@ -31,6 +33,7 @@
     <Optimize>False</Optimize>
     <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
   </PropertyGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\gemstone\expressions\src\Gemstone.Expressions\Gemstone.Expressions.csproj" />

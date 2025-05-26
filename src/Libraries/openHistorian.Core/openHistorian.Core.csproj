@@ -29,7 +29,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <OutputPath>..\..\..\build\$(Configuration)</OutputPath>
+    <OutputPath>..\..\..\build\$(Configuration)\Libraries\$(AssemblyName)</OutputPath>
     <DocumentationFile>..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 

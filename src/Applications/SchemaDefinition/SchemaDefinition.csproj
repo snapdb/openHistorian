@@ -22,10 +22,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <OutputPath>..\..\..\build\$(Configuration)</OutputPath>
-    <DocumentationFile>..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <OutputPath>..\..\..\build\$(Configuration)\Applications\$(AssemblyName)</OutputPath>
   </PropertyGroup>
-
+ 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Optimize>False</Optimize>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Development'">
     <DebugType>Full</DebugType>
     <Optimize>False</Optimize>
