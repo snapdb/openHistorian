@@ -25,12 +25,16 @@ DEFComputationAdapter adapter = new DEFComputationAdapter();
 Task<Tuple<AlarmMeasurement, EventDetails>?> adapterTask = adapter.LoadFile();
 
 DEFIdentificationAdapter idAdapter = new DEFIdentificationAdapter();
+DEFPowerworldVisualizerAdapter pwrAdapter = new DEFPowerworldVisualizerAdapter();
 await adapterTask.ContinueWith(tupe => {
     EventDetails computationDetail = tupe.Result.Item2;
     if (computationDetail is null)
         Console.WriteLine("Computation adapter could not resolve event details.");
     else
+    {
         idAdapter.TestEventDetail(tupe.Result.Item2);
+        pwrAdapter.CreateVisual(tupe.Result.Item2);
+    }
 });
 
 Console.WriteLine("Application Completed...");
