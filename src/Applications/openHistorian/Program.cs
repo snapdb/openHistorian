@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging.EventLog;
 
 using Gemstone.Threading;
 using Gemstone.Timeseries;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using openHistorian.Utility;
 
@@ -85,6 +84,7 @@ internal partial class Program
         }
     }
 
+    // TODO: This is not the best place for these settings, suggest moving to UI project or better location, then call from ServiceHost.DefineSettings
     private static void DefineGeoSpatialDisplaySettings(Settings settings)
     {
         dynamic section = settings["GeospatialDisplayServer"];
