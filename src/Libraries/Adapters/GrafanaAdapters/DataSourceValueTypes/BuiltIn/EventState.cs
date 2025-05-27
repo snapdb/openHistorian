@@ -67,6 +67,11 @@ public partial struct EventState
     public string Details;
 
     /// <summary>
+    /// Event type.
+    /// </summary>
+    public string Type;
+
+    /// <summary>
     /// Timestamp, in Unix epoch milliseconds, of the start time of the event.
     /// </summary>
     public double StartTime;

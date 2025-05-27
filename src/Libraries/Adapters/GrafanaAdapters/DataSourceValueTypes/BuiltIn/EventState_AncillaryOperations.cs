@@ -87,9 +87,9 @@ public partial struct EventState : IDataSourceValueType<EventState>
     // event state in context of Grafana query range. For example, the 'Time' will be at the start
     // of the Grafana query range if the event state started before the query range and is ongoing
     // so that ongoing events will be displayed in the Grafana UI for a given query range.
-    readonly object[] IDataSourceValueType.TimeSeriesValue => [EventID.ToString(), Details, StartTime, Duration, Time];
+    readonly object[] IDataSourceValueType.TimeSeriesValue => [EventID.ToString(), Details, Type, StartTime, Duration, Time];
 
-    readonly string[] IDataSourceValueType.TimeSeriesValueDefinition => [nameof(EventID), nameof(Details), nameof(StartTime), nameof(Duration), nameof(Time)];
+    readonly string[] IDataSourceValueType.TimeSeriesValueDefinition => [nameof(EventID), nameof(Details), nameof(Type), nameof(StartTime), nameof(Duration), nameof(Time)];
 
     readonly int IDataSourceValueType.ValueIndex => (int)PrimaryValueTarget;
 
@@ -321,6 +321,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         // mark event state time as the start of the query range
         double instanceTime = startTime <= 0.0D || startTime < queryStartTime ? queryStartTime : startTime;
         string eventDetails = null;
+        string eventType = "undefined";
 
         // Technically, multiple event states for the same target could have started and be ongoing before the
         // current Grafana query range or have started at the exact same time. Each of these event states must
@@ -336,7 +337,13 @@ public partial struct EventState : IDataSourceValueType<EventState>
                 // Query event details from database
                 using AdoDataConnection connection = new(ConfigSettings.Instance);
                 TableOperations<EventDetails> eventDetailsTable = new(connection);
-                eventDetails = (eventDetailsTable.QueryRecordWhere("EventGuid = {0}", eventID) ?? new EventDetails()).Details;
+                EventDetails eventDetailsRecord = eventDetailsTable.QueryRecordWhere("EventGuid = {0}", eventID) ?? new EventDetails();
+                
+                eventDetails = eventDetailsRecord.Details;
+                eventType = eventDetailsRecord.Type;
+
+                if (string.IsNullOrWhiteSpace(eventType))
+                    eventType = "undefined";
             }
             catch (Exception ex)
             {
@@ -372,6 +379,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
             EventID = eventID,
             Target = target,
             Details = details.ToString(),
+            Type = eventType,
             StartTime = startTime,  // Actual start time of event
             Duration = double.NaN,
             Time = instanceTime,    // Time of event state in context of Grafana query range
