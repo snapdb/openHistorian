@@ -186,11 +186,15 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         // ToDo: Record results
     }
 
-    private void ComputeRank(Gemstone.Numeric.Matrix<double> DE, List<string> PointTags, out double RankProb, out string RankArea, out string RankMsg, out int RankNSub)
+    private void ComputeRank(Gemstone.Numeric.Matrix<double> DE, string[] LineLabels, out double RankProb, out string RankArea, out string RankMsg, out int RankNSub)
     {
         double[] Correlation = new double[m_DeLabels.Count()];
         double[] Rank = new double[m_DeLabels.Count()];
         int nt = Math.Min(m_numDEComponents, m_DeNum.NColumns);
+
+        List<string> pointTags = new List<string>(LineLabels.Length);
+        foreach(int index in DE.GetColumn(0))
+            pointTags.Add(LineLabels[index]);
 
         for (int i = 0; i < m_DeLabels.Count(); i++)
         {
@@ -199,11 +203,11 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             if (m_DeLabels[i].Enabled == false)
                 continue;
 
-            var tags = m_DeLabels[i].Label.Take(nt).Intersect(PointTags).Select((t) => new LabelMatch()
+            var tags = m_DeLabels[i].Label.Take(nt).Intersect(pointTags).Select((t) => new LabelMatch()
             {
                 Label = t,
                 IndexLabel = m_DeLabels[i].Label.TakeWhile((l) => l != t).Count(),
-                IndexDE = PointTags.TakeWhile((l) => l != t).Count()
+                IndexDE = pointTags.TakeWhile((l) => l != t).Count()
             });
 
             if (tags.Count() == 0)
@@ -421,11 +425,6 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             m_computeRank.TryRunAsync();
         }
     }
-
-    #endregion
-
-    #region [ Static ]
-
 
     #endregion
 }
