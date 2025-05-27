@@ -95,7 +95,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
     class LineData 
     {
-        public string Label;
+        public string Substation;
+        public string LineID;
         public PhasorKey VoltageKey;
         public PhasorKey CurrentKey;
         public MeasurementKey FrequencyKey;
@@ -161,6 +162,12 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     bool IsRealData = true; // GenSet(10)
     double cdefTimeInterval = 0.5; // GenSet(13) 
 
+    private static string[] m_cpsdLabels = ["CPSD_LineNumber", "CPSD_Summation", "CPSD_RealPower_VoltageAngle", "CPSD_ReactivePower_VoltageMagnitude", "CPSD_ReactivePower_VoltageAngle", "CPSD_RealPower_VoltageMagnitude"];
+    private static string[] m_cdefLabels = ["CDEF_LineNumber", "CDEF_DECurve", "CDEF_DECurvePF", "CDEF_DECurveQV", "CDEF_DECurveQF", "CDEF_DECurvePV", "CDEF_DECurveNonNormal"];
+    private static string m_lineIds = "LineID_EMS";
+    private static string m_substation = "Subs";
+    private static string m_flagLabel= "MethodFlag";
+    private static string m_tAlarmLabel = "AlarmTime";
 
     /// <summary>
     /// The maximum size of the Buffer in second
@@ -258,14 +265,18 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_f = MatlabReader.Read<double>(pmuDataFile, "Fbus");
         MathNet.Numerics.LinearAlgebra.Matrix<double> pmu_map = MatlabReader.Read<double>(pmuDataFile, "I2U");
 
-        string[] labels = new string[pmu_map.RowCount];
+        string[] lineIds = new string[pmu_map.RowCount];
+        string[] substations = new string[pmu_map.RowCount];
+        string[] tags;
         int index = 0;
         string labelFile = "C:\\Users\\gcsantos\\Downloads\\DataAlarmLineLabels.csv";
         using (StreamReader reader = new(labelFile))
         {
             while (!reader.EndOfStream)
             {
-                labels[index] = reader.ReadLine().Trim();
+                tags = reader.ReadLine().Trim().Split(',');
+                lineIds[index] = tags[0];
+                substations[index] = tags[1];
                 index++;
             }
         }
@@ -293,7 +304,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     Angle = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:4")
                 },
                 FrequencyKey = MeasurementKey.CreateOrUpdate(Guid.NewGuid(), "MAT:5"),
-                Label = labels[ind]
+                Substation = substations[ind],
+                LineID = lineIds[ind]
             });
         }
 
@@ -542,8 +554,12 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             IEnumerable<IEnumerable<double>> currentM = pmuData.Select(d => d.Current.Select(c => c.Magnitude));
             IEnumerable<IEnumerable<double>> currentA = pmuData.Select(d => d.Current.Select(c => c.Angle.ToDegrees()));
             IEnumerable<IEnumerable<double>> fBus = pmuData.Select(d => d.Frequency);
-            string [] labels = pmuData.Select(v => v.Label).ToArray();
-            details.Add("LineLabels", JsonConvert.SerializeObject(labels));
+            string [] lineIds = pmuData.Select(v => v.LineID).ToArray();
+            details.Add(m_lineIds, JsonConvert.SerializeObject(lineIds));
+            string[] substations = pmuData.Select(v => v.Substation).ToArray();
+            details.Add(m_substation, JsonConvert.SerializeObject(substations));
+            details.Add(m_flagLabel, Enum.GetName(typeof(DEMethod), deMethodFlag));
+            details.Add(m_tAlarmLabel, Talarm.ToString("yyyyMMdd_HHmmss"));
 
             PMUDataCleaning(ref voltageM, ref voltageA, ref currentM, ref currentA, ref fBus, true);
 
@@ -583,12 +599,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 Matrix<double> voltageMagnitudeNoTrend = RemoveTrend(voltageMagnitude);
                 Matrix<double> voltageAngleNoTrend = RemoveTrend(voltageAngle);
                 Matrix<double> DE_cpsd = DE_CPSD(realPowerTrendless, reactivePowerTrendless, voltageMagnitudeNoTrend, voltageAngleNoTrend, voltageMean, kFactor, freqAlarm).Item1;
-                details.Add("CPSD_LineNumber", JsonConvert.SerializeObject(DE_cpsd.GetColumn(0)));
-                details.Add("CPSD_Summation", JsonConvert.SerializeObject(DE_cpsd.GetColumn(1)));
-                details.Add("CPSD_RealPower_VoltageAngle", JsonConvert.SerializeObject(DE_cpsd.GetColumn(2)));
-                details.Add("CPSD_ReactivePower_VoltageMagnitude", JsonConvert.SerializeObject(DE_cpsd.GetColumn(3)));
-                details.Add("CPSD_ReactivePower_VoltageAngle", JsonConvert.SerializeObject(DE_cpsd.GetColumn(4)));
-                details.Add("CPSD_RealPower_VoltageMagnitude", JsonConvert.SerializeObject(DE_cpsd.GetColumn(5)));
+                for (int col = 0; col < DE_cpsd.NColumns; col++)
+                    details.Add(m_cpsdLabels[col], JsonConvert.SerializeObject(DE_cpsd.GetColumn(col)));
             }
         }
 
@@ -611,12 +623,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 out Matrix<double> DE_curveQ,
                 out Matrix<double> DE_curveQF,
                 out Matrix<double> DE_curvePV);
-            details.Add("CDEF_LineNumber", JsonConvert.SerializeObject(DE_ranked.GetColumn(0)));
-            details.Add("CDEF_DECurve", JsonConvert.SerializeObject(DE_ranked.GetColumn(1)));
-            details.Add("CDEF_DECurvePF", JsonConvert.SerializeObject(DE_ranked.GetColumn(2)));
-            details.Add("CDEF_DECurveQV", JsonConvert.SerializeObject(DE_ranked.GetColumn(3)));
-            details.Add("CDEF_DECurveQF", JsonConvert.SerializeObject(DE_ranked.GetColumn(4)));
-            details.Add("CDEF_DECurvePV", JsonConvert.SerializeObject(DE_ranked.GetColumn(5)));
+            for (int col = 0; col < DE_ranked.NColumns; col++)
+                details.Add(m_cdefLabels[col], JsonConvert.SerializeObject(DE_ranked.GetColumn(col)));
         }
 
         AlarmMeasurement measurement = new AlarmMeasurement
@@ -1884,6 +1892,66 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     #endregion
 
     #region [ Static ]
+
+    /// <summary>
+    /// Creates a <see cref="List{string}"/> with the line IDs from DEFComputationAdapter. 
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static string[] ParseLineIds(JObject osc) => JsonConvert.DeserializeObject<string[]>(osc[m_lineIds].ToString());
+
+    /// <summary>
+    /// Creates a <see cref="List{string}"/> with the substations from DEFComputationAdapter. 
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static string[] ParseSubstations(JObject osc) => JsonConvert.DeserializeObject<string[]>(osc[m_substation].ToString());
+
+
+    /// <summary>
+    /// Creates a <see cref="string"/> with the alarm time, with a <see cref="DateTime"/> format string of yyyyMMdd_HHmmss
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static string ParseAlarmTime(JObject osc) => osc[m_tAlarmLabel].ToString();
+
+    /// <summary>
+    /// Creates a <see cref="Matrix{double}"/> with the CPSD output of DEFComputationAdapter. 
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static Matrix<double> ParseDeCpsd(JObject osc) => ParseDE(DEMethod.CPSD, osc);
+
+    /// <summary>
+    /// Creates a <see cref="Matrix{double}"/> with the CDEF output of DEFComputationAdapter. 
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static Matrix<double> ParseDeCdef(JObject osc) => ParseDE(DEMethod.CDEF, osc);
+
+    private static Matrix<double> ParseDE(DEMethod typeRequested, JObject osc)
+    {
+        // Get correct labels for parsing
+        string[] order;
+        switch (typeRequested) {
+            case DEMethod.CDEF: order = m_cdefLabels; break;
+            case DEMethod.CPSD: order = m_cpsdLabels; break;
+            default: throw new InvalidEnumArgumentException("Method enumeration not valid for parsing");
+        }
+
+        // If flag doesn't match, does not exist in object
+        DEMethod methodType;
+        if (!Enum.TryParse(osc[m_flagLabel].ToString(), true, out methodType) ||
+            (methodType != DEMethod.Both && methodType != typeRequested))
+            return new Matrix<double>(0, order.Length, 0);
+            
+        // Parse object
+        double[] buf = JsonConvert.DeserializeObject<double[]>(osc[order[0]].ToString());
+        Matrix<double> DE = new(buf.Count(), order.Length, 0);
+        for (int col = 0; col < DE.NColumns; col++)
+        {
+            if (col != 0)
+                buf = JsonConvert.DeserializeObject<double[]>(osc[order[col]].ToString());
+            for (int row = 0; row < DE.NRows; row++)
+                DE[row][col] = buf[row];
+        }
+        return DE;
+    }
 
 
     #endregion
