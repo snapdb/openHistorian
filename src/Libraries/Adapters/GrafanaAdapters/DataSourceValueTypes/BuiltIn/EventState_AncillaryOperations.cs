@@ -39,6 +39,7 @@ using SnapDB.Snap.Services;
 using SnapDB.Snap;
 using SnapDB.Snap.Services.Reader;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -605,7 +606,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         return (timestamp - s_baseTicks) / (double)Ticks.PerMillisecond;
     }
 
-    private static WeakReference<HistorianServer> s_historianServer;
+    private static readonly ConcurrentDictionary<string, WeakReference<HistorianServer>> s_historianServers;
     private static readonly string s_primaryHistorianInstanceName;
     private static readonly int s_alarmSignalTypeID;
     private static readonly ulong s_alarmSearchLimit;
@@ -616,19 +617,23 @@ public partial struct EventState : IDataSourceValueType<EventState>
     // consumers should not dispose this shared instance for best performance
     private static HistorianServer GetHistorianServerInstance(string instanceName)
     {
-        if (s_historianServer is not null && s_historianServer.TryGetTarget(out HistorianServer historianServer) && !historianServer.IsDisposed)
+        HistorianServer historianServer = null;
+
+        if (s_historianServers.TryGetValue(instanceName, out WeakReference<HistorianServer> weakReference) && weakReference.TryGetTarget(out historianServer) && !historianServer.IsDisposed)
             return historianServer;
 
         if (string.IsNullOrWhiteSpace(instanceName))
             instanceName = s_primaryHistorianInstanceName;
 
-        if (!LocalOutputAdapter.Instances.TryGetValue(instanceName, out LocalOutputAdapter adapterInstance) && !LocalOutputAdapter.Instances.IsEmpty)
-            adapterInstance = LocalOutputAdapter.Instances.Values.First();
+        if (LocalOutputAdapter.Instances.TryGetValue(instanceName, out LocalOutputAdapter adapterInstance) && adapterInstance is not null)
+        {
+            historianServer = adapterInstance.Server;
 
-        historianServer = adapterInstance?.Server;
-
-        if (historianServer is not null)
-            s_historianServer = new WeakReference<HistorianServer>(historianServer);
+            if (historianServer is null)
+                s_historianServers.TryRemove(instanceName, out _);
+            else
+                s_historianServers[instanceName] = new WeakReference<HistorianServer>(historianServer);
+        }
 
         return historianServer ?? throw new InvalidOperationException($"Failed to get historian server instance '{instanceName}'. Source adapter may still be initializing.");
     }
@@ -637,6 +642,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
     {
         const double DefaultAlarmSearchLimit = 1.0D;
 
+        s_historianServers = [];
         s_baseTicks = (ulong)UnixTimeTag.BaseTicks.Value;
 
         try
