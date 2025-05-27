@@ -168,21 +168,15 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     private void ComputeRank(EventDetails oscillation)
     {
         JObject osc = JObject.Parse(oscillation.Details);
+        IEnumerable<string> lineIds = DEFComputationAdapter.ParseLineIds(osc);
+        IEnumerable<string> substations = DEFComputationAdapter.ParseSubstations(osc);
 
-        Gemstone.Numeric.Matrix<double> cdef = ParseDE(
-            ["CDEF_LineNumber", "CDEF_DECurve", "CDEF_DECurvePF", "CDEF_DECurveQV", "CDEF_DECurveQF", "CDEF_DECurvePV"],
-            osc
-        );
-        Gemstone.Numeric.Matrix<double> cpsd = ParseDE(
-            ["CPSD_LineNumber", "CPSD_Summation", "CPSD_RealPower_VoltageAngle", "CPSD_ReactivePower_VoltageMagnitude", "CPSD_ReactivePower_VoltageAngle", "CPSD_RealPower_VoltageMagnitude"],
-            osc
-        );
+        string[] lineLabels = lineIds.Zip(substations, (id, sub) => $"{id}__{sub}").ToArray();
+        Gemstone.Numeric.Matrix<double> cpsd = DEFComputationAdapter.ParseDeCpsd(osc);
+        ComputeRank(cpsd, lineLabels, out double rankProbCpsd, out string rankAreaCpsd, out string rankMsgCpsd, out int rankNSubCpsd);
 
-        List<string> labels = JsonConvert.DeserializeObject<List<string>>(osc["LineLabels"].ToString());
-
-        ComputeRank(cpsd, labels, out double rankProbCpsd, out string rankAreaCpsd, out string rankMsgCpsd, out int rankNSubCpsd);
-
-        ComputeRank(cdef, labels, out double rankProbCdef, out string rankAreaCdef, out string rankMsgCdef, out int rankNSubCdef);
+        Gemstone.Numeric.Matrix<double> cdef = DEFComputationAdapter.ParseDeCdef(osc);
+        ComputeRank(cdef, lineLabels, out double rankProbCdef, out string rankAreaCdef, out string rankMsgCdef, out int rankNSubCdef);
         // ToDo: Record results
     }
 
