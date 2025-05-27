@@ -43,10 +43,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using Measurement = Gemstone.Timeseries.Measurement;
 using SignalType = Gemstone.Numeric.EE.SignalType;
-using System.Text.Json;
 
 namespace GrafanaAdapters.DataSourceValueTypes.BuiltIn;
 
@@ -243,7 +243,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
             double queryStartTime = ConvertToGrafanaTimestamp((ulong)queryParameters.StartTime.Ticks);
 
             // Create new event state
-            eventState = CreateEventState(instanceName, timeValueMap, target, pointID, flags, eventID, startTime, queryStartTime);
+            eventState = CreateEventState(timeValueMap, target, flags, eventID, startTime, queryStartTime);
 
             // Add new event state to time value map
             timeValueMap[eventState.Time] = eventState with
@@ -315,7 +315,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         }
     }
 
-    private static EventState CreateEventState(string instanceName, SortedList<double, EventState> timeValueMap, string target, ulong pointID, MeasurementStateFlags flags, Guid eventID, double startTime, double queryStartTime)
+    private static EventState CreateEventState(SortedList<double, EventState> timeValueMap, string target, MeasurementStateFlags flags, Guid eventID, double startTime, double queryStartTime)
     {
         // If the raised time is not valid or outside current query range, then
         // mark event state time as the start of the query range
@@ -433,13 +433,17 @@ public partial struct EventState : IDataSourceValueType<EventState>
         MeasurementStateFlags flags = MeasurementStateFlags.Normal;
         const ulong QuarterMillisecond = Ticks.PerMillisecond / 4L;
 
+        // Reading +/- quarter millisecond around the timestamp to ensure we capture the exact alarm state at the given time, this
+        // discrepancy is due to the fact that the Grafana timestamps have a resolution of 1ms and the historian timestamps have a
+        // resolution of 100-nanoseconds (10 million ticks per second), so we need to read a small range around the timestamp to
+        // account for rounding errors in the Grafana to openHistorian timestamp conversion.
         using TreeStream<HistorianKey, HistorianValue> currentValueStream = database.Read(timestamp - QuarterMillisecond, timestamp + QuarterMillisecond, pointIDs);
 
         // Interpret current value as alarm state
         if (currentValueStream.Read(key, value))
             (alarmed, eventID, flags) = value.AsAlarm;
         else
-            Debug.Fail( $"Failed to read current alarmed state for '{instanceName}:{pointID}' at '{new DateTime((long)timestamp, DateTimeKind.Utc):O}'");
+            Debug.Fail($"Failed to read current alarmed state for '{instanceName}:{pointID}' at '{new DateTime((long)timestamp, DateTimeKind.Utc):O}'");
 
         return (eventID, alarmed, flags);
     }
@@ -586,7 +590,7 @@ public partial struct EventState : IDataSourceValueType<EventState>
         {
             string target = pointIDTargets[pointID];
             SortedList<double, EventState> timeValueMap = timeValueMaps.GetOrAdd(target, _ => []);
-            EventState eventState = CreateEventState(instanceName, timeValueMap, target, pointID, flags, eventID, ConvertToGrafanaTimestamp(startTime), queryStartTime);
+            EventState eventState = CreateEventState(timeValueMap, target, flags, eventID, ConvertToGrafanaTimestamp(startTime), queryStartTime);
             timeValueMap[eventState.Time] = eventState;
         }
     }
