@@ -55,7 +55,6 @@ using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 using AcceptVerbsAttribute = Microsoft.AspNetCore.Mvc.AcceptVerbsAttribute;
 using CancellationToken = System.Threading.CancellationToken;
 using Http = System.Net.WebRequestMethods.Http;
-using Azure;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -135,7 +134,7 @@ public class GrafanaAuthProxyController : ControllerBase, IDefineSettings
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Proxied response.</returns>
-    [AcceptVerbs(Http.Get, Http.Head, Http.Post, Http.Put, Http.MkCol), Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.HttpPatch]
+    [AcceptVerbs(Http.Get, Http.Head, Http.Post, Http.Put, Http.MkCol), HttpDelete, HttpPatch]
     [Route("")]
     //[EnableCors]
     public Task ProxyRoot(CancellationToken cancellationToken)
@@ -149,31 +148,23 @@ public class GrafanaAuthProxyController : ControllerBase, IDefineSettings
     /// <param name="url">URL to proxy.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Proxied response.</returns>
-    [AcceptVerbs(Http.Get, Http.Head, Http.Post, Http.Put, Http.MkCol), Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.HttpPatch]
+    [AcceptVerbs(Http.Get, Http.Head, Http.Post, Http.Put, Http.MkCol), HttpDelete, HttpPatch]
     [Route("{*url}")]
     //[EnableCors]
     public async Task ProxyPage(string url, CancellationToken cancellationToken)
     {
         //HACK: Convert all calls to use HttpRequest instead of converted HttpRequestMessage
         using HttpRequestMessage request = await ConvertHTTPRequestAsync(Request, cancellationToken);
-        HttpResponseMessage? response = null;
 
         // Handle special URL commands
-        switch (url.ToLowerInvariant())
+        HttpResponseMessage? response = url.ToLowerInvariant() switch
         {
-            case "syncusers":
-                response = HandleSynchronizeUsersRequest(request, User.Identity?.Name);
-                break;
-            case "servertime":
-                response = HandleServerTimeRequest(request);
-                break;
-            case "logout":
-                response = HandleGrafanaLogoutRequest(request);
-                break;
-            case "api/login/ping":
-                response = HandleGrafanaLoginPingRequest(request, User.Identity?.Name);
-                break;
-        }
+            "syncusers" => HandleSynchronizeUsersRequest(request, User.Identity?.Name),
+            "servertime" => HandleServerTimeRequest(request),
+            "logout" => HandleGrafanaLogoutRequest(request),
+            "api/login/ping" => HandleGrafanaLoginPingRequest(request, User.Identity?.Name),
+            _ => null
+        };
 
         if (response is null)
         {
@@ -920,6 +911,7 @@ public class GrafanaAuthProxyController : ControllerBase, IDefineSettings
         return response;
     }
 
+    // ReSharper disable once UnusedParameter.Local
     private static HttpResponseMessage HandleGrafanaLoginPingRequest(HttpRequestMessage request, string? userName)
     {
         // TODO: Fix user security check
