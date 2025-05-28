@@ -44,14 +44,14 @@ namespace DataQualityMonitoring;
 /// <summary>
 /// Action adapter that generates alarm measurements based on alarm definitions from the database.
 /// </summary>
-[Description("DEF Identification: uses the computed Dissipating Energy Flow to identify the source of an oscillation")]
+[Description("DEF Powerworld Visualizer: uses the computed Dissipating Energy Flow to produce visualization files")]
 
 public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
 {
     #region [ Members ]
 
-    private readonly TaskSynchronizedOperation m_computeRank;
-    private readonly ConcurrentQueue<EventDetails> m_computationQueue;
+    private readonly TaskSynchronizedOperation m_visualDE;
+    private readonly ConcurrentQueue<EventDetails> m_visualizationQueue;
 
     #endregion
 
@@ -62,8 +62,8 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     /// </summary>
     public DEFPowerworldVisualizerAdapter()
     {
-        m_computeRank = new TaskSynchronizedOperation(CreateVisual, ex => OnProcessException(MessageLevel.Error, ex));
-        m_computationQueue = new ConcurrentQueue<EventDetails>();
+        m_visualDE = new TaskSynchronizedOperation(CreateVisual, ex => OnProcessException(MessageLevel.Error, ex));
+        m_visualizationQueue = new ConcurrentQueue<EventDetails>();
     }
 
     #endregion
@@ -210,7 +210,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
 
     private async Task CreateVisual()
     {
-        while (m_computationQueue.TryDequeue(out EventDetails oscillation))
+        while (m_visualizationQueue.TryDequeue(out EventDetails oscillation))
             CreateVisual(oscillation);
     }
 
@@ -332,9 +332,9 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
             foreach (EventDetails oscillation in toBeProcessed)
             {
                 // Process the Oscillation
-                m_computationQueue.Enqueue(oscillation);
+                m_visualizationQueue.Enqueue(oscillation);
             }
-            m_computeRank.TryRunAsync();
+            m_visualDE.TryRunAsync();
         }
     }
 
