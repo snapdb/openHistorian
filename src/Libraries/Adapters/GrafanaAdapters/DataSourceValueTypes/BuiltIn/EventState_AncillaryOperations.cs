@@ -238,7 +238,17 @@ public partial struct EventState : IDataSourceValueType<EventState>
                 double lastRaisedTime = QueryLastRaisedState(instanceName, pointID, dataSourceValue.Time, eventID);
 
                 if (lastRaisedTime > 0UL)
+                {
                     startTime = lastRaisedTime;
+                }
+                else
+                {
+                    ulong currentTime = ConvertFromGrafanaTimestamp(dataSourceValue.Time);
+                    startTime = ConvertToGrafanaTimestamp(currentTime - s_alarmSearchLimit);
+                    string message = $"No previous alarm raised state found for event '{eventID}' on '{target}' before '{new DateTime((long)currentTime, DateTimeKind.Utc):O}' -- this is unexpected, start time set to ambiguous value based on search limit: {new DateTime((long)ConvertFromGrafanaTimestamp(startTime), DateTimeKind.Utc):O}.";
+                    s_log.Publish(MessageLevel.Warning, message);
+                    Debug.WriteLine($"WARNING: {message}");
+                }
             }
 
             double queryStartTime = ConvertToGrafanaTimestamp((ulong)queryParameters.StartTime.Ticks);
