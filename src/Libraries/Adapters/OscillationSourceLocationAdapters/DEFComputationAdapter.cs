@@ -24,6 +24,8 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Data;
+using DataQualityMonitoring.Functions;
+using DataQualityMonitoring.Model;
 using Gemstone;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Data;
@@ -69,13 +71,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     private readonly TaskSynchronizedOperation m_computeDEFOperation;
     private readonly ConcurrentQueue<Tuple<EventDetails,IEnumerable<LineData>>> m_oscillationQueue;
 
-    public class PhasorKey
-    {
-        public MeasurementKey Magnitude;
-        public MeasurementKey Angle;
-
-    }
-
     public class Line
     {
         public PhasorKey Current;
@@ -92,27 +87,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         public List<MeasurementKey> VMag;
         public List<MeasurementKey> IMag;
     };
-
-    class LineData 
-    {
-        public string Substation;
-        public string LineID;
-        public PhasorKey VoltageKey;
-        public PhasorKey CurrentKey;
-        public MeasurementKey FrequencyKey;
-
-        public IEnumerable<ComplexNumber> Voltage;
-        public IEnumerable<ComplexNumber> Current;
-        public IEnumerable<double> Frequency;
-        public IEnumerable<Ticks> Timestamp;
-    }
-
-    private enum DataStatus 
-    { 
-        Success = 0,
-        SuspectData = 1,
-        BadData = 2
-    }
 
     public enum TrendMethod
     {
@@ -722,7 +696,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             details.Add(m_flagLabel, Enum.GetName(typeof(DEMethod), DEMethodFlag));
             details.Add(m_tAlarmLabel, Talarm.ToString("yyyyMMdd_HHmmss"));
 
-            PMUDataCleaning(ref voltageM, ref voltageA, ref currentM, ref currentA, ref fBus, true);
+            PMUCleaning.PMUDataCleaning(ref voltageM, ref voltageA, ref currentM, ref currentA, ref fBus, FramesPerSecond, true);
 
             double sqrt3 = Math.Sqrt(3); // to convert to phase to phase
             voltageM = voltageM.Select(col => col.Select(val => val * sqrt3));
@@ -826,7 +800,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         Tend = 0;
         Pline = new List<double>();
 
-        pmuCond = PMUDataCleaning(alarmVoltage, alarmCurrent, alarmFrequency, false);
+        pmuCond = PMUCleaning.PMUDataCleaning(alarmVoltage, alarmCurrent, alarmFrequency, FramesPerSecond, false);
         timeCond = DataStatus.Success;
         trippingCond = DataStatus.Success;
 
@@ -841,7 +815,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
         //Calculate Pline 3 Phase MW Flow
         Pline = alarmVoltage.Zip(alarmCurrent, (v, i) => (v*i.Conjugate * 3.0 / 1000000.0).Real);
-        Pline = InterpolateNaN(RemoveOutliers(Pline));
+        Pline = DataCleaning.InterpolateNaN(DataCleaning.RemoveOutliers(Pline));
 
         double Amax;
        
@@ -1209,232 +1183,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         int nStart = (int)Math.Floor(fs*Tstart);
         int nEnd = (int)Math.Ceiling(fs*Tend) + 1;
         return data.Skip(nStart).Take(nEnd - nStart);
-    }
-
-    /// <summary>
-    /// Clean PMU data and identify bad PMU data
-    /// </summary>
-    /// <param name="data"></param>
-    /// <param name="TNaN"></param>
-    /// <param name="epsilon1"></param>
-    /// <param name="epsilon2"></param>
-    /// <param name="result"></param>
-    /// <returns></returns>
-    private IEnumerable<IEnumerable<double>> PMU_Cleaning(IEnumerable<IEnumerable<double>> data, double TNaN, double epsilon1, double epsilon2, bool cleanOutlier, out DataStatus condition)
-    {
-        condition = DataStatus.Success;
-        int nVariables = data.Count();
-        int nSamples = data.First().Count();
-
-        IEnumerable<IEnumerable<double>> cleanedData = data.Select(d => {
-            double median = d.NaNAwareMedian(true);
-            int nStalled = d.Count((p) => Math.Abs(p) < epsilon1);
-            int nZero = d.Count((p) => Math.Abs(p - median) < epsilon2);
-
-            if (nStalled > TNaN * nSamples || nZero > TNaN * nSamples)
-                return d.Select(p => double.NaN);
-            
-            return d;
-        });
-
-        cleanedData = cleanedData.Select(d => d.Select((v) => (Math.Abs(v) < 0.000001 ? double.NaN : v)));
-        
-        cleanedData = cleanedData.Select((d) => (d.Count((v) => double.IsNaN(v)) > TNaN* nSamples ? d.Select((v) => 1e-8) : d));
-
-        if (nVariables == 1)
-        {
-            double min = cleanedData.First().Min();
-            double max = cleanedData.First().Max();
-
-            if (Math.Abs(min - max) < 0.00005)
-            {
-                condition = DataStatus.BadData;
-                return data;
-            }
-
-        }
-
-        // ind = sum(isnan(In1)) == length(In1); used later....
-        if (cleanOutlier)
-        {
-            cleanedData = cleanedData.Select(d => RemoveOutliers(d,0.05));
-        }
-
-        // Handle Sitouation where First sample is NaN
-        cleanedData = cleanedData.Select((d) => {
-            if (!double.IsNaN(d.First()))
-                return d;
-            
-            IEnumerable<Tuple<double,double>> inpData = d.Select((v,i) => new Tuple<double,double>(v,i)).Where((v) => !double.IsNaN(v.Item1)).Take(2*FramesPerSecond);
-            
-            double a, b;
-            CurveFit.LeastSquares(inpData.Select(v => v.Item1).ToArray(), inpData.Select(v => v.Item2).ToArray(), out a, out b);
-            int n = d.TakeWhile((v) => double.IsNaN(v)).Count() - 1;
-
-            return d.Select((v,i) => (i<=n? a*i+b: v));
-        });
-
-        //Handle the situation when the last sample is NaN
-        cleanedData = cleanedData.Select((d) => {
-            if (!double.IsNaN(d.Last()))
-                return d;
-
-            IEnumerable<Tuple<double, double>> inpData = d.Reverse().Select((v, i) => new Tuple<double, double>(v, i)).Where((v) => !double.IsNaN(v.Item1)).Take(2 * FramesPerSecond);
-
-            double a, b;
-            CurveFit.LeastSquares(inpData.Select(v => v.Item1).ToArray(), inpData.Select(v => v.Item2).ToArray(), out a, out b);
-            int n = d.TakeWhile((v) => double.IsNaN(v)).Count() - 1;
-
-            return d.Select((v, i) => ((d.Count() - i - 1) <= n ? a * (d.Count() - i - 1) + b : v));
-        });
-
-        cleanedData = cleanedData.Select((d,i) =>
-        {
-            if (!d.Any(v => !double.IsNaN(v)))
-                return d.Select((v) => 0.0001);
-          
-            return InterpolateNaN(d);
-        });
-
-        return cleanedData;
-    }
-
-    /// <summary>
-    /// use PCHip to interpolate data in NaN Locations
-    /// </summary>
-    /// <param name="data"></param>
-    /// <returns></returns>
-    private IEnumerable<double> InterpolateNaN(IEnumerable<double> data)
-    {
-        List<int> NaNIndices = data.Select((v, i) => new { v, i }).Where((v) => double.IsNaN(v.v)).Select((v) => v.i).ToList();
-        if (NaNIndices.Count() == data.Count() || NaNIndices.Count() == 0)
-            return data;
-
-        double[] estimates = Pchip.Interp1(data.Select((v, i) => new { v, i }).Where((v) => !double.IsNaN(v.v)).Select((v) => (double)v.i).ToArray(),
-               data.Where((v, i) => !double.IsNaN(v)).ToArray(),
-               NaNIndices.Select((v) => (double)v).ToArray());
-
-
-        return data.Select((v, i) =>
-        {
-            if (!double.IsNaN(v)) return v;
-
-            int index = NaNIndices.FindIndex((n) => n == i);
-
-            return (index >= 0 ? estimates[index] : double.NaN);
-        });
-    }
-
-    /// <summary>
-    /// Note this is skipping the Interpolate step for now.
-    /// </summary>
-    /// <param name="data"></param>
-    /// <param name="threshold"></param>
-    /// <returns></returns>
-    private IEnumerable<double> RemoveOutliers(IEnumerable<double> data, double threshold = 0.05, IEnumerable<int>? ind = null)
-    {
-        int nThreshold = (int)Math.Floor(data.Count() * threshold);
-        if (ind is null || ind.Count() == 0)
-            ind = data.Select((v, i) => new Tuple<double, int>(v, i)).OrderBy(v => Math.Abs(v.Item1)).Take(nThreshold).Select(v => v.Item2);
-        IEnumerable<double> sampleData = data.Where((_, i) => !ind.Any(ii => ii == i));
-        double median = sampleData.NaNAwareMedian(false);
-        double stdev = sampleData.StandardDeviation();
-
-        double min = median - 6 * stdev;
-        double max = median + 6 * stdev; ;
-
-
-        return data.Select(v => {
-            if (v < min || v > max)
-                return double.NaN;
-            return v;
-        });
-    }
-
-    private DataStatus PMUDataCleaning(
-        ref IEnumerable<IEnumerable<double>> Vm,
-        ref IEnumerable<IEnumerable<double>> Va,
-        ref IEnumerable<IEnumerable<double>> Im,
-        ref IEnumerable<IEnumerable<double>> Ia,
-        ref IEnumerable<IEnumerable<double>> Fbus,
-        bool CleanOutlier)
-    {
-        DataStatus result = DataStatus.Success;
-
-        double[] medianMagnitude = Im.Select(p => p.NaNAwareMedian()).ToArray();
-        double medianOfMedians = medianMagnitude.NaNAwareMedian();
-
-        Im = Im.Select((d, i) =>
-        {
-            if (medianMagnitude[i] / medianOfMedians > 100)
-                return d.Select(_ => double.NaN);
-            return d;
-        });
-
-        DataStatus code;
-        Vm = PMU_Cleaning(Vm, 0.5, 100, 2, CleanOutlier, out code);
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        Va = PMU_Cleaning(Va, 0.5, 1, 0.05, CleanOutlier, out code);
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        Im = PMU_Cleaning(Im, 0.5, 3, 0.05, CleanOutlier, out code);
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        Ia = PMU_Cleaning(Ia, 0.5, 1, 0.05, CleanOutlier, out code);
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        Fbus = PMU_Cleaning(Fbus, 0.5, 48, 0.00005, CleanOutlier, out code);
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        return result;
-    }
-
-    private DataStatus PMUDataCleaning(IEnumerable<ComplexNumber> V, IEnumerable<ComplexNumber> I, IEnumerable<double> f, bool CleanOutlier)
-    { 
-        DataStatus result = DataStatus.Success;
-
-        DataStatus code;
-        IEnumerable<double> Vm = PMU_Cleaning(new List<IEnumerable<double>>() { V.Select(p => p.Magnitude) },0.5,100,2,CleanOutlier,out code).First();
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        IEnumerable<double> Va = PMU_Cleaning(new List<IEnumerable<double>>() { V.Select(p => p.Angle).Unwrap().Select(a => a.ToDegrees()) }, 0.5, 1, 0.05, CleanOutlier, out code).First();
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        IEnumerable<double> Im = PMU_Cleaning(new List<IEnumerable<double>>() { I.Select(p => p.Magnitude) }, 0.5, 3, 0.05, CleanOutlier, out code).First();
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        IEnumerable<double> Ia = PMU_Cleaning(new List<IEnumerable<double>>() { I.Select(p => p.Angle).Unwrap().Select(a => a.ToDegrees()) }, 0.5, 1, 0.05, CleanOutlier, out code).First();
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        IEnumerable<double> Fbus = PMU_Cleaning(new List<IEnumerable<double>>() { f }, 0.5, 48, 0.00005, CleanOutlier, out code).First();
-
-        if (code == DataStatus.BadData || result == DataStatus.BadData)
-            result = DataStatus.BadData;
-
-        V = Vm.Zip(Va, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m));
-        I = Im.Zip(Ia, (m, a) => new ComplexNumber(Angle.FromDegrees(a), m));
-        f = Fbus;
-
-        return result;
     }
 
     private Matrix<double> BandPassFilter(Matrix<double> data, double fDominant)
