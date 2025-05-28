@@ -168,6 +168,28 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
         get; set;
     }
 
+    /// <summary>
+    /// Text portion of the output visualization file for CDEF
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue("DE_NEPEX")]
+    [Description("Text portion of the output visualization file for CDEF")]
+    public string CDEFLabel
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Text portion of the output visualization file for CPSD
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue("DE_NEPEXcpsd")]
+    [Description("Text portion of the output visualization file for CPSD")]
+    public string CPSDLabel
+    {
+        get; set;
+    }
+
     #endregion
 
     #region [ Methods ]
@@ -217,12 +239,12 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
             if (VisualizeCDEF)
             {
                 Matrix<double> cdef = DEFComputationAdapter.ParseDeCdef(osc);
-                cdefJpg = CreateVisual(cdef, lineLabels, "DE_NEPEX", alarmTime, simAutoConnection, scriptCommandMethod);
+                cdefJpg = CreateVisual(cdef, lineLabels, CDEFLabel, alarmTime, simAutoConnection, scriptCommandMethod);
             }
             if (VisualizeCPSD)
             {
                 Matrix<double> cpsd = DEFComputationAdapter.ParseDeCpsd(osc);
-                cpsdJpg = CreateVisual(cpsd, lineLabels, "DE_NEPEXcpsd", alarmTime, simAutoConnection, scriptCommandMethod);
+                cpsdJpg = CreateVisual(cpsd, lineLabels, CPSDLabel, alarmTime, simAutoConnection, scriptCommandMethod);
             }
         }
         finally
