@@ -34,9 +34,6 @@ using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Timeseries.Model;
-using MathNet.Numerics.LinearAlgebra.Complex;
-using MathNet.Numerics.Statistics;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PhasorProtocolAdapters;
 using ConfigSettings = Gemstone.Configuration.Settings;
@@ -53,18 +50,8 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
 {
     #region [ Members ]
 
-   
     private readonly TaskSynchronizedOperation m_computeRank;
     private readonly ConcurrentQueue<EventDetails> m_computationQueue;
-
-    private bool VisualizeCPSD = true; // ff31
-    private bool VisualizeCDEF = true; // ff26
-    private string ModelCaseFile = "model_pf_pwrflow_ttc_calculator_ver3211.aux"; // ff32
-    private string OneLineFile = "3211_oneline_rev22.pwd"; // ff28
-    private string DEFromFile = "DE_From.aux"; // fn5
-    private string DEToFile = "DE_To.aux"; // fn5
-    private int imageQuality = 80; // ff29, scale of 1-100, 100 being highest
-    private int imageResolution = 5; // ff30, [5,12] recommended
 
     #endregion
 
@@ -83,8 +70,103 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
 
     #region [ Properties ]
 
-    [ConnectionStringParameter()]
-    public string PowerworldScriptDirectory { get; set; } = string.Empty; // ff27
+    /// <summary>
+    /// Flag to control creation of CPSD Visualization Files
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(true)]
+    [Description("Flag to control creation of CPSD Visualization Files")]
+    public bool VisualizeCPSD
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Flag to control creation of CDEF Visualization Files
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(true)]
+    [Description("Flag to control creation of CDEF Visualization Files")]
+    public bool VisualizeCDEF
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Quality of the image; 1...100 with 100 being the highest quality image
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(80)]
+    [Description("Quality of the image; 1...100 with 100 being the highest quality image")]
+    public int ImageQuality
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// The image resolution scalar; recommended for this application 5..12
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(5)]
+    [Description("The image resolution scalar; recommended for this application 5..12")]
+    public int ImageResolution
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Directory which contains the powerworld scripts
+    /// </summary>
+    [ConnectionStringParameter]
+    [Description("Directory which contains the powerworld scripts")]
+    public string PowerworldScriptDirectory
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Power flow model file name
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue("model_pf_pwrflow_ttc_calculator_ver3211.aux")]
+    [Description("Power flow model file name")]
+    public string ModelCaseFile
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// One line diagram of ISO-NE system file name
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue("3211_oneline_rev22.pwd")]
+    [Description("One line diagram of ISO-NE system file name")]
+    public string OneLineFile
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Temporary file that holds DE input information file name
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue("DE_From.aux")]
+    [Description("Temporary file that holds DE input information file name")]
+    public string DEFromFile
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Temporary file that holds DE input information file name
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue("DE_To.aux")]
+    [Description("Temporary file that holds DE input information file name")]
+    public string DEToFile
+    {
+        get; set;
+    }
 
     #endregion
 
@@ -118,14 +200,13 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
         string alarmTime = DEFComputationAdapter.ParseAlarmTime(osc);
         string[] lineLabels = lineIds.Zip(substations, (i, s) => $"\"{s}|{i}\"").ToArray();
 
-        PowerworldScriptDirectory = "C:\\Users\\gcsantos\\source\\MATLAB\\m-code\\temp";
         // ToDo: Stop non-windows from using this before it throws an exception here?
         Type simAuto = Type.GetTypeFromProgID("pwrworld.SimulatorAuto");
         object simAutoConnection = Activator.CreateInstance(simAuto);
         if (simAutoConnection is null)
             throw new NullReferenceException("Unable to create connection to powerworld simAuto addon.");
-        string cdefJpg;
-        string cpsdJpg;
+        string? cdefJpg;
+        string? cpsdJpg;
         try
         {
             MethodInfo scriptCommandMethod = simAuto.GetMethod("RunScriptCommand");
@@ -151,8 +232,9 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
         // ToDo: Do something with jpgs made
     }
 
-    private string CreateVisual(Matrix<double> DE, string[] lineLabels, string label, string alarmTimeStamp, object simAutoConnection, MethodInfo scriptCommandMethod)
+    private string? CreateVisual(Matrix<double> DE, string[] lineLabels, string label, string alarmTimeStamp, object simAutoConnection, MethodInfo scriptCommandMethod)
     {
+        if (DE.NRows == 0) return null;
         CreatePowerworldInputFile(DE, lineLabels);
         // Load the rest of script for DE visualization
         scriptCommandMethod.Invoke(simAutoConnection, ["LoadAux(\"DE_VisualPrepare.aux\", CreateIfNotFound);"]);
@@ -167,9 +249,9 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
         // Switch to RUN mode to enable Dynamic Formatting
         scriptCommandMethod.Invoke(simAutoConnection, [$"EnterMode(RUN);"]);
         // Save oneline in JPG format
-        string jpgName = $"label_{alarmTimeStamp}.jpg";
+        string jpgName = $"{label}_{alarmTimeStamp}.jpg";
         string jpgpath = Path.Combine(PowerworldScriptDirectory, jpgName);
-        scriptCommandMethod.Invoke(simAutoConnection, [$"ExportOneline(\"{jpgName}\", \"{OneLineFile}\", JPG,,,YES,[{imageQuality.ToString()},{imageResolution.ToString()}]);"]);
+        scriptCommandMethod.Invoke(simAutoConnection, [$"ExportOneline(\"{jpgName}\", \"{OneLineFile}\", JPG,,,YES,[{ImageQuality.ToString()},{ImageResolution.ToString()}]);"]);
         return jpgpath;
     }
 
@@ -233,11 +315,6 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
             m_computeRank.TryRunAsync();
         }
     }
-
-    #endregion
-
-    #region [ Static ]
-
 
     #endregion
 }
