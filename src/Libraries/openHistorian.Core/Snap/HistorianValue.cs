@@ -88,8 +88,9 @@ public class HistorianValue : SnapTypeBase<HistorianValue>
     }
 
     /// <summary>
-    /// Type casts <see cref="Value1"/> and <see cref="Value2"/> into a 16 character string.
+    /// Type casts all values into a 20 character ASCII string.
     /// </summary>
+    /// 
     public string AsString
     {
         get

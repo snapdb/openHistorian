@@ -227,6 +227,13 @@ public class WebServer(WebServerConfiguration configuration)
             app.UseEmbeddedResources(routes => routes.MapWebRoot(webRoot));
         }
 
+        // Create branch to the export data handler. 
+        // All requests ending in .export will follow this branch.
+        app.MapWhen(context => context.Request.Path.ToString().EndsWith(".export"),
+            appBranch => {
+                appBranch.UseExportDataHandler();
+            });
+
         //app.UseHttpsRedirection();
 
         app.UseWebSockets();

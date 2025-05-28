@@ -116,6 +116,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sttp.gemstone", "..\..\..\s
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "sttp.core", "..\..\..\sttp\gsfapi\src\lib\sttp.core\sttp.core.shproj", "{5A705FBB-8702-4628-BD2E-9B04E4F7F517}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gemstone.COMTRADE", "..\..\..\gemstone\comtrade\src\Gemstone.COMTRADE\Gemstone.COMTRADE.csproj", "{FAA67283-8A79-30AB-9B9E-D304713967FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UpdateCOMTRADECounters", "Tools\UpdateCOMTRADECounters\UpdateCOMTRADECounters.csproj", "{7F5BBF4C-A27D-4367-9D1E-95AEA45EC58B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -335,6 +339,18 @@ Global
 		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Development|Any CPU.Build.0 = Development|Any CPU
 		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAA67283-8A79-30AB-9B9E-D304713967FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAA67283-8A79-30AB-9B9E-D304713967FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAA67283-8A79-30AB-9B9E-D304713967FC}.Development|Any CPU.ActiveCfg = Development|Any CPU
+		{FAA67283-8A79-30AB-9B9E-D304713967FC}.Development|Any CPU.Build.0 = Development|Any CPU
+		{FAA67283-8A79-30AB-9B9E-D304713967FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAA67283-8A79-30AB-9B9E-D304713967FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F5BBF4C-A27D-4367-9D1E-95AEA45EC58B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F5BBF4C-A27D-4367-9D1E-95AEA45EC58B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F5BBF4C-A27D-4367-9D1E-95AEA45EC58B}.Development|Any CPU.ActiveCfg = Release|Any CPU
+		{7F5BBF4C-A27D-4367-9D1E-95AEA45EC58B}.Development|Any CPU.Build.0 = Release|Any CPU
+		{7F5BBF4C-A27D-4367-9D1E-95AEA45EC58B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F5BBF4C-A27D-4367-9D1E-95AEA45EC58B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -381,6 +397,8 @@ Global
 		{94EDDBD9-1F72-47BD-A5A7-523DBC61A4EE} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{35B1ABA6-47B2-43BF-737A-64EFB7B7E585} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
 		{5A705FBB-8702-4628-BD2E-9B04E4F7F517} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{FAA67283-8A79-30AB-9B9E-D304713967FC} = {1224947C-1CED-4EF2-9502-BC2D440F49D2}
+		{7F5BBF4C-A27D-4367-9D1E-95AEA45EC58B} = {D1DEBD67-8EB0-4119-A5DC-1F202475943C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F524668-5FE5-406F-B1D4-177A413C9DD6}

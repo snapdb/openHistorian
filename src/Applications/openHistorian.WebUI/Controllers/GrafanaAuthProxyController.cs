@@ -48,7 +48,6 @@ using Gemstone.StringExtensions;
 using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries.Model;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using openHistorian.Adapters;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
@@ -154,7 +153,7 @@ public class GrafanaAuthProxyController : ControllerBase, IDefineSettings
     public async Task ProxyPage(string url, CancellationToken cancellationToken)
     {
         //HACK: Convert all calls to use HttpRequest instead of converted HttpRequestMessage
-        using HttpRequestMessage request = await ConvertHTTPRequestAsync(Request, cancellationToken);
+        using HttpRequestMessage request = await Request.ConvertHTTPRequestAsync(cancellationToken);
 
         // Handle special URL commands
         HttpResponseMessage? response = url.ToLowerInvariant() switch
@@ -1047,34 +1046,6 @@ public class GrafanaAuthProxyController : ControllerBase, IDefineSettings
             return string.Join(", ", aggEx.InnerExceptions.Select(iex => iex.Message));
 
         return ex.Message;
-    }
-    
-    private static async Task<HttpRequestMessage> ConvertHTTPRequestAsync(HttpRequest request, CancellationToken cancellationToken)
-    {
-        HttpRequestMessage requestMessage = new();
-        requestMessage.Method = new HttpMethod(request.Method);
-        requestMessage.RequestUri = new Uri($"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}");
-
-        foreach (KeyValuePair<string, StringValues> header in request.Headers)
-            requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
-
-        if (request.ContentLength == 0)
-            return requestMessage;
-
-        using MemoryStream stream = new();
-
-        try
-        {
-            await request.Body.CopyToAsync(stream, cancellationToken);
-        }
-        catch (ObjectDisposedException)
-        {
-        }
-
-        stream.Position = 0;
-        requestMessage.Content = new StreamContent(stream);
-
-        return requestMessage;
     }
 
     #endregion

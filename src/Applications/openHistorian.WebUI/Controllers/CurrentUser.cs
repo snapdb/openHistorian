@@ -2,7 +2,7 @@
 using Gemstone.Configuration;
 using Gemstone.Data;
 using Gemstone.Data.Model;
-using MathNet.Numerics;
+//using MathNet.Numerics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.IdentityModel.Tokens;
