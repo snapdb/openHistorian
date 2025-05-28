@@ -214,7 +214,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             ComputeRank(oscillation);
     }
 
-    private void ComputeRank(EventDetails oscillation)
+    private async Task ComputeRank(EventDetails oscillation)
     {
         JObject osc = JObject.Parse(oscillation.Details);
         IEnumerable<string> lineIds = DEFComputationAdapter.ParseLineIds(osc);
@@ -226,7 +226,34 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
         Gemstone.Numeric.Matrix<double> cdef = DEFComputationAdapter.ParseDeCdef(osc);
         ComputeRank(cdef, lineLabels, out double rankProbCdef, out string rankAreaCdef, out string rankMsgCdef, out int rankNSubCdef);
-        // ToDo: Record results
+
+        await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        JObject details = new JObject();
+        details["CDEF"] = JsonConvert.SerializeObject(new
+        {
+            prob = rankProbCdef,
+            area = rankAreaCdef,
+            msg = rankMsgCdef,
+            Nsub = rankNSubCdef
+        });
+        details["CPSD"] = JsonConvert.SerializeObject(new
+        {
+            prob = rankProbCpsd,
+            area = rankAreaCpsd,
+            msg = rankMsgCpsd,
+            Nsub = rankNSubCpsd
+        });
+        EventDetails eventDetails = new EventDetails()
+        {
+            StartTime = oscillation.StartTime,
+            EndTime = oscillation.EndTime,
+            EventGuid = oscillation.EventGuid,
+            Type = "defOscillation",
+            MeasurementID = oscillation.MeasurementID,
+            Details = details.ToString()
+        };
+        TableOperations<EventDetails> tableOperations = new(connection);
+        tableOperations.AddNewRecord(eventDetails);
     }
 
     private void ComputeRank(Gemstone.Numeric.Matrix<double> DE, string[] LineLabels, out double RankProb, out string RankArea, out string RankMsg, out int RankNSub)
