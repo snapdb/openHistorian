@@ -114,14 +114,14 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         BadData = 2
     }
 
-    private enum TrendMethod
+    public enum TrendMethod
     {
         SubtractAverage = 0,
         HighPassFilter = 1,
         SteadyStateRemoval = 2
     }
 
-    private enum DEMethod
+    public enum DEMethod
     {
         CDEF = 0,
         CPSD = 1,
@@ -145,23 +145,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
     #region [ Properties ]
 
-    public double TimeMargin = 160; //GenSet(8)
-    public double Cmin_w = 5; //GenSet(7)
-    public double Cmin_l = 8; //GenSet(6)
-    public double Cmin_h = 8; //GenSet(5)
-    public double BandThreshold = 0.2; //GenSet(4)
-    public double MminP = 1.5001; // GenSet(2)
-    public double Mmin = 0.4; // GenSet(3)
-    double Tstep = 2.0D; //GenSet(1)
-    int AllowedNoiseRatio = 200; // GenSet(19)
-    double FrequencyThreshold = 0.07; // GenSet(29)
-    int NumberOfElementsForSourceIdentification = 4; // GenSet(31)
-    double IntialKFactor = -990.2; // GenSet(15)
-    TrendMethod RemoveTrendFlag = TrendMethod.SubtractAverage; // GenSet(18), logic to determine is <0 is steady state, =0 subtract average, >0 highpass
-    DEMethod deMethodFlag = DEMethod.Both; //GenSet(16)
-    bool IsRealData = true; // GenSet(10)
-    double cdefTimeInterval = 0.5; // GenSet(13) 
-
     private static string[] m_cpsdLabels = ["CPSD_LineNumber", "CPSD_Summation", "CPSD_RealPower_VoltageAngle", "CPSD_ReactivePower_VoltageMagnitude", "CPSD_ReactivePower_VoltageAngle", "CPSD_RealPower_VoltageMagnitude"];
     private static string[] m_cdefLabels = ["CDEF_LineNumber", "CDEF_DECurve", "CDEF_DECurvePF", "CDEF_DECurveQV", "CDEF_DECurveQF", "CDEF_DECurvePV", "CDEF_DECurveNonNormal"];
     private static string m_lineIds = "LineID_EMS";
@@ -179,6 +162,184 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         get;
         set;
     }
+
+    /// <summary>
+    /// Time step of a sliding window for FFT analysis
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(2.0D)]
+    [Description("Time step of a sliding window for FFT analysis")]
+    public double Tstep
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Minimal MW threshold of mode's magnitude
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(1.5001)]
+    [Description("Minimal MW threshold of mode's magnitude")]
+    public double MminP
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Minimal p.u. threshold of mode's magnitude.
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(0.4)]
+    [Description("Minimal p.u. threshold of mode's magnitude.")]
+    public double Mmin
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Threshold to separate low and high frequency bands.
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(0.2)]
+    [Description("Threshold to separate low and high frequency bands.")]
+    public double BandThreshold
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Number if oscillatory cycles for the selection of study interval for higher frequency band.
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(8)]
+    [Description("Number if oscillatory cycles for the selection of study interval for higher frequency band.")]
+    public double CMinH
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Number if oscillatory cycles for the selection of study interval for lower frequency band.
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(8)]
+    [Description("Number if oscillatory cycles for the selection of study interval for lower frequency band.")]
+    public double CMinL
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Number of oscillatory cycles to define the length of an interval for FFT scans.
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(5)]
+    [Description("Number of oscillatory cycles to define the length of an interval for FFT scans.")]
+    public double CMinW
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Time safery margin before Alarm time to capture start time in seconds.
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(160)]
+    [Description("Defines the number of frames per second expected by the adapter.")]
+    public double TimeMargin
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Signifies if the data under analysis is real PMU data or simulated.
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(true)]
+    [Description("Signifies if the data under analysis is real PMU data or simulated.")]
+    public bool IsRealData
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Length of time interval to be used for DEF/CDEF after band-pass filtering
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(0.5)]
+    [Description("Length of time interval to be used for DEF/CDEF after band-pass filtering")]
+    public double CdefTimeInterval
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// A factor related to R/X ratio of the network
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(-990.2)]
+    [Description("A factor related to R/X ratio of the network")]
+    public double IntialKFactor
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Method for DE calculation
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(DEMethod.Both)]
+    [Description("Method for DE calculation")]
+    public DEMethod DEMethodFlag
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Method for DE calculation
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(TrendMethod.HighPassFilter)]
+    [Description("Method for DE calculation")]
+    public TrendMethod RemoveTrendFlag
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Method for DE calculation
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(200)]
+    [Description("Method for DE calculation")]
+    public double AllowedNoiseRatio
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Frequency threshold; frequencies below this threshold are ignored (Hz)
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(0.07)]
+    [Description("Frequency threshold; frequencies below this threshold are ignored (Hz)")]
+    public double FrequencyThreshold
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Number of elements with highest energy in CPSD/PSD spectra to identify Type of Source
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(4)]
+    [Description("Number of elements with highest energy in CPSD/PSD spectra to identify Type of Source\r\n")]
+    public int NumberOfElementsForSourceIdentification
+    {
+        get; set;
+    }
+
+
 
     #endregion
 
@@ -558,7 +719,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             details.Add(m_lineIds, JsonConvert.SerializeObject(lineIds));
             string[] substations = pmuData.Select(v => v.Substation).ToArray();
             details.Add(m_substation, JsonConvert.SerializeObject(substations));
-            details.Add(m_flagLabel, Enum.GetName(typeof(DEMethod), deMethodFlag));
+            details.Add(m_flagLabel, Enum.GetName(typeof(DEMethod), DEMethodFlag));
             details.Add(m_tAlarmLabel, Talarm.ToString("yyyyMMdd_HHmmss"));
 
             PMUDataCleaning(ref voltageM, ref voltageA, ref currentM, ref currentA, ref fBus, true);
@@ -594,7 +755,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             kFactor = SelectKFactor(cumulativePQRatio, IntialKFactor, freqAlarm);
 
             // Apply CPSD Method
-            if (deMethodFlag == DEMethod.CPSD || deMethodFlag == DEMethod.Both)
+            if (DEMethodFlag == DEMethod.CPSD || DEMethodFlag == DEMethod.Both)
             {
                 Matrix<double> voltageMagnitudeNoTrend = RemoveTrend(voltageMagnitude);
                 Matrix<double> voltageAngleNoTrend = RemoveTrend(voltageAngle);
@@ -613,7 +774,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         else
             voltageAngle = BandPassFilter(voltageAngle, freqAlarm);
 
-        if (deMethodFlag == DEMethod.CDEF || deMethodFlag == DEMethod.Both)
+        if (DEMethodFlag == DEMethod.CDEF || DEMethodFlag == DEMethod.Both)
         {
             CDEF(realPower, reactivePower, voltageMagnitude, voltageAngle, frequencyBus, voltageMean, kFactor,
                 out Matrix<double> DE_ranked,
@@ -655,8 +816,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         IEnumerable<ComplexNumber> alarmVoltage = alarmData.Voltage;
         IEnumerable<double> alarmFrequency = alarmData.Frequency;
 
-        double Twin = Cmin_w / freqAlarm;
-        double Tth = (freqAlarm < BandThreshold ? Cmin_l : Cmin_h) / freqAlarm;
+        double Twin = CMinW / freqAlarm;
+        double Tth = (freqAlarm < BandThreshold ? CMinL : CMinH) / freqAlarm;
 
         Ts = Talarm - (long)((HysteresisAlarm + TimeMargin) * (double)Ticks.PerSecond);
         Te = Talarm + (long)((Tth - HysteresisAlarm + 3.0D * Twin) * (double)Ticks.PerSecond);
@@ -928,9 +1089,9 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
         double fav = Fint.Mean();
         if (fav < BandThreshold)
-            Tth = Cmin_l / fav;
+            Tth = CMinL / fav;
         else
-            Tth = Cmin_h / fav;
+            Tth = CMinH / fav;
 
         if (Tstart == Tend)
             timeCond = DataStatus.BadData;
@@ -1658,9 +1819,9 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     {
         List<double> time = Enumerable.Range(0, vMagnitude.NRows).Select(n => (double) n / FramesPerSecond).ToList();
         // Select middle part of interval to be used
-        int startInd = time.FindIndex(t => t > time.First() + Math.Floor((time.Last() - time.First()) * (1 - cdefTimeInterval) / 2));
+        int startInd = time.FindIndex(t => t > time.First() + Math.Floor((time.Last() - time.First()) * (1 - CdefTimeInterval) / 2));
         if (startInd > 0) startInd--;
-        int endInd = time.FindIndex(t => t > time.First() + Math.Floor((time.Last() - time.First()) * (1 + cdefTimeInterval) / 2));
+        int endInd = time.FindIndex(t => t > time.First() + Math.Floor((time.Last() - time.First()) * (1 + CdefTimeInterval) / 2));
         if (endInd == -1) endInd = time.Count - 1;
 
 
