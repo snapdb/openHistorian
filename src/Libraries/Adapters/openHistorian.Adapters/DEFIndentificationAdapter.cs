@@ -53,12 +53,6 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     private readonly TaskSynchronizedOperation m_computeRank;
     private readonly ConcurrentQueue<EventDetails> m_computationQueue;
 
-    private double m_minRank = 0.2; // genset(25)
-    private double m_rankRange = 0.3; // genset(26)
-    private int m_maxSubstations = 5; // genset(27)
-    private int m_numDEComponents = 15; // GENSET_28
-    private double m_CorrThresholdMin = 0.6; // genset(30)
-
     private Gemstone.Numeric.Matrix<double> m_DeNum;
     private List<DELabel> m_DeLabels;
 
@@ -105,6 +99,61 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
     [ConnectionStringParameter()]
     public string ClassificationFile { get; set; } = string.Empty;
+
+    /// <summary>
+    /// [p.u.] minimal rank for a valid classification
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(0.2)]
+    [Description("[p.u.] minimal rank for a valid classification")]
+    public double MinRank
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// [p.u.] range of rank for selection of substations; (0.2 ... 0.4)
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(0.3)]
+    [Description("[p.u.] range of rank for selection of substations; (0.2 ... 0.4)")]
+    public double RankRange
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Maximal number of substation for uncertain classification
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(5)]
+    [Description("Maximal number of substation for uncertain classification")]
+    public int MaxSubstations
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// Number of transmission elements with max DE to be used in classifier (5...15)
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(15)]
+    [Description("Number of transmission elements with max DE to be used in classifier (5...15)")]
+    public int NumDEComponents
+    {
+        get; set;
+    }
+
+    /// <summary>
+    /// [p.u.] minimal threshold for DE and MW pattern correlation
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue(0.6)]
+    [Description("[p.u.] minimal threshold for DE and MW pattern correlation")]
+    public double CorrThresholdMin
+    {
+        get; set;
+    }
 
     #endregion
 
@@ -184,7 +233,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     {
         double[] Correlation = new double[m_DeLabels.Count()];
         double[] Rank = new double[m_DeLabels.Count()];
-        int nt = Math.Min(m_numDEComponents, m_DeNum.NColumns);
+        int nt = Math.Min(NumDEComponents, m_DeNum.NColumns);
 
         List<string> pointTags = new List<string>(LineLabels.Length);
         foreach(int index in DE.GetColumn(0))
@@ -230,7 +279,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         RankArea = "N/A";
 
         // Rank is below threshold; no certain identification
-        if (rankMax.Item1 < m_minRank)
+        if (rankMax.Item1 < MinRank)
         {
             RankMsg = "Source: cannot be reasonably localized";
             RankNSub = 0;
@@ -247,7 +296,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             int take = -1;
             for (int index = 0; index < sortedRanks.Length; index++)
             {
-                if (sortedRanks[index] <= sortedRanks[0] * (1 - m_rankRange))
+                if (sortedRanks[index] <= sortedRanks[0] * (1 - RankRange))
                 {
                     take = index;
                     break;
@@ -310,13 +359,13 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
                 }
                 else
                 {
-                    int subTake = Math.Min(substationsUnique.Count(), m_maxSubstations);
+                    int subTake = Math.Min(substationsUnique.Count(), MaxSubstations);
                     string buf = string.Join(',', substationsUnique.Take(subTake).Select(s => s.Item1));
-                    if (RankNSub > m_maxSubstations + 3)
+                    if (RankNSub > MaxSubstations + 3)
                     {
                         RankMsg = $"Source: Area={RankArea} (confidence={Math.Round(RankProb * 100)}%); station cannot be reasonably localized";
                     }
-                    else if (RankNSub > m_maxSubstations && RankNSub <= m_maxSubstations + 3)
+                    else if (RankNSub > MaxSubstations && RankNSub <= MaxSubstations + 3)
                     {
                         RankMsg = $"Source: Area={RankArea} (confidence={Math.Round(RankProb * 100)}%); uncertain localization within multiple substations: {buf}...";
                     }
@@ -329,7 +378,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
         }
 
-        if (rankCorr < m_CorrThresholdMin)
+        if (rankCorr < CorrThresholdMin)
             RankMsg = "Source: cannot be reasonably localized";
 
         return;
