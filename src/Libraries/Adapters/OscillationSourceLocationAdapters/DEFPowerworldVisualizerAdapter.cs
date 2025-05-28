@@ -1,6 +1,6 @@
 ﻿
 //******************************************************************************************************
-//  DEFIdentificationAdapter.cs - Gbtc
+//  DEFPowerworldVisualizerAdapter.cs - Gbtc
 //
 //  Copyright © 2025, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -17,7 +17,7 @@
 //
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
-//  02/21/2025 - C. Lackner
+//  05/21/2025 - G. Santos
 //       Generated original version of source code.
 //******************************************************************************************************
 
