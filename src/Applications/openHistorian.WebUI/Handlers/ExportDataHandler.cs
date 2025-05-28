@@ -26,7 +26,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Runtime.Caching;
-using System.Security.Principal;
+using System.Security.Claims;
 using System.Text;
 using Gemstone;
 using Gemstone.Collections.CollectionExtensions;
@@ -38,11 +38,11 @@ using Gemstone.Diagnostics;
 using Gemstone.IO;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries.Model;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Primitives;
 using openHistorian.Adapters;
 using openHistorian.Net;
 using openHistorian.Snap;
-using openHistorian.WebUI;
 using openHistorian.WebUI.Controllers;
 using SnapDB.Snap;
 using SnapDB.Snap.Filters;
@@ -108,27 +108,35 @@ public class ExportDataHandler
 
     #region [ Methods ]
 
-    public async Task Invoke(HttpContext context, CancellationToken cancellationToken)
+    /// <summary>
+    /// Invokes the <see cref="ExportDataHandler"/> to process an HTTP request.
+    /// </summary>
+    /// <param name="context">HTTP context to process.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public Task Invoke(HttpContext context, CancellationToken cancellationToken)
     {
-        await ProcessRequestAsync(await context.Request.ConvertHTTPRequestAsync(cancellationToken), context.Response, cancellationToken);
+        return ProcessRequestAsync(context.Request, context.Response, context.User, cancellationToken);
     }
 
     /// <summary>
     /// Enables processing of HTTP web requests by a custom handler.
     /// </summary>
-    /// <param name="request">HTTP request message.</param>
+    /// <param name="request">HTTP request.</param>
     /// <param name="response">HTTP response.</param>
+    /// <param name="securityPrincipal">Security principal of the user making the request.</param>
     /// <param name="cancellationToken">Propagates notification from client that operations should be canceled.</param>
-    public async Task ProcessRequestAsync(HttpRequestMessage request, HttpResponse response, CancellationToken cancellationToken)
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task ProcessRequestAsync(HttpRequest request, HttpResponse response, ClaimsPrincipal securityPrincipal, CancellationToken cancellationToken)
     {
-        NameValueCollection requestParameters = request.RequestUri.ParseQueryString();
-        WindowsPrincipal? securityPrincipal = request.GetRequestContext().Principal as WindowsPrincipal;
+        NameValueCollection requestParameters = new Uri(request.GetEncodedUrl()).ParseQueryString();
 
         // Initial post request assumed to be all point IDs to query, to be cached by key on server. This operation
         // allows for very large point ID selection posts that could otherwise exceed URI parameter string limits.
-        if (request.Method == HttpMethod.Post)
+        if (request.Method.Equals("Post", StringComparison.OrdinalIgnoreCase))
         {
-            string content = request.Content is null ? "" : await request.Content.ReadAsStringAsync(cancellationToken);
+            using StreamReader reader = new(request.Body);
+            string content = await reader.ReadToEndAsync(cancellationToken);
             ulong[] pointIDs = content.Split(',').Select(ulong.Parse).ToArray();
             Array.Sort(pointIDs);
 
@@ -214,13 +222,12 @@ public class ExportDataHandler
     private static async Task ExportToStreamAsync(int fileFormat, bool useCFF, string fileName, PointMetadata metadata, NameValueCollection requestParameters, Stream responseStream, CancellationToken cancellationToken)
     {
         // See if operation state for this export can be found
-        string? connectionID = requestParameters["ConnectionID"];
         string? operationHandleParam = requestParameters["OperationHandle"];
 
         HistorianOperationState? operationState = null;
         Action? completeHistorianOperation = null;
 
-        if (!string.IsNullOrEmpty(connectionID) && uint.TryParse(operationHandleParam, out uint operationHandle))
+        if (uint.TryParse(operationHandleParam, out uint operationHandle))
         {
             HistorianOperationsController hubClient = new();
             operationState = hubClient.GetHistorianOperationState(operationHandle);
@@ -805,7 +812,7 @@ public class ExportDataHandler
         return labels;
     }
 
-    private static PointMetadata CreatePointMetadata(WindowsPrincipal? _, ulong[] pointIDs)
+    private static PointMetadata CreatePointMetadata(ClaimsPrincipal? _, ulong[] pointIDs)
     {
         const int MaxSqlParams = 50;
 
@@ -869,7 +876,7 @@ public class ExportDataHandler
         return metadata;
     }
 
-    private static string CachePointMetadata(WindowsPrincipal? securityPrincipal, ulong[] pointIDs)
+    private static string CachePointMetadata(ClaimsPrincipal? securityPrincipal, ulong[] pointIDs)
     {
         string pointCacheID = Guid.NewGuid().ToString();
         s_pointMetadataCache.Add(pointCacheID, CreatePointMetadata(securityPrincipal, pointIDs), new CacheItemPolicy { SlidingExpiration = TimeSpan.FromSeconds(30.0D) });
