@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Configurations>Debug;Release;Development</Configurations>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\..\gemstone\timeseries\src\Gemstone.Timeseries\Gemstone.Timeseries.csproj" Condition="'$(Configuration)'=='Development'" />
+    <PackageReference Include="Gemstone.Timeseries" Version="1.0.128" Condition="'$(Configuration)'!='Development'" />
+    
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="MathNet.Numerics.Data.Matlab" Version="5.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    
+    <ProjectReference Include="..\openHistorian.Adapters\openHistorian.Adapters.csproj" />
+    <ProjectReference Include="..\PhasorProtocolAdapters\PhasorProtocolAdapters.csproj" />
+  </ItemGroup>
+
+</Project>
