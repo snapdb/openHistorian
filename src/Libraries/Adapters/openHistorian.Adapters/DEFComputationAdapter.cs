@@ -1371,12 +1371,12 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     private Matrix<double> HighPassFilter(Matrix<double> series) 
     {
         // This uses a precalculated 8th order elliptical filter with highpass frequency of 0.06 Hz (GenSet(18)), Attenuation of Stopband of 60 dB, allowed ripple of 0.1 dB
-        /* precalculated gain (this shouldn't matter for our analysis)
-         * 1.35451505239885
-         * 2.59271745340576
-         * 14.5488376541948
-         * 0.0177771674651696
-         */
+        double[] gain = [
+            1.35451505239885,
+            2.59271745340576,
+            14.5488376541948,
+            0.0177771674651696
+        ];
         double[][] filtNum = [
             [1, -1.99909120534373,1],
             [1,-1.99949340650223,1],
@@ -1395,7 +1395,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             double[] newValues = col;
             for(int i = 0; i < filtNum.GetLength(0); i++)
             {
-                newValues = DigitalFilter.FiltFilt(filtNum[i], filtDem[i], newValues);
+                newValues = DigitalFilter.FiltFilt(filtNum[i].Select(n => n * gain[i]).ToArray(), filtDem[i], newValues);
             }
             return newValues;
         });
