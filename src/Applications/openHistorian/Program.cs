@@ -72,11 +72,11 @@ internal partial class Program
             IHost host = application.Build();
             host.Run();
 
-        #if DEBUG
+#if DEBUG
             Settings.Save(forceSave: true);
-        #else
+#else
             Settings.Save();
-        #endif
+#endif
         }
         finally
         {
@@ -121,7 +121,7 @@ internal partial class Program
 
         JObject general = new JObject();
 
-        general.Add("HomePage","System");
+        general.Add("HomePage", "System");
         general.Add("TimeFormat", "YYYY-MM-DDTHH:mm:ss");
         general.Add("ReloadInterval", 30);
         general.Add("DefaultDuration", 30);
@@ -129,7 +129,7 @@ internal partial class Program
         general.Add("ThemeID", 1);
         general.Add("UseAngleRef", false);
         general.Add("RefAnglePointTag", "");
-        
+
         defaults.Add("General", general);
 
         JObject export = new JObject();
@@ -149,12 +149,12 @@ internal partial class Program
 
         var systemWdgets = new[] {
             new { Label = "Active Alarms", Enabled = true, ID = "Active Alarms" },
-            new { Label = "Frequency", Enabled = true, ID = "Frequency Graph" },
-            new { Label = "Device Status", Enabled = false, ID = "Device Status" },
-            new { Label = "Device Status", Enabled = true, ID = "Status Map" },
-            new { Label = "Frequency", Enabled = true, ID = "Frequency Map" },
+            new { Label = "Frequency Graph", Enabled = true, ID = "Frequency Graph" },
+            new { Label = "Device Status Grid", Enabled = false, ID = "Device Status" },
+            new { Label = "Device Status Map", Enabled = true, ID = "Status Map" },
+            new { Label = "Frequency Map", Enabled = true, ID = "Frequency Map" },
             new { Label = "Phasor Chart", Enabled = false, ID = "Phasor Chart" },
-            new { Label = "Failover Status", Enabled = false, ID = "Failover Status" } 
+            new { Label = "Failover Status", Enabled = false, ID = "Failover Status" }
         };
 
         foreach (var widget in systemWdgets)
@@ -163,7 +163,7 @@ internal partial class Program
             jsonWidget.Add("Label", widget.Label);
             jsonWidget.Add("Enabled", widget.Enabled);
             jsonWidget.Add("Setting", new JObject());
-            jsonWidget.Add("ID",widget.ID);
+            jsonWidget.Add("ID", widget.ID);
             systemStatusWidgets.Add(jsonWidget);
         }
 
@@ -233,12 +233,12 @@ internal partial class Program
         // Add Gemstone diagnostics logging
         builder.AddGemstoneDiagnostics();
 
-    #if RELEASE
+#if RELEASE
         if (OperatingSystem.IsWindows())
         {
             builder.AddFilter<EventLogLoggerProvider>("Application", LogLevel.Warning);
             builder.AddEventLog();
         }
-    #endif
+#endif
     }
 }
