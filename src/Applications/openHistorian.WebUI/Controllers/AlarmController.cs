@@ -17,7 +17,7 @@ public class AlarmController : ModelController<Alarm>
     private readonly IServiceCommands m_serviceCommands = WebServer.ServiceCommands;
 
     /// <summary>
-    /// Creates new record in associated table.
+    /// Creates a new alarm record in table.
     /// </summary>
     /// <param name="record">The record to be created.</param>
     /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
@@ -62,6 +62,20 @@ public class AlarmController : ModelController<Alarm>
         Alarm? foundRecord = tableOperations.QueryRecord(tableOperations.GetNonPrimaryFieldRecordRestriction(alarmRecord));
         m_serviceCommands.ReloadConfig();
         return Ok(foundRecord ?? alarmRecord);
+    }
+
+    /// <summary>
+    /// Updates an alarm record
+    /// </summary>
+    /// <param name="record">The record to be updated.</param>
+    /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the new record <see cref="T"/> or <see cref="Exception"/>.</returns>
+    [HttpPatch, Route("")]
+    public override async Task<IActionResult> Patch([FromBody] Alarm record, CancellationToken cancellationToken)
+    {
+        IActionResult result = await base.Patch(record, cancellationToken);
+        m_serviceCommands.ReloadConfig();
+        return result;
     }
 
     /// <summary>
