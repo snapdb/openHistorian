@@ -138,7 +138,7 @@ public class WebServer(WebServerConfiguration configuration)
         services.AddMvc().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = null;
-
+            options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals | JsonNumberHandling.AllowReadingFromString;
             // Add option to only treat properties as required if they have a JsonRequired attribute,
             // this allows 'record' types with 'required' properties to deserialize normally
             options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
