@@ -1,0 +1,94 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Development" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Folder Name="/Applications/">
+    <Project Path="Applications/openHistorian.WebUI/openHistorian.WebUI.csproj" />
+    <Project Path="Applications/openHistorian/openHistorian.csproj">
+      <BuildDependency Project="../../../gemstone/communication/src/Gemstone.Communication/Gemstone.Communication.csproj" />
+      <BuildDependency Project="../../../gemstone/diagnostics/src/Gemstone.Diagnostics/Gemstone.Diagnostics.csproj" />
+      <BuildDependency Project="../../../gemstone/expressions/src/Gemstone.Expressions/Gemstone.Expressions.csproj" />
+      <BuildDependency Project="../../../gemstone/io/src/Gemstone.IO/Gemstone.IO.csproj" />
+      <BuildDependency Project="../../../gemstone/numeric/src/Gemstone.Numeric/Gemstone.Numeric.csproj" />
+      <BuildDependency Project="../../../gemstone/security/src/Gemstone.Security/Gemstone.Security.csproj" />
+      <BuildDependency Project="../../../gemstone/threading/src/Gemstone.Threading/Gemstone.Threading.csproj" />
+      <BuildDependency Project="../../SnapDB/src/SnapDB/SnapDB.csproj" />
+    </Project>
+    <Project Path="Applications/SchemaDefinition/SchemaDefinition.csproj" />
+  </Folder>
+  <Folder Name="/Documentation/">
+    <File Path="../docs/README.md" />
+    <Project Path="DocGen/docgen.shfbproj" Type="7cf6df6d-3b04-46f8-a40b-537d21bca0b4" Id="e0ccff2a-c2df-436c-b34c-a20215da227a">
+      <BuildType Project="Debug" />
+      <Build Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Libraries/">
+    <Project Path="Libraries/openHistorian.Core/openHistorian.Core.csproj" />
+    <Project Path="Libraries/ServiceInterface/ServiceInterface.csproj" />
+  </Folder>
+  <Folder Name="/Libraries/Adapters/">
+    <Project Path="Libraries/Adapters/AdaptersUI/AdaptersUI.csproj" />
+    <Project Path="Libraries/Adapters/CSVAdapters/CSVAdapters.csproj" />
+    <Project Path="Libraries/Adapters/DynamicCalculator/DynamicCalculator.csproj" />
+    <Project Path="Libraries/Adapters/FileAdapters/FileAdapters.csproj" />
+    <Project Path="Libraries/Adapters/GrafanaAdapters/GrafanaAdapters.csproj" />
+    <Project Path="Libraries/Adapters/openHistorian.Adapters/openHistorian.Adapters.csproj" />
+    <Project Path="Libraries/Adapters/PhasorProtocolAdapters/PhasorProtocolAdapters.csproj" />
+    <Project Path="Libraries/Adapters/PowerCalculations/PowerCalculations.csproj" />
+    <Project Path="Libraries/Adapters/TestingAdapters/TestingAdapters.csproj" />
+  </Folder>
+  <Folder Name="/Libraries/InstallerActions/">
+    <Project Path="Libraries/InstallerActions/Gemstone.InstallerActions.Resources/Gemstone.InstallerActions.Resources.csproj" Id="94eddbd9-1f72-47bd-a5a7-523dbc61a4ee">
+      <BuildType Solution="Development|*" Project="Debug" />
+    </Project>
+    <Project Path="Libraries/InstallerActions/Gemstone.InstallerActions/Gemstone.InstallerActions.csproj" Id="de23eef6-ee66-42de-81b0-890b3a77b83c">
+      <BuildType Solution="Development|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/References/">
+    <Project Path="../../../gemstone/common/src/Gemstone/Gemstone.Common.csproj" />
+    <Project Path="../../../gemstone/communication/src/Gemstone.Communication/Gemstone.Communication.csproj" />
+    <Project Path="../../../gemstone/comtrade/src/Gemstone.COMTRADE/Gemstone.COMTRADE.csproj" />
+    <Project Path="../../../gemstone/configuration/src/Gemstone.Configuration/Gemstone.Configuration.csproj" />
+    <Project Path="../../../gemstone/data/src/Gemstone.Data/Gemstone.Data.csproj" />
+    <Project Path="../../../gemstone/diagnostics/src/Gemstone.Diagnostics/Gemstone.Diagnostics.csproj" />
+    <Project Path="../../../gemstone/expressions/src/Gemstone.Expressions/Gemstone.Expressions.csproj" />
+    <Project Path="../../../gemstone/io/src/Gemstone.IO/Gemstone.IO.csproj" />
+    <Project Path="../../../gemstone/numeric/src/Gemstone.Numeric/Gemstone.Numeric.csproj" />
+    <Project Path="../../../gemstone/phasor-protocols/src/Gemstone.PhasorProtocols/Gemstone.PhasorProtocols.csproj" />
+    <Project Path="../../../gemstone/security/src/Gemstone.Security/Gemstone.Security.csproj" />
+    <Project Path="../../../gemstone/threading/src/Gemstone.Threading/Gemstone.Threading.csproj" />
+    <Project Path="../../../gemstone/timeseries/src/Gemstone.Timeseries/Gemstone.Timeseries.csproj" />
+    <Project Path="../../../gemstone/web/src/Gemstone.Web/Gemstone.Web.csproj" />
+    <Project Path="../../../sttp/gsfapi/src/lib/sttp.core/sttp.core.shproj" />
+    <Project Path="../../../sttp/gsfapi/src/lib/sttp.gemstone/sttp.gemstone.csproj" />
+    <Project Path="../../SnapDB/src/SnapDB/SnapDB.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="../.gitignore" />
+    <File Path="../LICENSE" />
+    <File Path=".editorconfig" />
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="Tools/DataExtractionUtility/DataExtractionUtility.csproj">
+      <BuildType Solution="Development|*" Project="Debug" />
+      <Build Solution="Development|*" Project="false" />
+    </Project>
+    <Project Path="Tools/ServiceActions/ServiceActions.csproj">
+      <BuildType Solution="Development|*" Project="Debug" />
+    </Project>
+    <Project Path="Tools/UpdateCOMTRADECounters/UpdateCOMTRADECounters.csproj" Id="7f5bbf4c-a27d-4367-9d1e-95aea45ec58b">
+      <BuildType Solution="Development|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/UnitTests/" />
+  <Folder Name="/UnitTests/Adapter/">
+    <Project Path="UnitTests/Adapter/Adapter.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/UnitTests/OpenHistorian/">
+    <Project Path="UnitTests/OpenHistorian/openHistorian.UnitTests.csproj" />
+  </Folder>
+</Solution>
