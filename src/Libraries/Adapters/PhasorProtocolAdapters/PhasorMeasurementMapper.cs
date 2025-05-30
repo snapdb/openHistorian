@@ -97,6 +97,9 @@ namespace PhasorProtocolAdapters;
 [UIAdapterProtocol(nameof(PhasorProtocol.Macrodyne), "Gemstone.PhasorProtocols", ".Macrodyne.UI.Macrodyne.js")]
 [UIAdapterProtocol(nameof(PhasorProtocol.Macrodyne), "Gemstone.PhasorProtocols", ".Macrodyne.UI.MacrodyneChunk.js")]
 
+[UIAdapterProtocol("STTP", "sttp.gemstone", "sttp.UI.STTP.js")]
+[UIAdapterProtocol("STTP", "sttp.gemstone", "sttp.UI.STTPChunk.js")]
+
 public class PhasorMeasurementMapper : InputAdapterBase
 {
     #region [ Members ]
