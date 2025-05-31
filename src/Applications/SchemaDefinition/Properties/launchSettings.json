@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SchemaDefinition": {
+      "commandName": "Project",
+      "commandLineArgs": "System:ConnectionString=\"Data Source=openHistorian.db;\" System:DataProviderString=\"AssemblyName=Microsoft.Data.Sqlite; ConnectionType=Microsoft.Data.Sqlite.SqliteConnection\""
+    },
+    "SQL Server": {
+      "commandName": "Project",
+      "commandLineArgs": "System:ConnectionString=\"Data Source=localhost; Initial Catalog=OHEE; Integrated Security=SSPI; TrustServerCertificate=True; Connect Timeout=5\" System:DataProviderString=\"AssemblyName=Microsoft.Data.SqlClient; ConnectionType=Microsoft.Data.SqlClient.SqlConnection\""
+    }
+  }
+}
