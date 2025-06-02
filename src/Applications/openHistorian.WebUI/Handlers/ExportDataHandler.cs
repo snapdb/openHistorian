@@ -581,7 +581,7 @@ public class ExportDataHandler
 
     private static Task WriteTask(Stream responseStream, byte[]? headers, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, bool[] readComplete, HistorianOperationState? operationState, Action? completeHistorianOperation, CancellationToken cancellationToken)
     {
-        return Task.Factory.StartNew(() =>
+        return Task.Factory.StartNew(async () =>
         {
             long binaryByteCount = 0L;
 
@@ -589,7 +589,7 @@ public class ExportDataHandler
             {
                 // Write headers, e.g., CSV header row or CFF schema
                 if (headers is not null)
-                    responseStream.Write(headers, 0, headers.Length);
+                    await responseStream.WriteAsync(headers, 0, headers.Length, cancellationToken);
 
                 while ((writeBuffer.Length > 0 || !readComplete[0]) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
                 {
@@ -604,7 +604,7 @@ public class ExportDataHandler
                         writeBuffer.Clear();
                     }
 
-                    responseStream.Write(bytes, 0, bytes.Length);
+                    await responseStream.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
                     binaryByteCount += bytes.Length;
                 }
 
