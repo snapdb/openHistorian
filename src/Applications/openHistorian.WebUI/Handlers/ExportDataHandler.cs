@@ -256,9 +256,9 @@ public class ExportDataHandler
             const int DefaultTimestampSnap = 0;
             const double DefaultTolerance = 0.5D;
 
-            string dateTimeFormat = GlobalSettings.Default.DateTimeFormat;
-            string? startTimeParam = requestParameters["StartTime"];
-            string? endTimeParam = requestParameters["EndTime"];
+            string? dateTimeFormat = requestParameters["TimeFormat"];
+            string? startTimestampParam = requestParameters["StartTime"];
+            string? endTimestampParam = requestParameters["EndTime"];
             string? frameRateParam = requestParameters["FrameRate"];
             string? alignTimestampsParam = requestParameters["AlignTimestamps"];
             string? missingAsNaNParam = requestParameters["MissingAsNaN"];
@@ -267,30 +267,36 @@ public class ExportDataHandler
             string? timestampSnapParam = requestParameters["TimestampSnap"];
             string? toleranceParam = requestParameters["Tolerance"]; // In milliseconds
 
-            if (string.IsNullOrEmpty(startTimeParam))
+            if (string.IsNullOrEmpty(startTimestampParam))
                 throw new ArgumentNullException("StartTime", "Cannot export data: no \"StartTime\" parameter value was specified.");
 
-            if (string.IsNullOrEmpty(endTimeParam))
+            if (string.IsNullOrEmpty(endTimestampParam))
                 throw new ArgumentNullException("EndTime", "Cannot export data: no \"EndTime\" parameter value was specified.");
 
             DateTime startTime, endTime;
 
             try
             {
-                startTime = DateTime.ParseExact(startTimeParam, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal);
+                DateTimeOffset startDTO = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(startTimestampParam));
+                string formattedStart = startDTO.UtcDateTime.ToString(dateTimeFormat);
+
+                startTime = DateTime.ParseExact(formattedStart, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal);
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Cannot export data: failed to parse \"StartTime\" parameter value \"{startTimeParam}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", "StartTime", ex);
+                throw new ArgumentException($"Cannot export data: failed to parse \"StartTime\" parameter value \"{startTimestampParam}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", "StartTime", ex);
             }
 
             try
             {
-                endTime = DateTime.ParseExact(endTimeParam, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal);
+                DateTimeOffset endDTO = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(endTimestampParam));
+                string formattedEnd = endDTO.UtcDateTime.ToString(dateTimeFormat);
+
+                endTime = DateTime.ParseExact(formattedEnd, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal);
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Cannot export data: failed to parse \"EndTime\" parameter value \"{endTimeParam}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", "EndTime", ex);
+                throw new ArgumentException($"Cannot export data: failed to parse \"EndTime\" parameter value \"{endTimestampParam}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", "EndTime", ex);
             }
 
             if (startTime > endTime)
