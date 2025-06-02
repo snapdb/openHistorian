@@ -114,9 +114,9 @@ public class ExportDataHandler
     /// <param name="context">HTTP context to process.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task Invoke(HttpContext context, CancellationToken cancellationToken)
+    public Task Invoke(HttpContext context)
     {
-        return ProcessRequestAsync(context.Request, context.Response, context.User, cancellationToken);
+        return ProcessRequestAsync(context.Request, context.Response, context.User, context.RequestAborted);
     }
 
     /// <summary>
