@@ -291,10 +291,10 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             }
             else
             {
-                Gemstone.Numeric.Matrix<double> labelMatrix = new(1, tags.Select((k) => m_DeNum[i][k.IndexLabel]).ToArray());
-                Gemstone.Numeric.Matrix<double> deMatrix = new(1, tags.Select((k) => DE[k.IndexDE][1]).ToArray());
+                IEnumerable<double> labelMatrix = tags.Select((k) => m_DeNum[i][k.IndexLabel]);
+                IEnumerable<double> deMatrix = tags.Select((k) => DE[k.IndexDE][1]);
 
-                Correlation[i] = Corr(labelMatrix, deMatrix)[0][0];
+                Correlation[i] = Corr(labelMatrix, deMatrix);
                 Rank[i] = tags.Sum(
                     (t) => DE[t.IndexDE].Skip(1).Sum(v => v * m_DeNum[i][t.IndexLabel])
                 );
@@ -417,44 +417,20 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         return;
     }
 
-    private Gemstone.Numeric.Matrix<double> Corr(Gemstone.Numeric.Matrix<double> X, Gemstone.Numeric.Matrix<double> Y)
+    // Equivilent to matlab's corr function on a singular column pair
+    private double Corr(IEnumerable<double> X, IEnumerable<double> Y)
     {
-        // ToDo: Verifiy this function does what its supposed to, probably also change args to arrays
-        Gemstone.Numeric.Matrix<double> rho = new(X.NColumns,Y.NColumns, 0.0D);
-        double Xmean = 0;
-        for (int row = 0; row < X.NRows; row++)
-            Xmean += X.GetRow(row).Mean();
-        Xmean /= X.NRows;
-        double Ymean = 0;
-        for (int row = 0; row < Y.NRows; row++)
-            Ymean += Y.GetRow(row).Mean();
-        Ymean /= Y.NRows;
-
-        for (int j = 0; j < X.NColumns; j++)
-        {
-            for (int k = 0; k < Y.NColumns; k++)
-            {
-                double numerator = 0;
-                double Xdenominator = 0;
-                double Ydenominator = 0;
-
-                double[] colX = X.GetColumn(j);
-                double[] colY = Y.GetColumn(k);
-
-
+        if (X.Count() != Y.Count())
+            throw new InvalidDataException("Dimensions of arguements must match for correlation");
                
-                for (int i = 0; i < X.NRows; i++)
-                {
-                    numerator += (colX[i] - Xmean) * (colY[i] - Ymean);
-                    Xdenominator += (colX[i] - Xmean) * (colX[i] - Xmean);
-                    Ydenominator += (colY[i] - Ymean) * (colY[i] - Ymean);
-                }
+        double xMean = X.Mean();
+        double yMean = Y.Mean();
 
-                rho[j][k] =  numerator / Math.Sqrt(Xdenominator * Ydenominator);
-            }
-        }
+        double numerator = X.Zip(Y, (x, y) => (x - xMean) * (y - yMean)).Sum();
+        double denominatorX = X.Select(x => Math.Pow(x - xMean, 2)).Sum();
+        double denominatorY = Y.Select(y => Math.Pow(y - yMean, 2)).Sum();
 
-        return rho;      
+        return numerator / Math.Pow((denominatorX * denominatorY),0.5);      
     }
     protected override void PublishFrame(IFrame frame, int index)
     {
