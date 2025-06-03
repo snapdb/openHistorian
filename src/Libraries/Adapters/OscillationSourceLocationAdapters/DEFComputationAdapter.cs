@@ -660,6 +660,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         Matrix<double> voltageAngle;
         Matrix<double> frequencyBus;
         double[] voltageMean;
+        string[] lineIds;
+        string[] substations;
         JObject details = new JObject();
         {
             // ToDo: this might be an artifact of loading data strangely in OSL
@@ -669,12 +671,16 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             IEnumerable<IEnumerable<double>> currentM = pmuData.Select(d => d.Current.Select(c => c.Magnitude));
             IEnumerable<IEnumerable<double>> currentA = pmuData.Select(d => d.Current.Select(c => c.Angle.ToDegrees()));
             IEnumerable<IEnumerable<double>> fBus = pmuData.Select(d => d.Frequency);
-            string [] lineIds = pmuData.Select(v => v.LineID).ToArray();
+            lineIds = pmuData.Select(v => v.LineID).ToArray();
             details.Add(m_lineIds, JsonConvert.SerializeObject(lineIds));
-            string[] substations = pmuData.Select(v => v.Substation).ToArray();
+            substations = pmuData.Select(v => v.Substation).ToArray();
             details.Add(m_substation, JsonConvert.SerializeObject(substations));
             details.Add(m_flagLabel, Enum.GetName(typeof(DEMethod), DEMethodFlag));
-            details.Add(m_tAlarmLabel, Talarm.ToString("yyyyMMdd_HHmmss"));
+            details.Add(m_tAlarmLabel, Talarm.ToString());
+            details.Add(m_studyIntervalStart, Tstart.ToString());
+            details.Add(m_studyIntervalEnd, Tend.ToString());
+            details.Add("VoltageSignalID", alarmKey);
+            details.Add("Frequency", freqAlarm.ToString());
 
             PMUCleaning.PMUDataCleaning(ref voltageM, ref voltageA, ref currentM, ref currentA, ref fBus, FramesPerSecond, true);
 
@@ -727,6 +733,9 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             frequencyBus = BandPassFilter(frequencyBus, freqAlarm);
         else
             voltageAngle = BandPassFilter(voltageAngle, freqAlarm);
+
+        details.Add(m_maxMagReal, JsonConvert.SerializeObject(GetMaximumMagnitude(realPower, lineIds, substations)));
+        details.Add(m_maxMagReactive, JsonConvert.SerializeObject(GetMaximumMagnitude(reactivePower, lineIds, substations)));
 
         if (DEMethodFlag == DEMethod.CDEF || DEMethodFlag == DEMethod.Both)
         {
@@ -1683,6 +1692,23 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         return (start, length - start - 1);
     }
 
+    private MaximumMagnitude GetMaximumMagnitude(Matrix<double> values, string[] lineIds, string[] substations)
+    {
+        List<double> mangitudes = new List<double>(values.NColumns);
+
+        for (int col = 0; col < values.NColumns; col++)
+            mangitudes.Add(values.GetColumn(col).Select(Math.Abs).Mean() * 1.5 / 1000000); // aprrox.
+
+        Tuple<double, int> maxMag = mangitudes.Select((m, i) => new Tuple<double, int>(m, i)).MaxBy(v => v.Item1);
+
+        return new MaximumMagnitude
+        {
+            Substation = substations[maxMag.Item2],
+            LineID = lineIds[maxMag.Item2],
+            Magnitude = 2 *maxMag.Item1
+        };
+    }
+
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
@@ -1786,12 +1812,35 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     /// <param name="osc">The JSON object from EventDetails.Details</param>
     public static string[] ParseSubstations(JObject osc) => JsonConvert.DeserializeObject<string[]>(osc[m_substation].ToString());
 
-
     /// <summary>
-    /// Creates a <see cref="string"/> with the alarm time, with a <see cref="DateTime"/> format string of yyyyMMdd_HHmmss
+    /// Creates a <see cref="Ticks"/> with the alarm time.
     /// </summary>
     /// <param name="osc">The JSON object from EventDetails.Details</param>
-    public static string ParseAlarmTime(JObject osc) => osc[m_tAlarmLabel].ToString();
+    public static DateTime ParseAlarmTime(JObject osc) => DateTime.Parse(osc[m_tAlarmLabel].ToString());
+
+    /// <summary>
+    /// Start time of the study interval of the oscillation, relative to the start of data
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static double ParseStudyIntervalStart(JObject osc) => JsonConvert.DeserializeObject<double>(osc[m_studyIntervalStart].ToString());
+
+    /// <summary>
+    /// End time of the study interval of the oscillation, relative to the start of data
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static double ParseStudyIntervalEnd(JObject osc) => JsonConvert.DeserializeObject<double>(osc[m_studyIntervalEnd].ToString());
+
+    /// <summary>
+    /// Parses the line which has the maximum real magnitude from oscillation.
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static MaximumMagnitude ParseMaximumRealMagnitude(JObject osc) => JsonConvert.DeserializeObject<MaximumMagnitude>(osc[m_maxMagReal].ToString());
+
+    /// <summary>
+    /// Parses the line which has the maximum reactive magnitude from oscillation.
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static MaximumMagnitude ParseMaximumReactiveMagnitude(JObject osc) => JsonConvert.DeserializeObject<MaximumMagnitude>(osc[m_maxMagReactive].ToString());
 
     /// <summary>
     /// Creates a <see cref="Matrix{double}"/> with the CPSD output of DEFComputationAdapter. 
