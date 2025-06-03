@@ -1,6 +1,6 @@
 ﻿
 //******************************************************************************************************
-//  InterpolateNaN.cs - Gbtc
+//  DataCleaning.cs - Gbtc
 //
 //  Copyright © 2025, Grid Protection Alliance.  All Rights Reserved.
 //
@@ -52,6 +52,19 @@ public static class DataCleaning
                 return double.NaN;
             return v;
         });
+    }
+
+    /// <summary>
+    /// returns part of the <see cref="IEnumerable{double}"/>
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static IEnumerable<double> CutPeriod(double Tstart, double Tend, IEnumerable<double> data, double fs)
+    {
+        int n = data.Count();
+        int nStart = (int)Math.Floor(fs * Tstart);
+        int nEnd = (int)Math.Ceiling(fs * Tend) + 1;
+        return data.Skip(nStart).Take(nEnd - nStart);
     }
 
     /// <summary>
