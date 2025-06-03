@@ -21,15 +21,17 @@
 //
 //******************************************************************************************************
 
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Runtime.Serialization;
 using Gemstone;
 using Gemstone.ActionExtensions;
+using Microsoft.AspNetCore.Mvc;
 using openHistorian.Adapters;
 using openHistorian.Model;
 using openHistorian.Net;
 using openHistorian.Snap;
 using SnapDB.Snap.Services;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Concurrent;
 using CancellationToken = Gemstone.Threading.Cancellation.CancellationToken;
 using Random = Gemstone.Security.Cryptography.Random;
 
@@ -158,6 +160,52 @@ public class HistorianOperationsController : Controller
     public IEnumerable<string> GetInstanceNames()
     {
         return TrendValueAPI.GetInstanceNames();
+    }
+
+    /// <summary>
+    /// Generates a new cache ID that can be used to identify a specific operation or data set.
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public string GenerateCacheID()
+    {
+        return Guid.NewGuid().ToString();
+    }
+
+    /// <summary>
+    /// Begins a new data export operation for the specified time range using the provided date time format.
+    /// </summary>
+    /// <param name="startTime">Start time, in <paramref name="dateTimeFormat"/></param>   
+    /// <param name="endTime">End time, in <paramref name="dateTimeFormat"/></param>
+    /// <param name="dateTimeFormat">.NET date time format to use for parsing <paramref name="startTime"/> and <paramref name="endTime"/>.</param>
+    /// <returns>New operational state handle.</returns>
+    [HttpGet]
+    public uint BeginDataExport(string startTime, string endTime, string dateTimeFormat)
+    {
+        long startTicks, endTicks;
+
+        try
+        {
+            startTicks = DateTime.ParseExact(startTime, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal).Ticks;
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(startTime)}\" parameter value \"{startTime}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", nameof(startTime), ex);
+        }
+
+        try
+        {
+            endTicks = DateTime.ParseExact(endTime, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal).Ticks;
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(endTime)}\" parameter value \"{endTime}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", nameof(endTime), ex);
+        }
+
+        if (startTicks > endTicks)
+            throw new ArgumentOutOfRangeException(nameof(startTime), "Cannot export data: start time exceeds end time.");
+
+        return BeginHistorianRead(endTicks - startTicks);
     }
 
     /// <summary>
