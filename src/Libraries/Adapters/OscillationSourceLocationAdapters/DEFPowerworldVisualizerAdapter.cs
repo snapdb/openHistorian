@@ -76,10 +76,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(true)]
     [Description("Flag to control creation of CPSD Visualization Files")]
-    public bool VisualizeCPSD
-    {
-        get; set;
-    }
+    public bool VisualizeCPSD { get; set; } = true;
 
     /// <summary>
     /// Flag to control creation of CDEF Visualization Files
@@ -87,10 +84,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(true)]
     [Description("Flag to control creation of CDEF Visualization Files")]
-    public bool VisualizeCDEF
-    {
-        get; set;
-    }
+    public bool VisualizeCDEF { get; set; } = true;
 
     /// <summary>
     /// Quality of the image; 1...100 with 100 being the highest quality image
@@ -98,10 +92,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(80)]
     [Description("Quality of the image; 1...100 with 100 being the highest quality image")]
-    public int ImageQuality
-    {
-        get; set;
-    }
+    public int ImageQuality { get; set; } = 80;
 
     /// <summary>
     /// The image resolution scalar; recommended for this application 5..12
@@ -109,20 +100,14 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(5)]
     [Description("The image resolution scalar; recommended for this application 5..12")]
-    public int ImageResolution
-    {
-        get; set;
-    }
+    public int ImageResolution { get; set; } = 5;
 
     /// <summary>
     /// Directory which contains the powerworld scripts
     /// </summary>
     [ConnectionStringParameter]
     [Description("Directory which contains the powerworld scripts")]
-    public string PowerworldScriptDirectory
-    {
-        get; set;
-    }
+    public string PowerworldScriptDirectory { get; set; }
 
     /// <summary>
     /// Power flow model file name
@@ -130,10 +115,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue("model_pf_pwrflow_ttc_calculator_ver3211.aux")]
     [Description("Power flow model file name")]
-    public string ModelCaseFile
-    {
-        get; set;
-    }
+    public string ModelCaseFile { get; set; } = "model_pf_pwrflow_ttc_calculator_ver3211.aux";
 
     /// <summary>
     /// One line diagram of ISO-NE system file name
@@ -141,10 +123,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue("3211_oneline_rev22.pwd")]
     [Description("One line diagram of ISO-NE system file name")]
-    public string OneLineFile
-    {
-        get; set;
-    }
+    public string OneLineFile { get; set; } = "3211_oneline_rev22.pwd";
 
     /// <summary>
     /// Temporary file that holds DE input information file name
@@ -152,10 +131,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue("DE_From.aux")]
     [Description("Temporary file that holds DE input information file name")]
-    public string DEFromFile
-    {
-        get; set;
-    }
+    public string DEFromFile { get; set; } = "DE_From.aux";
 
     /// <summary>
     /// Temporary file that holds DE input information file name
@@ -163,10 +139,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue("DE_To.aux")]
     [Description("Temporary file that holds DE input information file name")]
-    public string DEToFile
-    {
-        get; set;
-    }
+    public string DEToFile { get; set; } = "DE_To.aux";
 
     /// <summary>
     /// Text portion of the output visualization file for CDEF
@@ -174,10 +147,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue("DE_NEPEX")]
     [Description("Text portion of the output visualization file for CDEF")]
-    public string CDEFLabel
-    {
-        get; set;
-    }
+    public string CDEFLabel { get; set; } = "DE_NEPEX";
 
     /// <summary>
     /// Text portion of the output visualization file for CPSD
@@ -185,10 +155,15 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue("DE_NEPEXcpsd")]
     [Description("Text portion of the output visualization file for CPSD")]
-    public string CPSDLabel
-    {
-        get; set;
-    }
+    public string CPSDLabel { get; set; } = "DE_NEPEXcpsd";
+
+    /// <summary>
+    /// Timestamp portion of the output visualiztion file, given in a <see cref="DateTime"/> format string.
+    /// </summary>
+    [ConnectionStringParameter]
+    [DefaultValue("yyyyMMdd_HHmmss")]
+    [Description("Timestamp portion of the output visualiztion file, given in a DateTime format string.")]
+    public string TimeStampFormat { get; set; } = "yyyyMMdd_HHmmss";
 
     #endregion
 
@@ -202,7 +177,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
         Dictionary<string, string> settings = Settings;
 
         if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
-            throw new InvalidOperationException("No input measurements were specified for the DEF Computation calculator.");
+            throw new InvalidOperationException("No input measurements were specified for the DEF Powerworld visualizer.");
 
         if (!InputMeasurementKeyTypes.Where(t => t == SignalType.ALRM).Any())
             throw new InvalidOperationException("At least 1 valid event measurement is requried.");
@@ -219,7 +194,7 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
         JObject osc = JObject.Parse(oscillation.Details);
         IEnumerable<string> lineIds = DEFComputationAdapter.ParseLineIds(osc);
         IEnumerable<string> substations = DEFComputationAdapter.ParseSubstations(osc);
-        string alarmTime = DEFComputationAdapter.ParseAlarmTime(osc);
+        string alarmTime = DEFComputationAdapter.ParseAlarmTime(osc).ToString(TimeStampFormat);
         string[] lineLabels = lineIds.Zip(substations, (i, s) => $"\"{s}|{i}\"").ToArray();
 
         // ToDo: Stop non-windows from using this before it throws an exception here?
