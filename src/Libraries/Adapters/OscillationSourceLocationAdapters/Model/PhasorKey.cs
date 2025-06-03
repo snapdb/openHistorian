@@ -21,8 +21,6 @@
 //       Generated original version of source code.
 //******************************************************************************************************
 
-using Gemstone;
-using Gemstone.Numeric;
 using Gemstone.Timeseries;
 
 namespace DataQualityMonitoring.Model;
