@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" />
     <ProjectReference Include="..\..\..\..\..\gemstone\diagnostics\src\Gemstone.Diagnostics\Gemstone.Diagnostics.csproj" />
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
+    <ProjectReference Include="..\..\Libraries\Adapters\OscillationSourceLocationAdapters\OscillationSourceLocationAdapters.csproj" />
   </ItemGroup>
 
 </Project>
