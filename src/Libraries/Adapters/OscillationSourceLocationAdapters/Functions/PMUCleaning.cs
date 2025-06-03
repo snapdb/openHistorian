@@ -21,7 +21,6 @@
 //       Generated original version of source code.
 //******************************************************************************************************
 
-using System.Linq;
 using DataQualityMonitoring.Model;
 using Gemstone.Numeric;
 using Gemstone.Numeric.Analysis;
