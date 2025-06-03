@@ -110,10 +110,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.2)]
     [Description("[p.u.] minimal rank for a valid classification")]
-    public double MinRank
-    {
-        get; set;
-    }
+    public double MinRank { get; set; } = 0.2;
 
     /// <summary>
     /// [p.u.] range of rank for selection of substations; (0.2 ... 0.4)
@@ -121,10 +118,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.3)]
     [Description("[p.u.] range of rank for selection of substations; (0.2 ... 0.4)")]
-    public double RankRange
-    {
-        get; set;
-    }
+    public double RankRange { get; set; } = 0.3;
 
     /// <summary>
     /// Maximal number of substation for uncertain classification
@@ -132,10 +126,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(5)]
     [Description("Maximal number of substation for uncertain classification")]
-    public int MaxSubstations
-    {
-        get; set;
-    }
+    public int MaxSubstations { get; set; } = 5;
 
     /// <summary>
     /// Number of transmission elements with max DE to be used in classifier (5...15)
@@ -143,10 +134,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(15)]
     [Description("Number of transmission elements with max DE to be used in classifier (5...15)")]
-    public int NumDEComponents
-    {
-        get; set;
-    }
+    public int NumDEComponents { get; set; } = 15;
 
     /// <summary>
     /// [p.u.] minimal threshold for DE and MW pattern correlation
@@ -154,10 +142,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.6)]
     [Description("[p.u.] minimal threshold for DE and MW pattern correlation")]
-    public double CorrThresholdMin
-    {
-        get; set;
-    }
+    public double CorrThresholdMin { get; set; } = 0.6;
 
     #endregion
 
@@ -171,7 +156,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         Dictionary<string, string> settings = Settings;
 
         if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
-            throw new InvalidOperationException("No input measurements were specified for the DEF Computation calculator.");
+            throw new InvalidOperationException("No input measurements were specified for the DEF Indentification calculator.");
 
         if (!InputMeasurementKeyTypes.Where(t => t == SignalType.ALRM).Any())
             throw new InvalidOperationException("At least 1 valid event measurement is requried.");
@@ -422,7 +407,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     {
         if (X.Count() != Y.Count())
             throw new InvalidDataException("Dimensions of arguements must match for correlation");
-               
+
         double xMean = X.Mean();
         double yMean = Y.Mean();
 
