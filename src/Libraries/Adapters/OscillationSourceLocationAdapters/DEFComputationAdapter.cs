@@ -105,94 +105,73 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     private static string m_substation = "Subs";
     private static string m_flagLabel= "MethodFlag";
     private static string m_tAlarmLabel = "AlarmTime";
+    private static string m_studyIntervalStart = "StudyIntervalStart";
+    private static string m_studyIntervalEnd = "StudyIntervalEnd";
+    private static string m_maxMagReal = "MaximumMagnitudeReal";
+    private static string m_maxMagReactive = "MaximumMagnitudeReactive";
 
     /// <summary>
     /// The maximum size of the Buffer in second
     /// </summary>
     [ConnectionStringParameter()]
     [Description("Maximum Buffer Time (in s)")]
-    public double MaxTimeResolution 
-    {
-        get;
-        set;
-    }
+    public double MaxTimeResolution { get; set; }
 
     /// <summary>
     /// Time step of a sliding window for FFT analysis
     /// </summary>
     [ConnectionStringParameter]
-    [DefaultValue(2.0D)]
     [Description("Time step of a sliding window for FFT analysis")]
-    public double Tstep
-    {
-        get; set;
-    }
+    [DefaultValue(2.0D)]
+    public double Tstep { get; set; } = 2.0D;
 
     /// <summary>
     /// Minimal MW threshold of mode's magnitude
     /// </summary>
     [ConnectionStringParameter]
-    [DefaultValue(1.5001)]
     [Description("Minimal MW threshold of mode's magnitude")]
-    public double MminP
-    {
-        get; set;
-    }
+    [DefaultValue(1.5001)]
+    public double MminP { get; set; } = 1.5001;
 
     /// <summary>
     /// Minimal p.u. threshold of mode's magnitude.
     /// </summary>
     [ConnectionStringParameter]
-    [DefaultValue(0.4)]
     [Description("Minimal p.u. threshold of mode's magnitude.")]
-    public double Mmin
-    {
-        get; set;
-    }
+    [DefaultValue(0.4)]
+    public double Mmin { get; set; } = 0.4;
 
     /// <summary>
     /// Threshold to separate low and high frequency bands.
     /// </summary>
     [ConnectionStringParameter]
-    [DefaultValue(0.2)]
     [Description("Threshold to separate low and high frequency bands.")]
-    public double BandThreshold
-    {
-        get; set;
-    }
+    [DefaultValue(0.2)]
+    public double BandThreshold { get; set; } = 0.2;
 
     /// <summary>
     /// Number if oscillatory cycles for the selection of study interval for higher frequency band.
     /// </summary>
     [ConnectionStringParameter]
-    [DefaultValue(8)]
     [Description("Number if oscillatory cycles for the selection of study interval for higher frequency band.")]
-    public double CMinH
-    {
-        get; set;
-    }
+    [DefaultValue(8)]
+    public double CMinH { get; set; } = 8;
 
     /// <summary>
     /// Number if oscillatory cycles for the selection of study interval for lower frequency band.
     /// </summary>
     [ConnectionStringParameter]
-    [DefaultValue(8)]
     [Description("Number if oscillatory cycles for the selection of study interval for lower frequency band.")]
-    public double CMinL
-    {
-        get; set;
-    }
+    [DefaultValue(8)]
+    public double CMinL { get; set; } = 8;
 
     /// <summary>
     /// Number of oscillatory cycles to define the length of an interval for FFT scans.
     /// </summary>
     [ConnectionStringParameter]
-    [DefaultValue(5)]
     [Description("Number of oscillatory cycles to define the length of an interval for FFT scans.")]
-    public double CMinW
-    {
-        get; set;
-    }
+    [DefaultValue(5)]
+    public double CMinW { get; set; } = 5;
 
     /// <summary>
     /// Time safery margin before Alarm time to capture start time in seconds.
@@ -200,10 +179,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(160)]
     [Description("Defines the number of frames per second expected by the adapter.")]
-    public double TimeMargin
-    {
-        get; set;
-    }
+    public double TimeMargin { get; set; } = 160;
 
     /// <summary>
     /// Signifies if the data under analysis is real PMU data or simulated.
@@ -211,10 +187,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(true)]
     [Description("Signifies if the data under analysis is real PMU data or simulated.")]
-    public bool IsRealData
-    {
-        get; set;
-    }
+    public bool IsRealData { get; set; } = true;
 
     /// <summary>
     /// Length of time interval to be used for DEF/CDEF after band-pass filtering
@@ -222,10 +195,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.5)]
     [Description("Length of time interval to be used for DEF/CDEF after band-pass filtering")]
-    public double CdefTimeInterval
-    {
-        get; set;
-    }
+    public double CdefTimeInterval { get; set; } = 0.5;
 
     /// <summary>
     /// A factor related to R/X ratio of the network
@@ -233,10 +203,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(-990.2)]
     [Description("A factor related to R/X ratio of the network")]
-    public double IntialKFactor
-    {
-        get; set;
-    }
+    public double IntialKFactor { get; set; } = -990.2;
 
     /// <summary>
     /// Method for DE calculation
@@ -244,10 +211,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(DEMethod.Both)]
     [Description("Method for DE calculation")]
-    public DEMethod DEMethodFlag
-    {
-        get; set;
-    }
+    public DEMethod DEMethodFlag { get; set; } = DEMethod.Both;
 
     /// <summary>
     /// Method for DE calculation
@@ -255,10 +219,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(TrendMethod.HighPassFilter)]
     [Description("Method for DE calculation")]
-    public TrendMethod RemoveTrendFlag
-    {
-        get; set;
-    }
+    public TrendMethod RemoveTrendFlag { get; set; } = TrendMethod.HighPassFilter;
 
     /// <summary>
     /// Method for DE calculation
@@ -266,10 +227,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(200)]
     [Description("Method for DE calculation")]
-    public double AllowedNoiseRatio
-    {
-        get; set;
-    }
+    public double AllowedNoiseRatio { get; set; } = 200;
 
     /// <summary>
     /// Frequency threshold; frequencies below this threshold are ignored (Hz)
@@ -277,10 +235,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.07)]
     [Description("Frequency threshold; frequencies below this threshold are ignored (Hz)")]
-    public double FrequencyThreshold
-    {
-        get; set;
-    }
+    public double FrequencyThreshold { get; set; } = 0.07;
 
     /// <summary>
     /// Number of elements with highest energy in CPSD/PSD spectra to identify Type of Source
@@ -288,12 +243,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(4)]
     [Description("Number of elements with highest energy in CPSD/PSD spectra to identify Type of Source\r\n")]
-    public int NumberOfElementsForSourceIdentification
-    {
-        get; set;
-    }
-
-
+    public int NumberOfElementsForSourceIdentification { get; set; } = 4;
 
     #endregion
 
@@ -1014,7 +964,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 for (int i = 1; i < (int)Math.Floor(Tend * fs - stepp); i += stepp)
                 {
                     i1 = i1 + 1;
-                    IEnumerable<double> test = Pline.Skip(i - 1).Take(stepp + 1);
                     rangeP.Add(Pline.Skip(i - 1).Take(stepp + 1).Max() - Pline.Skip(i - 1).Take(stepp + 1).Min());
                     tt.Add(i / fs);
                 }
