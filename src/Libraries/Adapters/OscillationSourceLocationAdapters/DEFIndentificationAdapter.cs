@@ -24,6 +24,7 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Data;
+using DataQualityMonitoring.Model;
 using Gemstone.Data;
 using Gemstone.Data.Model;
 using Gemstone.Diagnostics;
@@ -55,6 +56,9 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
 
     private Gemstone.Numeric.Matrix<double> m_DeNum;
     private List<DELabel> m_DeLabels;
+
+    private static string m_RankCdef = "Rank_CDEF";
+    private static string m_RankCpsd = "Rank_CPSD";
 
     private class DELabel
     {
@@ -227,21 +231,20 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         Gemstone.Numeric.Matrix<double> cdef = DEFComputationAdapter.ParseDeCdef(osc);
         ComputeRank(cdef, lineLabels, out double rankProbCdef, out string rankAreaCdef, out string rankMsgCdef, out int rankNSubCdef);
 
-        await using AdoDataConnection connection = new(ConfigSettings.Instance);
-        JObject details = new JObject();
-        details["CDEF"] = JsonConvert.SerializeObject(new
+        // Append details to osc and create new eventdetails
+        osc[m_RankCdef] = JsonConvert.SerializeObject(new RankDetails
         {
-            prob = rankProbCdef,
-            area = rankAreaCdef,
-            msg = rankMsgCdef,
-            Nsub = rankNSubCdef
+            Probability = rankProbCdef,
+            Area = rankAreaCdef,
+            Message = rankMsgCdef,
+            NumberOfSubstations = rankNSubCdef
         });
-        details["CPSD"] = JsonConvert.SerializeObject(new
+        osc[m_RankCpsd] = JsonConvert.SerializeObject(new RankDetails
         {
-            prob = rankProbCpsd,
-            area = rankAreaCpsd,
-            msg = rankMsgCpsd,
-            Nsub = rankNSubCpsd
+            Probability = rankProbCpsd,
+            Area = rankAreaCpsd,
+            Message = rankMsgCpsd,
+            NumberOfSubstations = rankNSubCpsd
         });
         EventDetails eventDetails = new EventDetails()
         {
@@ -250,8 +253,9 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
             EventGuid = oscillation.EventGuid,
             Type = "defOscillation",
             MeasurementID = oscillation.MeasurementID,
-            Details = details.ToString()
+            Details = osc.ToString()
         };
+        await using AdoDataConnection connection = new(ConfigSettings.Instance);
         TableOperations<EventDetails> tableOperations = new(connection);
         tableOperations.AddNewRecord(eventDetails);
     }
@@ -411,20 +415,6 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         return;
     }
 
-    private Gemstone.Numeric.Matrix<double> ParseDE(string[] order, JObject osc)
-    {
-        double[] buf = JsonConvert.DeserializeObject<double[]>(osc[order[0]].ToString());
-        Gemstone.Numeric.Matrix<double> DE = new(buf.Count(), order.Length, 0);
-        for (int col = 0; col < DE.NColumns; col++)
-        {
-            if (col != 0)
-                buf = JsonConvert.DeserializeObject<double[]>(osc[order[col]].ToString());
-            for (int row = 0; row < DE.NRows; row++)
-                DE[row][col] = buf[row];
-        }
-        return DE;
-    }
-
     private Gemstone.Numeric.Matrix<double> Corr(Gemstone.Numeric.Matrix<double> X, Gemstone.Numeric.Matrix<double> Y)
     {
         // ToDo: Verifiy this function does what its supposed to, probably also change args to arrays
@@ -493,6 +483,46 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
                 m_computationQueue.Enqueue(oscillation);
             }
             m_computeRank.TryRunAsync();
+        }
+    }
+
+    #endregion
+
+    #region [ Static ]
+
+    /// <summary>
+    /// Creates a <see cref="RankDetails"/> from the results of DEFIdentificationAdapter for CDEF results. Returns a <see cref="bool"/> with the succes of parsing.
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static bool TryParseCDEFRankDetails(JObject osc, out RankDetails details)
+    {
+        details = null;
+        try
+        {
+            details = JsonConvert.DeserializeObject<RankDetails>(osc[m_RankCdef].ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Creates a <see cref="RankDetails"/> from the results of DEFIdentificationAdapter for CPSD results. Returns a <see cref="bool"/> with the succes of parsing.
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static bool TryParseCPSDRankDetails(JObject osc, out RankDetails details)
+    {
+        details = null;
+        try
+        {
+            details = JsonConvert.DeserializeObject<RankDetails>(osc[m_RankCpsd].ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
         }
     }
 
