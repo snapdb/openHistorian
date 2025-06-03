@@ -1648,6 +1648,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         for (int col = 0; col < values.NColumns; col++)
             mangitudes.Add(values.GetColumn(col).Select(Math.Abs).Mean() * 1.5 / 1000000); // aprrox.
 
+        // Disagreement between this and the matlab code, I suspect the gain might not be correct on our butterworth filter...
+        // Might also be slight difference between the two in terms of frequency response, depending on how matlab designs its prototype lp filter...
         Tuple<double, int> maxMag = mangitudes.Select((m, i) => new Tuple<double, int>(m, i)).MaxBy(v => v.Item1);
 
         return new MaximumMagnitude
