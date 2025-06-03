@@ -68,23 +68,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     private readonly TaskSynchronizedOperation m_computeDEFOperation;
     private readonly ConcurrentQueue<Tuple<EventDetails,IEnumerable<LineData>>> m_oscillationQueue;
 
-    public class Line
-    {
-        public PhasorKey Current;
-        public PhasorKey Voltage;
-        public MeasurementKey Frequency;
-    }
-
-    class DeviceDetails
-    {
-        public MeasurementKey Frequency;
-        public string Name;
-        public List<MeasurementKey> VPhase;
-        public List<MeasurementKey> IPhase;
-        public List<MeasurementKey> VMag;
-        public List<MeasurementKey> IMag;
-    };
-
     public enum TrendMethod
     {
         SubtractAverage = 0,
