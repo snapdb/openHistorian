@@ -224,7 +224,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         IEnumerable<string> lineIds = DEFComputationAdapter.ParseLineIds(osc);
         IEnumerable<string> substations = DEFComputationAdapter.ParseSubstations(osc);
 
-        string[] lineLabels = lineIds.Zip(substations, (id, sub) => $"{id}__{sub}").ToArray();
+        string[] lineLabels = lineIds.Zip(substations, (id, sub) => $"{sub}__{id}").ToArray();
         Gemstone.Numeric.Matrix<double> cpsd = DEFComputationAdapter.ParseDeCpsd(osc);
         ComputeRank(cpsd, lineLabels, out double rankProbCpsd, out string rankAreaCpsd, out string rankMsgCpsd, out int rankNSubCpsd);
 
@@ -257,7 +257,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
         };
         await using AdoDataConnection connection = new(ConfigSettings.Instance);
         TableOperations<EventDetails> tableOperations = new(connection);
-        tableOperations.AddNewRecord(eventDetails);
+        tableOperations.UpdateRecord(eventDetails);
     }
 
     private void ComputeRank(Gemstone.Numeric.Matrix<double> DE, string[] LineLabels, out double RankProb, out string RankArea, out string RankMsg, out int RankNSub)
@@ -295,7 +295,9 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
                 Gemstone.Numeric.Matrix<double> deMatrix = new(1, tags.Select((k) => DE[k.IndexDE][1]).ToArray());
 
                 Correlation[i] = Corr(labelMatrix, deMatrix)[0][0];
-                Rank[i] = tags.Sum((t) => DE[t.IndexDE].Sum(v => v * m_DeNum[i][t.IndexLabel]));
+                Rank[i] = tags.Sum(
+                    (t) => DE[t.IndexDE].Skip(1).Sum(v => v * m_DeNum[i][t.IndexLabel])
+                );
             }
 
         }
