@@ -284,7 +284,7 @@ public class ExportDataHandler
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Cannot export data: failed to parse \"StartTime\" parameter value \"{startTimestampParam}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", "StartTime", ex);
+                throw new ArgumentException($"Cannot export data: failed to parse \"StartTime\" parameter value \"{startTimestampParam}\" with a format of \"{dateTimeFormat}\". Error message: {ex.Message}", "StartTime", ex);
             }
 
             try
@@ -296,7 +296,7 @@ public class ExportDataHandler
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Cannot export data: failed to parse \"EndTime\" parameter value \"{endTimestampParam}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", "EndTime", ex);
+                throw new ArgumentException($"Cannot export data: failed to parse \"EndTime\" parameter value \"{endTimestampParam}\" with a format of \"{dateTimeFormat}\". Error message: {ex.Message}", "EndTime", ex);
             }
 
             if (startTime > endTime)
