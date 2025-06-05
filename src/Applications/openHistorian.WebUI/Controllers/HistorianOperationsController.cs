@@ -136,7 +136,7 @@ public class HistorianOperationState
     /// Gets or sets end sample count.
     /// </summary>
     public long EndSampleCount { get; set; }
-        
+
     /// <summary>
     /// Gets or sets binary byte count.
     /// </summary>
@@ -175,31 +175,29 @@ public class HistorianOperationsController : Controller
     /// <summary>
     /// Begins a new data export operation for the specified time range using the provided date time format.
     /// </summary>
-    /// <param name="startTime">Start time, in <paramref name="dateTimeFormat"/></param>   
-    /// <param name="endTime">End time, in <paramref name="dateTimeFormat"/></param>
-    /// <param name="dateTimeFormat">.NET date time format to use for parsing <paramref name="startTime"/> and <paramref name="endTime"/>.</param>
+    /// <param name="startTime">Start time as Unix timestamp/></param>   
+    /// <param name="endTime">End time as Unix timestamp/></param>
     /// <returns>New operational state handle.</returns>
-    [HttpGet]
-    public uint BeginDataExport(string startTime, string endTime, string dateTimeFormat)
+    [HttpGet, Route("BeginDataExport")]
+    public uint BeginDataExport(string startTime, string endTime)
     {
         long startTicks, endTicks;
-
         try
         {
-            startTicks = DateTime.ParseExact(startTime, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal).Ticks;
+            startTicks = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(startTime, CultureInfo.InvariantCulture)).Ticks;
         }
         catch (Exception ex)
         {
-            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(startTime)}\" parameter value \"{startTime}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", nameof(startTime), ex);
+            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(startTime)}\" parameter value \"{startTime}\". Error message: {ex.Message}", nameof(startTime), ex);
         }
 
         try
         {
-            endTicks = DateTime.ParseExact(endTime, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal).Ticks;
+           endTicks = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(endTime, CultureInfo.InvariantCulture)).Ticks;
         }
         catch (Exception ex)
         {
-            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(endTime)}\" parameter value \"{endTime}\". Expected format is \"{dateTimeFormat}\". Error message: {ex.Message}", nameof(endTime), ex);
+            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(endTime)}\" parameter value \"{endTime}\". Error message: {ex.Message}", nameof(endTime), ex);
         }
 
         if (startTicks > endTicks)
@@ -286,9 +284,9 @@ public class HistorianOperationsController : Controller
 
                 operationState.StopTime = DateTime.UtcNow.Ticks;
             })
-            {
-                IsBackground = true
-            }
+        {
+            IsBackground = true
+        }
             .Start();
 
         return operationHandle;
@@ -299,7 +297,7 @@ public class HistorianOperationsController : Controller
     /// </summary>
     /// <param name="operationHandle">Handle to historian operation state.</param>
     /// <returns>Current historian write operation state.</returns>
-    [HttpGet]
+    [HttpGet, Route("GetHistorianOperationState")]
     public HistorianOperationState GetHistorianOperationState(uint operationHandle)
     {
         if (s_historianOperationStates.TryGetValue(operationHandle, out HistorianOperationState? operationState))
