@@ -374,10 +374,7 @@ public class ExportDataHandler
 
             try
             {
-                DateTimeOffset startDTO = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(startTimestampParam));
-                string formattedStart = startDTO.UtcDateTime.ToString(dateTimeFormat);
-
-                startTime = DateTime.ParseExact(formattedStart, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal);
+                startTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(startTimestampParam)).UtcDateTime;
             }
             catch (Exception ex)
             {
@@ -386,10 +383,7 @@ public class ExportDataHandler
 
             try
             {
-                DateTimeOffset endDTO = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(endTimestampParam));
-                string formattedEnd = endDTO.UtcDateTime.ToString(dateTimeFormat);
-
-                endTime = DateTime.ParseExact(formattedEnd, dateTimeFormat, null, DateTimeStyles.AdjustToUniversal);
+                endTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(endTimestampParam)).UtcDateTime;
             }
             catch (Exception ex)
             {
