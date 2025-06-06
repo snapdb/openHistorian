@@ -165,7 +165,7 @@ public class HistorianOperationsController : Controller
     /// Generates a new cache ID that can be used to identify a specific operation or data set.
     /// </summary>
     /// <returns></returns>
-    [HttpGet]
+    [HttpGet, Route("GenerateCacheID")]
     public string GenerateCacheID()
     {
         return Guid.NewGuid().ToString();
