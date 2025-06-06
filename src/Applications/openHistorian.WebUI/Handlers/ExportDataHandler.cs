@@ -352,7 +352,6 @@ public class ExportDataHandler
         try
         {
             const double DefaultFrameRate = 30D;
-            const int DefaultTimestampSnap = 0;
             const double DefaultTolerance = 0.5D;
 
             string dateTimeFormat = requestParameters["TimeFormat"] ?? TimeTagBase.DefaultFormat;
@@ -412,7 +411,7 @@ public class ExportDataHandler
             if (!double.TryParse(frameRateParam, out double frameRate))
                 frameRate = DefaultFrameRate;
 
-            int timestampSnap = bool.TryParse(timestampSnapParam, out bool boolState) ? (boolState ? 1 : 0) : (int.TryParse(timestampSnapParam, out int intState) ? intState : DefaultTimestampSnap);
+            bool timestampSnap = bool.TryParse(timestampSnapParam, out bool boolState) ? boolState : int.TryParse(timestampSnapParam, out int intState) && intState > 0;
 
             if (!double.TryParse(toleranceParam, out double tolerance))
                 tolerance = DefaultTolerance;
@@ -431,12 +430,13 @@ public class ExportDataHandler
             if (serverInstance is null)
                 throw new InvalidOperationException($"Cannot export data: failed to access internal historian server instance \"{instanceName}\".");
 
-            ManualResetEventSlim bufferReady = new(false);
-            BlockAllocatedMemoryStream writeBuffer = new();
+            using ManualResetEventSlim bufferReady = new(false);
+            using ManualResetEventSlim writeComplete = new(false);
+            await using BlockAllocatedMemoryStream writeBuffer = new();
             bool[] readComplete = [false];
 
-            Task readTask = ReadTask(fileType, schema, serverInstance, instanceName, metadata, pointIDIndex, startTime, endTime, writeBuffer, bufferReady, frameRate, missingAsNaN, timestampSnap, alignTimestamps, toleranceTicks, fillMissingTimestamps, dateTimeFormat, readComplete, operationState, cancellationToken);
-            Task writeTask = WriteTask(responseStream, headers, writeBuffer, bufferReady, readComplete, operationState, completeHistorianOperation, cancellationToken);
+            Task<Task> readTask = ReadTask(fileType, schema, serverInstance, instanceName, metadata, pointIDIndex, startTime, endTime, writeBuffer, bufferReady, writeComplete, frameRate, missingAsNaN, timestampSnap, alignTimestamps, toleranceTicks, fillMissingTimestamps, dateTimeFormat, readComplete, operationState, cancellationToken);
+            Task<Task> writeTask = WriteTask(responseStream, headers, writeBuffer, bufferReady, writeComplete, readComplete, operationState, completeHistorianOperation, cancellationToken);
 
             await Task.WhenAll(writeTask, readTask);
 
@@ -455,17 +455,19 @@ public class ExportDataHandler
         }
     }
 
-    private static Task ReadTask(FileType? fileType, Schema? schema, HistorianServer serverInstance, string instanceName, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, DateTime endTime, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, double frameRate, bool missingAsNaN, bool timestampSnap, bool alignTimestamps, int toleranceTicks, bool fillMissingTimestamps, string dateTimeFormat, bool[] readComplete, HistorianOperationState? operationState, CancellationToken cancellationToken)
+    private static Task<Task> ReadTask(FileType? fileType, Schema? schema, HistorianServer serverInstance, string instanceName, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, DateTime endTime, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, ManualResetEventSlim writeComplete, double frameRate, bool missingAsNaN, bool timestampSnap, bool alignTimestamps, int toleranceTicks, bool fillMissingTimestamps, string dateTimeFormat, bool[] readComplete, HistorianOperationState? operationState, CancellationToken cancellationToken)
     {
-        return Task.Factory.StartNew(() =>
+        return Task.Factory.StartNew(async () =>
         {
             uint sample = 0U;
 
             try
             {
                 using SnapClient connection = SnapClient.Connect(serverInstance.Host);
-                BlockAllocatedMemoryStream readBuffer = new();
-                StreamWriter readBufferWriter = new(readBuffer) { NewLine = Writer.CRLF };
+                await using BlockAllocatedMemoryStream readBuffer = new();
+                await using StreamWriter readBufferWriter = new(readBuffer);
+                
+                readBufferWriter.NewLine = Writer.CRLF;
                 int valueCount = metadata.PointIDs.Length;
 
                 if (fileType is not null && metadata.TargetQualityFlagsID > 0)
@@ -495,10 +497,10 @@ public class ExportDataHandler
                 MatchFilterBase<HistorianKey, HistorianValue> pointFilter = PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(metadata.PointIDs);
                 HistorianKey historianKey = new();
                 HistorianValue historianValue = new();
-                ushort fracSecValue = 0;
+                ushort currentFracSec = 0;
 
                 // Write row values function
-                void bufferValues(DateTime recordTimestamp)
+                async Task bufferValuesAsync(DateTime recordTimestamp, ushort fracSecValue)
                 {
                     // Schema nullability check validated prior to this method call
                     switch (fileType)
@@ -516,8 +518,8 @@ public class ExportDataHandler
                             Writer.WriteNextRecordFloat32(readBuffer, schema!, recordTimestamp, values, sample++, true, fracSecValue);
                             break;
                         case null:
-                            readBufferWriter.Write($"{Environment.NewLine}{recordTimestamp.ToString(dateTimeFormat)},");
-                            readBufferWriter.Write(missingAsNaN ? string.Join(",", values) : string.Join(",", values.Select(val => double.IsNaN(val) ? "" : $"{val}")));
+                            await readBufferWriter.WriteAsync($"{Environment.NewLine}{recordTimestamp.ToString(dateTimeFormat)},");
+                            await readBufferWriter.WriteAsync(missingAsNaN ? string.Join(",", values) : string.Join(",", values.Select(val => double.IsNaN(val) ? "" : $"{val}")));
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(fileType), fileType, null);
@@ -545,7 +547,7 @@ public class ExportDataHandler
                 bool adjustTimeStamp = timestampSnap; // TODO: Change to use "FirstTimestampBasedOn" parameter value
                 long baseTime = timestampSnap ? Ticks.RoundToSecondDistribution(startTime.Ticks, frameRate, startTime.Ticks - startTime.Ticks % Ticks.PerSecond): startTime.Ticks;
 
-                while (stream.Read(historianKey, historianValue) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
+                while (await stream.ReadAsync(historianKey, historianValue) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
                 {
                     ulong timestamp;
 
@@ -574,7 +576,7 @@ public class ExportDataHandler
                     if (timestamp != lastTimestamp)
                     {
                         if (lastTimestamp > 0UL)
-                            bufferValues(new DateTime((long)lastTimestamp));
+                            await bufferValuesAsync(new DateTime((long)lastTimestamp), currentFracSec);
 
                         for (int i = 0; i < values.Length; i++)
                             values[i] = double.NaN;
@@ -590,7 +592,7 @@ public class ExportDataHandler
                                 for (ulong i = 1; i < difference / interval; i++)
                                 {
                                     interpolated = (ulong)Ticks.RoundToSecondDistribution((long)(interpolated + interval), frameRate, startTime.Ticks).Value;
-                                    bufferValues(new DateTime((long)interpolated, DateTimeKind.Utc));
+                                    await bufferValuesAsync(new DateTime((long)interpolated, DateTimeKind.Utc), currentFracSec);
                                 }
                             }
                         }
@@ -602,12 +604,12 @@ public class ExportDataHandler
                     if (pointIDIndex.TryGetValue(historianKey.PointID, out int index))
                         values[index] = historianValue.AsSingle;
                     else if (historianKey.PointID == (ulong)metadata.TargetQualityFlagsID)
-                        fracSecValue = (ushort)historianValue.AsSingle;
+                        currentFracSec = (ushort)historianValue.AsSingle;
                 }
 
                 if (lastTimestamp > 0UL)
                 {
-                    bufferValues(new DateTime((long)lastTimestamp));
+                    await bufferValuesAsync(new DateTime((long)lastTimestamp), currentFracSec);
                 }
                 else
                 {
@@ -626,7 +628,7 @@ public class ExportDataHandler
                             for (ulong i = 1; i < difference / interval; i++)
                             {
                                 interpolated = (ulong)Ticks.RoundToSecondDistribution((long)(interpolated + interval), frameRate, startTime.Ticks).Value;
-                                bufferValues(new DateTime((long)interpolated, DateTimeKind.Utc));
+                                await bufferValuesAsync(new DateTime((long)interpolated, DateTimeKind.Utc), currentFracSec);
                             }
                         }
                     }
@@ -660,11 +662,12 @@ public class ExportDataHandler
 
                 readComplete[0] = true;
                 bufferReady.Set();
+                writeComplete.Wait(2000, cancellationToken);
             }
         }, cancellationToken);
     }
 
-    private static Task WriteTask(Stream responseStream, byte[]? headers, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, bool[] readComplete, HistorianOperationState? operationState, Action? completeHistorianOperation, CancellationToken cancellationToken)
+    private static Task<Task> WriteTask(Stream responseStream, byte[]? headers, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, ManualResetEventSlim writeComplete, bool[] readComplete, HistorianOperationState? operationState, Action? completeHistorianOperation, CancellationToken cancellationToken)
     {
         return Task.Factory.StartNew(async () =>
         {
@@ -674,7 +677,7 @@ public class ExportDataHandler
             {
                 // Write headers, e.g., CSV header row or CFF schema
                 if (headers is not null)
-                    await responseStream.WriteAsync(headers, 0, headers.Length, cancellationToken);
+                    await responseStream.WriteAsync(headers, cancellationToken);
 
                 while ((writeBuffer.Length > 0 || !readComplete[0]) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
                 {
@@ -689,7 +692,10 @@ public class ExportDataHandler
                         writeBuffer.Clear();
                     }
 
-                    await responseStream.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
+                    if (bytes.Length == 0)
+                        continue;
+
+                    await responseStream.WriteAsync(bytes, cancellationToken);
                     binaryByteCount += bytes.Length;
                 }
 
@@ -711,6 +717,7 @@ public class ExportDataHandler
                 if (operationState is not null)
                     operationState.BinaryByteCount = binaryByteCount;
 
+                writeComplete.Set();
                 completeHistorianOperation?.Invoke();
             }
         }, cancellationToken);
