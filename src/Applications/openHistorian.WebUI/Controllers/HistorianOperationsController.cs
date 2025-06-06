@@ -23,7 +23,6 @@
 
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Runtime.Serialization;
 using Gemstone;
 using Gemstone.ActionExtensions;
 using Microsoft.AspNetCore.Mvc;
@@ -182,13 +181,14 @@ public class HistorianOperationsController : Controller
     public uint BeginDataExport(string startTime, string endTime)
     {
         long startTicks, endTicks;
+
         try
         {
             startTicks = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(startTime, CultureInfo.InvariantCulture)).Ticks;
         }
         catch (Exception ex)
         {
-            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(startTime)}\" parameter value \"{startTime}\". Error message: {ex.Message}", nameof(startTime), ex);
+            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(startTime)}\" parameter value \"{startTime}\": {ex.Message}", nameof(startTime), ex);
         }
 
         try
@@ -197,7 +197,7 @@ public class HistorianOperationsController : Controller
         }
         catch (Exception ex)
         {
-            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(endTime)}\" parameter value \"{endTime}\". Error message: {ex.Message}", nameof(endTime), ex);
+            throw new ArgumentException($"Cannot export data: failed to parse \"{nameof(endTime)}\" parameter value \"{endTime}\": {ex.Message}", nameof(endTime), ex);
         }
 
         if (startTicks > endTicks)
@@ -232,62 +232,62 @@ public class HistorianOperationsController : Controller
         uint operationHandle = AddNewHistorianOperationState(operationState);
 
         new Thread(() =>
+        {
+            operationState.StartTime = DateTime.UtcNow.Ticks;
+
+            try
             {
-                operationState.StartTime = DateTime.UtcNow.Ticks;
+                SnapServer? server = GetServer(instanceName)?.Host;
 
-                try
+                if (server is null)
+                    throw new InvalidOperationException($"Server is null for instance [{instanceName}].");
+
+                using SnapClient connection = SnapClient.Connect(server);
+                using ClientDatabaseBase<HistorianKey, HistorianValue>? database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName);
+
+                if (database is null)
+                    throw new InvalidOperationException($"Database is null for instance [{instanceName}].");
+
+                HistorianKey key = new();
+                HistorianValue value = new();
+
+                foreach (TrendValue trendValue in values)
                 {
-                    SnapServer? server = GetServer(instanceName)?.Host;
-
-                    if (server is null)
-                        throw new InvalidOperationException($"Server is null for instance [{instanceName}].");
-
-                    using SnapClient connection = SnapClient.Connect(server);
-                    using ClientDatabaseBase<HistorianKey, HistorianValue>? database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName);
-
-                    if (database is null)
-                        throw new InvalidOperationException($"Database is null for instance [{instanceName}].");
-
-                    HistorianKey key = new();
-                    HistorianValue value = new();
-
-                    foreach (TrendValue trendValue in values)
+                    key.PointID = (ulong)trendValue.ID;
+                    key.Timestamp = timestampType switch
                     {
-                        key.PointID = (ulong)trendValue.ID;
-                        key.Timestamp = timestampType switch
-                        {
-                            TimestampType.Ticks => (ulong)trendValue.Timestamp,
-                            TimestampType.UnixSeconds => (ulong)trendValue.Timestamp * 10000000UL + 621355968000000000UL,
-                            TimestampType.UnixMilliseconds => (ulong)trendValue.Timestamp * 10000UL + 621355968000000000UL,
-                            _ => key.Timestamp
-                        };
+                        TimestampType.Ticks => (ulong)trendValue.Timestamp,
+                        TimestampType.UnixSeconds => (ulong)trendValue.Timestamp * 10000000UL + 621355968000000000UL,
+                        TimestampType.UnixMilliseconds => (ulong)trendValue.Timestamp * 10000UL + 621355968000000000UL,
+                        _ => key.Timestamp
+                    };
 
-                        value.AsSingle = (float)trendValue.Value;
+                    value.AsSingle = (float)trendValue.Value;
 
-                        database.Write(key, value);
-                        operationState.Progress++;
+                    database.Write(key, value);
+                    operationState.Progress++;
 
-                        if (operationState.CancellationToken.IsCancelled)
-                            break;
-                    }
-
-                    operationState.Completed = !operationState.CancellationToken.IsCancelled;
-                }
-                catch (Exception ex)
-                {
-                    operationState.Failed = true;
-                    operationState.FailedReason = ex.Message;
+                    if (operationState.CancellationToken.IsCancelled)
+                        break;
                 }
 
-                // Schedule operation handle to be removed
-                CancelHistorianOperation(operationHandle);
+                operationState.Completed = !operationState.CancellationToken.IsCancelled;
+            }
+            catch (Exception ex)
+            {
+                operationState.Failed = true;
+                operationState.FailedReason = ex.Message;
+            }
 
-                operationState.StopTime = DateTime.UtcNow.Ticks;
-            })
+            // Schedule operation handle to be removed
+            CancelHistorianOperation(operationHandle);
+
+            operationState.StopTime = DateTime.UtcNow.Ticks;
+        })
         {
             IsBackground = true
         }
-            .Start();
+        .Start();
 
         return operationHandle;
     }
