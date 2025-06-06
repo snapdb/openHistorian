@@ -28,6 +28,7 @@ using System.Net;
 using System.Runtime.Caching;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Gemstone;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.COMTRADE;
@@ -67,6 +68,29 @@ public class ExportDataHandler
     #region [ Members ]
 
     // Nested Types
+    private class ExportSettings
+    {
+        public long[] PointIDs = null!;
+        public string StartTime = null!;
+        public string EndTime = null!;
+        public int FileFormat;
+        public string FileName = null!;
+        public string TimeFormat = null!;
+        public string InstanceName = null!;
+        public bool AlignTimestamps;
+        public bool MissingAsNaN;
+        public bool FillMissingTimestamps;
+        public bool TimestampSnap;
+        public bool UseCFF;
+        public string FirstTimestampBasedOn = null!; // "frame-rate-starting-at-top-of-second" | "first-available-measurement" | "exact-start-time"
+        public string ColumnHeaders = null!;
+        public string FrameRateUnit = null!; // "frames-per-second" | "frames-per-minute" | "frames-per-hour"
+        public double FrameRate;
+        public double Tolerance;
+        public long OperationHandle; // Operation handle from '/api/HistorianOperations/BeginDataExport' for tracking export operation state, or zero to skip operation tracking
+        public string HeaderCacheID = null!; // Randomly generated ID, e.g., Guid string, to identify cached COMTRADE header data for download after export
+    }
+
     private class PointMetadata
     {
         public ulong[] PointIDs = null!;
@@ -112,7 +136,6 @@ public class ExportDataHandler
     /// Invokes the <see cref="ExportDataHandler"/> to process an HTTP request.
     /// </summary>
     /// <param name="context">HTTP context to process.</param>
-    /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public Task Invoke(HttpContext context)
     {
@@ -131,19 +154,90 @@ public class ExportDataHandler
     {
         NameValueCollection requestParameters = new Uri(request.GetEncodedUrl()).ParseQueryString();
 
-        // Initial post request assumed to be all point IDs to query, to be cached by key on server. This operation
-        // allows for very large point ID selection posts that could otherwise exceed URI parameter string limits.
         if (request.Method.Equals("Post", StringComparison.OrdinalIgnoreCase))
         {
             using StreamReader reader = new(request.Body);
             string content = await reader.ReadToEndAsync(cancellationToken);
-            ulong[] pointIDs = content.Split(',').Select(ulong.Parse).ToArray();
-            Array.Sort(pointIDs);
 
-            response.StatusCode = (int)HttpStatusCode.OK;
-            await response.WriteAsync(CachePointMetadata(securityPrincipal, pointIDs), cancellationToken);
+            if (string.IsNullOrWhiteSpace(content))
+                throw new InvalidOperationException("Cannot export data: no export settings JSON or point ID values were provided in the request body.");
+
+            try
+            {
+                // Attempt to deserialize export settings from JSON content in request body
+                ExportSettings? settings = JsonSerializer.Deserialize<ExportSettings>(content);
+                
+                if (settings == null)
+                    throw new InvalidOperationException("Cannot export data: export settings could not be deserialized.");
+
+                if (string.IsNullOrWhiteSpace(settings.FileName))
+                    settings.FileName = "Export";
+
+                settings.FileName = $"{settings.FileName}.{(settings.FileFormat < 0 ? "csv" : settings.UseCFF ? "cff" : "dat")}";
+
+                response.Headers.ContentType = settings.FileFormat switch
+                {
+                    -1 => CsvContentType,   // CSV
+                    0 => TextContentType,   // COMTRADE ASCII
+                    _ => BinaryContentType  // COMTRADE Binary
+                };
+
+                response.Headers.ContentDisposition = new StringValues($"attachment; filename=\"{settings.FileName}\"");
+
+                PointMetadata metadata;
+
+                try
+                {
+                    metadata = CreatePointMetadata(securityPrincipal, settings.PointIDs.Select(id => (ulong)id).ToArray());
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"Cannot export data: failed to parse \"PointIDs\" value: {ex.Message}", ex);
+                }
+
+                double frameRate = settings.FrameRateUnit switch 
+                {
+                    "frames-per-second" => settings.FrameRate,
+                    "frames-per-minute" => settings.FrameRate / 60D,
+                    "frames-per-hour" => settings.FrameRate / 3600D,
+                    _ => settings.FrameRate
+                };
+
+                requestParameters["TimeFormat"] = settings.TimeFormat;
+                requestParameters["StartTime"] = settings.StartTime;
+                requestParameters["EndTime"] = settings.EndTime;
+                requestParameters["FrameRate"] = $"{frameRate}";
+                requestParameters["AlignTimestamps"] = settings.AlignTimestamps.ToString();
+                requestParameters["MissingAsNaN"] = settings.MissingAsNaN.ToString();
+                requestParameters["FillMissingTimestamps"] = settings.FillMissingTimestamps.ToString();
+                requestParameters["InstanceName"] = settings.InstanceName;
+                requestParameters["TimestampSnap"] = $"{settings.TimestampSnap}";
+                requestParameters["Tolerance"] = $"{settings.Tolerance}";
+                requestParameters["FirstTimestampBasedOn"] = settings.FirstTimestampBasedOn;
+                requestParameters["ColumnHeaders"] = settings.ColumnHeaders;
+                requestParameters["HeaderCacheID"] = settings.HeaderCacheID;
+
+                if (settings.OperationHandle > 0L)
+                    requestParameters["OperationHandle"] = $"{settings.OperationHandle}";
+
+                await ExportToStreamAsync(settings.FileFormat, settings.UseCFF, settings.FileName, metadata, requestParameters, response.Body, cancellationToken);
+
+            }
+            catch (Exception ex)
+            {
+                Logger.SwallowException(ex, "Failed to process POST body request as 'ExportSettings' JSON, attempting to parse body as point ID list", nameof(ProcessRequestAsync));
+
+                // Fall back to original point ID parsing operation if JSON deserialization fails which assumes that
+                // initial post request is all point IDs to query, to be cached by key on server. This operation allows
+                // for very large point ID selection posts that could otherwise exceed URI parameter string limits.
+                ulong[] pointIDs = content.Split(',').Select(ulong.Parse).ToArray();
+                Array.Sort(pointIDs);
+
+                response.StatusCode = (int)HttpStatusCode.OK;
+                await response.WriteAsync(CachePointMetadata(securityPrincipal, pointIDs), cancellationToken);
+            }
         }
-        else
+        else // Assuming GET request for other operations
         {
             if (requestParameters["ExportCachedHeader"]?.ParseBoolean() ?? false)
             {
@@ -256,7 +350,7 @@ public class ExportDataHandler
             const int DefaultTimestampSnap = 0;
             const double DefaultTolerance = 0.5D;
 
-            string? dateTimeFormat = requestParameters["TimeFormat"];
+            string dateTimeFormat = requestParameters["TimeFormat"] ?? TimeTagBase.DefaultFormat;
             string? startTimestampParam = requestParameters["StartTime"];
             string? endTimestampParam = requestParameters["EndTime"];
             string? frameRateParam = requestParameters["FrameRate"];
@@ -266,6 +360,8 @@ public class ExportDataHandler
             string? instanceName = requestParameters["InstanceName"];
             string? timestampSnapParam = requestParameters["TimestampSnap"];
             string? toleranceParam = requestParameters["Tolerance"]; // In milliseconds
+
+            // TODO: Implement support for "FirstTimestampBasedOn" parameter
 
             if (string.IsNullOrEmpty(startTimestampParam))
                 throw new ArgumentNullException("StartTime", "Cannot export data: no \"StartTime\" parameter value was specified.");
@@ -609,7 +705,7 @@ public class ExportDataHandler
                 }
 
                 // Flush stream
-                responseStream.Flush();
+                await responseStream.FlushAsync(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -917,8 +1013,16 @@ public class ExportDataHandler
     #endregion
 }
 
+/// <summary>
+/// Extensions for <see cref="IApplicationBuilder"/> to add the <see cref="ExportDataHandler"/> middleware.
+/// </summary>
 public static class ExportDataHandlerExtensions
 {
+    /// <summary>
+    /// Adds the <see cref="ExportDataHandler"/> middleware to the application's request pipeline.
+    /// </summary>
+    /// <param name="builder">The <see cref="IApplicationBuilder"/> instance to configure.</param>
+    /// <returns>The <see cref="IApplicationBuilder"/> instance with the middleware added.</returns>
     public static IApplicationBuilder UseExportDataHandler(this IApplicationBuilder builder)
     {
         return builder.UseMiddleware<ExportDataHandler>();
