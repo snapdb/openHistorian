@@ -360,6 +360,7 @@ public class ExportDataHandler
             string? instanceName = requestParameters["InstanceName"];
             string? timestampSnapParam = requestParameters["TimestampSnap"];
             string? toleranceParam = requestParameters["Tolerance"]; // In milliseconds
+            string? columnHeaders = requestParameters["ColumnHeaders"];
 
             // TODO: Implement support for "FirstTimestampBasedOn" parameter
 
@@ -404,7 +405,7 @@ public class ExportDataHandler
                 fileType = (FileType)fileFormat;
 
             Dictionary<ulong, int> pointIDIndex = new(metadata.PointIDs.Length);
-            byte[]? headers = GetHeaders(fileType, useCFF, metadata, pointIDIndex, startTime, out Schema? schema);
+            byte[]? headers = GetHeaders(fileType, useCFF, metadata, pointIDIndex, startTime, columnHeaders, out Schema? schema);
 
             if (fileFormat > -1 && !useCFF && schema is null)
                 throw new InvalidOperationException($"Cannot export data: failed to create schema for COMTRADE file format {fileType}.");
@@ -744,7 +745,7 @@ public class ExportDataHandler
     }
 
     // Static Methods
-    private static byte[]? GetHeaders(FileType? fileType, bool useCFF, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, out Schema? schema)
+    private static byte[]? GetHeaders(FileType? fileType, bool useCFF, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, string? columnHeaders, out Schema? schema)
     {
         using AdoDataConnection connection = new(Settings.Instance);
         TableOperations<Device> deviceTable = new(connection);
@@ -759,19 +760,21 @@ public class ExportDataHandler
         if (fileType is null)
         {
             // Create CSV header
-            StringBuilder headers = new("\"Timestamp\"");
+            StringBuilder headers;
 
-            if (metadata.Measurements.Length > 0)
+            if (string.IsNullOrWhiteSpace(columnHeaders))
             {
-                headers.Append(',');
-                headers.Append(string.Join(",", metadata.Measurements.Select(measurement => $"\"[{measurement.PointID}] {measurement.PointTag}\"")));
+                headers = new StringBuilder("\"Timestamp\"");
+
+                if (metadata.Measurements.Length > 0)
+                {
+                    headers.Append(',');
+                    headers.Append(string.Join(",", metadata.Measurements.Select(measurement => $"\"[{measurement.PointID}] {measurement.PointTag}\"")));
+                }
             }
-            //Add row with Description
-            headers.Append(Environment.NewLine);
-            if (metadata.Measurements.Length > 0)
+            else
             {
-                headers.Append(',');
-                headers.Append(string.Join(",", metadata.Measurements.Select(measurement => $"\"{measurement.Description}\"")));
+                headers = new StringBuilder(columnHeaders);
             }
 
             for (int i = 0; i < metadata.PointIDs.Length; i++)
