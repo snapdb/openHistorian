@@ -383,7 +383,7 @@ public class ExportDataHandler
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Cannot export data: failed to parse \"StartTime\" parameter value \"{startTimestampParam}\" with a format of \"{dateTimeFormat}\". Error message: {ex.Message}", "StartTime", ex);
+                throw new ArgumentException($"Cannot export data: failed to parse \"StartTime\" parameter value \"{startTimestampParam}\": {ex.Message}", "StartTime", ex);
             }
 
             try
@@ -392,7 +392,7 @@ public class ExportDataHandler
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Cannot export data: failed to parse \"EndTime\" parameter value \"{endTimestampParam}\" with a format of \"{dateTimeFormat}\". Error message: {ex.Message}", "EndTime", ex);
+                throw new ArgumentException($"Cannot export data: failed to parse \"EndTime\" parameter value \"{endTimestampParam}\": {ex.Message}", "EndTime", ex);
             }
 
             if (startTime > endTime)
@@ -412,8 +412,7 @@ public class ExportDataHandler
             if (!double.TryParse(frameRateParam, out double frameRate))
                 frameRate = DefaultFrameRate;
 
-            if (!int.TryParse(timestampSnapParam, out int timestampSnap))
-                timestampSnap = DefaultTimestampSnap;
+            int timestampSnap = bool.TryParse(timestampSnapParam, out bool boolState) ? (boolState ? 1 : 0) : (int.TryParse(timestampSnapParam, out int intState) ? intState : DefaultTimestampSnap);
 
             if (!double.TryParse(toleranceParam, out double tolerance))
                 tolerance = DefaultTolerance;
@@ -456,7 +455,7 @@ public class ExportDataHandler
         }
     }
 
-    private static Task ReadTask(FileType? fileType, Schema? schema, HistorianServer serverInstance, string instanceName, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, DateTime endTime, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, double frameRate, bool missingAsNaN, int timestampSnap, bool alignTimestamps, int toleranceTicks, bool fillMissingTimestamps, string dateTimeFormat, bool[] readComplete, HistorianOperationState? operationState, CancellationToken cancellationToken)
+    private static Task ReadTask(FileType? fileType, Schema? schema, HistorianServer serverInstance, string instanceName, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, DateTime endTime, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, double frameRate, bool missingAsNaN, bool timestampSnap, bool alignTimestamps, int toleranceTicks, bool fillMissingTimestamps, string dateTimeFormat, bool[] readComplete, HistorianOperationState? operationState, CancellationToken cancellationToken)
     {
         return Task.Factory.StartNew(() =>
         {
@@ -543,19 +542,8 @@ public class ExportDataHandler
                 using TreeStream<HistorianKey, HistorianValue> stream = database.Read(SortedTreeEngineReaderOptions.Default, timeFilter, pointFilter);
 
                 // Adjust timestamp to use first timestamp as base
-                bool adjustTimeStamp = timestampSnap switch
-                {
-                    0 => false,
-                    1 => true,
-                    2 => false,
-                    _ => true
-                };
-
-                long baseTime = timestampSnap switch
-                {
-                    0 => Ticks.RoundToSecondDistribution(startTime.Ticks, frameRate, startTime.Ticks - startTime.Ticks % Ticks.PerSecond),
-                    _ => startTime.Ticks
-                };
+                bool adjustTimeStamp = timestampSnap; // TODO: Change to use "FirstTimestampBasedOn" parameter value
+                long baseTime = timestampSnap ? Ticks.RoundToSecondDistribution(startTime.Ticks, frameRate, startTime.Ticks - startTime.Ticks % Ticks.PerSecond): startTime.Ticks;
 
                 while (stream.Read(historianKey, historianValue) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
                 {
@@ -571,6 +559,7 @@ public class ExportDataHandler
 
                         // Make sure the timestamp is actually close enough to the distribution
                         Ticks ticks = Ticks.ToSecondDistribution((long)historianKey.Timestamp, frameRate, baseTime, toleranceTicks);
+
                         if (ticks == Ticks.MinValue)
                             continue;
 
@@ -643,7 +632,7 @@ public class ExportDataHandler
                     }
                 }
 
-                readBufferWriter.Flush();
+                await readBufferWriter.FlushAsync(cancellationToken);
 
                 if (readBuffer.Length > 0)
                 {
