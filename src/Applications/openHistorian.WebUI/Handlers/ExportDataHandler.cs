@@ -71,8 +71,8 @@ public class ExportDataHandler
     private class ExportSettings
     {
         public long[] PointIDs = null!;
-        public string StartTime = null!;
-        public string EndTime = null!;
+        public long StartTime;
+        public long EndTime;
         public int FileFormat;
         public string FileName = null!;
         public string TimeFormat = null!;
@@ -164,8 +164,13 @@ public class ExportDataHandler
 
             try
             {
+                JsonSerializerOptions options = new JsonSerializerOptions
+                {
+                    IncludeFields = true,
+                };
+
                 // Attempt to deserialize export settings from JSON content in request body
-                ExportSettings? settings = JsonSerializer.Deserialize<ExportSettings>(content);
+                ExportSettings? settings = JsonSerializer.Deserialize<ExportSettings>(content, options);
                 
                 if (settings == null)
                     throw new InvalidOperationException("Cannot export data: export settings could not be deserialized.");
@@ -204,8 +209,8 @@ public class ExportDataHandler
                 };
 
                 requestParameters["TimeFormat"] = settings.TimeFormat;
-                requestParameters["StartTime"] = settings.StartTime;
-                requestParameters["EndTime"] = settings.EndTime;
+                requestParameters["StartTime"] = settings.StartTime.ToString();
+                requestParameters["EndTime"] = settings.EndTime.ToString();
                 requestParameters["FrameRate"] = $"{frameRate}";
                 requestParameters["AlignTimestamps"] = settings.AlignTimestamps.ToString();
                 requestParameters["MissingAsNaN"] = settings.MissingAsNaN.ToString();
