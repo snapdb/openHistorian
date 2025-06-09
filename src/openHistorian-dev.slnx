@@ -80,9 +80,7 @@
     <Project Path="Tools/ServiceActions/ServiceActions.csproj">
       <BuildType Solution="Development|*" Project="Debug" />
     </Project>
-    <Project Path="Tools/UpdateCOMTRADECounters/UpdateCOMTRADECounters.csproj" Id="7f5bbf4c-a27d-4367-9d1e-95aea45ec58b">
-      <BuildType Solution="Development|*" Project="Debug" />
-    </Project>
+    <Project Path="Tools/UpdateCOMTRADECounters/UpdateCOMTRADECounters.csproj" Id="7f5bbf4c-a27d-4367-9d1e-95aea45ec58b" />
   </Folder>
   <Folder Name="/UnitTests/" />
   <Folder Name="/UnitTests/Adapter/">

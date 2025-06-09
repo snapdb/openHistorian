@@ -29,6 +29,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="UpdateCOMTRADECounters.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\Tools\UpdateCOMTRADECounters\bin\$(Configuration)\UpdateCOMTRADECounters.exe" Link="UpdateCOMTRADECounters.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\gemstone\common\src\Gemstone\Gemstone.Common.csproj" Condition="'$(Configuration)'=='Development'">
       <Private>True</Private>
       <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>

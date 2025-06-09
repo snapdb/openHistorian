@@ -102,4 +102,7 @@ public static class EmbeddedResourceMiddlewareExtensions
 
     public static IEmbeddedResourceRouteBuilder MapWebRoot(this IEmbeddedResourceRouteBuilder builder, string pathPrefix) =>
         builder.Map(pathPrefix, $"{nameof(openHistorian)}.{nameof(WebUI)}.wwwroot", Assembly.GetExecutingAssembly());
+
+    public static IEmbeddedResourceRouteBuilder MapResourceRoot(this IEmbeddedResourceRouteBuilder builder) =>
+        builder.Map("/@", $"{nameof(openHistorian)}.{nameof(WebUI)}.", Assembly.GetExecutingAssembly());
 }
