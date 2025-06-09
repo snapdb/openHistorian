@@ -25,6 +25,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Reflection;
 using System.Runtime.Caching;
 using System.Security.Claims;
 using System.Text;
@@ -80,10 +81,9 @@ public class ExportDataHandler
         public bool AlignTimestamps;
         public bool MissingAsNaN;
         public bool FillMissingTimestamps;
-        public bool TimestampSnap;
         public bool UseCFF;
         public string FirstTimestampBasedOn = null!; // "frame-rate-starting-at-top-of-second" | "first-available-measurement" | "exact-start-time"
-        public string ColumnHeaders = null!;
+        public string ColumnHeaderTemplate = null!;
         public string FrameRateUnit = null!; // "frames-per-second" | "frames-per-minute" | "frames-per-hour"
         public double FrameRate;
         public double Tolerance;
@@ -164,13 +164,8 @@ public class ExportDataHandler
 
             try
             {
-                JsonSerializerOptions options = new JsonSerializerOptions
-                {
-                    IncludeFields = true,
-                };
-
                 // Attempt to deserialize export settings from JSON content in request body
-                ExportSettings? settings = JsonSerializer.Deserialize<ExportSettings>(content, options);
+                ExportSettings? settings = JsonSerializer.Deserialize<ExportSettings>(content, s_jsonOptions);
                 
                 if (settings == null)
                     throw new InvalidOperationException("Cannot export data: export settings could not be deserialized.");
@@ -203,9 +198,17 @@ public class ExportDataHandler
                 double frameRate = settings.FrameRateUnit switch 
                 {
                     "frames-per-second" => settings.FrameRate,
-                    "frames-per-minute" => settings.FrameRate / 60D,
-                    "frames-per-hour" => settings.FrameRate / 3600D,
+                    "frames-per-minute" => settings.FrameRate / 60.0D,
+                    "frames-per-hour" => settings.FrameRate / 3600.0D,
                     _ => settings.FrameRate
+                };
+
+                int timestampSnap = settings.FirstTimestampBasedOn switch
+                {
+                    "frame-rate-starting-at-top-of-second" => 0,
+                    "first-available-measurement" => 1,
+                    "exact-start-time" => 2,
+                    _ => 1,
                 };
 
                 requestParameters["TimeFormat"] = settings.TimeFormat;
@@ -216,10 +219,9 @@ public class ExportDataHandler
                 requestParameters["MissingAsNaN"] = settings.MissingAsNaN.ToString();
                 requestParameters["FillMissingTimestamps"] = settings.FillMissingTimestamps.ToString();
                 requestParameters["InstanceName"] = settings.InstanceName;
-                requestParameters["TimestampSnap"] = $"{settings.TimestampSnap}";
+                requestParameters["TimestampSnap"] = $"{timestampSnap}";
                 requestParameters["Tolerance"] = $"{settings.Tolerance}";
-                requestParameters["FirstTimestampBasedOn"] = settings.FirstTimestampBasedOn;
-                requestParameters["ColumnHeaders"] = settings.ColumnHeaders;
+                requestParameters["ColumnHeaderTemplate"] = settings.ColumnHeaderTemplate;
                 requestParameters["HeaderCacheID"] = settings.HeaderCacheID;
 
                 if (settings.OperationHandle > 0L)
@@ -364,9 +366,7 @@ public class ExportDataHandler
             string? instanceName = requestParameters["InstanceName"];
             string? timestampSnapParam = requestParameters["TimestampSnap"];
             string? toleranceParam = requestParameters["Tolerance"]; // In milliseconds
-            string? columnHeaders = requestParameters["ColumnHeaders"];
-
-            // TODO: Implement support for "FirstTimestampBasedOn" parameter
+            string? columnHeaderTemplate = requestParameters["ColumnHeaderTemplate"];
 
             if (string.IsNullOrEmpty(startTimestampParam))
                 throw new ArgumentNullException("StartTime", "Cannot export data: no \"StartTime\" parameter value was specified.");
@@ -403,7 +403,7 @@ public class ExportDataHandler
                 fileType = (FileType)fileFormat;
 
             Dictionary<ulong, int> pointIDIndex = new(metadata.PointIDs.Length);
-            byte[]? headers = GetHeaders(fileType, useCFF, metadata, pointIDIndex, startTime, columnHeaders, out Schema? schema);
+            byte[]? headers = GetHeaders(fileType, useCFF, metadata, pointIDIndex, startTime, columnHeaderTemplate, out Schema? schema);
 
             if (fileFormat > -1 && !useCFF && schema is null)
                 throw new InvalidOperationException($"Cannot export data: failed to create schema for COMTRADE file format {fileType}.");
@@ -411,7 +411,7 @@ public class ExportDataHandler
             if (!double.TryParse(frameRateParam, out double frameRate))
                 frameRate = DefaultFrameRate;
 
-            bool timestampSnap = bool.TryParse(timestampSnapParam, out bool boolState) ? boolState : int.TryParse(timestampSnapParam, out int intState) && intState > 0;
+            int.TryParse(timestampSnapParam, out int timestampSnap);
 
             if (!double.TryParse(toleranceParam, out double tolerance))
                 tolerance = DefaultTolerance;
@@ -431,12 +431,11 @@ public class ExportDataHandler
                 throw new InvalidOperationException($"Cannot export data: failed to access internal historian server instance \"{instanceName}\".");
 
             using ManualResetEventSlim bufferReady = new(false);
-            using ManualResetEventSlim writeComplete = new(false);
             BlockAllocatedMemoryStream writeBuffer = new();
             bool[] readComplete = [false];
 
-            Task<Task> readTask = ReadTask(fileType, schema, serverInstance, instanceName, metadata, pointIDIndex, startTime, endTime, writeBuffer, bufferReady, writeComplete, frameRate, missingAsNaN, timestampSnap, alignTimestamps, toleranceTicks, fillMissingTimestamps, dateTimeFormat, readComplete, operationState, cancellationToken);
-            Task<Task> writeTask = WriteTask(responseStream, headers, writeBuffer, bufferReady, writeComplete, readComplete, operationState, completeHistorianOperation, cancellationToken);
+            Task readTask = ReadTask(fileType, schema, serverInstance, instanceName, metadata, pointIDIndex, startTime, endTime, writeBuffer, bufferReady, frameRate, missingAsNaN, timestampSnap, alignTimestamps, toleranceTicks, fillMissingTimestamps, dateTimeFormat, readComplete, operationState, cancellationToken);
+            Task writeTask = WriteTask(responseStream, headers, writeBuffer, bufferReady, readComplete, operationState, completeHistorianOperation, cancellationToken);
 
             await Task.WhenAll(writeTask, readTask);
 
@@ -455,175 +454,137 @@ public class ExportDataHandler
         }
     }
 
-    private static Task<Task> ReadTask(FileType? fileType, Schema? schema, HistorianServer serverInstance, string instanceName, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, DateTime endTime, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, ManualResetEventSlim writeComplete, double frameRate, bool missingAsNaN, bool timestampSnap, bool alignTimestamps, int toleranceTicks, bool fillMissingTimestamps, string dateTimeFormat, bool[] readComplete, HistorianOperationState? operationState, CancellationToken cancellationToken)
+    private static async Task ReadTask(FileType? fileType, Schema? schema, HistorianServer serverInstance, string instanceName, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, DateTime endTime, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, double frameRate, bool missingAsNaN, int timestampSnap, bool alignTimestamps, int toleranceTicks, bool fillMissingTimestamps, string dateTimeFormat, bool[] readComplete, HistorianOperationState? operationState, CancellationToken cancellationToken)
     {
-        return Task.Factory.StartNew(async () =>
+        uint sample = 0U;
+
+        try
         {
-            uint sample = 0U;
+            using SnapClient connection = SnapClient.Connect(serverInstance.Host);
+            await using BlockAllocatedMemoryStream readBuffer = new();
+            await using StreamWriter readBufferWriter = new(readBuffer);
+            
+            readBufferWriter.NewLine = Writer.CRLF;
+            int valueCount = metadata.PointIDs.Length;
 
-            try
+            if (fileType is not null && metadata.TargetQualityFlagsID > 0)
+                valueCount--;
+
+            double[] values = new double[valueCount];
+
+            for (int i = 0; i < values.Length; i++)
+                values[i] = double.NaN;
+
+            ulong interval;
+
+            if (Math.Abs(frameRate % 1) <= double.Epsilon * 100)
             {
-                using SnapClient connection = SnapClient.Connect(serverInstance.Host);
-                await using BlockAllocatedMemoryStream readBuffer = new();
-                await using StreamWriter readBufferWriter = new(readBuffer);
-                
-                readBufferWriter.NewLine = Writer.CRLF;
-                int valueCount = metadata.PointIDs.Length;
+                Ticks[] subseconds = Ticks.SubsecondDistribution((int)frameRate);
+                interval = (ulong)(subseconds.Length > 1 ? subseconds[1].Value : Ticks.PerSecond);
+            }
+            else
+            {
+                interval = (ulong)(Math.Floor(1.0d / frameRate) * Ticks.PerSecond);
+            }
 
-                if (fileType is not null && metadata.TargetQualityFlagsID > 0)
-                    valueCount--;
+            ulong lastTimestamp = 0;
 
-                double[] values = new double[valueCount];
+            // Write data pages
+            SeekFilterBase<HistorianKey> timeFilter = TimestampSeekFilter.CreateFromRange<HistorianKey>(startTime, endTime);
+            MatchFilterBase<HistorianKey, HistorianValue> pointFilter = PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(metadata.PointIDs);
+            HistorianKey historianKey = new();
+            HistorianValue historianValue = new();
+            ushort currentFracSec = 0;
 
-                for (int i = 0; i < values.Length; i++)
-                    values[i] = double.NaN;
-
-                ulong interval;
-
-                if (Math.Abs(frameRate % 1) <= double.Epsilon * 100)
+            // Write row values function
+            async Task bufferValuesAsync(DateTime recordTimestamp, ushort fracSecValue)
+            {
+                // Schema nullability check validated prior to this method call
+                switch (fileType)
                 {
-                    Ticks[] subseconds = Ticks.SubsecondDistribution((int)frameRate);
-                    interval = (ulong)(subseconds.Length > 1 ? subseconds[1].Value : Ticks.PerSecond);
+                    case FileType.Ascii:
+                        Writer.WriteNextRecordAscii(readBufferWriter, schema!, recordTimestamp, values, sample++, true, fracSecValue);
+                        break;
+                    case FileType.Binary:
+                        Writer.WriteNextRecordBinary(readBuffer, schema!, recordTimestamp, values, sample++, true, fracSecValue);
+                        break;
+                    case FileType.Binary32:
+                        Writer.WriteNextRecordBinary32(readBuffer, schema!, recordTimestamp, values, sample++, true, fracSecValue);
+                        break;
+                    case FileType.Float32:
+                        Writer.WriteNextRecordFloat32(readBuffer, schema!, recordTimestamp, values, sample++, true, fracSecValue);
+                        break;
+                    case null:
+                        await readBufferWriter.WriteAsync($"{Environment.NewLine}{recordTimestamp.ToString(dateTimeFormat)},");
+                        await readBufferWriter.WriteAsync(missingAsNaN ? string.Join(",", values) : string.Join(",", values.Select(val => double.IsNaN(val) ? "" : $"{val}")));
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(fileType), fileType, null);
+                }
+
+                // Update progress based on time
+                if (operationState is not null)
+                    operationState.Progress = recordTimestamp.Ticks - startTime.Ticks;
+
+                if (readBuffer.Length < TargetBufferSize)
+                    return;
+
+                lock (writeBuffer)
+                    readBuffer.WriteTo(writeBuffer);
+
+                readBuffer.Clear();
+                bufferReady.Set();
+            }
+
+            // Start stream reader for the provided time window and selected points
+            using ClientDatabaseBase<HistorianKey, HistorianValue> database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName) ?? throw new InvalidOperationException($"Cannot export data: failed to access historian database instance \"{instanceName}\".");
+            using TreeStream<HistorianKey, HistorianValue> stream = database.Read(SortedTreeEngineReaderOptions.Default, timeFilter, pointFilter);
+
+            // Adjust timestamp to use first timestamp as base
+            bool adjustTimeStamp = timestampSnap == 0;
+            long baseTime = adjustTimeStamp ? Ticks.RoundToSecondDistribution(startTime.Ticks, frameRate, startTime.Ticks - startTime.Ticks % Ticks.PerSecond): startTime.Ticks;
+
+            while (await stream.ReadAsync(historianKey, historianValue) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
+            {
+                ulong timestamp;
+
+                if (alignTimestamps)
+                {
+                    if (adjustTimeStamp)
+                    {
+                        adjustTimeStamp = false;
+                        baseTime = (long)historianKey.Timestamp;
+                    }
+
+                    // Make sure the timestamp is actually close enough to the distribution
+                    Ticks ticks = Ticks.ToSecondDistribution((long)historianKey.Timestamp, frameRate, baseTime, toleranceTicks);
+
+                    if (ticks == Ticks.MinValue)
+                        continue;
+
+                    timestamp = (ulong)ticks.Value;
                 }
                 else
                 {
-                    interval = (ulong)(Math.Floor(1.0d / frameRate) * Ticks.PerSecond);
+                    timestamp = historianKey.Timestamp;
                 }
 
-                ulong lastTimestamp = 0;
-
-                // Write data pages
-                SeekFilterBase<HistorianKey> timeFilter = TimestampSeekFilter.CreateFromRange<HistorianKey>(startTime, endTime);
-                MatchFilterBase<HistorianKey, HistorianValue> pointFilter = PointIDMatchFilter.CreateFromList<HistorianKey, HistorianValue>(metadata.PointIDs);
-                HistorianKey historianKey = new();
-                HistorianValue historianValue = new();
-                ushort currentFracSec = 0;
-
-                // Write row values function
-                async Task bufferValuesAsync(DateTime recordTimestamp, ushort fracSecValue)
+                // Start a new row for each encountered new timestamp
+                if (timestamp != lastTimestamp)
                 {
-                    // Schema nullability check validated prior to this method call
-                    switch (fileType)
+                    if (lastTimestamp > 0UL)
+                        await bufferValuesAsync(new DateTime((long)lastTimestamp), currentFracSec);
+
+                    for (int i = 0; i < values.Length; i++)
+                        values[i] = double.NaN;
+
+                    if (fillMissingTimestamps && lastTimestamp > 0UL && timestamp > lastTimestamp)
                     {
-                        case FileType.Ascii:
-                            Writer.WriteNextRecordAscii(readBufferWriter, schema!, recordTimestamp, values, sample++, true, fracSecValue);
-                            break;
-                        case FileType.Binary:
-                            Writer.WriteNextRecordBinary(readBuffer, schema!, recordTimestamp, values, sample++, true, fracSecValue);
-                            break;
-                        case FileType.Binary32:
-                            Writer.WriteNextRecordBinary32(readBuffer, schema!, recordTimestamp, values, sample++, true, fracSecValue);
-                            break;
-                        case FileType.Float32:
-                            Writer.WriteNextRecordFloat32(readBuffer, schema!, recordTimestamp, values, sample++, true, fracSecValue);
-                            break;
-                        case null:
-                            await readBufferWriter.WriteAsync($"{Environment.NewLine}{recordTimestamp.ToString(dateTimeFormat)},");
-                            await readBufferWriter.WriteAsync(missingAsNaN ? string.Join(",", values) : string.Join(",", values.Select(val => double.IsNaN(val) ? "" : $"{val}")));
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(fileType), fileType, null);
-                    }
-
-                    // Update progress based on time
-                    if (operationState is not null)
-                        operationState.Progress = recordTimestamp.Ticks - startTime.Ticks;
-
-                    if (readBuffer.Length < TargetBufferSize)
-                        return;
-
-                    lock (writeBuffer)
-                        readBuffer.WriteTo(writeBuffer);
-
-                    readBuffer.Clear();
-                    bufferReady.Set();
-                }
-
-                // Start stream reader for the provided time window and selected points
-                using ClientDatabaseBase<HistorianKey, HistorianValue> database = connection.GetDatabase<HistorianKey, HistorianValue>(instanceName) ?? throw new InvalidOperationException($"Cannot export data: failed to access historian database instance \"{instanceName}\".");
-                using TreeStream<HistorianKey, HistorianValue> stream = database.Read(SortedTreeEngineReaderOptions.Default, timeFilter, pointFilter);
-
-                // Adjust timestamp to use first timestamp as base
-                bool adjustTimeStamp = timestampSnap; // TODO: Change to use "FirstTimestampBasedOn" parameter value
-                long baseTime = timestampSnap ? Ticks.RoundToSecondDistribution(startTime.Ticks, frameRate, startTime.Ticks - startTime.Ticks % Ticks.PerSecond): startTime.Ticks;
-
-                while (await stream.ReadAsync(historianKey, historianValue) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
-                {
-                    ulong timestamp;
-
-                    if (alignTimestamps)
-                    {
-                        if (adjustTimeStamp)
-                        {
-                            adjustTimeStamp = false;
-                            baseTime = (long)historianKey.Timestamp;
-                        }
-
-                        // Make sure the timestamp is actually close enough to the distribution
-                        Ticks ticks = Ticks.ToSecondDistribution((long)historianKey.Timestamp, frameRate, baseTime, toleranceTicks);
-
-                        if (ticks == Ticks.MinValue)
-                            continue;
-
-                        timestamp = (ulong)ticks.Value;
-                    }
-                    else
-                    {
-                        timestamp = historianKey.Timestamp;
-                    }
-
-                    // Start a new row for each encountered new timestamp
-                    if (timestamp != lastTimestamp)
-                    {
-                        if (lastTimestamp > 0UL)
-                            await bufferValuesAsync(new DateTime((long)lastTimestamp), currentFracSec);
-
-                        for (int i = 0; i < values.Length; i++)
-                            values[i] = double.NaN;
-
-                        if (fillMissingTimestamps && lastTimestamp > 0UL && timestamp > lastTimestamp)
-                        {
-                            ulong difference = timestamp - lastTimestamp;
-
-                            if (difference > interval)
-                            {
-                                ulong interpolated = lastTimestamp;
-
-                                for (ulong i = 1; i < difference / interval; i++)
-                                {
-                                    interpolated = (ulong)Ticks.RoundToSecondDistribution((long)(interpolated + interval), frameRate, startTime.Ticks).Value;
-                                    await bufferValuesAsync(new DateTime((long)interpolated, DateTimeKind.Utc), currentFracSec);
-                                }
-                            }
-                        }
-
-                        lastTimestamp = timestamp;
-                    }
-
-                    // Save value to its column
-                    if (pointIDIndex.TryGetValue(historianKey.PointID, out int index))
-                        values[index] = historianValue.AsSingle;
-                    else if (historianKey.PointID == (ulong)metadata.TargetQualityFlagsID)
-                        currentFracSec = (ushort)historianValue.AsSingle;
-                }
-
-                if (lastTimestamp > 0UL)
-                {
-                    await bufferValuesAsync(new DateTime((long)lastTimestamp), currentFracSec);
-                }
-                else
-                {
-                    // No data queried, interpolate blank rows if requested
-                    if (fillMissingTimestamps)
-                    {
-                        ulong difference = (ulong)(endTime.Ticks - startTime.Ticks);
+                        ulong difference = timestamp - lastTimestamp;
 
                         if (difference > interval)
                         {
-                            for (int i = 0; i < values.Length; i++)
-                                values[i] = double.NaN;
-
-                            ulong interpolated = (ulong)startTime.Ticks;
+                            ulong interpolated = lastTimestamp;
 
                             for (ulong i = 1; i < difference / interval; i++)
                             {
@@ -632,95 +593,125 @@ public class ExportDataHandler
                             }
                         }
                     }
+
+                    lastTimestamp = timestamp;
                 }
 
-                await readBufferWriter.FlushAsync(cancellationToken);
-
-                if (readBuffer.Length > 0)
-                {
-                    lock (writeBuffer)
-                        readBuffer.WriteTo(writeBuffer);
-                }
-
-                if (operationState is not null)
-                    operationState.Progress = operationState.Total;
+                // Save value to its column
+                if (pointIDIndex.TryGetValue(historianKey.PointID, out int index))
+                    values[index] = historianValue.AsSingle;
+                else if (historianKey.PointID == (ulong)metadata.TargetQualityFlagsID)
+                    currentFracSec = (ushort)historianValue.AsSingle;
             }
-            catch (Exception ex)
+
+            if (lastTimestamp > 0UL)
             {
-                if (operationState is not null)
-                {
-                    operationState.Failed = true;
-                    operationState.FailedReason = ex.Message;
-                }
-
-                throw;
+                await bufferValuesAsync(new DateTime((long)lastTimestamp), currentFracSec);
             }
-            finally
+            else
             {
-                if (operationState is not null && sample > 0U)
-                    operationState.EndSampleCount = sample - 1U;
+                // No data queried, interpolate blank rows if requested
+                if (fillMissingTimestamps)
+                {
+                    ulong difference = (ulong)(endTime.Ticks - startTime.Ticks);
 
-                readComplete[0] = true;
-                bufferReady.Set();
-                writeComplete.Wait(2000, cancellationToken);
+                    if (difference > interval)
+                    {
+                        for (int i = 0; i < values.Length; i++)
+                            values[i] = double.NaN;
+
+                        ulong interpolated = (ulong)startTime.Ticks;
+
+                        for (ulong i = 1; i < difference / interval; i++)
+                        {
+                            interpolated = (ulong)Ticks.RoundToSecondDistribution((long)(interpolated + interval), frameRate, startTime.Ticks).Value;
+                            await bufferValuesAsync(new DateTime((long)interpolated, DateTimeKind.Utc), currentFracSec);
+                        }
+                    }
+                }
             }
-        }, cancellationToken);
+
+            await readBufferWriter.FlushAsync(cancellationToken);
+
+            if (readBuffer.Length > 0)
+            {
+                lock (writeBuffer)
+                    readBuffer.WriteTo(writeBuffer);
+            }
+
+            if (operationState is not null)
+                operationState.Progress = operationState.Total;
+        }
+        catch (Exception ex)
+        {
+            if (operationState is not null)
+            {
+                operationState.Failed = true;
+                operationState.FailedReason = ex.Message;
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (operationState is not null && sample > 0U)
+                operationState.EndSampleCount = sample - 1U;
+
+            readComplete[0] = true;
+            bufferReady.Set();
+        }
     }
 
-    private static Task<Task> WriteTask(Stream responseStream, byte[]? headers, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, ManualResetEventSlim writeComplete, bool[] readComplete, HistorianOperationState? operationState, Action? completeHistorianOperation, CancellationToken cancellationToken)
+    private static async Task WriteTask(Stream responseStream, byte[]? headers, BlockAllocatedMemoryStream writeBuffer, ManualResetEventSlim bufferReady, bool[] readComplete, HistorianOperationState? operationState, Action? completeHistorianOperation, CancellationToken cancellationToken)
     {
-        return Task.Factory.StartNew(async () =>
+        long binaryByteCount = 0L;
+
+        try
         {
-            long binaryByteCount = 0L;
+            // Write headers, e.g., CSV header row or CFF schema
+            if (headers is not null)
+                await responseStream.WriteAsync(headers, cancellationToken);
 
-            try
+            while ((writeBuffer.Length > 0 || !readComplete[0]) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
             {
-                // Write headers, e.g., CSV header row or CFF schema
-                if (headers is not null)
-                    await responseStream.WriteAsync(headers, cancellationToken);
+                byte[] bytes;
 
-                while ((writeBuffer.Length > 0 || !readComplete[0]) && !cancellationToken.IsCancellationRequested && !(operationState?.CancellationToken.IsCancelled ?? false))
+                bufferReady.Wait(cancellationToken);
+                bufferReady.Reset();
+
+                lock (writeBuffer)
                 {
-                    byte[] bytes;
-
-                    bufferReady.Wait(cancellationToken);
-                    bufferReady.Reset();
-
-                    lock (writeBuffer)
-                    {
-                        bytes = writeBuffer.ToArray();
-                        writeBuffer.Clear();
-                    }
-
-                    if (bytes.Length == 0)
-                        continue;
-
-                    await responseStream.WriteAsync(bytes, cancellationToken);
-                    binaryByteCount += bytes.Length;
+                    bytes = writeBuffer.ToArray();
+                    writeBuffer.Clear();
                 }
 
-                // Flush stream
-                await responseStream.FlushAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                if (operationState is not null)
-                {
-                    operationState.Failed = true;
-                    operationState.FailedReason = ex.Message;
-                }
+                if (bytes.Length == 0)
+                    continue;
 
-                throw;
+                await responseStream.WriteAsync(bytes, cancellationToken);
+                binaryByteCount += bytes.Length;
             }
-            finally
-            {
-                if (operationState is not null)
-                    operationState.BinaryByteCount = binaryByteCount;
 
-                writeComplete.Set();
-                completeHistorianOperation?.Invoke();
+            // Flush stream
+            await responseStream.FlushAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            if (operationState is not null)
+            {
+                operationState.Failed = true;
+                operationState.FailedReason = ex.Message;
             }
-        }, cancellationToken);
+
+            throw;
+        }
+        finally
+        {
+            if (operationState is not null)
+                operationState.BinaryByteCount = binaryByteCount;
+
+            completeHistorianOperation?.Invoke();
+        }
     }
 
     #endregion
@@ -731,16 +722,18 @@ public class ExportDataHandler
     //private static readonly string s_minimumRequiredRoles;
     private static readonly MemoryCache s_pointMetadataCache;
     private static readonly MemoryCache s_headerCache;
+    private static readonly JsonSerializerOptions s_jsonOptions;
 
     // Static Constructor
     static ExportDataHandler()
     {
         s_pointMetadataCache = new MemoryCache($"{nameof(ExportDataHandler)}-{nameof(PointMetadata)}Cache");
         s_headerCache = new MemoryCache($"{nameof(ExportDataHandler)}-HeaderCache");
+        s_jsonOptions = new JsonSerializerOptions() { IncludeFields = true };
     }
 
     // Static Methods
-    private static byte[]? GetHeaders(FileType? fileType, bool useCFF, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, string? columnHeaders, out Schema? schema)
+    private static byte[]? GetHeaders(FileType? fileType, bool useCFF, PointMetadata metadata, Dictionary<ulong, int> pointIDIndex, DateTime startTime, string? columnHeaderTemplate, out Schema? schema)
     {
         using AdoDataConnection connection = new(Settings.Instance);
         TableOperations<Device> deviceTable = new(connection);
@@ -755,21 +748,25 @@ public class ExportDataHandler
         if (fileType is null)
         {
             // Create CSV header
-            StringBuilder headers;
+            if (string.IsNullOrWhiteSpace(columnHeaderTemplate))
+                columnHeaderTemplate = "\"[{PointID}] {PointTag}\"";
 
-            if (string.IsNullOrWhiteSpace(columnHeaders))
+            StringBuilder headers = new("\"Timestamp\"");
+
+            if (metadata.Measurements.Length > 0)
             {
-                headers = new StringBuilder("\"Timestamp\"");
+                PropertyInfo[] measurementProperties = typeof(Measurement).GetProperties();
 
-                if (metadata.Measurements.Length > 0)
+                foreach (Measurement measurement in metadata.Measurements)
                 {
+                    Dictionary<string, object> metadataMap = new(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (PropertyInfo property in measurementProperties)
+                        metadataMap[property.Name] = property.GetValue(measurement)!;
+
                     headers.Append(',');
-                    headers.Append(string.Join(",", metadata.Measurements.Select(measurement => $"\"[{measurement.PointID}] {measurement.PointTag}\"")));
+                    headers.Append(columnHeaderTemplate.Interpolate(metadataMap as IEnumerable<KeyValuePair<string, object>>));
                 }
-            }
-            else
-            {
-                headers = new StringBuilder(columnHeaders);
             }
 
             for (int i = 0; i < metadata.PointIDs.Length; i++)
