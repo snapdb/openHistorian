@@ -1,9 +1,10 @@
-﻿using Gemstone.Web.APIController;
-using Microsoft.AspNetCore.Mvc;
-using Gemstone.Timeseries.Model;
+﻿using Gemstone.Data;
 using Gemstone.Data.Model;
-using Gemstone.Data;
 using Gemstone.Numeric.EE;
+using Gemstone.Timeseries.Model;
+using Gemstone.Web.APIController;
+using Microsoft.AspNetCore.Mvc;
+using openHistorian.Adapters;
 
 namespace openHistorian.WebUI.Controllers;
 
@@ -20,6 +21,32 @@ public class DeviceController : ModelController<Device>
     public IActionResult GetConnectionParameters(Device detail)
     {
         return Ok(new List<object>());
+    }
+
+    /// <summary>
+    /// Deletes a record from associated table.
+    /// </summary>
+    /// <param name="record">The record to be deleted.</param>
+    /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+    /// <returns>An <see cref="IActionResult"/> containing 1 or <see cref="Exception"/>.</returns>
+    [HttpDelete, Route("")]
+    public override async Task<IActionResult> Delete([FromBody] Device record, CancellationToken cancellationToken)
+    {
+        if (!DeleteAuthCheck())
+            return Unauthorized();
+
+        await using AdoDataConnection connection = CreateConnection();
+        TableOperations<Device> tableOperations = new(connection);
+
+        List<Device?> children = tableOperations.QueryRecordsWhere("ParentID = {0}", record.ID).ToList();
+
+        foreach (Device? child in children)
+        {
+            if (child is not null)
+                tableOperations.DeleteRecord(child);
+        }
+
+        return await base.Delete(record, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -54,7 +81,7 @@ public class DeviceController : ModelController<Device>
 
         foreach (Measurement measurement in measurementList)
         {
-            if(measurement == null) continue;
+            if (measurement == null) continue;
             Gemstone.Timeseries.Model.SignalType? signalType = signalTypeOperations.QueryRecordWhere("ID = {0}", measurement.SignalTypeID);
             int? phasorSourceIndex = measurement.PhasorSourceIndex;
 
