@@ -432,7 +432,7 @@ public class ExportDataHandler
 
             using ManualResetEventSlim bufferReady = new(false);
             using ManualResetEventSlim writeComplete = new(false);
-            await using BlockAllocatedMemoryStream writeBuffer = new();
+            BlockAllocatedMemoryStream writeBuffer = new();
             bool[] readComplete = [false];
 
             Task<Task> readTask = ReadTask(fileType, schema, serverInstance, instanceName, metadata, pointIDIndex, startTime, endTime, writeBuffer, bufferReady, writeComplete, frameRate, missingAsNaN, timestampSnap, alignTimestamps, toleranceTicks, fillMissingTimestamps, dateTimeFormat, readComplete, operationState, cancellationToken);
