@@ -8,6 +8,11 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <OutputPath>..\..\..\build\$(Configuration)\Libraries\$(AssemblyName)</OutputPath>
+    <DocumentationFile>..\..\..\build\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+  
   <ItemGroup>
     <None Remove="UI\Virtual.js" />
     <None Remove="UI\VirtualChunk.js" />

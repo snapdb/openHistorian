@@ -7,6 +7,10 @@
     <Configurations>Debug;Release;Development</Configurations>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <OutputPath>..\..\..\build\$(Configuration)\Libraries\$(AssemblyName)</OutputPath>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Remove="GrafanaAdapters\**" />
     <EmbeddedResource Remove="GrafanaAdapters\**" />
