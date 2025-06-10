@@ -13,14 +13,26 @@ namespace openHistorian.WebUI.Controllers;
 public class DeviceController : ModelController<Device>
 {
     /// <summary>
-    /// Gets the default connection parameters for a device.
+    /// Creates new records in device table.
     /// </summary>
-    /// <param name="detail">Device to get the connection parameters for.</param>
-    /// <returns>Default Connection Parameters for a device.</returns>
-    [HttpPost, Route("ConnectionParameters/{id:int?}")]
-    public IActionResult GetConnectionParameters(Device detail)
+    /// <param name="record">The records to be created.</param>
+    /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the new <see cref="T"/> or <see cref="Exception"/>.</returns>
+    [HttpPost, Route("BulkAdd")]
+    public async Task<IActionResult> BulkAdd([FromBody] Device[] records, CancellationToken cancellationToken)
     {
-        return Ok(new List<object>());
+        if (!PostAuthCheck())
+            return Unauthorized();
+
+        await using AdoDataConnection connection = CreateConnection();
+        TableOperations<Device> tableOperations = new(connection);
+
+        foreach(Device record in records)
+        {
+            await tableOperations.AddNewRecordAsync(record, cancellationToken);
+        }
+
+        return Ok(1);
     }
 
     /// <summary>
