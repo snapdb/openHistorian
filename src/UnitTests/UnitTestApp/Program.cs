@@ -24,6 +24,7 @@ Console.WriteLine("Starting application...");
 DEFComputationAdapter adapter = new DEFComputationAdapter();
 Task<Tuple<AlarmMeasurement, EventDetails>?> adapterTask = adapter.LoadFile();
 
+/*
 DEFIdentificationAdapter idAdapter = new DEFIdentificationAdapter();
 EMSAlarmMsgAdapter emsAdapter = new EMSAlarmMsgAdapter();
 await adapterTask.ContinueWith(tupe => {
@@ -36,5 +37,6 @@ await adapterTask.ContinueWith(tupe => {
         emsAdapter.LoadFile(idDetails);
     }
 });
+*/
 
 Console.WriteLine("Application Completed...");
