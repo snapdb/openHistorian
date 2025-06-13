@@ -177,7 +177,7 @@ internal partial class Program
             new { Label = "Measurement Data", IsOpenOnLoad = false, Type = "MeasurementData" },
             new { Label = "Phasor", IsOpenOnLoad = false, Type = "Phasor" },
             new { Label = "Phasor Data", IsOpenOnLoad = false, Type = "PhasorData" },
-            new { Label = "Stats", IsOpenOnLoad = false, Type = "Stats" }
+            new { Label = "Stats", IsOpenOnLoad = false, Type = "Stats" },
         };
 
         foreach (var card in deviceCard)
@@ -199,6 +199,7 @@ internal partial class Program
             new { Label = "Connection String", IsOpenOnLoad = true, Type = "ConnectionString", Enabled = true },
             new { Label = "Input", IsOpenOnLoad = true, Type = "Input", Enabled = true },
             new { Label = "Output", IsOpenOnLoad = true, Type = "Output", Enabled = true },
+            new { Label = "Commands", IsOpenOnLoad = true, Type = "Commands", Enabled = true }
         };
 
         foreach (var card in adapterCard)
