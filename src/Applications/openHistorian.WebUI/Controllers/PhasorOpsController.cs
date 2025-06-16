@@ -486,46 +486,45 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     [HttpPost, Route("SaveConfiguration/{deviceID:int?}")]
     public IActionResult SaveConfiguration(ConfigurationFrame configFrame, int? deviceID = null)
     {
-            // Query existing device record, or create new one
-            Device device = deviceID is null ? NewDevice() : QueryDeviceByID(deviceID.Value);
-            string connectionString = configFrame.ConnectionString;
+        // Query existing device record, or create new one
+        Device device = deviceID is null ? NewDevice() : QueryDeviceByID(deviceID.Value);
+        string connectionString = configFrame.ConnectionString;
 
-            // Set device connection-level / concentrator properties (also applies to a single device)
-            device.Acronym = configFrame.Acronym;
-            device.Name = configFrame.StationName;
-            device.AccessID = configFrame.IDCode;
-            device.LoadOrder = configFrame.LoadOrder;
-            device.TimeZone = configFrame.TimeZone;
-            device.Longitude = configFrame.Longitude ?? 0;
-            device.Latitude = configFrame.Latitude ?? 0;
-            device.CompanyID = configFrame.CompanyID;
-            device.HistorianID = configFrame.HistorianID;
-            device.InterconnectionID = configFrame.InterconnectionID;
-            device.VendorDeviceID = configFrame.VendorDeviceID;
-            device.ContactList = configFrame.ContactList;
-            device.TimeAdjustmentTicks = configFrame.TimeAdjustmentTicks;
-            device.IsConcentrator = !string.IsNullOrWhiteSpace(connectionString) && (configFrame.IsConcentrator || configFrame.Cells.Count > 1);
+        // Set device connection-level / concentrator properties (also applies to a single device)
+        device.Acronym = configFrame.Acronym;
+        device.Name = configFrame.StationName;
+        device.AccessID = configFrame.IDCode;
+        device.LoadOrder = configFrame.LoadOrder;
+        device.TimeZone = configFrame.TimeZone;
+        device.Longitude = configFrame.Longitude ?? 0;
+        device.Latitude = configFrame.Latitude ?? 0;
+        device.CompanyID = configFrame.CompanyID;
+        device.HistorianID = configFrame.HistorianID;
+        device.InterconnectionID = configFrame.InterconnectionID;
+        device.VendorDeviceID = configFrame.VendorDeviceID;
+        device.ContactList = configFrame.ContactList;
+        device.TimeAdjustmentTicks = configFrame.TimeAdjustmentTicks;
+        device.IsConcentrator = !string.IsNullOrWhiteSpace(connectionString) && (configFrame.IsConcentrator || configFrame.Cells.Count > 1);
 
-            if (string.IsNullOrWhiteSpace(device.Name))
-                device.Name = device.Acronym;
+        if (string.IsNullOrWhiteSpace(device.Name))
+            device.Name = device.Acronym;
 
-            // Only update connection string if one has been defined, prevents changing any existing one to blank
-            if (connectionString.Length > 0)
-                device.ConnectionString = connectionString;
+        // Only update connection string if one has been defined, prevents changing any existing one to blank
+        if (connectionString.Length > 0)
+            device.ConnectionString = connectionString;
 
-            device.Enabled = true;
+        device.Enabled = true;
 
-            // Add new or update existing device record
-            if (deviceID is null)
-                deviceID = AddNewDevice(device);
-            else
-                UpdateDevice(device);
+        // Add new or update existing device record
+        if (deviceID is null)
+            deviceID = AddNewDevice(device);
+        else
+            UpdateDevice(device);
 
-            SaveDeviceRecords(configFrame, deviceID.Value);
-            MarkConfigurationAsSynchronized(device.Acronym);
-            
-            m_serviceCommands.Initialize(device.Acronym);
-        }
+        SaveDeviceRecords(configFrame, deviceID.Value);
+        MarkConfigurationAsSynchronized(device.Acronym);
+
+        m_serviceCommands.Initialize(device.Acronym);
 
         return Ok(1);
     }
@@ -613,7 +612,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             freqSignalType = GetDeviceSignalType(freqSignalTypeID) ?? s_freqSignalType;
 
         // Save frequency, dF/dt signal types and status flags
-        SaveFixedMeasurement(cell, freqSignalType ?? s_freqSignalType, framesPerSecond, cell.FrequencyDefinition.Label, cell.FrequencyDefinition.PointTag, cell.FrequencyDefinition.AlternateTag);
+        SaveFixedMeasurement(cell, freqSignalType ?? s_freqSignalType, framesPerSecond, cell.FrequencyDefinition.Label, cell.FrequencyDefinition.PointTag,
+            cell.FrequencyDefinition.AlternateTag, cell.FrequencyDefinition.AlternateTag2, cell.FrequencyDefinition.AlternateTag3);
+
         SaveFixedMeasurement(cell, s_dfdtSignalType, framesPerSecond);
         SaveFixedMeasurement(cell, s_flagSignalType, framesPerSecond);
 
@@ -633,11 +634,15 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             Measurement measurement = QueryMeasurement(orgSignalReference);
             string pointTag = string.IsNullOrWhiteSpace(analogDefinition.PointTag) ? CreateIndexedPointTag(cell.Acronym, s_alogSignalType.Acronym, index, analogDefinition.Label) : analogDefinition.PointTag;
             string alternateTag = string.IsNullOrWhiteSpace(analogDefinition.AlternateTag) ? analogDefinition.Label : analogDefinition.AlternateTag;
+            string alternateTag2 = string.IsNullOrWhiteSpace(analogDefinition.AlternateTag2) ? analogDefinition.Label : analogDefinition.AlternateTag2;
+            string alternateTag3 = string.IsNullOrWhiteSpace(analogDefinition.AlternateTag3) ? analogDefinition.Label : analogDefinition.AlternateTag3;
 
             measurement.DeviceID = cell.ID;
             measurement.HistorianID = cell.HistorianID;
             measurement.PointTag = pointTag;
             measurement.AlternateTag = alternateTag;
+            measurement.AlternateTag2 = alternateTag2;
+            measurement.AlternateTag3 = alternateTag3;
             measurement.Description = $"{cell.IDLabel} Analog Value {index}:{analogDefinition.AnalogType}: {analogDefinition.Label}";
             measurement.SignalReference = signalReference;
             measurement.SignalTypeID = analogDefinition.SignalTypeID ?? s_alogSignalType.ID;
@@ -664,11 +669,15 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             Measurement measurement = QueryMeasurement(orgSignalReference);
             string pointTag = string.IsNullOrWhiteSpace(digitalDefinition.PointTag) ? CreateIndexedPointTag(cell.Acronym, s_digiSignalType.Acronym, index, digitalDefinition.Label) : digitalDefinition.PointTag;
             string alternateTag = string.IsNullOrWhiteSpace(digitalDefinition.AlternateTag) ? digitalDefinition.Label : digitalDefinition.AlternateTag;
+            string alternateTag2 = string.IsNullOrWhiteSpace(digitalDefinition.AlternateTag2) ? digitalDefinition.Label : digitalDefinition.AlternateTag2;
+            string alternateTag3 = string.IsNullOrWhiteSpace(digitalDefinition.AlternateTag3) ? digitalDefinition.Label : digitalDefinition.AlternateTag3;
 
             measurement.DeviceID = cell.ID;
             measurement.HistorianID = cell.HistorianID;
             measurement.PointTag = pointTag;
             measurement.AlternateTag = alternateTag;
+            measurement.AlternateTag2 = alternateTag2;
+            measurement.AlternateTag3 = alternateTag3;
             measurement.Description = $"{cell.IDLabel} Digital Value {index}: {digitalDefinition.Label}";
             measurement.SignalReference = signalReference;
             measurement.SignalTypeID = digitalDefinition.SignalTypeID ?? s_digiSignalType.ID;
@@ -683,7 +692,16 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         SaveDevicePhasors(cell, framesPerSecond);
     }
 
-    private void SaveFixedMeasurement(ConfigurationCell cell, SignalType signalType, double framesPerSecond, string? label = null, string? pointTag = null, string? alternateTag = null)
+    private void SaveFixedMeasurement(
+        ConfigurationCell cell,
+        SignalType signalType,
+        double framesPerSecond,
+        string? label = null,
+        string? pointTag = null,
+        string? alternateTag = null,
+        string? alternateTag2 = null,
+        string? alternateTag3 = null
+        )
     {
         if (string.IsNullOrWhiteSpace(cell.OriginalAcronym))
             cell.OriginalAcronym = cell.Acronym;
@@ -699,6 +717,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         measurement.HistorianID = cell.HistorianID;
         measurement.PointTag = pointTag;
         measurement.AlternateTag = alternateTag ?? "";
+        measurement.AlternateTag2 = alternateTag2 ?? "";
+        measurement.AlternateTag3 = alternateTag3 ?? "";
         measurement.Description = $"{cell.Acronym} {signalType.Name}{(string.IsNullOrWhiteSpace(label) ? "" : " - " + label)}";
         measurement.SignalReference = signalReference;
         measurement.SignalTypeID = signalType.ID;
@@ -1407,7 +1427,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
                 });
             }
 
-            int digitalIndex= 0;
+            int digitalIndex = 0;
 
             // Create equivalent derived digital definitions
             foreach (IDigitalDefinition sourceDigital in sourceCell.DigitalDefinitions)
