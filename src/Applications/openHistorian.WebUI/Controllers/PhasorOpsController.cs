@@ -484,10 +484,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
     /// <param name="configFrames">Source config frames.</param>
     /// <param name="deviceID">Device ID to save configuration for, leave blank for new devices.</param>
     [HttpPost, Route("SaveConfiguration/{deviceID:int?}")]
-    public IActionResult SaveConfiguration(ConfigurationFrame[] configFrames, int? deviceID = null)
+    public IActionResult SaveConfiguration(ConfigurationFrame configFrame, int? deviceID = null)
     {
-        foreach (ConfigurationFrame configFrame in configFrames)
-        {
             // Query existing device record, or create new one
             Device device = deviceID is null ? NewDevice() : QueryDeviceByID(deviceID.Value);
             string connectionString = configFrame.ConnectionString;
@@ -529,7 +527,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
             m_serviceCommands.Initialize(device.Acronym);
         }
 
-        return Ok(configFrames.Length);
+        return Ok(1);
     }
 
     private void SaveDeviceRecords(ConfigurationFrame configFrame, int deviceID)
