@@ -17,6 +17,14 @@ public class FrequencyDefinition
 
     public string AlternateTag { get; set; }
 
+    public string AlternateTag2 { get; set; }
+
+    public string AlternateTag3 { get; set; }
+
+    public double Adder { get; set; }
+
+    public double Multiplier { get; set; }
+
     public int? SignalTypeID { get; set; }
 }
 
@@ -68,6 +76,10 @@ public class AnalogDefinition
 
     public string AlternateTag { get; set; }
 
+    public string AlternateTag2 { get; set; }
+
+    public string AlternateTag3 { get; set; }
+
     public string Description { get; set; } = "";
 
     public double Adder { get; set; }
@@ -86,6 +98,10 @@ public class DigitalDefinition
     public string PointTag { get; set; }
 
     public string AlternateTag { get; set; }
+
+    public string AlternateTag2 { get; set; }
+
+    public string AlternateTag3 { get; set; }
 
     public string Description { get; set; } = "";
 

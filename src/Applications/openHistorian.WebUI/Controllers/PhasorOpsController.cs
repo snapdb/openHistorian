@@ -613,7 +613,7 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
 
         // Save frequency, dF/dt signal types and status flags
         SaveFixedMeasurement(cell, freqSignalType ?? s_freqSignalType, framesPerSecond, cell.FrequencyDefinition.Label, cell.FrequencyDefinition.PointTag,
-            cell.FrequencyDefinition.AlternateTag, cell.FrequencyDefinition.AlternateTag2, cell.FrequencyDefinition.AlternateTag3);
+            cell.FrequencyDefinition.AlternateTag, cell.FrequencyDefinition.AlternateTag2, cell.FrequencyDefinition.AlternateTag3, cell.FrequencyDefinition.Adder, cell.FrequencyDefinition.Multiplier);
 
         SaveFixedMeasurement(cell, s_dfdtSignalType, framesPerSecond);
         SaveFixedMeasurement(cell, s_flagSignalType, framesPerSecond);
@@ -700,7 +700,9 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         string? pointTag = null,
         string? alternateTag = null,
         string? alternateTag2 = null,
-        string? alternateTag3 = null
+        string? alternateTag3 = null,
+        double adder = 0D,
+        double multiplier = 1D
         )
     {
         if (string.IsNullOrWhiteSpace(cell.OriginalAcronym))
@@ -719,6 +721,8 @@ public class PhasorOpsController : Controller, ISupportConnectionTest
         measurement.AlternateTag = alternateTag ?? "";
         measurement.AlternateTag2 = alternateTag2 ?? "";
         measurement.AlternateTag3 = alternateTag3 ?? "";
+        measurement.Adder = adder;
+        measurement.Multiplier = multiplier;
         measurement.Description = $"{cell.Acronym} {signalType.Name}{(string.IsNullOrWhiteSpace(label) ? "" : " - " + label)}";
         measurement.SignalReference = signalReference;
         measurement.SignalTypeID = signalType.ID;
