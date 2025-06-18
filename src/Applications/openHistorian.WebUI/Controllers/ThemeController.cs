@@ -100,7 +100,8 @@ public class ThemeController : ModelController<Theme>
         return Ok();
     }
 
-    [HttpGet, Route("{themeID}.css")]
+    [AcceptVerbs("GET", "HEAD")]
+    [Route("{themeID}.css")]
     public IActionResult GetCSSFile(int themeID)
     {
         Theme? theme;
@@ -115,12 +116,18 @@ public class ThemeController : ModelController<Theme>
 
         string filePath = Path.Combine(WebRoot, ThemesFolder, Path.GetFileName(filename));
 
-        Stream? stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+        try
+        {
+            Stream? stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            if (stream is null)
+                return NotFound();
 
-        if (stream is null)
+            return File(stream, "text/css");
+        }
+        catch
+        {
             return NotFound();
-
-        return File(stream, "text/css");
+        }
     }
 
     [HttpDelete, Route("")]
