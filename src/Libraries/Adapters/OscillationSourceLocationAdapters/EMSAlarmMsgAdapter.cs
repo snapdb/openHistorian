@@ -359,10 +359,10 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
         List<LineData> lineData = new List<LineData>([
            new LineData()
            {
-                Current = Ia.ToColumnArrays().First().Zip(Im.ToColumnArrays().First(),(f,s) => new ComplexNumber(Angle.FromDegrees(f),s)),
-                Frequency = f.ToColumnArrays().First(),
-                Voltage = Va.ToColumnArrays().First().Zip(Vm.ToColumnArrays().First(), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)),
-                Timestamp = Time,
+                Current = Ia.ToColumnArrays().First().Zip(Im.ToColumnArrays().First(),(f,s) => new ComplexNumber(Angle.FromDegrees(f),s)).ToList(),
+                Frequency = f.ToColumnArrays().First().ToList(),
+                Voltage = Va.ToColumnArrays().First().Zip(Vm.ToColumnArrays().First(), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)).ToList(),
+                Timestamp = Time.ToList(),
 
                 CurrentKey = new PhasorKey()
                 {

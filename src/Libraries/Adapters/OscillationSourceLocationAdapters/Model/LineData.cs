@@ -35,8 +35,8 @@ public class LineData
     public PhasorKey CurrentKey;
     public MeasurementKey FrequencyKey;
 
-    public IEnumerable<ComplexNumber> Voltage;
-    public IEnumerable<ComplexNumber> Current;
-    public IEnumerable<double> Frequency;
-    public IEnumerable<Ticks> Timestamp;
+    public List<ComplexNumber> Voltage;
+    public List<ComplexNumber> Current;
+    public List<double> Frequency;
+    public List<Ticks> Timestamp;
 }
