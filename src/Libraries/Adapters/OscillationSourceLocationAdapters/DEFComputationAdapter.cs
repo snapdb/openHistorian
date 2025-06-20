@@ -23,7 +23,9 @@
 
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
+using System.Reflection;
 using DataQualityMonitoring.Functions;
 using DataQualityMonitoring.Model;
 using Gemstone;
@@ -45,9 +47,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PhasorProtocolAdapters;
 using ConfigSettings = Gemstone.Configuration.Settings;
+using Ext = Gemstone.Collections.CollectionExtensions.CollectionExtensions;
 using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
 using SignalType = Gemstone.Numeric.EE.SignalType;
-using Ext = Gemstone.Collections.CollectionExtensions.CollectionExtensions;
 
 namespace DataQualityMonitoring;
 
@@ -113,7 +115,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     /// <summary>
     /// The maximum size of the Buffer in second
     /// </summary>
-    [ConnectionStringParameter()]
+    [ConnectionStringParameter]
     [Description("Maximum Buffer Time (in s)")]
     public double MaxTimeResolution { get; set; }
 
@@ -123,7 +125,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Time step of a sliding window for FFT analysis")]
     [DefaultValue(2.0D)]
-    public double Tstep { get; set; } = 2.0D;
+    public double Tstep { get; set; }
 
     /// <summary>
     /// Minimal MW threshold of mode's magnitude
@@ -131,7 +133,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Minimal MW threshold of mode's magnitude")]
     [DefaultValue(1.5001)]
-    public double MminP { get; set; } = 1.5001;
+    public double MminP { get; set; }
 
     /// <summary>
     /// Minimal p.u. threshold of mode's magnitude.
@@ -139,7 +141,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Minimal p.u. threshold of mode's magnitude.")]
     [DefaultValue(0.4)]
-    public double Mmin { get; set; } = 0.4;
+    public double Mmin { get; set; }
 
     /// <summary>
     /// Threshold to separate low and high frequency bands.
@@ -147,7 +149,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Threshold to separate low and high frequency bands.")]
     [DefaultValue(0.2)]
-    public double BandThreshold { get; set; } = 0.2;
+    public double BandThreshold { get; set; }
 
     /// <summary>
     /// Number if oscillatory cycles for the selection of study interval for higher frequency band.
@@ -155,7 +157,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Number if oscillatory cycles for the selection of study interval for higher frequency band.")]
     [DefaultValue(8)]
-    public double CMinH { get; set; } = 8;
+    public double CMinH { get; set; }
 
     /// <summary>
     /// Number if oscillatory cycles for the selection of study interval for lower frequency band.
@@ -163,7 +165,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Number if oscillatory cycles for the selection of study interval for lower frequency band.")]
     [DefaultValue(8)]
-    public double CMinL { get; set; } = 8;
+    public double CMinL { get; set; }
 
     /// <summary>
     /// Number of oscillatory cycles to define the length of an interval for FFT scans.
@@ -171,7 +173,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Number of oscillatory cycles to define the length of an interval for FFT scans.")]
     [DefaultValue(5)]
-    public double CMinW { get; set; } = 5;
+    public double CMinW { get; set; }
 
     /// <summary>
     /// Time safery margin before Alarm time to capture start time in seconds.
@@ -179,7 +181,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(160)]
     [Description("Defines the number of frames per second expected by the adapter.")]
-    public double TimeMargin { get; set; } = 160;
+    public double TimeMargin { get; set; }
 
     /// <summary>
     /// Signifies if the data under analysis is real PMU data or simulated.
@@ -187,7 +189,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(true)]
     [Description("Signifies if the data under analysis is real PMU data or simulated.")]
-    public bool IsRealData { get; set; } = true;
+    public bool IsRealData { get; set; }
 
     /// <summary>
     /// Length of time interval to be used for DEF/CDEF after band-pass filtering
@@ -195,7 +197,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.5)]
     [Description("Length of time interval to be used for DEF/CDEF after band-pass filtering")]
-    public double CdefTimeInterval { get; set; } = 0.5;
+    public double CdefTimeInterval { get; set; }
 
     /// <summary>
     /// A factor related to R/X ratio of the network
@@ -203,23 +205,23 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(-990.2)]
     [Description("A factor related to R/X ratio of the network")]
-    public double IntialKFactor { get; set; } = -990.2;
+    public double IntialKFactor { get; set; }
 
     /// <summary>
     /// Method for DE calculation
     /// </summary>
     [ConnectionStringParameter]
     [DefaultValue(DEMethod.Both)]
-    [Description("Method for DE calculation")]
-    public DEMethod DEMethodFlag { get; set; } = DEMethod.Both;
+    [Description("Method for DE calculation. Allowed values are Both, CPSD, and CDEF")]
+    public DEMethod DEMethodFlag { get; set; }
 
     /// <summary>
     /// Method for DE calculation
     /// </summary>
     [ConnectionStringParameter]
     [DefaultValue(TrendMethod.HighPassFilter)]
-    [Description("Method for DE calculation")]
-    public TrendMethod RemoveTrendFlag { get; set; } = TrendMethod.HighPassFilter;
+    [Description("Method for DE calculation. Allowed values are HighPassFilter, SubtractAverage, and SteadyStateRemoval")]
+    public TrendMethod RemoveTrendFlag { get; set; }
 
     /// <summary>
     /// Method for DE calculation
@@ -227,7 +229,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(200)]
     [Description("Method for DE calculation")]
-    public double AllowedNoiseRatio { get; set; } = 200;
+    public double AllowedNoiseRatio { get; set; }
 
     /// <summary>
     /// Frequency threshold; frequencies below this threshold are ignored (Hz)
@@ -235,15 +237,15 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.07)]
     [Description("Frequency threshold; frequencies below this threshold are ignored (Hz)")]
-    public double FrequencyThreshold { get; set; } = 0.07;
+    public double FrequencyThreshold { get; set; }
 
     /// <summary>
     /// Number of elements with highest energy in CPSD/PSD spectra to identify Type of Source
     /// </summary>
     [ConnectionStringParameter]
     [DefaultValue(4)]
-    [Description("Number of elements with highest energy in CPSD/PSD spectra to identify Type of Source\r\n")]
-    public int NumberOfElementsForSourceIdentification { get; set; } = 4;
+    [Description("Number of elements with highest energy in CPSD/PSD spectra to identify Type of Source")]
+    public int NumberOfElementsForSourceIdentification { get; set; }
 
     #endregion
 
@@ -251,8 +253,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
     public override void Initialize()
     {
-
         base.Initialize();
+        InitializeParameters();
 
         Dictionary<string, string> settings = Settings;
 
@@ -269,7 +271,49 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
         // Load line definitions
         LoadLineDefinitions();
+    }
 
+    public void InitializeParameters()
+    {
+        List<PropertyInfo> propertiesBase = typeof(CalculatedMeasurementBase).GetProperties().ToList();
+        IEnumerable<PropertyInfo> properties = typeof(DEFComputationAdapter)
+            .GetProperties()
+            // Only init connection string params
+            .Where(p => p.GetCustomAttributes<ConnectionStringParameterAttribute>().Any())
+            // Skipping base constructor properties
+            .Where(p => propertiesBase.FindIndex(pB => string.Equals(pB.Name, p.Name)) < 0);
+        Dictionary<string, string> settings = Settings;
+
+        foreach (PropertyInfo prop in properties)
+        {
+            try
+            {
+                if (!settings.TryGetValue(prop.Name, out string? setting))
+                    throw new ArgumentNullException(string.Format("{0} is missing from Settings - Example: framesPerSecond=30; lagTime=3; leadTime=1", prop.Name));
+
+                object? value = null;
+                if (prop.PropertyType.IsEnum) 
+                {
+                    value = Enum.Parse(prop.PropertyType, setting);
+    }
+                else
+                {
+                    MethodInfo? parseFunc = prop.PropertyType.GetMethod("Parse", 0, BindingFlags.Public | BindingFlags.Static, [typeof(string)]);
+                    if (parseFunc is null)
+                        throw new SettingsPropertyWrongTypeException(string.Format("{0} is unable to be parsed by initialization function.", prop.Name));
+                    value = parseFunc.Invoke(null, [setting]);
+                }
+
+                prop.SetValue(this, value);
+            }
+            catch (ArgumentNullException ex)
+            {
+                DefaultValueAttribute? defaultValue = prop.GetCustomAttribute<DefaultValueAttribute>();
+                if (defaultValue is null) throw; // No default
+
+                prop.SetValue(this, defaultValue.Value);
+            }
+        }
     }
 
     public Task<Tuple<AlarmMeasurement, EventDetails>?> LoadFile()
