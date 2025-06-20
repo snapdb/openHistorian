@@ -295,10 +295,10 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         List<LineData> lineData = new List<LineData>([
            new LineData()
            {
-                Current = Ia.ToColumnArrays().First().Zip(Im.ToColumnArrays().First(),(f,s) => new ComplexNumber(Angle.FromDegrees(f),s)),
-                Frequency = f.ToColumnArrays().First(),
-                Voltage = Va.ToColumnArrays().First().Zip(Vm.ToColumnArrays().First(), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)),
-                Timestamp = Time,
+                Current = Ia.ToColumnArrays().First().Zip(Im.ToColumnArrays().First(),(f,s) => new ComplexNumber(Angle.FromDegrees(f),s)).ToList(),
+                Frequency = f.ToColumnArrays().First().ToList(),
+                Voltage = Va.ToColumnArrays().First().Zip(Vm.ToColumnArrays().First(), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)).ToList(),
+                Timestamp = Time.ToList(),
 
                 CurrentKey = new PhasorKey()
                 {
@@ -352,10 +352,10 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             int[] mapVector = pmu_map.Row(ind).Select(i =>(int) i -1).ToArray();
             lineData.Add(new LineData()
             {
-                Current = pmu_Ia.Column(mapVector[0]).Zip(pmu_Im.Column(mapVector[0]), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)),
-                Frequency = pmu_f.Column(mapVector[1]),
-                Voltage = pmu_Va.Column(mapVector[1]).Zip(pmu_Vm.Column(mapVector[1]), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)),
-                Timestamp = pmu_time,
+                Current = pmu_Ia.Column(mapVector[0]).Zip(pmu_Im.Column(mapVector[0]), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)).ToList(),
+                Frequency = pmu_f.Column(mapVector[1]).ToList(),
+                Voltage = pmu_Va.Column(mapVector[1]).Zip(pmu_Vm.Column(mapVector[1]), (f, s) => new ComplexNumber(Angle.FromDegrees(f), s)).ToList(),
+                Timestamp = pmu_time.ToList(),
 
 
                 CurrentKey = new PhasorKey()
@@ -1662,7 +1662,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
-        
         m_frameQueue.Add(frame);
 
         while (m_frameQueue.Count > m_frameQueueLimit)
@@ -1679,7 +1678,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 using AdoDataConnection connection = new(ConfigSettings.Instance);
                 TableOperations<EventDetails> tableOperations = new(connection);
                 EventDetails details = tableOperations.QueryRecordWhere("EventGuid = {0}", ((AlarmMeasurement)alarm).AlarmID);
-                if (details.Type == "oscillation")
+                if (details is not null && details.Type == "oscillation")
                 {
                     toBeProcessed.Add(details);
                 }            
@@ -1688,7 +1687,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
         
         if (toBeProcessed.Count > 0)
         {
-            IEnumerable<LineData> lineData = m_lines.Select((d) => new LineData() {
+            List<LineData> lineData = m_lines.Select((d) => new LineData() {
                 FrequencyKey = d.Frequency,
                 VoltageKey = d.Voltage,
                 CurrentKey = d.Current,
@@ -1696,12 +1695,12 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 Current = new List<ComplexNumber>(),
                 Frequency = new List<double>(),
                 Timestamp = new List<Ticks>()
-            });
+            }).ToList();
 
             foreach (IFrame f in m_frameQueue)
             {
                 // ToDo: we need to add a label to line here, how do we get it?
-                foreach (LineData line in lineData)
+                for(int lineIndex = 0; lineIndex < lineData.Count(); lineIndex++)
                 {
                     ComplexNumber V = new ComplexNumber(double.NaN, double.NaN);
                     ComplexNumber I = new ComplexNumber(double.NaN, double.NaN);
@@ -1709,31 +1708,31 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     double F = double.NaN;
                     Ticks T = f.Timestamp;
 
-                    if (f.Measurements.TryGetValue(line.FrequencyKey, out IMeasurement measurement))
+                    if (f.Measurements.TryGetValue(lineData[lineIndex].FrequencyKey, out IMeasurement measurement))
                     {
                         F = measurement.AdjustedValue;
                     }
-                    if (f.Measurements.TryGetValue(line.VoltageKey.Magnitude, out measurement))
+                    if (f.Measurements.TryGetValue(lineData[lineIndex].VoltageKey.Magnitude, out measurement))
                     {
                        V.Magnitude = measurement.AdjustedValue;
                     }
-                    if (f.Measurements.TryGetValue(line.VoltageKey.Angle, out measurement))
+                    if (f.Measurements.TryGetValue(lineData[lineIndex].VoltageKey.Angle, out measurement))
                     {
                         V.Angle = measurement.AdjustedValue;
                     }
-                    if (f.Measurements.TryGetValue(line.CurrentKey.Magnitude, out measurement))
+                    if (f.Measurements.TryGetValue(lineData[lineIndex].CurrentKey.Magnitude, out measurement))
                     {
                         I.Magnitude = measurement.AdjustedValue;
                     }
-                    if (f.Measurements.TryGetValue(line.CurrentKey.Angle, out measurement))
+                    if (f.Measurements.TryGetValue(lineData[lineIndex].CurrentKey.Angle, out measurement))
                     {
                         I.Angle = measurement.AdjustedValue;
                     }
 
-                    line.Voltage.Append(V);
-                    line.Current.Append(I);
-                    line.Frequency.Append(F);
-                    line.Timestamp.Append(T);
+                    lineData[lineIndex].Voltage.Add(V);
+                    lineData[lineIndex].Current.Add(I);
+                    lineData[lineIndex].Frequency.Add(F);
+                    lineData[lineIndex].Timestamp.Add(T);
                 }
             }
 
