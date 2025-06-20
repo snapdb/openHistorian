@@ -28,7 +28,7 @@ using openHistorian.WebUI.Controllers;
 
 namespace openHistorian;
 
-internal partial  class Program
+internal partial class Program
 {
     private static void SetupGrafanaHostingAdapter(Settings settings)
     {

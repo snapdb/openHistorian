@@ -72,11 +72,11 @@ internal partial class Program
             IHost host = application.Build();
             host.Run();
 
-#if DEBUG
+        #if DEBUG
             Settings.Save(forceSave: true);
-#else
+        #else
             Settings.Save();
-#endif
+        #endif
         }
         finally
         {
