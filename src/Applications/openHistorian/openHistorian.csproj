@@ -82,6 +82,8 @@
 
     <ProjectReference Include="..\..\Libraries\Adapters\openHistorian.Adapters\openHistorian.Adapters.csproj" />
 
+    <ProjectReference Include="..\..\Libraries\Adapters\OscillationSourceLocationAdapters\OscillationSourceLocationAdapters.csproj" />
+
     <ProjectReference Include="..\..\Libraries\Adapters\PhasorProtocolAdapters\PhasorProtocolAdapters.csproj" />
 
     <ProjectReference Include="..\..\Libraries\Adapters\PowerCalculations\PowerCalculations.csproj" />
@@ -90,6 +92,12 @@
     <ProjectReference Include="..\..\Libraries\openHistorian.Core\openHistorian.Core.csproj" />
     <ProjectReference Include="..\..\Libraries\ServiceInterface\ServiceInterface.csproj" />
     <ProjectReference Include="..\openHistorian.WebUI\openHistorian.WebUI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\Dependencies\GSF\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />

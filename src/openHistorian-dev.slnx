@@ -36,6 +36,7 @@
     <Project Path="Libraries/Adapters/FileAdapters/FileAdapters.csproj" />
     <Project Path="Libraries/Adapters/GrafanaAdapters/GrafanaAdapters.csproj" />
     <Project Path="Libraries/Adapters/openHistorian.Adapters/openHistorian.Adapters.csproj" />
+    <Project Path="Libraries/Adapters/OscillationSourceLocationAdapters/OscillationSourceLocationAdapters.csproj" />
     <Project Path="Libraries/Adapters/PhasorProtocolAdapters/PhasorProtocolAdapters.csproj" />
     <Project Path="Libraries/Adapters/PowerCalculations/PowerCalculations.csproj" />
     <Project Path="Libraries/Adapters/TestingAdapters/TestingAdapters.csproj" />
