@@ -295,7 +295,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 if (prop.PropertyType.IsEnum) 
                 {
                     value = Enum.Parse(prop.PropertyType, setting);
-    }
+                }
                 else
                 {
                     MethodInfo? parseFunc = prop.PropertyType.GetMethod("Parse", 0, BindingFlags.Public | BindingFlags.Static, [typeof(string)]);
@@ -431,11 +431,12 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     /// <summary>
     /// Load the V,I Mappings and Angle, Magnitude Mappings into m_Line
     /// </summary>
-    private void LoadLineDefinitions()
+    private async void LoadLineDefinitions()
     {
-        Func<DataRow, Gemstone.Timeseries.Model.Measurement?> loadMeasurement= TableOperations<Gemstone.Timeseries.Model.Measurement>.LoadRecordFunction();
-        Func<DataRow, PhasorRecord?> loadPhasor  = TableOperations<PhasorRecord>.LoadRecordFunction();
-        Func<DataRow, Device?> loadDevice = TableOperations<Device>.LoadRecordFunction();
+        await using AdoDataConnection connection = new(ConfigSettings.Instance);
+        TableOperations<Gemstone.Timeseries.Model.Measurement> measurementTable = new(connection);
+        TableOperations<Device> deviceTable = new(connection);
+        TableOperations<PhasorRecord> phasorTable = new(connection);
 
         Dictionary<int, DeviceDetails> deviceDetails = new();
 
@@ -444,13 +445,12 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
             MeasurementKey key = InputMeasurementKeys[i];
             SignalType signalType = InputMeasurementKeyTypes[i];
 
-            Gemstone.Timeseries.Model.Measurement? measurement = loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={key.SignalID}")[0]);
+            Gemstone.Timeseries.Model.Measurement? measurement = measurementTable.QueryRecordWhere("SignalID={0}", key.SignalID);
             if (measurement?.DeviceID is null)
                 continue;
             
             int deviceID = measurement.DeviceID.Value;
-
-            Device? device = loadDevice(base.DataSource.Tables["Device"].Select($"ID={deviceID}")[0]);
+            Device? device = deviceTable.QueryRecordWhere("ID={0}", deviceID);
 
             if (signalType == SignalType.FREQ)
             {
@@ -550,10 +550,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
             foreach (MeasurementKey iMagKey in details.IMag)
             {
-
-                Gemstone.Timeseries.Model.Measurement? iMag = loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={iMagKey.SignalID}")[0]);
-
-                PhasorRecord iPhasor = loadPhasor(base.DataSource.Tables["Phasor"].Select($"DeviceID={deviceID} AND AND SourceIndex = {iMag.PhasorSourceIndex}")[0]);
+                Gemstone.Timeseries.Model.Measurement? iMag = measurementTable.QueryRecordWhere("SignalID={0}", iMagKey.SignalID);
+                PhasorRecord? iPhasor = phasorTable.QueryRecordWhere("DeviceID={0} AND SourceIndex={1}", deviceID, iMag?.PhasorSourceIndex);
 
                 if (iPhasor is null)
                 {
@@ -561,7 +559,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     continue;
                 }
 
-                PhasorRecord vPhasor = loadPhasor(base.DataSource.Tables["Phasor"].Select($" ID = {iPhasor.PrimaryVoltageID ?? iPhasor.SecondaryVoltageID}")[0]);
+                int? vId = iPhasor.PrimaryVoltageID ?? iPhasor.SecondaryVoltageID;
+                PhasorRecord? vPhasor = phasorTable.QueryRecordWhere("ID={0}", vId);
 
                 if (vPhasor is null)
                 {
@@ -569,11 +568,8 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                     continue;
                 }
 
-                Gemstone.Timeseries.Model.Measurement[] vMeas = base.DataSource.Tables["Measurement"].Select($"PhasorSourceIndex={vPhasor.SourceIndex} AND DeviceID={deviceID}")
-                    .Select(row => loadMeasurement(row)).ToArray();
-
-                Gemstone.Timeseries.Model.Measurement[] iMeas = base.DataSource.Tables["Measurement"].Select($"PhasorSourceIndex={iPhasor.SourceIndex} AND DeviceID={deviceID}")
-                    .Select(row => loadMeasurement(row)).ToArray();
+                Gemstone.Timeseries.Model.Measurement[] vMeas = measurementTable.QueryRecordsWhere("PhasorSourceIndex={0} AND DeviceID={1}", vPhasor.SourceIndex, deviceID).ToArray();
+                Gemstone.Timeseries.Model.Measurement[] iMeas = measurementTable.QueryRecordsWhere("PhasorSourceIndex={0} AND DeviceID={1}", iPhasor.SourceIndex, deviceID).ToArray();
 
                 Line line = new Line()
                 {
@@ -925,7 +921,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
                 }
             }
         }
-        
+
         // Verify on whether the alarm is related to tripping to to bad PMU data
         if (Tend > 0)
         {
