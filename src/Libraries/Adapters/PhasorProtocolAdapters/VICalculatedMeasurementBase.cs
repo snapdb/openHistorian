@@ -1,7 +1,7 @@
 ﻿//******************************************************************************************************
-//  ImpedanceCalculator.cs - Gbtc
+//  VICalculatedMeasurementBase.cs - Gbtc
 //
-//  Copyright © 2016, Grid Protection Alliance.  All Rights Reserved.
+//  Copyright © 2025, Grid Protection Alliance.  All Rights Reserved.
 //
 //  Licensed to the Grid Protection Alliance (GPA) under one or more contributor license agreements. See
 //  the NOTICE file distributed with this work for additional information regarding copyright ownership.
@@ -16,30 +16,21 @@
 //
 //  Code Modification History:
 //  ----------------------------------------------------------------------------------------------------
-//  10/26/2016 - J. Ritchie Carroll / Vahid Salehi
+//  04/29/2025 - C. Lackner
 //       Generated original version of source code.
 //
 //******************************************************************************************************
 // ReSharper disable InconsistentNaming
 
-using System;
 using System.ComponentModel;
 using System.Data;
 using System.Text;
-using Gemstone.Configuration;
 using Gemstone.Data.Model;
-using Gemstone.Numeric;
-using Gemstone.Numeric.EE;
-using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
-using Gemstone.Units;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using PhasorProtocolAdapters;
-using static System.Net.Mime.MediaTypeNames;
 using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
 using MeasurementRecord = Gemstone.Timeseries.Model.Measurement;
-using static PowerCalculations.SequenceCalculator;
 
 namespace PowerCalculations;
 
@@ -160,7 +151,7 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
             if (currentAngles.Length != voltageAngles.Length)
                 throw new InvalidOperationException("A different number of current and voltage input measurement keys were supplied - the angles and magnitudes must be supplied in pairs, i.e., one current input measurement must be supplied for each voltage  input measurement");
 
-            m_VISets = currentAngles.Select((angI,i) => new VISet()
+            m_VISets = currentAngles.Select((angI, i) => new VISet()
             {
                 CurrentAngle = angI,
                 CurrentMagnitude = currentMagnitudes[i],
@@ -186,12 +177,13 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
         if (currentPhasors.Length != 2)
             throw new InvalidOperationException("Exactly two current phasors needs to be specified.");
 
-        m_VISets = currentPhasors.Select((i) => new VISet() {
+        m_VISets = currentPhasors.Select((i) => new VISet()
+        {
             CurrentAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={i.SourceIndex} AND DeviceID={i.DeviceID} AND SignalTYPE LIKE 'IPHA'").FirstOrDefault(),
             CurrentMagnitude = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={i.SourceIndex} AND DeviceID={i.DeviceID} AND SignalTYPE LIKE 'IPHM'").FirstOrDefault(),
             VoltageAngle = new MeasurementKey[2],
             VoltageMagnitude = new MeasurementKey[2]
-        }).ToArray() ;
+        }).ToArray();
 
         if (string.IsNullOrEmpty(voltage))
         {
