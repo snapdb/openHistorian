@@ -174,9 +174,6 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
         .Select((meas) => loadPhasor(DataSource.Tables["Phasor"].Select($"DeviceID={meas?.DeviceID ?? 0} AND SourceIndex = {meas?.PhasorSourceIndex ?? 0}")[0]))
         .DistinctBy((phasor) => phasor?.ID ?? 0).ToArray();
 
-        if (currentPhasors.Length != 2)
-            throw new InvalidOperationException("Exactly two current phasors needs to be specified.");
-
         m_VISets = currentPhasors.Select((i) => new VISet()
         {
             CurrentAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={i.SourceIndex} AND DeviceID={i.DeviceID} AND SignalTYPE LIKE 'IPHA'").FirstOrDefault(),
@@ -209,9 +206,7 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
         else
         {
             MeasurementKey[] voltages = AdapterBase.ParseInputMeasurementKeys(DataSource, true, voltage);
-            if (voltages.Length != 2)
-                throw new InvalidOperationException("Exactly two voltage phasors needs to be specified.");
-
+          
             PhasorRecord[] voltagePhasors = voltages.Select((meas) => loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={meas.SignalID}")[0]))
                 .Select((meas) => loadPhasor(DataSource.Tables["Phasor"].Select($"DeviceID={meas?.DeviceID ?? 0} AND SourceIndex = {meas?.PhasorSourceIndex ?? 0}")[0]))
                 .ToArray();
