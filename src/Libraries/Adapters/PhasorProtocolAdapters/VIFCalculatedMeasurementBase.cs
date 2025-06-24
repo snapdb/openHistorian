@@ -120,7 +120,9 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
     {
         Func<DataRow, MeasurementRecord?> loadMeasurement = TableOperations<MeasurementRecord>.LoadRecordFunction();
         Func<DataRow, PhasorRecord?> loadPhasor = TableOperations<PhasorRecord>.LoadRecordFunction();
-       
+
+        ILookup<int, string> deviceAcronyms = DataSource.Tables["Device"].Select().ToLookup(row => row.Field<int>("ID"), row => row.Field<string>("Acronym") ?? string.Empty);
+
         m_VIFSets = m_VISets.Select((s) => new VIFSet()
         {
             CurrentAngle = s.CurrentAngle,
@@ -137,7 +139,7 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
             foreach (VIFSet set in m_VIFSets)
             {
                 MeasurementRecord current = loadMeasurement(DataSource.Tables["ActiveMeasurement"].Select($"ID={set.CurrentMagnitude}")[0]);
-                set.Frequency = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE DeviceID={current.DeviceID} AND SignalTYPE LIKE 'FREQ'").ToArray();
+                set.Frequency = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE Device = {deviceAcronyms[current?.DeviceID ?? 0].FirstOrDefault()} AND SignalTYPE LIKE 'FREQ'").ToArray();
             }
         }
         else

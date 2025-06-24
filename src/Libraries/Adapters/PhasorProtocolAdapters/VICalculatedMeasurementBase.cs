@@ -110,7 +110,7 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
     #region [ Methods ]
 
     /// <summary>
-    /// Initializes the <see cref="ImpedanceCalculator"/> monitor.
+    /// Initializes the <see cref="VICalculatedMeasurementBase"/> monitor.
     /// </summary>
     public override void Initialize()
     {
@@ -170,14 +170,16 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
 
         MeasurementKey[] currents = AdapterBase.ParseInputMeasurementKeys(DataSource, true, current);
 
+        ILookup<int,string> deviceAcronyms = DataSource.Tables["Device"].Select().ToLookup(row => row.Field<int>("ID"), row => row.Field<string>("Acronym") ?? string.Empty);
+
         PhasorRecord[] currentPhasors = currents.Select((meas) => loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={meas.SignalID}")[0]))
         .Select((meas) => loadPhasor(DataSource.Tables["Phasor"].Select($"DeviceID={meas?.DeviceID ?? 0} AND SourceIndex = {meas?.PhasorSourceIndex ?? 0}")[0]))
         .DistinctBy((phasor) => phasor?.ID ?? 0).ToArray();
 
         m_VISets = currentPhasors.Select((i) => new VISet()
         {
-            CurrentAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={i.SourceIndex} AND DeviceID={i.DeviceID} AND SignalTYPE LIKE 'IPHA'").FirstOrDefault(),
-            CurrentMagnitude = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={i.SourceIndex} AND DeviceID={i.DeviceID} AND SignalTYPE LIKE 'IPHM'").FirstOrDefault(),
+            CurrentAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex = {i.SourceIndex} AND Device = {deviceAcronyms[i.DeviceID].FirstOrDefault()} AND SignalTYPE LIKE 'IPHA'").FirstOrDefault(),
+            CurrentMagnitude = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={i.SourceIndex} AND Device = {deviceAcronyms[i.DeviceID].FirstOrDefault()} AND SignalTYPE LIKE 'IPHM'").FirstOrDefault(),
             VoltageAngle = new MeasurementKey[2],
             VoltageMagnitude = new MeasurementKey[2]
         }).ToArray();
@@ -189,16 +191,16 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
             {
                 PhasorRecord[] v = new PhasorRecord[2];
                 if (currentPhasors[index].PrimaryVoltageID is not null)
-                    v[0] = loadPhasor(DataSource.Tables["Phasor"].Select($"ID={currentPhasors[index].PrimaryVoltageID}")[0]);
+                    v[0] = loadPhasor(DataSource.Tables["Phasor"].Select($"ID = {currentPhasors[index].PrimaryVoltageID}")[0]);
 
                 if (currentPhasors[index].SecondaryVoltageID is not null)
-                    v[1] = loadPhasor(DataSource.Tables["Phasor"].Select($"ID={currentPhasors[index].SecondaryVoltageID}")[0]);
+                    v[1] = loadPhasor(DataSource.Tables["Phasor"].Select($"ID = {currentPhasors[index].SecondaryVoltageID}")[0]);
 
                 if (v.Length < 1)
                     throw new InvalidOperationException($"Unable to identify the voltage phasor based on the current. A set of voltage phasors must be specified.");
 
-                set.VoltageAngle = v.SelectMany((volt) => AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={volt.SourceIndex} AND DeviceID={volt.DeviceID} AND SignalTYPE LIKE 'VPHA'")).ToArray();
-                set.VoltageMagnitude = v.SelectMany((volt) => AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={volt.SourceIndex} AND DeviceID={volt.DeviceID} AND SignalTYPE LIKE 'VPHM'")).ToArray();
+                set.VoltageAngle = v.SelectMany((volt) => AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex = {volt.SourceIndex} AND Device = {deviceAcronyms[volt.DeviceID].FirstOrDefault()} AND SignalTYPE LIKE 'VPHA'")).ToArray();
+                set.VoltageMagnitude = v.SelectMany((volt) => AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex = {volt.SourceIndex} AND Device = {deviceAcronyms[volt.DeviceID].FirstOrDefault()} AND SignalTYPE LIKE 'VPHM'")).ToArray();
                 index++;
             }
 
@@ -207,15 +209,15 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
         {
             MeasurementKey[] voltages = AdapterBase.ParseInputMeasurementKeys(DataSource, true, voltage);
           
-            PhasorRecord[] voltagePhasors = voltages.Select((meas) => loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={meas.SignalID}")[0]))
+            PhasorRecord[] voltagePhasors = voltages.Select((meas) => loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID = {meas.SignalID}")[0]))
                 .Select((meas) => loadPhasor(DataSource.Tables["Phasor"].Select($"DeviceID={meas?.DeviceID ?? 0} AND SourceIndex = {meas?.PhasorSourceIndex ?? 0}")[0]))
                 .ToArray();
 
             int index = 0;
             foreach (VISet set in m_VISets)
             {
-                set.VoltageAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={voltagePhasors[index].SourceIndex} AND DeviceID={voltagePhasors[index].DeviceID} AND SignalTYPE LIKE 'VPHA'");
-                set.VoltageMagnitude = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex={voltagePhasors[index].SourceIndex} AND DeviceID={voltagePhasors[index].DeviceID} AND SignalTYPE LIKE 'VPHM'");
+                set.VoltageAngle = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex = {voltagePhasors[index].SourceIndex} AND DeviceID = {deviceAcronyms[voltagePhasors[index].DeviceID].FirstOrDefault()} AND SignalTYPE LIKE 'VPHA'");
+                set.VoltageMagnitude = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE SourceIndex = {voltagePhasors[index].SourceIndex} AND DeviceID = {deviceAcronyms[voltagePhasors[index].DeviceID].FirstOrDefault()} AND SignalTYPE LIKE 'VPHM'");
                 index++;
             }
         }
