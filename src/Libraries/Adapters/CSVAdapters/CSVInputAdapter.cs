@@ -33,6 +33,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Timers;
 using Gemstone.IO;
+using Gemstone.Threading.SynchronizedOperations;
 using Timer = System.Timers.Timer;
 
 namespace CSVAdapters;
@@ -52,7 +53,9 @@ public class CSVInputAdapter : InputAdapterBase
     private string? m_header;
     private readonly Dictionary<string, int> m_columns;
     private readonly Dictionary<int, IMeasurement> m_columnMappings;
+
     private Timer? m_looseTimer;
+    private ShortSynchronizedOperation? m_readRow;
 
     private PrecisionInputTimer? m_precisionTimer;
     private long[]? m_subsecondDistribution;
@@ -242,6 +245,7 @@ public class CSVInputAdapter : InputAdapterBase
                 m_looseTimer?.Dispose();
 
             m_looseTimer = null;
+            m_readRow = null;
 
             m_inStream?.Dispose();
             m_inStream = null;
@@ -297,7 +301,10 @@ public class CSVInputAdapter : InputAdapterBase
         UseHighResolutionInputTimer = setting.ParseBoolean();
 
         if (!UseHighResolutionInputTimer)
+        {
             m_looseTimer = new Timer();
+            m_readRow = new ShortSynchronizedOperation(ReadRow, ex => OnProcessException(MessageLevel.Warning, ex));
+        }
 
         if (TransverseMode)
         {
@@ -430,13 +437,18 @@ public class CSVInputAdapter : InputAdapterBase
     // Handler for loose timer measurements processing
     private void m_looseTimer_Elapsed(object? sender, ElapsedEventArgs e)
     {
-        if (!Enabled || ReadNextRecord(DateTime.UtcNow.Ticks))
+        m_readRow!.Run();
+    }
+
+    private void ReadRow()
+    {
+        if (!Enabled)
             return;
 
-        Stop();
+        if (ReadNextRecord(DateTime.UtcNow.Ticks))
+            return;
 
-        if (AutoRepeat)
-            Start();
+        ReadComplete();
     }
 
     // Handler for precision timer measurements processing
@@ -451,11 +463,19 @@ public class CSVInputAdapter : InputAdapterBase
 
         if (!Enabled)
             return;
-        
-        Stop();
 
-        if (AutoRepeat)
-            Start();
+        ReadComplete();
+    }
+
+    private void ReadComplete()
+    {
+        AttemptDisconnection();
+
+        if (!AutoRepeat)
+            return;
+
+        OnStatusMessage(MessageLevel.Info, "Restarting CSV read for auto-repeat.");
+        AttemptConnection();
     }
 
     // Attempt to read as many records as necessary to reach the target frame index
