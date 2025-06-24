@@ -18,6 +18,8 @@
 //  ----------------------------------------------------------------------------------------------------
 //  10/31/2024 - C. Lackner
 //       Migrated from GSF.
+//  06/24/2025 - J. Ritchie Carroll
+//       Improved operation and added support for quoted fields in CSV lines.
 //
 //******************************************************************************************************
 
@@ -30,6 +32,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Timers;
+using Gemstone.IO;
 using Timer = System.Timers.Timer;
 
 namespace CSVAdapters;
@@ -38,28 +41,21 @@ namespace CSVAdapters;
 /// Represents an input adapter that reads measurements from a CSV file.
 /// </summary>
 [Description("CSV: Reads measurements from a CSV file")]
-[UIResource("AdaptersUI", $".CSVAdapters.CSVInputAdapter.main.js")]
-[UIResource("AdaptersUI", $".CSVAdapters.CSVInputAdapter.chunk.js")]
+[UIResource("AdaptersUI", ".CSVAdapters.CSVInputAdapter.main.js")]
+[UIResource("AdaptersUI", ".CSVAdapters.CSVInputAdapter.chunk.js")]
 public class CSVInputAdapter : InputAdapterBase
 {
     #region [ Members ]
 
     // Fields
-    private string m_fileName;
-    private StreamReader m_inStream;
-    private string m_header;
+    private StreamReader? m_inStream;
+    private string? m_header;
     private readonly Dictionary<string, int> m_columns;
     private readonly Dictionary<int, IMeasurement> m_columnMappings;
-    private double m_inputInterval;
-    private int m_measurementsPerInterval;
-    private int m_skipRows;
-    private bool m_simulateTimestamp;
-    private bool m_transverse;
-    private bool m_autoRepeat;
-    private Timer m_looseTimer;
+    private Timer? m_looseTimer;
 
-    private PrecisionInputTimer m_precisionTimer;
-    private long[] m_subsecondDistribution;
+    private PrecisionInputTimer? m_precisionTimer;
+    private long[]? m_subsecondDistribution;
     private long m_previousSecond;
     private int m_previousFrameIndex;
 
@@ -74,11 +70,11 @@ public class CSVInputAdapter : InputAdapterBase
     /// </summary>
     public CSVInputAdapter()
     {
-        m_fileName = "measurements.csv";
+        FileName = "measurements.csv";
         m_columns = new Dictionary<string, int>(StringComparer.CurrentCultureIgnoreCase);
         m_columnMappings = new Dictionary<int, IMeasurement>();
-        m_inputInterval = 33.333333;
-        m_measurementsPerInterval = 5;
+        InputInterval = 33.333333;
+        MeasurementsPerInterval = 5;
 
         // Set minimum timer resolution to one millisecond to improve timer accuracy
         PrecisionTimer.SetMinimumTimerResolution(1);
@@ -91,74 +87,33 @@ public class CSVInputAdapter : InputAdapterBase
     /// <summary>
     /// Gets or sets the name of the CSV file from which measurements will be read.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Define the name of the CSV file from which measurements will be read."),
-    DefaultValue("measurements.csv")]
-    public string FileName
-    {
-        get
-        {
-            return m_fileName;
-        }
-        set
-        {
-            m_fileName = value;
-        }
-    }
+    [ConnectionStringParameter]
+    [Description("Define the name of the CSV file from which measurements will be read.")]
+    public string FileName { get; set; }
 
     /// <summary>
     /// Gets or sets the interval of time between sending frames into the concentrator.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Define the interval of time, in milliseconds, between sending frames into the concentrator."),
-    DefaultValue(33.333333)]
-    public double InputInterval
-    {
-        get
-        {
-            return m_inputInterval;
-        }
-        set
-        {
-            m_inputInterval = value;
-        }
-    }
+    [ConnectionStringParameter]
+    [Description("Define the interval of time, in milliseconds, between sending frames into the concentrator.")]
+    [DefaultValue(33.333333)]
+    public double InputInterval { get; set; }
 
     /// <summary>
     /// Gets or sets value that determines if the CSV input file data should be replayed repeatedly.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Define if the CSV input file data should be replayed repeatedly."),
-    DefaultValue(false)]
-    public bool AutoRepeat
-    {
-        get
-        {
-            return m_autoRepeat;
-        }
-        set
-        {
-            m_autoRepeat = value;
-        }
-    }
+    [ConnectionStringParameter]
+    [Description("Define if the CSV input file data should be replayed repeatedly.")]
+    [DefaultValue(false)]
+    public bool AutoRepeat { get; set; }
 
     /// <summary>
     /// Gets or sets number of lines to skip in the source file before the header line is encountered.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Define the number of lines to skip in the source file before the header line is encountered."),
-    DefaultValue(0)]
-    public int SkipRows
-    {
-        get
-        {
-            return m_skipRows;
-        }
-        set
-        {
-            m_skipRows = value;
-        }
-    }
+    [ConnectionStringParameter]
+    [Description("Define the number of lines to skip in the source file before the header line is encountered.")]
+    [DefaultValue(0)]
+    public int SkipRows { get; set; }
 
     /// <summary>
     /// Gets or sets flag that determines if a high-resolution precision timer should be used for CSV file based input.
@@ -168,91 +123,59 @@ public class CSVInputAdapter : InputAdapterBase
     /// an input device and calculate downstream latencies.<br/>
     /// This is only applicable when connection is made to a file for replay purposes.
     /// </remarks>
-    [ConnectionStringParameter,
-    Description("Determines if a high-resolution precision timer should be used for CSV file based input."),
-    DefaultValue(false)]
+    [ConnectionStringParameter]
+    [Description("Determines if a high-resolution precision timer should be used for CSV file based input.")]
+    [DefaultValue(false)]
     public bool UseHighResolutionInputTimer
     {
-        get
-        {
-            return (object)m_precisionTimer != null;
-        }
+        get => m_precisionTimer is not null;
         set
         {
-            // Note that a 1-ms timer and debug mode don't mix, so the high-resolution timer is disabled while debugging
-            if (value && (object)m_precisionTimer == null && !Debugger.IsAttached)
-                m_precisionTimer = PrecisionInputTimer.Attach((int)(1000.0D / m_inputInterval), ex => OnProcessException(MessageLevel.Warning, ex));
-            else if (!value && m_precisionTimer != null)
-                PrecisionInputTimer.Detach(ref m_precisionTimer);
+            switch (value)
+            {
+                // Note that a 1-ms timer and debug mode don't mix, so the high-resolution timer is disabled while debugging
+                case true when m_precisionTimer is null && !Debugger.IsAttached:
+                    m_precisionTimer = PrecisionInputTimer.Attach((int)(1000.0D / InputInterval), ex => OnProcessException(MessageLevel.Warning, ex));
+                    break;
+                case false when m_precisionTimer is not null:
+                    PrecisionInputTimer.Detach(ref m_precisionTimer);
+                    break;
+            }
         }
     }
 
     /// <summary>
     /// Gets or sets the number of measurements that are read from the CSV file in each frame.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Define the number of measurements that are read from the CSV file in each frame."),
-    DefaultValue(5)]
-    public int MeasurementsPerInterval
-    {
-        get
-        {
-            return m_measurementsPerInterval;
-        }
-        set
-        {
-            m_measurementsPerInterval = value;
-        }
-    }
+    [ConnectionStringParameter]
+    [Description("Define the number of measurements that are read from the CSV file in each frame.")]
+    [DefaultValue(5)]
+    public int MeasurementsPerInterval { get; set; }
 
     /// <summary>
     /// Gets or sets a value that determines whether CSV file is in transverse mode for real-time concentration.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Indicate whether CSV file is in transverse mode for real-time concentration."),
-    DefaultValue(false)]
-    public bool TransverseMode
-    {
-        get
-        {
-            return m_transverse;
-        }
-        set
-        {
-            m_transverse = value;
-        }
-    }
+    [ConnectionStringParameter]
+    [Description("Indicate whether CSV file is in transverse mode for real-time concentration.")]
+    [DefaultValue(false)]
+    public bool TransverseMode { get; set; }
 
     /// <summary>
     /// Gets or sets a value that determines whether timestamps are
     /// simulated for the purposes of real-time concentration.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Indicate whether timestamps are simulated for real-time concentration."),
-    DefaultValue(false)]
-    public bool SimulateTimestamp
-    {
-        get
-        {
-            return m_simulateTimestamp;
-        }
-        set
-        {
-            m_simulateTimestamp = value;
-        }
-    }
+    [ConnectionStringParameter]
+    [Description("Indicate whether timestamps are simulated for real-time concentration.")]
+    [DefaultValue(false)]
+    public bool SimulateTimestamp { get; set; }
 
     /// <summary>
-    /// Defines the column mappings must defined: e.g., 0=Timestamp; 1=PPA:12; 2=PPA13.
+    /// Defines the column mappings, must be defined: e.g., 0=Timestamp; 1=PPA:12; 2=PPA13.
     /// </summary>
-    [ConnectionStringParameter,
-    Description("Defines the column mappings must defined: e.g., \"0=Timestamp; 1=PPA:12; 2=PPA13\"."),
-    DefaultValue("")]
-    public int ColumnMappings
-    {
-        get;
-        set;
-    }
+    [ConnectionStringParameter]
+    [Description("Defines the column mappings must defined: e.g., \"0=Timestamp; 1=PPA:12; 2=PPA13\".")]
+    [DefaultValue("")]
+    public int ColumnMappings { get; set; }
 
     /// <summary>
     /// Gets a flag that determines if this <see cref="CSVInputAdapter"/>
@@ -267,30 +190,22 @@ public class CSVInputAdapter : InputAdapterBase
     {
         get
         {
-            StringBuilder status = new StringBuilder();
+            StringBuilder status = new();
 
             status.Append(base.Status);
             status.AppendLine();
-            status.AppendFormat("                 File name: {0}", m_fileName);
-            status.AppendLine();
-            status.AppendFormat("               File header: {0}", m_header);
-            status.AppendLine();
-            status.AppendFormat("            Input interval: {0}", m_inputInterval);
-            status.AppendLine();
-            status.AppendFormat(" Measurements per interval: {0}", m_measurementsPerInterval);
-            status.AppendLine();
-            status.AppendFormat("     Using traverse format: {0}", m_transverse);
-            status.AppendLine();
-            status.AppendFormat("               Auto-repeat: {0}", m_autoRepeat);
-            status.AppendLine();
-            status.AppendFormat("     Precision input timer: {0}", UseHighResolutionInputTimer ? "Enabled" : "Offline");
-            status.AppendLine();
-            status.AppendFormat("             Lines to skip: {0}", m_skipRows);
-            status.AppendLine();
+            status.AppendLine($"                 File name: {FilePath.TrimFileName(FileName, 51)}");
+            status.AppendLine($"               File header: {m_header}");
+            status.AppendLine($"            Input interval: {InputInterval:N3}");
+            status.AppendLine($" Measurements per interval: {MeasurementsPerInterval:N0}");
+            status.AppendLine($"     Using transverse mode: {TransverseMode}");
+            status.AppendLine($"               Auto-repeat: {AutoRepeat}");
+            status.AppendLine($"     Precision input timer: {(UseHighResolutionInputTimer ? "Enabled" : "Offline")}");
+            status.AppendLine($"             Lines to skip: {SkipRows:N0}");
 
-            if ((object)m_precisionTimer != null)
+            if (m_precisionTimer is not null)
             {
-                status.AppendFormat("  Timer resynchronizations: {0}", m_precisionTimer.Resynchronizations);
+                status.Append($"  Timer resynchronizations: {m_precisionTimer.Resynchronizations}");
                 status.AppendLine();
             }
 
@@ -313,40 +228,31 @@ public class CSVInputAdapter : InputAdapterBase
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
     protected override void Dispose(bool disposing)
     {
-        if (!m_disposed)
+        if (m_disposed)
+            return;
+        
+        try
         {
-            try
-            {
-                if (disposing)
-                {
-                    if (UseHighResolutionInputTimer)
-                    {
-                        PrecisionInputTimer.Detach(ref m_precisionTimer);
-                    }
-                    else if ((object)m_looseTimer != null)
-                    {
-                        m_looseTimer.Stop();
-                        m_looseTimer.Dispose();
-                    }
-                    m_looseTimer = null;
+            if (!disposing)
+                return;
 
-                    if ((object)m_inStream != null)
-                    {
-                        m_inStream.Close();
-                        m_inStream.Dispose();
-                    }
+            if (UseHighResolutionInputTimer)
+                PrecisionInputTimer.Detach(ref m_precisionTimer);
+            else
+                m_looseTimer?.Dispose();
 
-                    m_inStream = null;
+            m_looseTimer = null;
 
-                    // Clear minimum timer resolution.
-                    PrecisionTimer.ClearMinimumTimerResolution(1);
-                }
-            }
-            finally
-            {
-                m_disposed = true;          // Prevent duplicate dispose.
-                base.Dispose(disposing);    // Call base class Dispose().
-            }
+            m_inStream?.Dispose();
+            m_inStream = null;
+
+            // Clear minimum timer resolution.
+            PrecisionTimer.ClearMinimumTimerResolution(1);
+        }
+        finally
+        {
+            m_disposed = true;          // Prevent duplicate dispose.
+            base.Dispose(disposing);    // Call base class Dispose().
         }
     }
 
@@ -358,35 +264,32 @@ public class CSVInputAdapter : InputAdapterBase
         base.Initialize();
 
         Dictionary<string, string> settings = Settings;
-        string setting;
 
         // Load optional parameters
+        if (settings.TryGetValue(nameof(FileName), out string? setting))
+            FileName = setting;
 
-        if (settings.TryGetValue("fileName", out setting))
-            m_fileName = setting;
+        if (settings.TryGetValue(nameof(InputInterval), out setting))
+            InputInterval = double.Parse(setting);
 
-        if (settings.TryGetValue("inputInterval", out setting))
-            m_inputInterval = double.Parse(setting);
+        if (settings.TryGetValue(nameof(MeasurementsPerInterval), out setting))
+            MeasurementsPerInterval = int.Parse(setting);
 
-        if (settings.TryGetValue("measurementsPerInterval", out setting))
-            m_measurementsPerInterval = int.Parse(setting);
+        if (settings.TryGetValue(nameof(SimulateTimestamp), out setting))
+            SimulateTimestamp = setting.ParseBoolean();
 
-        if (settings.TryGetValue("simulateTimestamp", out setting))
-            m_simulateTimestamp = setting.ParseBoolean();
+        if (settings.TryGetValue(nameof(TransverseMode), out setting) || settings.TryGetValue("transverse", out setting))
+            TransverseMode = setting.ParseBoolean();
 
-        if (settings.TryGetValue("transverse", out setting) || settings.TryGetValue("transverseMode", out setting))
-            m_transverse = setting.ParseBoolean();
+        if (settings.TryGetValue(nameof(AutoRepeat), out setting))
+            AutoRepeat = setting.ParseBoolean();
 
-        if (settings.TryGetValue("autoRepeat", out setting))
-            m_autoRepeat = setting.ParseBoolean();
+        if (settings.TryGetValue(nameof(SkipRows), out setting) && int.TryParse(setting, out int skipRows) && skipRows > 0)
+            SkipRows = skipRows;
+        else
+            SkipRows = 0;
 
-        if (settings.TryGetValue("skipRows", out setting))
-            int.TryParse(setting, out m_skipRows);
-
-        if (m_skipRows < 0)
-            m_skipRows = 0;
-
-        settings.TryGetValue("useHighResolutionInputTimer", out setting);
+        settings.TryGetValue(nameof(UseHighResolutionInputTimer), out setting);
 
         if (string.IsNullOrEmpty(setting))
             setting = "false";
@@ -396,42 +299,36 @@ public class CSVInputAdapter : InputAdapterBase
         if (!UseHighResolutionInputTimer)
             m_looseTimer = new Timer();
 
-        if (m_transverse)
+        if (TransverseMode)
         {
             // Load column mappings:
-            if (settings.TryGetValue("columnMappings", out setting))
+            if (settings.TryGetValue(nameof(ColumnMappings), out setting))
             {
-                Dictionary<int, string> columnMappings = new Dictionary<int, string>();
-                int index;
+                Dictionary<int, string> columnMappings = new();
 
                 foreach (KeyValuePair<string, string> mapping in setting.ParseKeyValuePairs())
                 {
-                    if (int.TryParse(mapping.Key, out index))
+                    if (int.TryParse(mapping.Key, out int index))
                         columnMappings[index] = mapping.Value;
                 }
 
-                if (!m_simulateTimestamp && !columnMappings.Values.Contains("Timestamp", StringComparer.OrdinalIgnoreCase))
+                if (!SimulateTimestamp && !columnMappings.Values.Contains("Timestamp", StringComparer.OrdinalIgnoreCase))
                     throw new InvalidOperationException("One of the column mappings must be defined as a \"Timestamp\": e.g., columnMappings={0=Timestamp; 1=PPA:12; 2=PPA13}.");
 
                 // In transverse mode, maximum measurements per interval is set to maximum columns in input file
-                m_measurementsPerInterval = columnMappings.Keys.Max() + 1;
+                MeasurementsPerInterval = columnMappings.Keys.Max() + 1;
 
                 // Auto-assign output measurements based on column mappings
-                OutputMeasurements = columnMappings.Where(kvp => string.Compare(kvp.Value, "Timestamp", StringComparison.OrdinalIgnoreCase) != 0).Select(kvp =>
+                OutputMeasurements = columnMappings.Where(kvp => string.Compare(kvp.Value, "Timestamp", StringComparison.OrdinalIgnoreCase) != 0).Select(IMeasurement (kvp) =>
                 {
                     string measurementID = kvp.Value;
-                    IMeasurement measurement = new Measurement();
+                    Measurement measurement = new();
                     MeasurementKey key;
-                    Guid id;
 
-                    if (Guid.TryParse(measurementID, out id))
-                    {
+                    if (Guid.TryParse(measurementID, out Guid id))
                         key = MeasurementKey.LookUpBySignalID(id);
-                    }
                     else
-                    {
                         MeasurementKey.TryParse(measurementID, out key);
-                    }
 
                     measurement.Metadata = key.Metadata;
 
@@ -446,7 +343,7 @@ public class CSVInputAdapter : InputAdapterBase
                 // Reserve a column mapping for timestamp value
                 IMeasurement timestampMeasurement = new Measurement
                 {
-                    Metadata = new MeasurementMetadata(null, "Timestamp", 0, 1, null)
+                    Metadata = new MeasurementMetadata(null!, "Timestamp", 0, 1, null)
                 };
 
                 m_columnMappings[timestampColumn] = timestampMeasurement;
@@ -459,14 +356,14 @@ public class CSVInputAdapter : InputAdapterBase
 
         // Override input interval based on temporal processing interval if it's not set to default
         if (ProcessingInterval > -1)
-            m_inputInterval = ProcessingInterval == 0 ? 1 : ProcessingInterval;
+            InputInterval = ProcessingInterval == 0 ? 1 : ProcessingInterval;
 
-        if ((object)m_looseTimer != null)
-        {
-            m_looseTimer.Interval = m_inputInterval;
-            m_looseTimer.AutoReset = true;
-            m_looseTimer.Elapsed += m_looseTimer_Elapsed;
-        }
+        if (m_looseTimer is null)
+            return;
+
+        m_looseTimer.Interval = InputInterval;
+        m_looseTimer.AutoReset = true;
+        m_looseTimer.Elapsed += m_looseTimer_Elapsed;
     }
 
     /// <summary>
@@ -474,17 +371,15 @@ public class CSVInputAdapter : InputAdapterBase
     /// </summary>
     protected override void AttemptConnection()
     {
-        string[] headings;
-
-        m_inStream = new StreamReader(File.Open(m_fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+        m_inStream = new StreamReader(File.Open(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 
         // Skip specified number of header lines that exist before column heading definitions
-        for (int i = 0; i < m_skipRows; i++)
+        for (int i = 0; i < SkipRows; i++)
             m_inStream.ReadLine();
 
         m_columns.Clear();
         m_header = m_inStream.ReadLine();
-        headings = m_header.ToNonNullString().Split(',');
+        string[] headings = m_header.ToNonNullString().Split(',');
 
         for (int i = 0; i < headings.Length; i++)
             m_columns.Add(headings[i], i);
@@ -492,12 +387,16 @@ public class CSVInputAdapter : InputAdapterBase
         if (UseHighResolutionInputTimer)
         {
             // Start a new thread to process measurements using precision timer
-            new Thread(ProcessMeasurements).Start();
+            new Thread(ProcessMeasurements)
+            {
+                IsBackground = true
+            }
+            .Start();
         }
         else
         {
             // Start common timer
-            m_looseTimer.Start();
+            m_looseTimer!.Start();
         }
     }
 
@@ -506,7 +405,7 @@ public class CSVInputAdapter : InputAdapterBase
     /// </summary>
     protected override void AttemptDisconnection()
     {
-        if ((object)m_inStream != null)
+        if (m_inStream is not null)
         {
             m_inStream.Close();
             m_inStream.Dispose();
@@ -515,7 +414,7 @@ public class CSVInputAdapter : InputAdapterBase
         m_inStream = null;
 
         if (!UseHighResolutionInputTimer)
-            m_looseTimer.Stop();
+            m_looseTimer!.Stop();
     }
 
     /// <summary>
@@ -528,71 +427,58 @@ public class CSVInputAdapter : InputAdapterBase
         return $"{ProcessedMeasurements} measurements read from CSV file.".CenterText(maxLength);
     }
 
+    // Handler for loose timer measurements processing
+    private void m_looseTimer_Elapsed(object? sender, ElapsedEventArgs e)
+    {
+        if (!Enabled || ReadNextRecord(DateTime.UtcNow.Ticks))
+            return;
+
+        Stop();
+
+        if (AutoRepeat)
+            Start();
+    }
+
+    // Handler for precision timer measurements processing
     private void ProcessMeasurements()
     {
+        if (m_precisionTimer is null)
+            return;
+
+        // When high resolution input timing is requested, we only need to wait for the next signal...
         while (Enabled && ReadToFrame(m_precisionTimer.LastFrameTime))
-        {
-            // When high resolution input timing is requested, we only need to wait for the next signal...
-            m_precisionTimer.FrameWaitHandle.Wait();
-        }
+            m_precisionTimer.FrameWaitHandle?.Wait();
 
-        if (Enabled)
-        {
-            Stop();
+        if (!Enabled)
+            return;
+        
+        Stop();
 
-            if (m_autoRepeat)
-                Start();
-        }
+        if (AutoRepeat)
+            Start();
     }
 
-    private void m_looseTimer_Elapsed(object sender, ElapsedEventArgs e)
-    {
-        if (!ReadNextRecord(DateTime.UtcNow.Ticks) && Enabled)
-        {
-            Stop();
-
-            if (m_autoRepeat)
-                Start();
-        }
-    }
-
-    // Attempt to read as many records as necessary
-    // to reach the target frame index
+    // Attempt to read as many records as necessary to reach the target frame index
     private bool ReadToFrame(long targetFrameTime)
     {
-        long CalculateFrameTime()
-        {
-            long subseconds = m_subsecondDistribution[m_previousFrameIndex];
-            return m_previousSecond + subseconds;
-        }
-
-        bool JumpToFrameTime()
-        {
-            TimeSpan targetFrameSpan = TimeSpan.FromTicks(targetFrameTime);
-            TimeSpan targetFrameSecond = TimeSpan.FromSeconds(Math.Truncate(targetFrameSpan.TotalSeconds));
-            TimeSpan targetFrameSubsecond = targetFrameSpan - targetFrameSecond;
-            m_previousSecond = targetFrameSecond.Ticks;
-            m_previousFrameIndex = (int)Math.Round(targetFrameSubsecond.TotalSeconds * m_precisionTimer.FramesPerSecond);
-
-            long frameTime = CalculateFrameTime();
-            return ReadNextRecord(frameTime);
-        }
+        if (m_precisionTimer is null)
+            return false;
 
         try
         {
-            if ((object)m_subsecondDistribution == null)
+            if (m_subsecondDistribution is null)
             {
                 m_subsecondDistribution = Ticks.SubsecondDistribution(m_precisionTimer.FramesPerSecond)
-                    .Select(subsecond => (long)subsecond)
+                    .Select(subsecond => subsecond.Value)
                     .ToArray();
 
-                return JumpToFrameTime();
+                return jumpToFrameTime();
             }
 
             if (targetFrameTime - m_previousSecond > TimeSpan.FromSeconds(5.0D).Ticks)
-                return JumpToFrameTime();
+                return jumpToFrameTime();
 
-            long currentFrameTime = CalculateFrameTime();
+            long currentFrameTime = calculateFrameTime();
 
             while (currentFrameTime < targetFrameTime)
             {
@@ -601,7 +487,7 @@ public class CSVInputAdapter : InputAdapterBase
                 if (m_previousFrameIndex == 0)
                     m_previousSecond += Ticks.PerSecond;
 
-                currentFrameTime = CalculateFrameTime();
+                currentFrameTime = calculateFrameTime();
 
                 if (!ReadNextRecord(currentFrameTime))
                     return false;
@@ -613,25 +499,55 @@ public class CSVInputAdapter : InputAdapterBase
         }
 
         return true;
+
+        long calculateFrameTime()
+        {
+            long subseconds = m_subsecondDistribution[m_previousFrameIndex];
+            return m_previousSecond + subseconds;
+        }
+
+        bool jumpToFrameTime()
+        {
+            TimeSpan targetFrameSpan = TimeSpan.FromTicks(targetFrameTime);
+            TimeSpan targetFrameSecond = TimeSpan.FromSeconds(Math.Truncate(targetFrameSpan.TotalSeconds));
+            TimeSpan targetFrameSubsecond = targetFrameSpan - targetFrameSecond;
+
+            m_previousSecond = targetFrameSecond.Ticks;
+            m_previousFrameIndex = (int)Math.Round(targetFrameSubsecond.TotalSeconds * m_precisionTimer.FramesPerSecond);
+
+            long frameTime = calculateFrameTime();
+            return ReadNextRecord(frameTime);
+        }
     }
 
     // Attempt to read the next record
     private bool ReadNextRecord(long currentTime)
     {
+        if (m_inStream is null)
+            return false;
+
         try
         {
             List<IMeasurement> newMeasurements = [];
             long fileTime = 0;
             int timestampColumn = 0;
-            string[] fields = m_inStream.ReadLine().ToNonNullString().Split(',');
+
+            string? line = m_inStream.ReadLine();
+
+            // Null line indicates end of file, return false
+            if (line is null)
+                return false;
+
+            // Parse line of CSV file accounting for quoted fields
+            string[] fields = ParseCSVLine(line.Trim());
 
             if (m_inStream.EndOfStream || fields.Length < m_columns.Count)
                 return false;
 
             // Read time from Timestamp column in transverse mode
-            if (m_transverse)
+            if (TransverseMode)
             {
-                if (m_simulateTimestamp)
+                if (SimulateTimestamp)
                 {
                     fileTime = currentTime;
                 }
@@ -642,11 +558,11 @@ public class CSVInputAdapter : InputAdapterBase
                 }
             }
 
-            for (int i = 0; i < m_measurementsPerInterval; i++)
+            for (int i = 0; i < MeasurementsPerInterval; i++)
             {
-                IMeasurement measurement;
+                IMeasurement? measurement;
 
-                if (m_transverse)
+                if (TransverseMode)
                 {
                     // No measurement will be defined for timestamp column
                     if (i == timestampColumn)
@@ -664,7 +580,7 @@ public class CSVInputAdapter : InputAdapterBase
                         measurement.Value = double.NaN;
                     }
 
-                    if (m_simulateTimestamp)
+                    if (SimulateTimestamp)
                         measurement.Timestamp = currentTime;
                     else if (m_columns.ContainsKey("Timestamp"))
                         measurement.Timestamp = fileTime;
@@ -673,27 +589,26 @@ public class CSVInputAdapter : InputAdapterBase
                 {
                     measurement = new Measurement();
 
-                    if (m_columns.ContainsKey("Signal ID"))
+                    if (m_columns.TryGetValue("Signal ID", out int idColumn))
                     {
-                        Guid measurementID = new Guid(fields[m_columns["Signal ID"]]);
+                        Guid measurementID = new(fields[idColumn]);
 
-                        if (m_columns.ContainsKey("Measurement Key"))
-                            measurement.Metadata = MeasurementKey.LookUpOrCreate(measurementID, fields[m_columns["Measurement Key"]]).Metadata;
-                        else
-                            measurement.Metadata = MeasurementKey.LookUpBySignalID(measurementID).Metadata;
+                        measurement.Metadata = m_columns.TryGetValue("Measurement Key", out int keyColumn) ? 
+                            MeasurementKey.LookUpOrCreate(measurementID, fields[keyColumn]).Metadata : 
+                            MeasurementKey.LookUpBySignalID(measurementID).Metadata;
                     }
-                    else if (m_columns.ContainsKey("Measurement Key"))
+                    else if (m_columns.TryGetValue("Measurement Key", out int keyColumn))
                     {
-                        measurement.Metadata = MeasurementKey.Parse(fields[m_columns["Measurement Key"]]).Metadata;
+                        measurement.Metadata = MeasurementKey.Parse(fields[keyColumn]).Metadata;
                     }
 
-                    if (m_simulateTimestamp)
+                    if (SimulateTimestamp)
                         measurement.Timestamp = currentTime;
-                    else if (m_columns.ContainsKey("Timestamp"))
-                        measurement.Timestamp = long.Parse(fields[m_columns["Timestamp"]]);
+                    else if (m_columns.TryGetValue("Timestamp", out int timeColumn))
+                        measurement.Timestamp = long.Parse(fields[timeColumn]);
 
-                    if (m_columns.ContainsKey("Value"))
-                        measurement.Value = double.Parse(fields[m_columns["Value"]]);
+                    if (m_columns.TryGetValue("Value", out int valueColumn))
+                        measurement.Value = double.Parse(fields[valueColumn]);
                 }
 
                 newMeasurements.Add(measurement);
@@ -707,6 +622,64 @@ public class CSVInputAdapter : InputAdapterBase
         }
 
         return true;
+    }
+
+    // Parse a CSV line into fields, accounting for quoted fields
+    private static string[] ParseCSVLine(string line)
+    {
+        List<string> fields = [];
+        bool inQuotes = false;
+        bool fieldHasQuotes = false;
+        StringBuilder fieldBuilder = new();
+
+        for (int i = 0; i < line.Length; i++)
+        {
+            char c = line[i];
+
+            if (inQuotes)
+            {
+                if (c == '"')
+                {
+                    // Peek ahead to see if it's an escaped quote (two quotes in a row)
+                    if (i + 1 < line.Length && line[i + 1] == '"')
+                    {
+                        fieldBuilder.Append('"');
+                        i++; // Skip second quote
+                    }
+                    else
+                    {
+                        inQuotes = false; // End of quoted field
+                    }
+                }
+                else
+                {
+                    fieldBuilder.Append(c);
+                }
+            }
+            else
+            {
+                switch (c)
+                {
+                    case ',':
+                        fields.Add(fieldHasQuotes ? fieldBuilder.ToString() : fieldBuilder.ToString().Trim());
+                        fieldBuilder.Clear();
+                        fieldHasQuotes = false;
+                        break;
+                    case '"':
+                        inQuotes = true;
+                        fieldHasQuotes = true;
+                        break;
+                    default:
+                        fieldBuilder.Append(c);
+                        break;
+                }
+            }
+        }
+
+        // Add last field
+        fields.Add(fieldHasQuotes ? fieldBuilder.ToString() : fieldBuilder.ToString().Trim());
+
+        return fields.ToArray();
     }
 
     #endregion
