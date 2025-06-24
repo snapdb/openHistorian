@@ -63,6 +63,7 @@ using GrafanaAdapters.Metadata;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Gemstone.Configuration;
 using GrafanaAdapters.Model.Common;
+using Gemstone.ComponentModel.DataAnnotations;
 
 namespace GrafanaAdapters;
 
@@ -170,6 +171,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Defines overall monitoring rate, in milliseconds, for devices.")]
     [DefaultValue(DefaultMonitoringRate)]
+    [Label("Monitoring Rate")]
     public int MonitoringRate { get; set; }
 
     /// <summary>
@@ -178,6 +180,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Defines the time, in minutes, for which to change the device state to not available when no data is received.")]
     [DefaultValue(DefaultNotAvailableMinutes)]
+    [Label("Not Available Minutes")]
     public double NotAvailableMinutes
     {
         get => m_alarmTime.ToMinutes();
@@ -189,6 +192,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     /// </summary>
     [ConnectionStringParameter]
     [Description("Defines the flag that determines if alarm states should only target parent devices, i.e., PDCs and direct connect PMUs, or all devices.")]
+    [Label("Target Parent Devices")]
     public bool TargetParentDevices { get; set; }
 
     /// <summary>
@@ -197,6 +201,7 @@ public class DeviceStateAdapter : FacileActionAdapterBase
     [ConnectionStringParameter]
     [Description("Defines the delay time, in minutes, before transitioning the Acknowledged state back to Good.")]
     [DefaultValue(DefaultAcknowledgedTransitionHysteresisDelay)]
+    [Label("Acknowledged Transition Hysteresis Delay")]
     public double AcknowledgedTransitionHysteresisDelay { get; set; }
 
     /// <summary>

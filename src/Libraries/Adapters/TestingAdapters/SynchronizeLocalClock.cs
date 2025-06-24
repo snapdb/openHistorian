@@ -34,6 +34,7 @@ using System.Runtime.Versioning;
 using System.Text;
 using System.Timers;
 using Gemstone;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Diagnostics;
 using Gemstone.Security.AccessControl;
 using Gemstone.StringExtensions;
@@ -143,6 +144,7 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(DefaultUpdateFrequency)]
     [Description("Defines the update frequency, in milliseconds, for setting the local system clock time.")]
+    [Label("Update Frequency")]
     public int UpdateFrequency { get; set; } = DefaultUpdateFrequency;
 
     /// <summary>
@@ -151,6 +153,7 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(DefaultUpdateTolerance)]
     [Description("Defines the minimum update tolerance, in seconds, as deviation to current local time to check before updating the local clock.")]
+    [Label("Update Tolerance")]
     public double UpdateTolerance
     {
         get => new Ticks(m_updateTolerance).ToSeconds();
@@ -164,6 +167,7 @@ public class SynchronizeLocalClock : FacileActionAdapterBase
     [ConnectionStringParameter]
     [DefaultValue(DefaultPreferGoodTimeQuality)]
     [Description("Defines flag that determines if good time quality should be preferred for clock syncs. If false, absolute latest time will always be used regardless of reported quality.")]
+    [Label("Prefer Good Time Quality")]
     public bool PreferGoodTimeQuality { get; set; } = DefaultPreferGoodTimeQuality;
 
     /// <summary>

@@ -41,6 +41,7 @@ using SignalType = Gemstone.Numeric.EE.SignalType;
 using PhaseDetail = System.Tuple<Gemstone.Timeseries.MeasurementKey, Gemstone.Numeric.EE.SignalType, Gemstone.Timeseries.Model.Measurement, Gemstone.Timeseries.Model.Phasor>;
 using static PowerCalculations.SequenceCalculator;
 using static PowerCalculations.SequenceCalculator.Output;
+using Gemstone.ComponentModel.DataAnnotations;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Local
 namespace PowerCalculations;
@@ -104,6 +105,7 @@ public class BulkSequenceCalculator : IndependentActionAdapterManagerBase<Sequen
     [ConnectionStringParameter]
     [Description("Flag that determines if the last few values should be monitored for diagnostics.")]
     [DefaultValue(DefaultTrackRecentValues)]
+    [Label("Track Recent Values")]
     public bool TrackRecentValues { get; set; } = DefaultTrackRecentValues;
 
     /// <summary>
@@ -112,6 +114,7 @@ public class BulkSequenceCalculator : IndependentActionAdapterManagerBase<Sequen
     [ConnectionStringParameter]
     [Description("Define the sample size of the data to be monitored when TrackRecentValues is true.")]
     [DefaultValue(DefaultSampleSize)]
+    [Label("Sample Size")]
     public int SampleSize { get; set; } = DefaultSampleSize;
 
     /// <summary>
@@ -120,6 +123,7 @@ public class BulkSequenceCalculator : IndependentActionAdapterManagerBase<Sequen
     [ConnectionStringParameter]
     [Description("Flag that determines if positive sequence calculations should be included.")]
     [DefaultValue(DefaultIncludePositiveSequence)]
+    [Label("Include Positive Sequence")]
     public bool IncludePositiveSequence { get; set; } = DefaultIncludePositiveSequence;
 
     /// <summary>
@@ -128,6 +132,7 @@ public class BulkSequenceCalculator : IndependentActionAdapterManagerBase<Sequen
     [ConnectionStringParameter]
     [Description("Flag that determines if negative sequence calculations should be included.")]
     [DefaultValue(DefaultIncludeNegativeSequence)]
+    [Label("Include Negative Sequence")]
     public bool IncludeNegativeSequence { get; set; } = DefaultIncludeNegativeSequence;
 
     /// <summary>
@@ -136,6 +141,7 @@ public class BulkSequenceCalculator : IndependentActionAdapterManagerBase<Sequen
     [ConnectionStringParameter]
     [Description("Flag that determines if zero sequence calculations should be included.")]
     [DefaultValue(DefaultIncludeZeroSequence)]
+    [Label("Include Zero Sequence")]
     public bool IncludeZeroSequence { get; set; } = DefaultIncludeZeroSequence;
 
     /// <summary>
@@ -144,6 +150,7 @@ public class BulkSequenceCalculator : IndependentActionAdapterManagerBase<Sequen
     [ConnectionStringParameter]
     [Description("Defines bad data strategy used to when inputs are marked with bad quality.")]
     [DefaultValue(DefaultBadDataStrategy)]
+    [Label("Bad Data Strategy")]
     public BadDataStrategy BadDataStrategy { get; set; } = DefaultBadDataStrategy;
 
     /// <summary>
@@ -277,6 +284,7 @@ public class BulkSequenceCalculator : IndependentActionAdapterManagerBase<Sequen
     [ConnectionStringParameter]
     [Description("STTP usage flag that determines if all output signal types should be forced to CALC. This is required if you are wanting to create local sequence calculations using data received from GEP or STTP - otherwise output values associated with source device with targeted signal types will appear as foreign measurements, i.e., non-existent on publisher, and be deleted during metadata synchronization.")]
     [DefaultValue(false)]
+    [Label("Force Calc Signal Type")]
     public bool ForceCalcSignalType
     {
         get => m_forceCalcSignalType;

@@ -30,6 +30,7 @@
 using System.ComponentModel;
 using System.Text;
 using Gemstone.Collections.CollectionExtensions;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Numeric.Analysis;
 using Gemstone.Numeric.EE;
 using Gemstone.Timeseries;
@@ -91,6 +92,7 @@ public class PowerStability : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the sample size, in seconds, of the data to be monitored.")]
     [DefaultValue(15)]
+    [Label("Sample Size")]
     public int SampleSize
     {
         get => m_minimumSamples / FramesPerSecond;
@@ -103,6 +105,7 @@ public class PowerStability : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the energized bus threshold, in volts. The recommended value is 20% of nominal line-to-neutral voltage.")]
     [DefaultValue(58000.0D)]
+    [Label("Energized Threshold")]
     public double EnergizedThreshold { get; set; }
 
     /// <summary>

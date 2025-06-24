@@ -31,6 +31,7 @@
 using System.ComponentModel;
 using System.Text;
 using Gemstone.Collections.CollectionExtensions;
+using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Diagnostics;
 using Gemstone.Numeric.EE;
 using Gemstone.Timeseries;
@@ -101,6 +102,7 @@ public class LossOfField : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the threshold of Q-area MVar-sec.")]
     [DefaultValue(DefaultQAreaSet)] // default value 500 mVar-sec
+    [Label("QArea Set")]
     public double QAreaSet { get; set; }
 
     /// <summary>
@@ -109,6 +111,7 @@ public class LossOfField : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the threshold of voltage, in volts.")]
     [DefaultValue(DefaultVoltageThreshold)] // default value 0.95 p.u. or 475 kV
+    [Label("Voltage Threshold")]
     public double VoltageThreshold { get; set; }
 
     /// <summary>
@@ -117,6 +120,7 @@ public class LossOfField : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [Description("Define the interval between adjacent calculations. The default value is the frame-rate defined in the connection string for this Loss of Field.")]
     [DefaultValue(DefaultAnalysisInterval)]
+    [Label("Analysis Interval")]
     public int AnalysisInterval { get; set; }
 
     /// <summary>
