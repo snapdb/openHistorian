@@ -48,7 +48,7 @@ public class AdapterAdminController : Controller
 [Route("api/[controller]")]
 [ApiController]
 public abstract class AdaptersControllerBase<TIAdapter, TAdapterModel> : 
-    ModelController<TAdapterModel> 
+    ReloadController<TAdapterModel> 
     where TIAdapter : IAdapter
     where TAdapterModel : CustomAdapterBase, new()
 {

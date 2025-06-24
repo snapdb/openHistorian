@@ -1,14 +1,13 @@
-﻿using Gemstone.Data.Model;
-using Gemstone.Data;
+﻿using Gemstone.Data;
+using Gemstone.Data.Model;
 using Gemstone.Timeseries.Model;
-using Gemstone.Web.APIController;
 using Microsoft.AspNetCore.Mvc;
 
 namespace openHistorian.WebUI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class MeasurementController: ModelController<Measurement>
+public class MeasurementController : ReloadController<Measurement>
 {
 
     /// <summary>

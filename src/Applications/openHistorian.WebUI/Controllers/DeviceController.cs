@@ -5,13 +5,16 @@ using Gemstone.Timeseries.Model;
 using Gemstone.Web.APIController;
 using Microsoft.AspNetCore.Mvc;
 using openHistorian.Adapters;
+using ServiceInterface;
 
 namespace openHistorian.WebUI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class DeviceController : ModelController<Device>
+public class DeviceController : ReloadController<Device>
 {
+    private readonly IServiceCommands m_serviceCommands = WebServer.ServiceCommands;
+
     /// <summary>
     /// Creates new records in device table.
     /// </summary>
@@ -31,6 +34,8 @@ public class DeviceController : ModelController<Device>
         {
             await tableOperations.AddNewRecordAsync(record, cancellationToken);
         }
+
+        m_serviceCommands.ReloadConfig();
 
         return Ok(1);
     }
@@ -105,6 +110,8 @@ public class DeviceController : ModelController<Device>
             measurement.SignalReference = newSignalReference;
             measurementTableOperations.UpdateRecord(measurement);
         }
+
+        m_serviceCommands.ReloadConfig();
 
         return Ok(record);
     }
