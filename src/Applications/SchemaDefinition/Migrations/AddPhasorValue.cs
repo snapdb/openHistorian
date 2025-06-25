@@ -53,7 +53,7 @@ public class PhasorValueView : Migration
                 M.SignalID AS MagnitudeSignalID,
                 A.SignalID AS AngleSignalID,
                 M.SignalReference AS MagnitudeSignalReference,
-            `   A.SignalReference AS AngleSignalReference
+                A.SignalReference AS AngleSignalReference,
                 M.PhasorLabel AS Label,
                 COALESCE(M.PhasorType, 'V') AS Type,
                 COALESCE(M.Phase, '+') AS Phase,
