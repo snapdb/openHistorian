@@ -65,7 +65,7 @@ public class PhasorValueView : Migration
                 MAX(M.UpdatedOn, A.UpdatedOn) AS UpdatedOn,
                 M.ID AS ID,
                 M.Device AS Device, 
-                M.SignalID AS SignalID,
+                M.SignalID AS SignalID
             FROM 
                 ActiveMeasurement M LEFT JOIN ActiveMeasurement A ON 
                 M.PhasorID = A.PhasorID AND A.SignalType LIKE '%PHA' AND M.SignalType LIKE '%PHM'
