@@ -23,6 +23,7 @@
 
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;
+using FluentMigrator.Runner.Logging;
 using Gemstone.Configuration;
 using Gemstone.Data;
 using Gemstone.Diagnostics;
@@ -30,6 +31,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
+using Microsoft.Extensions.Options;
 using SchemaDefinition.Migrations;
 
 namespace SchemaDefinition;
@@ -66,22 +68,40 @@ internal class Program
     /// </summary>
     private static ServiceProvider CreateServices(Settings settings)
     {
-        return new ServiceCollection()
+        dynamic x = settings;
+        string fileName = $"openHistorian_Upgrade_{DateTime.Now.ToString("yyyyMMdd")}.sql";
+
+        IServiceCollection serviceCollection = new ServiceCollection()
             // Add common FluentMigrator services
             .AddFluentMigratorCore()
-            .ConfigureRunner(rb => rb
-                .UseAdoConnectionDatabase(settings)
+            .ConfigureRunner(rb => {
+                rb.UseAdoConnectionDatabase(settings);
+                dynamic x = settings;
+                if (x.Migration.GenerateScript)
+                    rb.AsGlobalPreview();
                 // Define the assembly containing the migrations
-                .ScanIn(typeof(InitialSchema).Assembly).For.Migrations())
+                rb.ScanIn(typeof(InitialSchema).Assembly).For.Migrations();
+            })
             // Enable logging to console in the FluentMigrator way
             .AddLogging(ConfigureLogging)
             .Configure<RunnerOptions>(opt => {
                 dynamic x = settings;
                 if (x.Migration.IncludeDataset)
                     opt.Tags = new string[] { "Dataset", x.Migration.Locale };
-            })
+            });
+
+            if (x.Migration.GenerateScript)
+                serviceCollection.AddSingleton<ILoggerProvider, LogFileFluentMigratorLoggerProvider>();
+
+            serviceCollection.Configure<LogFileFluentMigratorLoggerOptions>(opt => {
+                    opt.OutputFileName = fileName;
+                    opt.OutputGoBetweenStatements = true;
+                    opt.ShowSql = true;
+                });
             // Build the service provider
-            .BuildServiceProvider(false);
+            
+        return serviceCollection.BuildServiceProvider(false);
+
     }
 
     /// <summary>
@@ -91,7 +111,7 @@ internal class Program
     {
         // Instantiate the runner
         IMigrationRunner runner = serviceProvider.GetRequiredService<IMigrationRunner>();
-
+      
         if (!runner.HasMigrationsToApplyUp())
             s_logger?.LogInformation("Database version newer or equal to current schema.");
 
@@ -148,8 +168,8 @@ internal class Program
     internal static void DefineMigrationSettings(Settings settings)
     {
         dynamic migrationSettings = settings["Migration"];
-        migrationSettings.GenerateScript = (false, "Defines the path used to archive log files.");
         migrationSettings.IncludeDataset = (true, "Determines whether the initial dataset should be added.");
         migrationSettings.Locale = ("NorthAmerica", "Determines which set of default settings should be added.");
+        migrationSettings.GenerateScript = (false, "Defines whether a script should be generated instead of applying migrations directly.");
     }
 }
