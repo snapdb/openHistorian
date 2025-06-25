@@ -64,7 +64,7 @@ public class PhasorValueView : Migration
                 M.Company AS Company,
                 MAX(M.UpdatedOn, A.UpdatedOn) AS UpdatedOn,
                 M.ID AS ID,
-                M.DeviceID AS DeviceID, 
+                M.Device AS Device, 
                 M.SignalID AS SignalID,
             FROM 
                 ActiveMeasurement M LEFT JOIN ActiveMeasurement A ON 
