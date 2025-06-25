@@ -44,6 +44,9 @@ public class PhasorValueView : Migration
     public override void Up()
     {
         this.AddView("PhasorValues", @"
+                P.Label AS PointTag,
+                P.PrimaryVoltageID AS PrimaryVoltagePhasorID,
+                P.SecondaryVoltageID AS SecondaryVoltagePhasorID,
                 M.DeviceID AS DeviceID,
                 M.PointTag AS MagnitudePointTag,
                 A.PointTag AS AnglePointTag,
@@ -58,7 +61,7 @@ public class PhasorValueView : Migration
                 COALESCE(M.PhasorType, 'V') AS Type,
                 COALESCE(M.Phase, '+') AS Phase,
                 M.SourceIndex AS SourceIndex,
-                M.BaseKV AS BaseKV,
+                P.BaseKV AS BaseKV,
                 M.Longitude AS Longitude,
                 M.Latitude AS Latitude,
                 M.Company AS Company,
@@ -69,7 +72,8 @@ public class PhasorValueView : Migration
             FROM 
                 ActiveMeasurement M LEFT JOIN ActiveMeasurement A ON 
                 M.PhasorID = A.PhasorID AND A.SignalType LIKE '%PHA' AND M.SignalType LIKE '%PHM'
-            WHERE M.PhasorID IS NOT NULL
+                LEFT JOIN Phasor P ON M.PhasorID = P.ID
+            WHERE A.PhasorID IS NOT NULL
         ");
 
         Insert.IntoTable("ConfigurationEntity")
