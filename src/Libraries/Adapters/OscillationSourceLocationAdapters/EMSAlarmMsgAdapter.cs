@@ -67,7 +67,7 @@ public class EMSAlarmMsgAdapter : VIFCalculatedMeasurementBase
     List<MeasurementKey> m_eventMeasurements;
     private readonly ConcurrentQueue<Tuple<EventDetails, Ticks, Ticks>> m_testQueue;
 
-    // Semaphore protects frameQueue from shrinking while an oscillation is intializing and prevents unready oscillations from firing.
+    // Semaphore protects frameQueue from shrinking while an oscillation is intializing.
     private Semaphore m_TestsProcessing;
     // Protected from shrinking while an oscillation is intializing to guarantee data for it will exist.
     private ConcurrentQueue<IFrame> m_frameQueue;
@@ -471,7 +471,7 @@ public class EMSAlarmMsgAdapter : VIFCalculatedMeasurementBase
             }
         }
 
-        if (hasProcessLock)
+        if (hasProcessLock && !m_testQueue.IsEmpty)
         {
             // Process the Oscillation
             m_createMessage.TryRunAsync();
