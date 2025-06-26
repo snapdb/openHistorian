@@ -24,6 +24,7 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Data;
+using DataQualityMonitoring.Functions;
 using DataQualityMonitoring.Model;
 using Gemstone.Data;
 using Gemstone.Data.Model;
@@ -31,11 +32,11 @@ using Gemstone.Diagnostics;
 using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
+using Gemstone.Timeseries.Data;
 using Gemstone.Timeseries.Model;
 using MathNet.Numerics.Statistics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using PhasorProtocolAdapters;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using SignalType = Gemstone.Numeric.EE.SignalType;
 
@@ -51,7 +52,7 @@ public class DEFIdentificationAdapter : ActionAdapterBase
     #region [ Members ]
 
     public override bool SupportsTemporalProcessing => false;
-   
+
     private readonly TaskSynchronizedOperation m_computeRank;
     private readonly ConcurrentQueue<EventDetails> m_computationQueue;
 
@@ -60,6 +61,7 @@ public class DEFIdentificationAdapter : ActionAdapterBase
 
     private static string m_RankCdef = "Rank_CDEF";
     private static string m_RankCpsd = "Rank_CPSD";
+    private static string m_guid = "Comp_Guid";
 
     private class DELabel
     {
@@ -156,11 +158,14 @@ public class DEFIdentificationAdapter : ActionAdapterBase
 
         Dictionary<string, string> settings = Settings;
 
-        if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
+        if (InputMeasurementKeys is null)
             throw new InvalidOperationException("No input measurements were specified for the DEF Indentification calculator.");
 
-        if (!InputMeasurementKeyTypes.Where(t => t == SignalType.ALRM).Any())
-            throw new InvalidOperationException("At least 1 valid event measurement is requried.");
+        if (InputMeasurementKeys.Length != 1 || DataSource.GetSignalTypes(InputMeasurementKeys).First() != SignalType.ALRM)
+            throw new InvalidOperationException("Only one input measurement must be specified, and it must be of the event type.");
+
+        if (OutputMeasurements is not null && OutputMeasurements.Length > 1)
+            throw new InvalidOperationException("Only up to 1 output measurement is allowed.");
 
         // Load File For Rank Idneitfication
         LoadClassificationFile();
@@ -207,6 +212,7 @@ public class DEFIdentificationAdapter : ActionAdapterBase
     private async Task ComputeRank(EventDetails oscillation)
     {
         JObject osc = JObject.Parse(oscillation.Details);
+        JObject newDetail = new JObject();
         IEnumerable<string> lineIds = DEFComputationAdapter.ParseLineIds(osc);
         IEnumerable<string> substations = DEFComputationAdapter.ParseSubstations(osc);
 
@@ -218,32 +224,45 @@ public class DEFIdentificationAdapter : ActionAdapterBase
         ComputeRank(cdef, lineLabels, out double rankProbCdef, out string rankAreaCdef, out string rankMsgCdef, out int rankNSubCdef);
 
         // Append details to osc and create new eventdetails
-        osc[m_RankCdef] = JsonConvert.SerializeObject(new RankDetails
+        newDetail[m_RankCdef] = JsonConvert.SerializeObject(new RankDetails
         {
             Probability = rankProbCdef,
             Area = rankAreaCdef,
             Message = rankMsgCdef,
             NumberOfSubstations = rankNSubCdef
         });
-        osc[m_RankCpsd] = JsonConvert.SerializeObject(new RankDetails
+        newDetail[m_RankCpsd] = JsonConvert.SerializeObject(new RankDetails
         {
             Probability = rankProbCpsd,
             Area = rankAreaCpsd,
             Message = rankMsgCpsd,
             NumberOfSubstations = rankNSubCpsd
         });
+        newDetail[m_guid] = oscillation.EventGuid;
+
+        AlarmMeasurement measurement = new AlarmMeasurement
+        {
+            Timestamp = DateTime.UtcNow,
+            Value = 1,
+            AlarmID = Guid.NewGuid()
+        };
         EventDetails eventDetails = new EventDetails()
         {
             StartTime = oscillation.StartTime,
             EndTime = oscillation.EndTime,
-            EventGuid = oscillation.EventGuid,
-            Type = "defOscillation",
-            MeasurementID = oscillation.MeasurementID,
-            Details = osc.ToString()
+            EventGuid = measurement.AlarmID,
+            Type = "oscilation_identification",
+            Details = newDetail.ToString()
         };
         await using AdoDataConnection connection = new(ConfigSettings.Instance);
         TableOperations<EventDetails> tableOperations = new(connection);
-        tableOperations.UpdateRecord(eventDetails);
+        if (OutputMeasurements is not null && OutputMeasurements.Length == 1)
+        {
+            eventDetails.MeasurementID = OutputMeasurements[0].ID;
+            measurement.Metadata = MeasurementKey.LookUpBySignalID(OutputMeasurements[0].ID).Metadata;
+            OnNewMeasurements([measurement]);
+        }
+        tableOperations.AddNewRecord(eventDetails);
     }
 
     private void ComputeRank(Gemstone.Numeric.Matrix<double> DE, string[] LineLabels, out double RankProb, out string RankArea, out string RankMsg, out int RankNSub)
@@ -420,39 +439,42 @@ public class DEFIdentificationAdapter : ActionAdapterBase
     }
     protected override void PublishFrame(IFrame frame, int index)
     {
-
-        List<EventDetails> toBeProcessed = new List<EventDetails>();
-
-        // if it contains an alarm that is an oscillation We need to trigger computation
-        foreach (MeasurementKey key in InputMeasurementKeys)
+        // if it contains an alarm that is an oscillation computation We need to trigger computation
+        if (frame.Measurements.TryGetValue(InputMeasurementKeys.First(), out IMeasurement alarm) && alarm is AlarmMeasurement && ((AlarmMeasurement)alarm).Value == 1)
         {
-            if (frame.Measurements.TryGetValue(key, out IMeasurement alarm) && alarm is AlarmMeasurement && ((AlarmMeasurement)alarm).Value == 1)
+            // Grab the Alarm Details.
+            using AdoDataConnection connection = new(ConfigSettings.Instance);
+            TableOperations<EventDetails> tableOperations = new(connection);
+            EventDetails? details = tableOperations.QueryRecordWhere("EventGuid = {0}", ((AlarmMeasurement)alarm).AlarmID);
+            if (details is not null && details.Type == "oscilation_computation")
             {
-                // Grab the Alarm Details.
-                using AdoDataConnection connection = new(ConfigSettings.Instance);
-                TableOperations<EventDetails> tableOperations = new(connection);
-                EventDetails details = tableOperations.QueryRecordWhere("EventGuid = {0}", ((AlarmMeasurement)alarm).AlarmID);
-                if (details.Type == "oscillation")
-                {
-                    toBeProcessed.Add(details);
-                }            
+                m_computationQueue.Enqueue(details);
+                m_computeRank.TryRunAsync();
             }
-        }
-        
-        if (toBeProcessed.Count > 0)
-        {
-            foreach (EventDetails oscillation in toBeProcessed)
-            {
-                // Process the Oscillation
-                m_computationQueue.Enqueue(oscillation);
-            }
-            m_computeRank.TryRunAsync();
         }
     }
 
     #endregion
 
     #region [ Static ]
+    /// <summary>
+    /// Creates a <see cref="Guid"/> from the results of DEFIdentificationAdapter. This guid is the eventguid of the computation asscociated with rank details.
+    /// Returns a <see cref="bool"/> with the succes of parsing.
+    /// </summary>
+    /// <param name="osc">The JSON object from EventDetails.Details</param>
+    public static bool TryParseComputationEventGuid(JObject osc, out Guid? details)
+    {
+        details = null;
+        try
+        {
+            details = JsonConvert.DeserializeObject<Guid>(osc[m_guid].ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     /// <summary>
     /// Creates a <see cref="RankDetails"/> from the results of DEFIdentificationAdapter for CDEF results. Returns a <see cref="bool"/> with the succes of parsing.
