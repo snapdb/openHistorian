@@ -44,7 +44,7 @@ public class PhasorValueView : Migration
     public override void Up()
     {
         this.AddView("PhasorValues", @"
-                P.Label AS PointTag,
+                CONCAT(COALESCE(CONCAT(M.Device, '-P'),''), M.SourceIndex, ':', COALESCE(M.PhasorType, 'V')) AS PointTag,
                 P.PrimaryVoltageID AS PrimaryVoltagePhasorID,
                 P.SecondaryVoltageID AS SecondaryVoltagePhasorID,
                 M.DeviceID AS DeviceID,
