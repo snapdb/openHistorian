@@ -82,11 +82,11 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
         else
             Frequencies = string.Empty;
 
-        ParseFrequencies(Frequencies);
+        ParseFrequencies(Frequencies, settings);
 
     }
 
-    private void ParseFrequencies(string frequency)
+    private void ParseFrequencies(string frequency, Dictionary<string, string> settings)
     {
         Func<DataRow, MeasurementRecord?> loadMeasurement = TableOperations<MeasurementRecord>.LoadRecordFunction();
 
@@ -128,7 +128,15 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
             }
         }
 
-        InputMeasurementKeys = m_VIFSets.SelectMany((s) => s.VoltageMagnitude.Concat(s.VoltageAngle).Concat(s.Frequency).Concat(new MeasurementKey[] { s.CurrentMagnitude, s.CurrentAngle })).ToArray();
+        InputMeasurementKeys = m_VIFSets
+            .SelectMany(
+                (s) => s.VoltageMagnitude
+                    .Concat(s.VoltageAngle)
+                    .Concat(s.Frequency)
+                    .Concat(new MeasurementKey[] { s.CurrentMagnitude, s.CurrentAngle })
+            )
+            .Concat(ParseAddtionalInputMeasurementKeys(settings))
+            .ToArray();
     }
 
     protected override string DisplaySet(VISet set)

@@ -153,9 +153,23 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
                 VoltageAngle = voltageAngles[i..i],
                 VoltageMagnitude = voltageMagnitudes[i..i]
             }).ToArray();
-            InputMeasurementKeys = m_VISets.SelectMany((s) => s.VoltageMagnitude.Concat(s.VoltageAngle).Concat(new MeasurementKey[] { s.CurrentMagnitude, s.CurrentAngle })).ToArray();
+            InputMeasurementKeys = m_VISets
+                .SelectMany(
+                    (s) => s.VoltageMagnitude
+                        .Concat(s.VoltageAngle)
+                        .Concat(new MeasurementKey[] { s.CurrentMagnitude, s.CurrentAngle })
+                )
+                .Concat(ParseAddtionalInputMeasurementKeys(settings))
+                .ToArray();
         }
 
+    }
+
+    protected IEnumerable<MeasurementKey> ParseAddtionalInputMeasurementKeys(Dictionary<string, string> settings)
+    {
+        return settings.TryGetValue(nameof(InputMeasurementKeys), out string setting) ?
+            AdapterBase.ParseInputMeasurementKeys(DataSource, true, setting) :
+            [];
     }
 
     private void ParsePhasors(string current, string voltage)
