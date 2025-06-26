@@ -46,9 +46,11 @@ namespace DataQualityMonitoring;
 /// </summary>
 [Description("DEF Powerworld Visualizer: uses the computed Dissipating Energy Flow to produce visualization files")]
 
-public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
+public class DEFPowerworldVisualizerAdapter : ActionAdapterBase
 {
     #region [ Members ]
+
+    public override bool SupportsTemporalProcessing => false;
 
     private readonly TaskSynchronizedOperation m_visualDE;
     private readonly ConcurrentQueue<EventDetails> m_visualizationQueue;
