@@ -27,15 +27,16 @@
 //
 //******************************************************************************************************
 
-using System.Collections.Concurrent;
-using System.ComponentModel;
-using System.Text;
 using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Numeric.EE;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
+using Gemstone.Units;
 using PhasorProtocolAdapters;
+using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Text;
 
 namespace PowerCalculations;
 
@@ -43,6 +44,8 @@ namespace PowerCalculations;
 /// Calculates a real-time average frequency reporting the average, maximum and minimum values.
 /// </summary>
 [Description("Average Frequency: Calculates a real-time average frequency reporting the average, maximum, and minimum values")]
+[UIResource("AdaptersUI", $".PowerCalculations.AverageFrequency.main.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.AverageFrequency.chunk.js")]
 public class AverageFrequency : CalculatedMeasurementBase
 {
     #region [ Members ]
@@ -57,6 +60,7 @@ public class AverageFrequency : CalculatedMeasurementBase
     private double m_maximumFrequency;
     private double m_minimumFrequency;
     private readonly ConcurrentDictionary<Guid, Tuple<int, long>> m_lastValues = new();
+    private Dictionary<Output, IMeasurement> m_OutputMap = new();
 
     // Important: Make sure output definition defines points in the following order
     private enum Output
@@ -96,6 +100,36 @@ public class AverageFrequency : CalculatedMeasurementBase
     [DefaultValue(DefaultReportUnreasonableResultsAsNaN)]
     [Label("Report Unreasonable Results As NaN")]
     public bool ReportUnreasonableResultsAsNaN { get; set; }
+
+    /// <summary>
+    /// Gets or sets output measurements that the calculated measurement will produce, if any.
+    /// </summary>
+    [ConnectionStringParameter(false)]
+    [DefaultValue(null)]
+    [Description("Defines primary keys of output measurements the action adapter expects; can be one of a filter expression, measurement key, point tag or Guid.")]
+    public override IMeasurement[]? OutputMeasurements
+    {
+        get => base.OutputMeasurements;
+        set
+        {
+            base.OutputMeasurements = value;
+        }
+    }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Average.")]
+    [DefaultValue("")]
+    public IMeasurement Average { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Maximum.")]
+    [DefaultValue("")]
+    public IMeasurement Maximum { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Minimum.")]
+    [DefaultValue("")]
+    public IMeasurement Minimum { get; set; }
 
     /// <summary>
     /// Returns the detailed status of the <see cref="AverageFrequency"/> calculator.
@@ -156,8 +190,42 @@ public class AverageFrequency : CalculatedMeasurementBase
         InputMeasurementKeys = validInputMeasurementKeys;
 
         // Validate output measurements
-        if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
-            throw new InvalidOperationException("Not enough output measurements were specified for the average frequency calculator, expecting measurements for \"Average\", \"Maximum\", and \"Minimum\" frequencies - in this order.");
+        ValidateOutputMeasurements();
+    }
+
+    private void ValidateOutputMeasurements()
+    {
+        List<IMeasurement> measurementKeys = new();
+        Dictionary<string, string> settings = Settings;
+
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (settings.TryGetValue(Enum.GetNames<Output>()[i], out string setting))
+                measurementKeys.Add(AdapterBase.ParseOutputMeasurements(DataSource, true, setting).FirstOrDefault());
+            else
+                measurementKeys.Add(null);
+        }
+
+        if (!measurementKeys.Any(item => item is not null))
+        {
+            if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
+                throw new InvalidOperationException("Not enough output measurements were specified for the average frequency adapter, expecting measurements for the \"Average\", \"Maximum\", \"Minimum\" - in this order.");
+
+            m_OutputMap = new Dictionary<Output, IMeasurement>();
+
+            foreach (Output o in Enum.GetValues<Output>())
+            {
+                m_OutputMap.Add(o, OutputMeasurements[(int)o]);
+            }
+            return;
+        }
+
+        m_OutputMap = new Dictionary<Output, IMeasurement>();
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (measurementKeys[i] is not null)
+                m_OutputMap.Add((Output)i, measurementKeys[i]);
+        }
     }
 
     /// <summary>
@@ -172,6 +240,8 @@ public class AverageFrequency : CalculatedMeasurementBase
             double total = 0.0D;
             double maximumFrequency = LowFrequencyThreshold;
             double minimumFrequency = HighFrequencyThreshold;
+            double averageFrequency = (HighFrequencyThreshold + LowFrequencyThreshold) / 2;
+
             int count = 0;
 
             foreach (IMeasurement measurement in frame.Measurements.Values)
@@ -214,9 +284,11 @@ public class AverageFrequency : CalculatedMeasurementBase
                 count++;
             }
 
+            averageFrequency = total / count;
+
             if (count > 0)
             {
-                m_averageFrequency = total / count;
+                m_averageFrequency = averageFrequency;
                 m_maximumFrequency = maximumFrequency;
                 m_minimumFrequency = minimumFrequency;
             }
@@ -234,12 +306,19 @@ public class AverageFrequency : CalculatedMeasurementBase
             }
 
             // Provide calculated measurements for external consumption
-            IMeasurement[] outputMeasurements = OutputMeasurements!;
+            List<IMeasurement> outputMeasurements = new();
 
-            OnNewMeasurements([
-                Measurement.Clone(outputMeasurements[(int)Output.Average], m_averageFrequency, frame.Timestamp),
-                Measurement.Clone(outputMeasurements[(int)Output.Maximum], m_maximumFrequency, frame.Timestamp),
-                Measurement.Clone(outputMeasurements[(int)Output.Minimum], m_minimumFrequency, frame.Timestamp)]);
+            if (m_OutputMap.TryGetValue(Output.Average, out var avgMeasurement))
+                outputMeasurements.Add(Measurement.Clone(avgMeasurement, averageFrequency, frame.Timestamp));
+
+            if (m_OutputMap.TryGetValue(Output.Maximum, out var maxMeasurement))
+                outputMeasurements.Add(Measurement.Clone(maxMeasurement, maximumFrequency, frame.Timestamp));
+
+            if (m_OutputMap.TryGetValue(Output.Minimum, out var minMeasurement))
+                outputMeasurements.Add(Measurement.Clone(minMeasurement, minimumFrequency, frame.Timestamp));
+
+            // Provide calculated measurements for external consumption
+            OnNewMeasurements(outputMeasurements.ToArray());
         }
         else
         {
