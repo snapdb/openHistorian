@@ -46,10 +46,11 @@ namespace DataQualityMonitoring;
 /// </summary>
 [Description("DEF Identification: uses the computed Dissipating Energy Flow to identify the source of an oscillation")]
 
-public class DEFIdentificationAdapter : CalculatedMeasurementBase
+public class DEFIdentificationAdapter : ActionAdapterBase
 {
     #region [ Members ]
 
+    public override bool SupportsTemporalProcessing => false;
    
     private readonly TaskSynchronizedOperation m_computeRank;
     private readonly ConcurrentQueue<EventDetails> m_computationQueue;
@@ -102,7 +103,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     #region [ Properties ]
 
     [ConnectionStringParameter()]
-    public string ClassificationFile { get; set; } = string.Empty;
+    public string ClassificationFile { get; set; }
 
     /// <summary>
     /// [p.u.] minimal rank for a valid classification
@@ -110,7 +111,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.2)]
     [Description("[p.u.] minimal rank for a valid classification")]
-    public double MinRank { get; set; } = 0.2;
+    public double MinRank { get; set; }
 
     /// <summary>
     /// [p.u.] range of rank for selection of substations; (0.2 ... 0.4)
@@ -118,7 +119,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.3)]
     [Description("[p.u.] range of rank for selection of substations; (0.2 ... 0.4)")]
-    public double RankRange { get; set; } = 0.3;
+    public double RankRange { get; set; }
 
     /// <summary>
     /// Maximal number of substation for uncertain classification
@@ -126,7 +127,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(5)]
     [Description("Maximal number of substation for uncertain classification")]
-    public int MaxSubstations { get; set; } = 5;
+    public int MaxSubstations { get; set; }
 
     /// <summary>
     /// Number of transmission elements with max DE to be used in classifier (5...15)
@@ -134,7 +135,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(15)]
     [Description("Number of transmission elements with max DE to be used in classifier (5...15)")]
-    public int NumDEComponents { get; set; } = 15;
+    public int NumDEComponents { get; set; }
 
     /// <summary>
     /// [p.u.] minimal threshold for DE and MW pattern correlation
@@ -142,7 +143,7 @@ public class DEFIdentificationAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.6)]
     [Description("[p.u.] minimal threshold for DE and MW pattern correlation")]
-    public double CorrThresholdMin { get; set; } = 0.6;
+    public double CorrThresholdMin { get; set; }
 
     #endregion
 
