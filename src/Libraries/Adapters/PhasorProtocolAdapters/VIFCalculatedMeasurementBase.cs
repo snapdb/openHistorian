@@ -30,8 +30,7 @@ using PhasorProtocolAdapters;
 using System.ComponentModel;
 using System.Data;
 using System.Text;
-using MeasurementRecord = Gemstone.Timeseries.Model.Measurement;
-using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
+using MeasurementRecord = Gemstone.Timeseries.Model.ActiveMeasurement;
 
 namespace PowerCalculations;
 
@@ -65,35 +64,6 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
     [DefaultValue("")]
     public string Frequencies { get; set; }
 
-    public override string Status
-    {
-        get
-        {
-            const int MaxVIPairsToShow = 10;
-            StringBuilder status = new();
-
-            status.Append(base.Status);
-
-            status.AppendLine("Associated Frequencies:");
-            status.AppendLine();
-
-            for (int i = 0; i < Math.Min(m_VIFSets.Length, MaxVIPairsToShow); i++)
-            {
-             
-                status.AppendLine($"   Voltage Magnitudes: {string.Join(", ", m_VISets[i].VoltageMagnitude.Select(key => key.SignalID))}");
-                status.AppendLine($"   Voltage Angles: {string.Join(", ", m_VISets[i].VoltageAngle.Select((key) => key.SignalID))}");
-                status.AppendLine($"   Frequencies: {string.Join(", ", m_VIFSets[i].Frequency.Select((key) => key.SignalID))}");
-                status.AppendLine();
-            }
-            if (m_VISets.Length > MaxVIPairsToShow)
-                status.AppendLine("...".PadLeft(26));
-
-            status.AppendLine();
-
-            return status.ToString();
-        }
-    }
-
     #endregion
 
     #region [ Methods ]
@@ -119,9 +89,6 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
     private void ParseFrequencies(string frequency)
     {
         Func<DataRow, MeasurementRecord?> loadMeasurement = TableOperations<MeasurementRecord>.LoadRecordFunction();
-        Func<DataRow, PhasorRecord?> loadPhasor = TableOperations<PhasorRecord>.LoadRecordFunction();
-
-        ILookup<int, string> deviceAcronyms = DataSource.Tables["Device"].Select().ToLookup(row => row.Field<int>("ID"), row => row.Field<string>("Acronym") ?? string.Empty);
 
         m_VIFSets = m_VISets.Select((s) => new VIFSet()
         {
@@ -129,17 +96,19 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
             CurrentMagnitude = s.CurrentMagnitude,
             VoltageAngle = s.VoltageAngle,
             VoltageMagnitude = s.VoltageMagnitude,
-            Frequency = new MeasurementKey[0]
         }).ToArray();
-
-       
 
         if (string.IsNullOrEmpty(frequency))
         {
             foreach (VIFSet set in m_VIFSets)
             {
-                MeasurementRecord current = loadMeasurement(DataSource.Tables["ActiveMeasurement"].Select($"ID={set.CurrentMagnitude}")[0]);
-                set.Frequency = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE Device = {deviceAcronyms[current?.DeviceID ?? 0].FirstOrDefault()} AND SignalTYPE LIKE 'FREQ'").ToArray();
+                MeasurementRecord? current = loadMeasurement(DataSource.Tables["ActiveMeasurement"].Select($"ID = '{set.CurrentMagnitude}'").FirstOrDefault());
+                if (current is null)
+                {
+                    OnStatusMessage(Gemstone.Diagnostics.MessageLevel.Error, $"Unable to find current measurement with ID '{set.CurrentMagnitude}'.");
+                    continue;
+                }
+                set.Frequency = AdapterBase.ParseInputMeasurementKeys(DataSource, true, $"FILTER ActiveMeasurement WHERE Device = '{current.Device}' AND SignalTYPE LIKE 'FREQ'").ToArray();
             }
         }
         else
@@ -154,7 +123,7 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
 
             foreach (VIFSet set in m_VIFSets)
             {
-                set.Frequency = new MeasurementKey[1] { frequencies[index % frequencies.Count()] };
+                set.Frequency = [frequencies[index % frequencies.Count()]];
                 index++;
             }
         }
@@ -162,5 +131,23 @@ public abstract class VIFCalculatedMeasurementBase : VICalculatedMeasurementBase
         InputMeasurementKeys = m_VIFSets.SelectMany((s) => s.VoltageMagnitude.Concat(s.VoltageAngle).Concat(s.Frequency).Concat(new MeasurementKey[] { s.CurrentMagnitude, s.CurrentAngle })).ToArray();
     }
 
+    protected override string DisplaySet(VISet set)
+    {
+        if (set is VIFSet vifSet)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"   Current Magnitude: {vifSet.CurrentMagnitude.SignalID}");
+            sb.AppendLine($"   Current Angle: {vifSet.CurrentAngle.SignalID}");
+            sb.AppendLine($"   Voltage Magnitudes: {string.Join(", ", vifSet.VoltageMagnitude.Select(key => key.SignalID))}");
+            sb.AppendLine($"   Voltage Angles: {string.Join(", ", vifSet.VoltageAngle.Select((key) => key.SignalID))}");
+            sb.AppendLine($"   Frequencuies: {string.Join(", ", vifSet.Frequency.Select((key) => key.SignalID))}");
+            sb.AppendLine();
+            return sb.ToString();
+        }
+        else
+        {
+            return base.DisplaySet(set);
+        }
+    }
     #endregion
 }

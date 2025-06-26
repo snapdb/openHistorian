@@ -226,7 +226,7 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
     /// </summary>
     /// <param name="set">The <see cref="VISet"/> to be displayed. </param>
     /// <returns>a string representation of the <paramref name="set"/>.</returns>
-    protected string DisplaySet(VISet set)
+    protected virtual string DisplaySet(VISet set)
     {
         StringBuilder status = new();
         status.AppendLine($"   Current Magnitude: {set.CurrentMagnitude.SignalID}");
