@@ -171,8 +171,8 @@ public class DEFPowerworldVisualizerAdapter : CalculatedMeasurementBase
 
     public override void Initialize()
     {
-
         base.Initialize();
+        this.InitializeParameters<ActionAdapterBase>();
 
         Dictionary<string, string> settings = Settings;
 

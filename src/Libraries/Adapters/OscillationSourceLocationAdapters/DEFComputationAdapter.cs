@@ -254,7 +254,7 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
     public override void Initialize()
     {
         base.Initialize();
-        InitializeParameters();
+        this.InitializeParameters<VIFCalculatedMeasurementBase>();
 
         Dictionary<string, string> settings = Settings;
 
@@ -271,49 +271,6 @@ public class DEFComputationAdapter : CalculatedMeasurementBase
 
         // Load line definitions
         LoadLineDefinitions();
-    }
-
-    public void InitializeParameters()
-    {
-        List<PropertyInfo> propertiesBase = typeof(CalculatedMeasurementBase).GetProperties().ToList();
-        IEnumerable<PropertyInfo> properties = typeof(DEFComputationAdapter)
-            .GetProperties()
-            // Only init connection string params
-            .Where(p => p.GetCustomAttributes<ConnectionStringParameterAttribute>().Any())
-            // Skipping base constructor properties
-            .Where(p => propertiesBase.FindIndex(pB => string.Equals(pB.Name, p.Name)) < 0);
-        Dictionary<string, string> settings = Settings;
-
-        foreach (PropertyInfo prop in properties)
-        {
-            try
-            {
-                if (!settings.TryGetValue(prop.Name, out string? setting))
-                    throw new ArgumentNullException(string.Format("{0} is missing from Settings - Example: framesPerSecond=30; lagTime=3; leadTime=1", prop.Name));
-
-                object? value = null;
-                if (prop.PropertyType.IsEnum) 
-                {
-                    value = Enum.Parse(prop.PropertyType, setting);
-                }
-                else
-                {
-                    MethodInfo? parseFunc = prop.PropertyType.GetMethod("Parse", 0, BindingFlags.Public | BindingFlags.Static, [typeof(string)]);
-                    if (parseFunc is null)
-                        throw new SettingsPropertyWrongTypeException(string.Format("{0} is unable to be parsed by initialization function.", prop.Name));
-                    value = parseFunc.Invoke(null, [setting]);
-                }
-
-                prop.SetValue(this, value);
-            }
-            catch (ArgumentNullException ex)
-            {
-                DefaultValueAttribute? defaultValue = prop.GetCustomAttribute<DefaultValueAttribute>();
-                if (defaultValue is null) throw; // No default
-
-                prop.SetValue(this, defaultValue.Value);
-            }
-        }
     }
 
     public Task<Tuple<AlarmMeasurement, EventDetails>?> LoadFile()

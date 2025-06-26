@@ -148,6 +148,7 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
     public override void Initialize()
     {
         base.Initialize();
+        this.InitializeParameters<VIFCalculatedMeasurementBase>();
 
         Dictionary<string, string> settings = Settings;
 
