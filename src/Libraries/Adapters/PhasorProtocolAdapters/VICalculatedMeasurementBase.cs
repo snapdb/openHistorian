@@ -88,11 +88,7 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
 
             for (int i = 0; i < Math.Min(m_VISets.Length, MaxVIPairsToShow); i++)
             {
-                status.AppendLine($"   Current Magnitude: {m_VISets[i].CurrentMagnitude.SignalID}");
-                status.AppendLine($"   Current Angle: {m_VISets[i].CurrentAngle.SignalID}");
-                status.AppendLine($"   Voltage Magnitudes: {string.Join(", ", m_VISets[i].VoltageMagnitude.Select(key => key.SignalID))}");
-                status.AppendLine($"   Voltage Angles: {string.Join(", ", m_VISets[i].VoltageAngle.Select((key) => key.SignalID))}");
-                status.AppendLine();
+                status.Append(DisplaySet(m_VISets[i]));
             }
             if (m_VISets.Length > MaxVIPairsToShow)
                 status.AppendLine("...".PadLeft(26));
@@ -225,5 +221,21 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
         InputMeasurementKeys = m_VISets.SelectMany((s) => s.VoltageMagnitude.Concat(s.VoltageAngle).Concat([s.CurrentMagnitude, s.CurrentAngle])).ToArray();
     }
 
+    /// <summary>
+    /// Returns a string repsresentation of the <see cref="VISet"/> used when displaying status of the <see cref="VICalculatedMeasurementBase">.
+    /// </summary>
+    /// <param name="set">The <see cref="VISet"/> to be displayed. </param>
+    /// <returns>a string representation of the <paramref name="set"/>.</returns>
+    protected string DisplaySet(VISet set)
+    {
+        StringBuilder status = new();
+        status.AppendLine($"   Current Magnitude: {set.CurrentMagnitude.SignalID}");
+        status.AppendLine($"   Current Angle: {set.CurrentAngle.SignalID}");
+        status.AppendLine($"   Voltage Magnitudes: {string.Join(", ", set.VoltageMagnitude.Select(key => key.SignalID))}");
+        status.AppendLine($"   Voltage Angles: {string.Join(", ", set.VoltageAngle.Select((key) => key.SignalID))}");
+        status.AppendLine();
+
+        return status.ToString();
+    }
     #endregion
 }
