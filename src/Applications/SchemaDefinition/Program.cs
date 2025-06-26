@@ -22,6 +22,8 @@
 //******************************************************************************************************
 
 using FluentMigrator.Runner;
+using FluentMigrator.Runner.Initialization;
+using FluentMigrator.Runner.Logging;
 using Gemstone.Configuration;
 using Gemstone.Data;
 using Gemstone.Diagnostics;
@@ -29,6 +31,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
+using Microsoft.Extensions.Options;
 using SchemaDefinition.Migrations;
 
 namespace SchemaDefinition;
@@ -41,22 +44,20 @@ internal class Program
     {
         Settings settings = new()
         {
-            INIFile = ConfigurationOperation.ReadWrite,
-            SQLite = ConfigurationOperation.Disabled
+            INIFile = ConfigurationOperation.ReadOnly,
+            SQLite = ConfigurationOperation.Disabled,
         };
 
-        // Define settings for referenced components
         DefineSettings(settings);
+        
+        settings.Bind(new ConfigurationBuilder().AddIniFile(GetOHIniFilePath()).AddCommandLine(args));
 
-        // Bind settings to configuration sources
-        settings.Bind(new ConfigurationBuilder()
-            .ConfigureGemstoneDefaults(settings)
-            .AddCommandLine(args, settings.SwitchMappings));
 
         using ILoggerFactory loggerFactory = LoggerFactory.Create(ConfigureLogging);
         s_logger = loggerFactory.CreateLogger<Program>();
 
-        using ServiceProvider serviceProvider = CreateServices();
+
+        using ServiceProvider serviceProvider = CreateServices(settings);
         using IServiceScope scope = serviceProvider.CreateScope();
 
         UpdateDatabase(scope.ServiceProvider);
@@ -65,25 +66,42 @@ internal class Program
     /// <summary>
     /// Configure the dependency injection services
     /// </summary>
-    private static ServiceProvider CreateServices()
+    private static ServiceProvider CreateServices(Settings settings)
     {
-        string connectionString = Settings.Default.System.ConnectionString;
+        dynamic x = settings;
+        string fileName = $"openHistorian_Upgrade_{DateTime.Now.ToString("yyyyMMdd")}.sql";
 
-        return new ServiceCollection()
+        IServiceCollection serviceCollection = new ServiceCollection()
             // Add common FluentMigrator services
             .AddFluentMigratorCore()
-            .ConfigureRunner(rb => rb
-                // Add SQLite support to FluentMigrator
-                .AddSQLite()
-                .AddSqlServer()
-                // Set the connection string
-                .WithGlobalConnectionString(connectionString)
+            .ConfigureRunner(rb => {
+                rb.UseAdoConnectionDatabase(settings);
+                dynamic x = settings;
+                if (x.Migration.GenerateScript)
+                    rb.AsGlobalPreview();
                 // Define the assembly containing the migrations
-                .ScanIn(typeof(InitialSchema).Assembly).For.Migrations())
+                rb.ScanIn(typeof(InitialSchema).Assembly).For.Migrations();
+            })
             // Enable logging to console in the FluentMigrator way
             .AddLogging(ConfigureLogging)
+            .Configure<RunnerOptions>(opt => {
+                dynamic x = settings;
+                if (x.Migration.IncludeDataset)
+                    opt.Tags = new string[] { "Dataset", x.Migration.Locale };
+            });
+
+            if (x.Migration.GenerateScript)
+                serviceCollection.AddSingleton<ILoggerProvider, LogFileFluentMigratorLoggerProvider>();
+
+            serviceCollection.Configure<LogFileFluentMigratorLoggerOptions>(opt => {
+                    opt.OutputFileName = fileName;
+                    opt.OutputGoBetweenStatements = true;
+                    opt.ShowSql = true;
+                });
             // Build the service provider
-            .BuildServiceProvider(false);
+            
+        return serviceCollection.BuildServiceProvider(false);
+
     }
 
     /// <summary>
@@ -93,7 +111,7 @@ internal class Program
     {
         // Instantiate the runner
         IMigrationRunner runner = serviceProvider.GetRequiredService<IMigrationRunner>();
-
+      
         if (!runner.HasMigrationsToApplyUp())
             s_logger?.LogInformation("Database version newer or equal to current schema.");
 
@@ -113,7 +131,18 @@ internal class Program
         {
             DiagnosticsLogger.DefineSettings(settings);
             AdoDataConnection.DefineSettings(settings);
+            DefineMigrationSettings(settings);
         }
+    }
+
+    /// <summary>
+    /// Gets the ini file path for openHistorian
+    /// </summary>
+    private static string GetOHIniFilePath()
+    {
+        Environment.SpecialFolder specialFolder = Environment.SpecialFolder.CommonApplicationData;
+        string appDataPath = Environment.GetFolderPath(specialFolder);
+        return Path.Combine(appDataPath, "openHistorian", "settings.ini");
     }
 
     /// <summary>
@@ -134,5 +163,13 @@ internal class Program
 
         // Add Gemstone diagnostics logging
         builder.AddGemstoneDiagnostics();
+    }
+
+    internal static void DefineMigrationSettings(Settings settings)
+    {
+        dynamic migrationSettings = settings["Migration"];
+        migrationSettings.IncludeDataset = (true, "Determines whether the initial dataset should be added.");
+        migrationSettings.Locale = ("NorthAmerica", "Determines which set of default settings should be added.");
+        migrationSettings.GenerateScript = (false, "Defines whether a script should be generated instead of applying migrations directly.");
     }
 }

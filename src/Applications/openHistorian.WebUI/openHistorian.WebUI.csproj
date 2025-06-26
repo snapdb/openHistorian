@@ -10,15 +10,11 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>..\..\..\build\Output\Release\Applications\openHistorian.WebUI\</OutputPath>
+  <PropertyGroup>
+    <OutputPath>..\..\..\build\$(Configuration)\Applications\$(AssemblyName)</OutputPath>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>..\..\..\build\Output\Debug\Applications\openHistorian.WebUI\</OutputPath>
-    <Optimize>False</Optimize>
-  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)'=='Development'">
-    <OutputPath>..\..\..\build\Output\Debug\Applications\openHistorian.WebUI\</OutputPath>
     <DebugType>Full</DebugType>
     <Optimize>False</Optimize>
     <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
@@ -26,6 +22,13 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>False</Optimize>
+  </PropertyGroup>
+  
+  
+  <PropertyGroup Condition="'$(Configuration)'=='Development'">
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

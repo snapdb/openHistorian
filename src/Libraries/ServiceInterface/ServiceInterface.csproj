@@ -11,19 +11,9 @@
     <Configurations>Debug;Release;Development</Configurations>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>..\..\..\build\Output\Debug\Libraries\</OutputPath>
-    <DocumentationFile>..\..\..\build\Output\Debug\Libraries\ServiceInterface.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|AnyCPU'">
-    <OutputPath>..\..\..\build\Output\Debug\Libraries\</OutputPath>
-    <DocumentationFile>..\..\..\build\Output\Debug\Libraries\ServiceInterface.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>..\..\..\build\Output\Release\Libraries\</OutputPath>
-    <DocumentationFile>..\..\..\build\Output\Release\Libraries\ServiceInterface.xml</DocumentationFile>
+  <PropertyGroup>
+    <OutputPath>..\..\..\build\$(Configuration)\Libraries\$(AssemblyName)</OutputPath>
+    <DocumentationFile>..\..\..\build\$(Configuration)\Libraries\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
