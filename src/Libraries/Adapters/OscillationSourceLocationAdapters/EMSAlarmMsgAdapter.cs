@@ -48,6 +48,7 @@ using MathNet.Numerics.Statistics;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Bcpg;
 using PhasorProtocolAdapters;
+using PowerCalculations;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
 using SignalType = Gemstone.Numeric.EE.SignalType;
@@ -59,17 +60,21 @@ namespace DataQualityMonitoring;
 /// </summary>
 [Description("DEF Alarm: checks if an identified oscillation is ongoing")]
 
-public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
+public class EMSAlarmMsgAdapter : VIFCalculatedMeasurementBase
 {
     #region [ Members ]
 
-    List<Line> m_lines = new List<Line>();
     List<MeasurementKey> m_eventMeasurements;
-    List<IFrame> m_frameQueue = new List<IFrame>();
+    private readonly ConcurrentQueue<Tuple<EventDetails, Ticks, Ticks>> m_testQueue;
+
+    // Semaphore protects frameQueue from shrinking while an oscillation is intializing and prevents unready oscillations from firing.
+    private Semaphore m_TestsProcessing;
+    // Protected from shrinking while an oscillation is intializing to guarantee data for it will exist.
+    private ConcurrentQueue<IFrame> m_frameQueue;
+    private volatile int m_NumTestsProcessing = 0;
 
     private int m_frameQueueLimit = 10;
     private readonly TaskSynchronizedOperation m_createMessage;
-    private readonly ConcurrentQueue<Tuple<EventDetails, IEnumerable<LineData>>> m_testQueue;
 
     #endregion
 
@@ -81,7 +86,8 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
     public EMSAlarmMsgAdapter()
     {
         m_createMessage = new TaskSynchronizedOperation(TestData, ex => OnProcessException(MessageLevel.Error, ex));
-        m_testQueue = new ConcurrentQueue<Tuple<EventDetails, IEnumerable<LineData>>>();
+        m_testQueue = new ConcurrentQueue<Tuple<EventDetails, Ticks, Ticks>>();
+        m_TestsProcessing = new Semaphore(1, 1);
     }
 
     #endregion
@@ -101,7 +107,7 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(2.0D)]
     [Description("Time step of a sliding window for FFT analysis")]
-    public double Tstep { get; set; } = 2;
+    public double Tstep { get; set; }
 
     /// <summary>
     /// Number of oscillatory cycles to define the length of an interval for FFT scans.
@@ -109,7 +115,7 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(5)]
     [Description("Number of oscillatory cycles to define the length of an interval for FFT scans.")]
-    public double CMinW { get; set; } = 5;
+    public double CMinW { get; set; }
 
     /// <summary>
     /// [pu] Magnitude threshold for ceased oscillation; magnitude at the end of observed time interval relative to average in study interval
@@ -117,7 +123,7 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue(0.2)]
     [Description("[pu] Magnitude threshold for ceased oscillation; magnitude at the end of observed time interval relative to average in study interval")]
-    public double CeasedOscThreshold { get; set; } = 0.2;
+    public double CeasedOscThreshold { get; set; }
 
     /// <summary>
     /// Timestamp portion of the output message and file, given in a <see cref="DateTime"/> format string.
@@ -125,7 +131,7 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
     [ConnectionStringParameter]
     [DefaultValue("HH:mm:ss")]
     [Description("Timestamp portion of the output message file, given in a DateTime format string.")]
-    public string TimeStampFormat { get; set; } = "HH:mm:ss";
+    public string TimeStampFormat { get; set; }
 
     /// <summary>
     /// Directory in which outputfiles are written.
@@ -138,7 +144,7 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
     /// Base name of the output file, which the timestamp is appended to.
     /// </summary>
     [ConnectionStringParameter]
-    [Description("Directory in which outputfiles are written.")]
+    [Description("Base name of the output file, which the timestamp is appended to.")]
     public string OutputFileBaseName { get; set; }
 
     #endregion
@@ -158,186 +164,13 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
         if (!InputMeasurementKeyTypes.Where(t => t == SignalType.ALRM).Any())
             throw new InvalidOperationException("At least 1 valid event measurement is requried.");
 
+        if (OutputMeasurements is not null && OutputMeasurements.Length > 1)
+            throw new InvalidOperationException("Only up to 1 output measurement is allowed.");
+
         m_eventMeasurements = InputMeasurementKeys.Where((key, index) => InputMeasurementKeyTypes[index] == SignalType.ALRM).ToList();
-        m_frameQueue = new List<IFrame>();
+        m_frameQueue = new ConcurrentQueue<IFrame>();
 
         m_frameQueueLimit = (int)Math.Ceiling(MaxTimeResolution * (double)FramesPerSecond);
-
-        // Load line definitions
-        LoadLineDefinitions();
-    }
-
-    /// <summary>
-    /// Load the V,I Mappings and Angle, Magnitude Mappings into m_Line
-    /// </summary>
-    private void LoadLineDefinitions()
-    {
-        Func<DataRow, Gemstone.Timeseries.Model.Measurement?> loadMeasurement = TableOperations<Gemstone.Timeseries.Model.Measurement>.LoadRecordFunction();
-        Func<DataRow, PhasorRecord?> loadPhasor = TableOperations<PhasorRecord>.LoadRecordFunction();
-        Func<DataRow, Device?> loadDevice = TableOperations<Device>.LoadRecordFunction();
-
-        Dictionary<int, DeviceDetails> deviceDetails = new();
-
-        for (int i = 0; i < InputMeasurementKeys.Length; i++)
-        {
-            MeasurementKey key = InputMeasurementKeys[i];
-            SignalType signalType = InputMeasurementKeyTypes[i];
-
-            Gemstone.Timeseries.Model.Measurement? measurement = loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={key.SignalID}")[0]);
-            if (measurement?.DeviceID is null)
-                continue;
-
-            int deviceID = measurement.DeviceID.Value;
-
-            Device? device = loadDevice(base.DataSource.Tables["Device"].Select($"ID={deviceID}")[0]);
-
-            if (signalType == SignalType.FREQ)
-            {
-                if (deviceDetails.ContainsKey(deviceID))
-                    deviceDetails[deviceID].Frequency = key;
-                else
-                    deviceDetails.Add(deviceID, new DeviceDetails()
-                    {
-                        Frequency = key,
-                        IMag = new List<MeasurementKey>(),
-                        VMag = new List<MeasurementKey>(),
-                        IPhase = new List<MeasurementKey>(),
-                        VPhase = new List<MeasurementKey>(),
-                        Name = device?.Name ?? ""
-                    });
-            }
-            else if (signalType == SignalType.VPHA)
-            {
-                if (deviceDetails.ContainsKey(deviceID))
-                    deviceDetails[deviceID].VPhase.Add(key);
-                else
-                    deviceDetails.Add(deviceID, new DeviceDetails()
-                    {
-                        IMag = new List<MeasurementKey>(),
-                        VMag = new List<MeasurementKey>(),
-                        IPhase = new List<MeasurementKey>(),
-                        VPhase = new List<MeasurementKey>() { key },
-                        Name = device?.Name ?? ""
-                    });
-            }
-            else if (signalType == SignalType.VPHM)
-            {
-                if (deviceDetails.ContainsKey(deviceID))
-                    deviceDetails[deviceID].VMag.Add(key);
-                else
-                    deviceDetails.Add(deviceID, new DeviceDetails()
-                    {
-                        IMag = new List<MeasurementKey>(),
-                        VMag = new List<MeasurementKey>() { key },
-                        IPhase = new List<MeasurementKey>(),
-                        VPhase = new List<MeasurementKey>(),
-                        Name = device?.Name ?? ""
-                    });
-            }
-            else if (signalType == SignalType.IPHA)
-            {
-                if (deviceDetails.ContainsKey(deviceID))
-                    deviceDetails[deviceID].IPhase.Add(key);
-                else
-                    deviceDetails.Add(deviceID, new DeviceDetails()
-                    {
-                        IMag = new List<MeasurementKey>(),
-                        VMag = new List<MeasurementKey>(),
-                        IPhase = new List<MeasurementKey>() { key },
-                        VPhase = new List<MeasurementKey>(),
-                        Name = device?.Name ?? ""
-                    });
-            }
-            else if (signalType == SignalType.IPHM)
-            {
-                if (deviceDetails.ContainsKey(deviceID))
-                    deviceDetails[deviceID].IMag.Add(key);
-                else
-                    deviceDetails.Add(deviceID, new DeviceDetails()
-                    {
-                        IMag = new List<MeasurementKey>() { key },
-                        VMag = new List<MeasurementKey>(),
-                        IPhase = new List<MeasurementKey>(),
-                        VPhase = new List<MeasurementKey>(),
-                        Name = device?.Name ?? ""
-                    });
-            }
-            else if (signalType != SignalType.ALRM)
-            {
-                OnStatusMessage(MessageLevel.Warning, $"Unexpected signal type \"{signalType}\" in input \"{key}\" [{key.SignalID}] for {nameof(DEFComputationAdapter)}. Expected one of \"{SignalType.VPHM}\", \"{SignalType.VPHA}\", \"{SignalType.IPHM}\", or \"{SignalType.IPHA}\", input excluded.");
-            }
-        }
-
-        foreach ((int deviceID, DeviceDetails details) in deviceDetails)
-        {
-            if (details.Frequency is null)
-            {
-                OnStatusMessage(MessageLevel.Warning, $"No Frequency Signal found for Device \"{details.Name}\"");
-                continue;
-            }
-
-            if (details.IPhase.Count == 0 || details.IMag.Count == 0)
-            {
-                OnStatusMessage(MessageLevel.Warning, $"No Current Phasors found for Device \"{details.Name}\"");
-                continue;
-            }
-
-            if (details.VPhase.Count == 0 || details.VMag.Count == 0)
-            {
-                OnStatusMessage(MessageLevel.Warning, $"No Voltage Phasors found for Device \"{details.Name}\"");
-                continue;
-            }
-
-            foreach (MeasurementKey iMagKey in details.IMag)
-            {
-
-                Gemstone.Timeseries.Model.Measurement? iMag = loadMeasurement(base.DataSource.Tables["Measurement"].Select($"SignalID={iMagKey.SignalID}")[0]);
-
-                PhasorRecord iPhasor = loadPhasor(base.DataSource.Tables["Phasor"].Select($"DeviceID={deviceID} AND AND SourceIndex = {iMag.PhasorSourceIndex}")[0]);
-
-                if (iPhasor is null)
-                {
-                    OnStatusMessage(MessageLevel.Warning, $"No Phasor found for current magnitude \"{iMag.PointTag}\"");
-                    continue;
-                }
-
-                PhasorRecord vPhasor = loadPhasor(base.DataSource.Tables["Phasor"].Select($" ID = {iPhasor.PrimaryVoltageID ?? iPhasor.SecondaryVoltageID}")[0]);
-
-                if (vPhasor is null)
-                {
-                    OnStatusMessage(MessageLevel.Warning, $"No matching voltage phasor found for  \"{iPhasor.Label}\"");
-                    continue;
-                }
-
-                Gemstone.Timeseries.Model.Measurement[] vMeas = base.DataSource.Tables["Measurement"].Select($"PhasorSourceIndex={vPhasor.SourceIndex} AND DeviceID={deviceID}")
-                    .Select(row => loadMeasurement(row)).ToArray();
-
-                Gemstone.Timeseries.Model.Measurement[] iMeas = base.DataSource.Tables["Measurement"].Select($"PhasorSourceIndex={iPhasor.SourceIndex} AND DeviceID={deviceID}")
-                    .Select(row => loadMeasurement(row)).ToArray();
-
-                Line line = new Line()
-                {
-                    Current = new PhasorKey()
-                    {
-                        Magnitude = iMagKey,
-                        Angle = details.IPhase.Where(key => iMeas.Any(m => m.SignalID == key.SignalID && m.SignalTypeID == (int)SignalType.IPHA)).FirstOrDefault()
-                    },
-                    Voltage = new PhasorKey()
-                    {
-                        Magnitude = details.VMag.Where(key => vMeas.Any(m => m.SignalID == key.SignalID && m.SignalTypeID == (int)SignalType.VPHM)).FirstOrDefault(),
-                        Angle = details.VPhase.Where(key => vMeas.Any(m => m.SignalID == key.SignalID && m.SignalTypeID == (int)SignalType.VPHA)).FirstOrDefault()
-                    },
-                    Frequency = details.Frequency
-                };
-                if (line.Current.Magnitude == null || line.Current.Angle == null || line.Voltage.Magnitude == null || line.Voltage.Angle == null)
-                {
-                    OnStatusMessage(MessageLevel.Warning, $"Incomplete Phasor set for \"{details.Name}\"");
-                    continue;
-                }
-
-                m_lines.Add(line);
-            }
-        }
     }
 
     public void LoadFile(EventDetails baseDetails)
@@ -379,26 +212,87 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
            }
         ]);
 
-        m_lines = lineData.Select(d => new Line()
-        {
-            Current = d.CurrentKey,
-            Voltage = d.VoltageKey,
-            Frequency = d.FrequencyKey
-        }).ToList();
-
-        TestData(baseDetails, lineData);
+        // ToDo: To be able to do this as a unit test, we must leverage polymorphism to dodge frame processing, see DEFComputationAdapters as an example.
+        // TestData(baseDetails, lineData);
     }
 
     private async Task TestData()
     {
-        while (m_testQueue.TryDequeue(out Tuple<EventDetails, IEnumerable<LineData>> testData))
-            TestData(testData.Item1, testData.Item2);
+        m_TestsProcessing.WaitOne();
+        while (m_testQueue.TryDequeue(out Tuple<EventDetails, Ticks, Ticks> oscillation))
+        {
+            Interlocked.Increment(ref m_NumTestsProcessing);
+            TestData(oscillation.Item1, oscillation.Item2, oscillation.Item3);
+        }
+        SpinWait.SpinUntil(() => Interlocked.Equals(m_NumTestsProcessing, 0));
+        m_TestsProcessing.Release();
     }
 
-    public void TestData(EventDetails oscillation, IEnumerable<LineData> data)
+    public void TestData(EventDetails oscillation, Ticks startTime, Ticks endTime)
     {
-        JObject osc = JObject.Parse(oscillation.Details);
-        string alarmKey = osc["VoltageSignalID"].ToString();
+        JObject osc;
+        string alarmKey;
+        LineData alarmData;
+        try
+        {
+            osc = JObject.Parse(oscillation.Details);
+            alarmKey = osc["VoltageSignalID"].ToString();
+            // process frames here
+            VIFSet alarmSet = m_VIFSets.First(set => set.VoltageMagnitude.First().SignalID.ToString() == alarmKey);
+            alarmData = new LineData()
+            {
+                FrequencyKey = alarmSet.Frequency.First(),
+                VoltageKey = new PhasorKey { Magnitude = alarmSet.VoltageMagnitude.First(), Angle = alarmSet.VoltageAngle.First() },
+                CurrentKey = new PhasorKey { Magnitude = alarmSet.CurrentMagnitude, Angle = alarmSet.CurrentAngle },
+                Voltage = new List<ComplexNumber>(),
+                Current = new List<ComplexNumber>(),
+                Frequency = new List<double>(),
+                Timestamp = new List<Ticks>()
+            };
+
+            foreach (IFrame f in m_frameQueue)
+            {
+                if (f.Timestamp < startTime) continue;
+                if (f.Timestamp > endTime) break;
+                // ToDo: we need to add a label to line here, how do we get it?
+                ComplexNumber V = new ComplexNumber(double.NaN, double.NaN);
+                ComplexNumber I = new ComplexNumber(double.NaN, double.NaN);
+
+                double F = double.NaN;
+                Ticks T = f.Timestamp;
+
+                if (f.Measurements.TryGetValue(alarmData.FrequencyKey, out IMeasurement measurement))
+                {
+                    F = measurement.AdjustedValue;
+                }
+                if (f.Measurements.TryGetValue(alarmData.VoltageKey.Magnitude, out measurement))
+                {
+                    V.Magnitude = measurement.AdjustedValue;
+                }
+                if (f.Measurements.TryGetValue(alarmData.VoltageKey.Angle, out measurement))
+                {
+                    V.Angle = measurement.AdjustedValue;
+                }
+                if (f.Measurements.TryGetValue(alarmData.CurrentKey.Magnitude, out measurement))
+                {
+                    I.Magnitude = measurement.AdjustedValue;
+                }
+                if (f.Measurements.TryGetValue(alarmData.CurrentKey.Angle, out measurement))
+                {
+                    I.Angle = measurement.AdjustedValue;
+                }
+
+                alarmData.Voltage.Add(V);
+                alarmData.Current.Add(I);
+                alarmData.Frequency.Add(F);
+                alarmData.Timestamp.Add(T);
+            }
+        }
+        finally
+        {
+            Interlocked.Decrement(ref m_NumTestsProcessing);
+        }
+
         double tStart = DEFComputationAdapter.ParseStudyIntervalStart(osc);
         double tEnd = DEFComputationAdapter.ParseStudyIntervalEnd(osc);
         string alarmTime = DEFComputationAdapter.ParseAlarmTime(osc).ToString(TimeStampFormat);
@@ -410,8 +304,6 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
 
         if (!double.TryParse(osc["Frequency"].ToString(), out double freqAlarm)) //GenSet(23)
             throw new InvalidDataException("Oscillation Event not formated correctly - Can not parse \"Frequency\"");
-
-        LineData alarmData = data.Where(d => d.VoltageKey.Magnitude.SignalID.ToString() == alarmKey).FirstOrDefault();
 
         IEnumerable<ComplexNumber> alarmCurrent = alarmData.Current;
         IEnumerable<ComplexNumber> alarmVoltage = alarmData.Voltage;
@@ -428,6 +320,18 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
         string outmsgFile = $"{OutputFileBaseName}_{alarmTime}.txt";
         using (StreamWriter writer = new StreamWriter(Path.Combine(OutputDirectory, outmsgFile), false))
             writer.WriteLine(alarmMsg);
+
+        if (OutputMeasurements is not null && OutputMeasurements.Length == 1)
+        {
+            AlarmMeasurement measurement = new AlarmMeasurement
+            {
+                Timestamp = DateTime.UtcNow,
+                Value = 1,
+                AlarmID = Guid.NewGuid()
+            };
+            measurement.Metadata = MeasurementKey.LookUpBySignalID(OutputMeasurements[0].ID).Metadata;
+            OnNewMeasurements([measurement]);
+        }
 
         return;
     }
@@ -525,92 +429,55 @@ public class EMSAlarmMsgAdapter : CalculatedMeasurementBase
         return $"OSL {timeStamp} {magString}; {source}; {type}";
     }
 
+    private bool TryRetrieveEventDetails(AlarmMeasurement alarm, out EventDetails details)
+    {
+        using AdoDataConnection connection = new(ConfigSettings.Instance);
+        TableOperations<EventDetails> tableOperations = new(connection);
+        details = tableOperations.QueryRecordWhere("EventGuid = {0}", ((AlarmMeasurement)alarm).AlarmID);
+        if (details is not null && details.Type == "oscilation_identification")
+        {
+            return true;
+        }
+        return false;
+    }
+
     protected override void PublishFrame(IFrame frame, int index)
     {
         // Queue the frame for buffering
+        m_frameQueue.Enqueue(frame);
+        bool hasProcessLock = m_TestsProcessing.WaitOne(0);
+        // Ensure we keep the limit or at least how much an event requires.
+        while (
+                hasProcessLock &&
+                m_frameQueue.Count > m_frameQueueLimit &&
+                (
+                    m_testQueue.IsEmpty ||
+                    (m_testQueue.TryPeek(out Tuple<EventDetails, Ticks, Ticks> nextEvent) && nextEvent.Item2 > m_frameQueue.First().Timestamp)
+                )
+            ) if (!m_frameQueue.TryDequeue(out _)) break;
 
-        m_frameQueue.Add(frame);
-
-        while (m_frameQueue.Count > m_frameQueueLimit)
-            m_frameQueue.RemoveAt(0);
-
-        List<EventDetails> toBeProcessed = new List<EventDetails>();
-
-        // if it contains an alarm that is an oscillation We need to trigger computation
         foreach (MeasurementKey key in m_eventMeasurements)
         {
             if (frame.Measurements.TryGetValue(key, out IMeasurement alarm) && alarm is AlarmMeasurement && ((AlarmMeasurement)alarm).Value == 1)
             {
                 // Grab the Alarm Details.
-                using AdoDataConnection connection = new(ConfigSettings.Instance);
-                TableOperations<EventDetails> tableOperations = new(connection);
-                EventDetails details = tableOperations.QueryRecordWhere("EventGuid = {0}", ((AlarmMeasurement)alarm).AlarmID);
-                if (details.Type == "oscillation")
+                if (TryRetrieveEventDetails((AlarmMeasurement)alarm, out EventDetails details))
                 {
-                    toBeProcessed.Add(details);
+                    Ticks Ts = frame.Timestamp - (long) (MaxTimeResolution * Ticks.PerSecond);
+                    Ticks Te = frame.Timestamp;
+                    m_testQueue.Enqueue(new Tuple<EventDetails, Ticks, Ticks>(details, Ts, Te));
+                    OnStatusMessage(MessageLevel.Info, $"Oscillation enqueued for ongoing alarm test at at {frame.Timestamp}.");
                 }
             }
         }
 
-        if (toBeProcessed.Count > 0)
+        if (hasProcessLock)
         {
-            IEnumerable<LineData> lineData = m_lines.Select((d) => new LineData()
-            {
-                FrequencyKey = d.Frequency,
-                VoltageKey = d.Voltage,
-                CurrentKey = d.Current,
-                Voltage = new List<ComplexNumber>(),
-                Current = new List<ComplexNumber>(),
-                Frequency = new List<double>(),
-                Timestamp = new List<Ticks>()
-            });
-
-            foreach (IFrame f in m_frameQueue)
-            {
-                // ToDo: we need to add a label to line here, how do we get it?
-                foreach (LineData line in lineData)
-                {
-                    ComplexNumber V = new ComplexNumber(double.NaN, double.NaN);
-                    ComplexNumber I = new ComplexNumber(double.NaN, double.NaN);
-
-                    double F = double.NaN;
-                    Ticks T = f.Timestamp;
-
-                    if (f.Measurements.TryGetValue(line.FrequencyKey, out IMeasurement measurement))
-                    {
-                        F = measurement.AdjustedValue;
-                    }
-                    if (f.Measurements.TryGetValue(line.VoltageKey.Magnitude, out measurement))
-                    {
-                        V.Magnitude = measurement.AdjustedValue;
-                    }
-                    if (f.Measurements.TryGetValue(line.VoltageKey.Angle, out measurement))
-                    {
-                        V.Angle = measurement.AdjustedValue;
-                    }
-                    if (f.Measurements.TryGetValue(line.CurrentKey.Magnitude, out measurement))
-                    {
-                        I.Magnitude = measurement.AdjustedValue;
-                    }
-                    if (f.Measurements.TryGetValue(line.CurrentKey.Angle, out measurement))
-                    {
-                        I.Angle = measurement.AdjustedValue;
-                    }
-
-                    line.Voltage.Append(V);
-                    line.Current.Append(I);
-                    line.Frequency.Append(F);
-                    line.Timestamp.Append(T);
-                }
-            }
-
-            foreach (EventDetails oscillation in toBeProcessed)
-            {
-                // Process the Oscillation
-                m_testQueue.Enqueue(new Tuple<EventDetails, IEnumerable<LineData>>(oscillation, lineData));
-            }
+            // Process the Oscillation
             m_createMessage.TryRunAsync();
+            OnStatusMessage(MessageLevel.Info, $"Oscillation operation began for ongoing alarm test at {frame.Timestamp}");
         }
+        if (hasProcessLock) m_TestsProcessing.Release();
     }
 
     #endregion
