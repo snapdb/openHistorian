@@ -23,9 +23,9 @@
 
 using System.Collections.Concurrent;
 using System.ComponentModel;
-using System.Data;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using DataQualityMonitoring.Functions;
 using Gemstone.Data;
 using Gemstone.Data.Model;
 using Gemstone.Diagnostics;
@@ -33,9 +33,9 @@ using Gemstone.Numeric;
 using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
+using Gemstone.Timeseries.Data;
 using Gemstone.Timeseries.Model;
 using Newtonsoft.Json.Linq;
-using PhasorProtocolAdapters;
 using ConfigSettings = Gemstone.Configuration.Settings;
 using SignalType = Gemstone.Numeric.EE.SignalType;
 
@@ -178,11 +178,14 @@ public class DEFPowerworldVisualizerAdapter : ActionAdapterBase
 
         Dictionary<string, string> settings = Settings;
 
-        if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
+        if (InputMeasurementKeys is null)
             throw new InvalidOperationException("No input measurements were specified for the DEF Powerworld visualizer.");
 
-        if (!InputMeasurementKeyTypes.Where(t => t == SignalType.ALRM).Any())
-            throw new InvalidOperationException("At least 1 valid event measurement is requried.");
+        if (InputMeasurementKeys.Length != 1 || DataSource.GetSignalTypes(InputMeasurementKeys).First() != SignalType.ALRM)
+            throw new InvalidOperationException("Only one input measurement must be specified, and it must be of the event type.");
+
+        if (OutputMeasurements is not null && OutputMeasurements.Length > 1)
+            throw new InvalidOperationException("Only up to 1 output measurement is allowed.");
     }
 
     private async Task CreateVisual()
@@ -228,7 +231,19 @@ public class DEFPowerworldVisualizerAdapter : ActionAdapterBase
         {
             Marshal.FinalReleaseComObject(simAutoConnection);
         }
-        // ToDo: Do something with jpgs made
+
+        // Output measurement for completion
+        if (OutputMeasurements is not null && OutputMeasurements.Length == 1)
+        {
+            AlarmMeasurement measurement = new AlarmMeasurement
+            {
+                Timestamp = DateTime.UtcNow,
+                Value = 1,
+                AlarmID = Guid.NewGuid()
+            };
+            measurement.Metadata = MeasurementKey.LookUpBySignalID(OutputMeasurements[0].ID).Metadata;
+            OnNewMeasurements([measurement]);
+        }
     }
 
     private string? CreateVisual(Matrix<double> DE, string[] lineLabels, string label, string alarmTimeStamp, object simAutoConnection, MethodInfo scriptCommandMethod)
@@ -285,33 +300,18 @@ public class DEFPowerworldVisualizerAdapter : ActionAdapterBase
 
     protected override void PublishFrame(IFrame frame, int index)
     {
-
-        List<EventDetails> toBeProcessed = new List<EventDetails>();
-
-        // if it contains an alarm that is an oscillation We need to trigger computation
-        foreach (MeasurementKey key in InputMeasurementKeys)
+        // if it contains an alarm that is an oscillation computation We need to trigger computation
+        if (frame.Measurements.TryGetValue(InputMeasurementKeys.First(), out IMeasurement alarm) && alarm is AlarmMeasurement && ((AlarmMeasurement)alarm).Value == 1)
         {
-            if (frame.Measurements.TryGetValue(key, out IMeasurement alarm) && alarm is AlarmMeasurement && ((AlarmMeasurement)alarm).Value == 1)
+            // Grab the Alarm Details.
+            using AdoDataConnection connection = new(ConfigSettings.Instance);
+            TableOperations<EventDetails> tableOperations = new(connection);
+            EventDetails? details = tableOperations.QueryRecordWhere("EventGuid = {0}", ((AlarmMeasurement)alarm).AlarmID);
+            if (details is not null && details.Type == "oscilation_computation")
             {
-                // Grab the Alarm Details.
-                using AdoDataConnection connection = new(ConfigSettings.Instance);
-                TableOperations<EventDetails> tableOperations = new(connection);
-                EventDetails details = tableOperations.QueryRecordWhere("EventGuid = {0}", ((AlarmMeasurement)alarm).AlarmID);
-                if (details.Type == "oscillation")
-                {
-                    toBeProcessed.Add(details);
-                }            
+                m_visualizationQueue.Enqueue(details);
+                m_visualDE.TryRunAsync();
             }
-        }
-        
-        if (toBeProcessed.Count > 0)
-        {
-            foreach (EventDetails oscillation in toBeProcessed)
-            {
-                // Process the Oscillation
-                m_visualizationQueue.Enqueue(oscillation);
-            }
-            m_visualDE.TryRunAsync();
         }
     }
 
