@@ -167,27 +167,20 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
         Func<DataRow, PhasorRecord?> loadPhasor = TableOperations<PhasorRecord>.LoadRecordFunction();
 
         MeasurementKey[] currents = AdapterBase.ParseInputMeasurementKeys(DataSource, true, current);
-        DataTable? phasorValuesTable = DataSource?.Tables["PhasorValues"];
-        if (phasorValuesTable == null) return;
 
-        PhasorRecord?[] currentPhasors = currents
-        .Select((meas) =>
-        {
-            DataRow[] rows = phasorValuesTable.Select($"AngleSignalID='{meas.SignalID}' OR MagnitudeSignalID = '{meas.SignalID}'");
-            DataRow? firstResult = rows?[0] ?? null;
-            if (firstResult != null)
-                return loadPhasor(firstResult);
-            return null;
-        })
-        .Where(phasor => phasor != null)
+        if (DataSource?.Tables["PhasorValues"] is null)
+            throw new InvalidOperationException("PhasorValues table is not available in the data source. Ensure that ConfigurationEntity is properly configured.");
+
+        DataTable phasorValuesTable = DataSource.Tables["PhasorValues"];
+
+        PhasorRecord[] currentPhasors = currents
+        .SelectMany((meas) => phasorValuesTable.Select($"AngleSignalID = '{meas.SignalID}' OR MagnitudeSignalID = '{meas.SignalID}'").Select(loadPhasor))
         .DistinctBy((phasor) => phasor!.SignalID).ToArray();
 
         m_VISets = currentPhasors.Select((i) => new VISet()
         {
             CurrentAngle = MeasurementKey.LookUpBySignalID(i.AngleSignalID ?? Guid.Empty),
             CurrentMagnitude = MeasurementKey.LookUpBySignalID(i.MagnitudeSignalID ?? Guid.Empty),
-            VoltageAngle = new MeasurementKey[2],
-            VoltageMagnitude = new MeasurementKey[2]
         }).ToArray();
 
         if (string.IsNullOrEmpty(voltage))
@@ -195,18 +188,16 @@ public abstract class VICalculatedMeasurementBase : CalculatedMeasurementBase
             int index = 0;
             foreach (VISet set in m_VISets)
             {
-                PhasorRecord?[] v = new PhasorRecord[2];
-                if (currentPhasors?[index]?.PrimaryVoltagePhasorID is not null)
-                    v[0] = loadPhasor(phasorValuesTable.Select($"PhasorID = {currentPhasors?[index]?.PrimaryVoltagePhasorID}")[0]);
+                List<PhasorRecord> v = new();
+                if (currentPhasors[index].PrimaryVoltagePhasorID is not null)
+                    v.AddRange(phasorValuesTable.Select($"PhasorID = {currentPhasors?[index]?.PrimaryVoltagePhasorID}")?.Select(p => loadPhasor(p)));
 
-                if (currentPhasors?[index]?.SecondaryVoltagePhasorID is not null)
-                    v[1] = loadPhasor(phasorValuesTable.Select($"PhasorID = {currentPhasors?[index]?.SecondaryVoltagePhasorID}")[0]);
+                if (currentPhasors[index].SecondaryVoltagePhasorID is not null)
+                    v.AddRange(phasorValuesTable.Select($"PhasorID = {currentPhasors?[index]?.SecondaryVoltagePhasorID}")?.Select(p => loadPhasor(p)));
 
-                if (v.Any(phasor => phasor is null) || v.Length < 1)
-                    throw new InvalidOperationException(
-                        "Unable to identify both voltage phasors. " +
-                        "Make sure both Primary Voltage Phasor and Secondary Voltage Phasor resolve to valid phasors."
-                    );
+                if (v.Count() < 1)
+                    throw new InvalidOperationException($"Unable to identify the voltage phasor based on the current. A set of voltage phasors must be specified.");
+
 
                 set.VoltageAngle = v.Select((volt) => MeasurementKey.LookUpBySignalID(volt?.AngleSignalID ?? Guid.Empty)).ToArray();
                 set.VoltageMagnitude = v.Select((volt) => MeasurementKey.LookUpBySignalID(volt?.MagnitudeSignalID ?? Guid.Empty)).ToArray();
