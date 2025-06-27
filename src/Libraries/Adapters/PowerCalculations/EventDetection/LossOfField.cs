@@ -28,16 +28,13 @@
 //******************************************************************************************************
 // ReSharper disable InconsistentNaming
 
-using System.ComponentModel;
-using System.Text;
-using Gemstone.Collections.CollectionExtensions;
 using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Diagnostics;
-using Gemstone.Numeric.EE;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
-using PhasorProtocolAdapters;
+using System.ComponentModel;
+using System.Text;
 
 namespace PowerCalculations.EventDetection;
 
@@ -45,7 +42,9 @@ namespace PowerCalculations.EventDetection;
 /// Represents an algorithm that detects Loss of Field from a synchrophasor device.
 /// </summary>
 [Description("Loss of Field: Detects Loss-of-Field from a synchrophasor device")]
-public class LossOfField : CalculatedMeasurementBase
+[UIResource("AdaptersUI", $".PowerCalculations.LossOfField.main.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.LossOfField.chunk.js")]
+public class LossOfField : VICalculatedMeasurementBase
 {
     #region [ Members ]
 
@@ -56,16 +55,13 @@ public class LossOfField : CalculatedMeasurementBase
     private const double DefaultQAreaSet = 500.0D;
     private const double DefaultVoltageThreshold = 475000.0D;
     private const int DefaultAnalysisInterval = 0;
+    private Dictionary<Output, IMeasurement> m_outputMap = new();
 
     // Fields
     private double m_qAreamVar;                 // Calculated Q area value                 
     private long m_count;                       // Running frame count
     private long m_count1;                      // Last frame count
     private long m_count2;                      // Current frame count
-    private MeasurementKey? m_voltageMagnitude; // Measurement input key for voltage magnitude
-    private MeasurementKey? m_voltageAngle;     // Measurement input key for voltage angle
-    private MeasurementKey? m_currentMagnitude; // Measurement input key for current magnitude
-    private MeasurementKey? m_currentAngle;     // Measurement input key for current angle
 
     // Important: Make sure output definition defines points in the following order
     private enum Output
@@ -169,47 +165,46 @@ public class LossOfField : CalculatedMeasurementBase
         m_count1 = 0;
         m_count2 = 0;
 
-        if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
-            throw new InvalidOperationException("No input measurements were specified for the loss of field detector.");
-
-        // Get expected voltage magnitude
-        int index = InputMeasurementKeyTypes.IndexOf(signalType => signalType == SignalType.VPHM);
-
-        if (index < 0)
-            throw new InvalidOperationException("No voltage magnitude input measurement key was not found - this is a required input measurement for the loss of field detector.");
-
-        m_voltageMagnitude = InputMeasurementKeys[index];
-
-        // Get expected voltage angle
-        index = InputMeasurementKeyTypes.IndexOf(signalType => signalType == SignalType.VPHA);
-        
-        if (index < 0)
-            throw new InvalidOperationException("No voltage angle input measurement key was not found - this is a required input measurement for the loss of field detector.");
-
-        m_voltageAngle = InputMeasurementKeys[index];
-
-        // Get expected current magnitude
-        index = InputMeasurementKeyTypes.IndexOf(signalType => signalType == SignalType.IPHM);
-        
-        if (index < 0)
-            throw new InvalidOperationException("No current magnitude input measurement key was not found - this is a required input measurement for the loss of field detector.");
-
-        m_currentMagnitude = InputMeasurementKeys[index];
-
-        // Get expected current angle
-        index = InputMeasurementKeyTypes.IndexOf(signalType => signalType == SignalType.IPHA);
-        
-        if (index < 0)
-            throw new InvalidOperationException("No current angle input measurement key was not found - this is a required input measurement for the loss of field detector.");
-
-        m_currentAngle = InputMeasurementKeys[index];
-
-        // Make sure only these phasor measurements are used as input
-        InputMeasurementKeys = [m_voltageMagnitude, m_voltageAngle, m_currentMagnitude, m_currentAngle];
+        if (m_VISets.Length != 1)
+            throw new InvalidOperationException("Exactly one VI phasor pair is required for the loss of field detector.");
 
         // Validate output measurements
-        if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
-            throw new InvalidOperationException("Not enough output measurements were specified for the loss of field detector, expecting measurements for \"Warning Signal Status (0 = Not Signaled, 1 = Signaled)\", \"Real Power\", \"Reactive Power\" and \"Q-Area Value\" - in this order.");
+        ValidateOutputMeasurements();
+    }
+
+    private void ValidateOutputMeasurements()
+    {
+        List<IMeasurement> measurementKeys = new();
+        Dictionary<string, string> settings = Settings;
+
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (settings.TryGetValue(Enum.GetNames<Output>()[i], out string setting))
+                measurementKeys.Add(AdapterBase.ParseOutputMeasurements(DataSource, true, setting).FirstOrDefault());
+            else
+                measurementKeys.Add(null);
+        }
+
+        if (!measurementKeys.Any(item => item is not null))
+        {
+            if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
+                throw new InvalidOperationException("Not enough output measurements were specified for the loss of field detector, expecting measurements for \"Warning Signal Status (0 = Not Signaled, 1 = Signaled)\", \"Real Power\", \"Reactive Power\" and \"Q-Area Value\" - in this order.");
+
+            m_outputMap = new Dictionary<Output, IMeasurement>();
+
+            foreach (Output o in Enum.GetValues<Output>())
+            {
+                m_outputMap.Add(o, OutputMeasurements[(int)o]);
+            }
+            return;
+        }
+
+        m_outputMap = new Dictionary<Output, IMeasurement>();
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (measurementKeys[i] is not null)
+                m_outputMap.Add((Output)i, measurementKeys[i]);
+        }
     }
 
     /// <summary>
@@ -227,31 +222,22 @@ public class LossOfField : CalculatedMeasurementBase
             return;
 
         IDictionary<MeasurementKey, IMeasurement> measurements = frame.Measurements;
-        double voltageMagnitude, voltageAngle, currentMagnitude, currentAngle;
         bool warningSignaled = false;
 
         m_count1 = m_count2;
         m_count2 = m_count;
 
-        if (measurements.TryGetValue(m_voltageMagnitude!, out IMeasurement? measurement))
-            voltageMagnitude = measurement.AdjustedValue;
-        else
-            return;
+        VISet set = m_VISets[0];         // first (or only) VI pair
 
-        if (measurements.TryGetValue(m_voltageAngle!, out measurement))
-            voltageAngle = Angle.FromDegrees(measurement.AdjustedValue);
-        else
-            return;
+        if (!measurements.TryGetValue(set.VoltageMagnitude[0], out var vMag)) return;
+        if (!measurements.TryGetValue(set.VoltageAngle[0], out var vAng)) return;
+        if (!measurements.TryGetValue(set.CurrentMagnitude, out var iMag)) return;
+        if (!measurements.TryGetValue(set.CurrentAngle, out var iAng)) return;
 
-        if (measurements.TryGetValue(m_currentMagnitude!, out measurement))
-            currentMagnitude = measurement.AdjustedValue;
-        else
-            return;
-
-        if (measurements.TryGetValue(m_currentAngle!, out measurement))
-            currentAngle = Angle.FromDegrees(measurement.AdjustedValue);
-        else
-            return;
+        double voltageMagnitude = vMag.AdjustedValue;
+        double voltageAngle = Angle.FromDegrees(vAng.AdjustedValue);
+        double currentMagnitude = iMag.AdjustedValue;
+        double currentAngle = Angle.FromDegrees(iAng.AdjustedValue);
 
         double realPower = 3.0D * voltageMagnitude * currentMagnitude * Math.Cos(voltageAngle - currentAngle) / SI.Mega;
         double reactivePower = 3.0D * voltageMagnitude * currentMagnitude * Math.Sin(voltageAngle - currentAngle) / SI.Mega;
@@ -273,15 +259,23 @@ public class LossOfField : CalculatedMeasurementBase
         }
 
         // Expose output measurement values
-        IMeasurement[] outputMeasurements = OutputMeasurements!;
+        List<IMeasurement> outputMeasurements = new();
 
-        OnNewMeasurements(
-        [
-            Measurement.Clone(outputMeasurements[(int)Output.WarningSignal], warningSignaled ? 1.0D : 0.0D, frame.Timestamp),
-            Measurement.Clone(outputMeasurements[(int)Output.RealPower], realPower, frame.Timestamp),
-            Measurement.Clone(outputMeasurements[(int)Output.ReactivePower], reactivePower, frame.Timestamp),
-            Measurement.Clone(outputMeasurements[(int)Output.QAreaValue], m_qAreamVar, frame.Timestamp)
-        ]);
+        if (m_outputMap.TryGetValue(Output.WarningSignal, out var warningSignal))
+            outputMeasurements.Add(Measurement.Clone(warningSignal, warningSignaled ? 1.0D : 0.0D, frame.Timestamp));
+
+        if (m_outputMap.TryGetValue(Output.RealPower, out var realPowerMeas))
+            outputMeasurements.Add(Measurement.Clone(realPowerMeas, realPower, frame.Timestamp));
+
+        if (m_outputMap.TryGetValue(Output.ReactivePower, out var reactivePowmeas))
+            outputMeasurements.Add(Measurement.Clone(reactivePowmeas, (int)reactivePower, frame.Timestamp));
+
+        if (m_outputMap.TryGetValue(Output.QAreaValue, out var qAreaMeas))
+            outputMeasurements.Add(Measurement.Clone(qAreaMeas, m_qAreamVar, frame.Timestamp));
+
+        // Provide measurements for external consumption
+        OnNewMeasurements(outputMeasurements.ToArray());
+
     }
 
     private void OutputLOFWarning(double realPower, double reactivePower, double qAreamVar)
