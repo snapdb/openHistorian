@@ -56,7 +56,10 @@ public enum ExcursionType
 /// <summary>
 /// Represents an algorithm that detects frequency excursions.
 /// </summary>
+
 [Description("Frequency Excursion: Detects frequency excursions in synchrophasor data")]
+[UIResource("AdaptersUI", $".PowerCalculations.FrequencyExcursion.main.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.FrequencyExcursion.chunk.js")]
 public class FrequencyExcursion : CalculatedMeasurementBase
 {
     #region [ Members ]
@@ -75,6 +78,7 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     private readonly List<DateTime> m_timeStamps = [];  // Timestamps of frequencies
     private int m_detectedExcursions;                   // Number of detected excursions
     private long m_count;                               // Published frame count
+    private Dictionary<Output, IMeasurement> m_outputMap = new();
 
     // Important: Make sure output definition defines points in the following order
     private enum Output
@@ -238,8 +242,8 @@ public class FrequencyExcursion : CalculatedMeasurementBase
         InputMeasurementKeys = validInputMeasurementKeys;
 
         // Validate output measurements
-        if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
-            throw new InvalidOperationException("Not enough output measurements were specified for the frequency excursion detector, expecting measurements for \"Warning Signal Status (0 = Not Signaled, 1 = Signaled)\", \"Frequency Delta\", \"Type of Excursion (0 = Gen Trip, 1 = Load Trip)\" and \"Estimated Size (MW)\" - in this order.");
+        ValidateOutputMeasurements();
+
     }
 
     /// <summary>
@@ -307,25 +311,67 @@ public class FrequencyExcursion : CalculatedMeasurementBase
             }
         }
 
-        // Expose output measurement values
-        IMeasurement[] outputMeasurements = OutputMeasurements!;
+        List<IMeasurement> outputMeasurements = new();
 
-        OnNewMeasurements(
-        [
-            Measurement.Clone(outputMeasurements[(int)Output.WarningSignal], warningSignaled ? 1.0D : 0.0D, frame.Timestamp),
-            Measurement.Clone(outputMeasurements[(int)Output.FrequencyDelta], frequencyDelta, frame.Timestamp),
-            Measurement.Clone(outputMeasurements[(int)Output.TypeOfExcursion], (int)typeofExcursion, frame.Timestamp),
-            Measurement.Clone(outputMeasurements[(int)Output.EstimatedSize], estimatedSize, frame.Timestamp)
-        ]);
+        if (m_outputMap.TryGetValue(Output.WarningSignal, out var warningSignal))
+            outputMeasurements.Add(Measurement.Clone(warningSignal, warningSignaled ? 1.0D : 0.0D, frame.Timestamp));
+
+        if (m_outputMap.TryGetValue(Output.FrequencyDelta, out var freqDelta))
+            outputMeasurements.Add(Measurement.Clone(freqDelta, frequencyDelta, frame.Timestamp));
+
+        if (m_outputMap.TryGetValue(Output.TypeOfExcursion, out var typeExcursion))
+            outputMeasurements.Add(Measurement.Clone(typeExcursion, (int)typeofExcursion, frame.Timestamp));
+
+        if (m_outputMap.TryGetValue(Output.EstimatedSize, out var estimatedSizeMeas))
+            outputMeasurements.Add(Measurement.Clone(estimatedSizeMeas, estimatedSize, frame.Timestamp));
+
+        // Provide measurements for external consumption
+        OnNewMeasurements(outputMeasurements.ToArray());
+
     }
 
     private void OutputFrequencyWarning(DateTime timestamp, double delta, ExcursionType typeOfExcursion, double totalAmount) =>
         OnStatusMessage(MessageLevel.Info,
-            $"Frequency excursion detected!{Environment.NewLine}" + 
-            $"              Time = {timestamp:dd-MMM-yyyy HH:mm:ss.fff}{Environment.NewLine}" + 
-            $"             Delta = {delta}{Environment.NewLine}" + 
-            $"              Type = {typeOfExcursion}{Environment.NewLine}" + 
+            $"Frequency excursion detected!{Environment.NewLine}" +
+            $"              Time = {timestamp:dd-MMM-yyyy HH:mm:ss.fff}{Environment.NewLine}" +
+            $"             Delta = {delta}{Environment.NewLine}" +
+            $"              Type = {typeOfExcursion}{Environment.NewLine}" +
             $"    Estimated Size = {totalAmount:0.00}MW{Environment.NewLine}");
+
+    private void ValidateOutputMeasurements()
+    {
+        List<IMeasurement> measurementKeys = new();
+        Dictionary<string, string> settings = Settings;
+
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (settings.TryGetValue(Enum.GetNames<Output>()[i], out string setting))
+                measurementKeys.Add(AdapterBase.ParseOutputMeasurements(DataSource, true, setting).FirstOrDefault());
+            else
+                measurementKeys.Add(null);
+        }
+
+        if (!measurementKeys.Any(item => item is not null))
+        {
+            if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
+                throw new InvalidOperationException("Not enough output measurements were specified for the frequency excursion adapter, expecting measurements for the \"WarningSignal\", \"FrequencyDelta\", \"TypeOfExcursion\", and \"EstimatedSize\" - in this order.");
+
+            m_outputMap = new Dictionary<Output, IMeasurement>();
+
+            foreach (Output o in Enum.GetValues<Output>())
+            {
+                m_outputMap.Add(o, OutputMeasurements[(int)o]);
+            }
+            return;
+        }
+
+        m_outputMap = new Dictionary<Output, IMeasurement>();
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (measurementKeys[i] is not null)
+                m_outputMap.Add((Output)i, measurementKeys[i]);
+        }
+    }
 
     #endregion
 }

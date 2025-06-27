@@ -29,6 +29,10 @@
     <None Remove="openHistorian.Adapters\LocalOutputAdapter\main.js" />
     <None Remove="PowerCalculations\AngleDifferenceCalculator\chunk.js" />
     <None Remove="PowerCalculations\AngleDifferenceCalculator\main.js" />
+    <None Remove="PowerCalculations\AverageFrequency\chunk.js" />
+    <None Remove="PowerCalculations\AverageFrequency\main.js" />
+    <None Remove="PowerCalculations\FrequencyExcursion\chunk.js" />
+    <None Remove="PowerCalculations\FrequencyExcursion\main.js" />
     <None Remove="PowerCalculations\ImpedanceCalculator\chunk.js" />
     <None Remove="PowerCalculations\ImpedanceCalculator\main.js" />
     <None Remove="PowerCalculations\ImpedanceCalculator\PowerCalculations.ImpedanceCalculator.js" />
@@ -38,6 +42,8 @@
     <None Remove="PowerCalculations\SequenceCalculator\chunk.js" />
     <None Remove="PowerCalculations\SequenceCalculator\main.js" />
     <None Remove="PowerCalculations\SequenceCalculator\PowerCalculations.SequenceCalculator.js" />
+    <None Remove="PowerCalculations\VICalculatedMeasurementBase\chunk.js" />
+    <None Remove="PowerCalculations\VICalculatedMeasurementBase\main.js" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,12 +59,18 @@
     <EmbeddedResource Include="openHistorian.Adapters\LocalOutputAdapter\main.js" />
     <EmbeddedResource Include="PowerCalculations\AngleDifferenceCalculator\chunk.js" />
     <EmbeddedResource Include="PowerCalculations\AngleDifferenceCalculator\main.js" />
+    <EmbeddedResource Include="PowerCalculations\AverageFrequency\chunk.js" />
+    <EmbeddedResource Include="PowerCalculations\AverageFrequency\main.js" />
+    <EmbeddedResource Include="PowerCalculations\FrequencyExcursion\chunk.js" />
+    <EmbeddedResource Include="PowerCalculations\FrequencyExcursion\main.js" />
     <EmbeddedResource Include="PowerCalculations\ImpedanceCalculator\chunk.js" />
     <EmbeddedResource Include="PowerCalculations\ImpedanceCalculator\main.js" />
     <EmbeddedResource Include="PowerCalculations\PowerCalculator\chunk.js" />
     <EmbeddedResource Include="PowerCalculations\PowerCalculator\main.js" />
     <EmbeddedResource Include="PowerCalculations\SequenceCalculator\chunk.js" />
     <EmbeddedResource Include="PowerCalculations\SequenceCalculator\main.js" />
+    <EmbeddedResource Include="PowerCalculations\VICalculatedMeasurementBase\chunk.js" />
+    <EmbeddedResource Include="PowerCalculations\VICalculatedMeasurementBase\main.js" />
   </ItemGroup>
 
 </Project>
