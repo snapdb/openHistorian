@@ -105,6 +105,16 @@ public class PowerStability : VICalculatedMeasurementBase
     [Label("Energized Threshold")]
     public double EnergizedThreshold { get; set; }
 
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Power.")]
+    [DefaultValue("")]
+    public IMeasurement Power { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for St Dev.")]
+    [DefaultValue("")]
+    public IMeasurement StDev { get; set; }
+
     /// <summary>
     /// Returns the detailed status of the <see cref="PowerStability"/> monitor.
     /// </summary>
