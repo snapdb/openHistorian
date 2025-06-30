@@ -60,7 +60,7 @@ public class AverageFrequency : CalculatedMeasurementBase
     private double m_maximumFrequency;
     private double m_minimumFrequency;
     private readonly ConcurrentDictionary<Guid, Tuple<int, long>> m_lastValues = new();
-    private Dictionary<Output, IMeasurement> m_OutputMap = new();
+    private Dictionary<Output, IMeasurement> m_outputMap = new();
 
     // Important: Make sure output definition defines points in the following order
     private enum Output
@@ -211,20 +211,20 @@ public class AverageFrequency : CalculatedMeasurementBase
             if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
                 throw new InvalidOperationException("Not enough output measurements were specified for the average frequency adapter, expecting measurements for the \"Average\", \"Maximum\", \"Minimum\" - in this order.");
 
-            m_OutputMap = new Dictionary<Output, IMeasurement>();
+            m_outputMap = new Dictionary<Output, IMeasurement>();
 
             foreach (Output o in Enum.GetValues<Output>())
             {
-                m_OutputMap.Add(o, OutputMeasurements[(int)o]);
+                m_outputMap.Add(o, OutputMeasurements[(int)o]);
             }
             return;
         }
 
-        m_OutputMap = new Dictionary<Output, IMeasurement>();
+        m_outputMap = new Dictionary<Output, IMeasurement>();
         for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
         {
             if (measurementKeys[i] is not null)
-                m_OutputMap.Add((Output)i, measurementKeys[i]);
+                m_outputMap.Add((Output)i, measurementKeys[i]);
         }
     }
 
@@ -305,19 +305,18 @@ public class AverageFrequency : CalculatedMeasurementBase
                     m_minimumFrequency = double.NaN;
             }
 
-            // Provide calculated measurements for external consumption
             List<IMeasurement> outputMeasurements = new();
 
-            if (m_OutputMap.TryGetValue(Output.Average, out var avgMeasurement))
+            if (m_outputMap.TryGetValue(Output.Average, out var avgMeasurement))
                 outputMeasurements.Add(Measurement.Clone(avgMeasurement, averageFrequency, frame.Timestamp));
 
-            if (m_OutputMap.TryGetValue(Output.Maximum, out var maxMeasurement))
+            if (m_outputMap.TryGetValue(Output.Maximum, out var maxMeasurement))
                 outputMeasurements.Add(Measurement.Clone(maxMeasurement, maximumFrequency, frame.Timestamp));
 
-            if (m_OutputMap.TryGetValue(Output.Minimum, out var minMeasurement))
+            if (m_outputMap.TryGetValue(Output.Minimum, out var minMeasurement))
                 outputMeasurements.Add(Measurement.Clone(minMeasurement, minimumFrequency, frame.Timestamp));
 
-            // Provide calculated measurements for external consumption
+            // Provide measurements for external consumption
             OnNewMeasurements(outputMeasurements.ToArray());
         }
         else
