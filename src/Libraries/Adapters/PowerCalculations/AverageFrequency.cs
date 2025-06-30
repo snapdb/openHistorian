@@ -104,9 +104,10 @@ public class AverageFrequency : CalculatedMeasurementBase
     /// <summary>
     /// Gets or sets output measurements that the calculated measurement will produce, if any.
     /// </summary>
-    [ConnectionStringParameter(false)]
+    [ConnectionStringParameter]
     [DefaultValue(null)]
     [Description("Defines primary keys of output measurements the action adapter expects; can be one of a filter expression, measurement key, point tag or Guid.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public override IMeasurement[]? OutputMeasurements
     {
         get => base.OutputMeasurements;
