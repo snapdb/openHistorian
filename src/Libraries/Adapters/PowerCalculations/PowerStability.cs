@@ -27,16 +27,14 @@
 //
 //******************************************************************************************************
 
-using System.ComponentModel;
-using System.Text;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.ComponentModel.DataAnnotations;
 using Gemstone.Numeric.Analysis;
-using Gemstone.Numeric.EE;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
-using PhasorProtocolAdapters;
+using System.ComponentModel;
+using System.Text;
 
 namespace PowerCalculations;
 
@@ -62,7 +60,9 @@ namespace PowerCalculations;
 /// </para>
 /// </remarks>
 [Description("Power Stability: Calculates power and stability for a synchrophasor device")]
-public class PowerStability : CalculatedMeasurementBase
+[UIResource("AdaptersUI", $".PowerCalculations.PowerStability.main.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.PowerStability.chunk.js")]
+public class PowerStability : VICalculatedMeasurementBase
 {
     #region [ Members ]
 
@@ -70,10 +70,7 @@ public class PowerStability : CalculatedMeasurementBase
     private int m_minimumSamples;
     private readonly List<double> m_powerDataSample = [];
     private double m_lastStdev;
-    private MeasurementKey[]? m_voltageAngles;
-    private MeasurementKey[]? m_voltageMagnitudes;
-    private MeasurementKey[]? m_currentAngles;
-    private MeasurementKey[]? m_currentMagnitudes;
+    private Dictionary<Output, IMeasurement> m_outputMap = new();
 
     // Important: Make sure output definition defines points in the following order
     private enum Output
@@ -121,15 +118,15 @@ public class PowerStability : CalculatedMeasurementBase
 
             status.AppendLine($"          Data sample size: {m_minimumSamples / FramesPerSecond} seconds");
             status.AppendLine($"   Energized bus threshold: {EnergizedThreshold:0.00} volts");
-            status.AppendLine($"     Total voltage phasors: {m_voltageMagnitudes?.Length}");
-            status.AppendLine($"     Total current phasors: {m_currentMagnitudes?.Length}");
+            status.AppendLine($"     Total voltage phasors: {m_VISets.SelectMany(s => s.VoltageMagnitude).Count()}");
+            status.AppendLine($"     Total current phasors: {m_VISets.Length}");
             status.Append("         Last power values: ");
 
             lock (m_powerDataSample)
             {
                 // Display last several values
-                status.Append(m_powerDataSample.Count > ValuesToShow ? 
-                    m_powerDataSample.GetRange(m_powerDataSample.Count - ValuesToShow - 1, ValuesToShow).Select(v => v.ToString("0.00MW")).ToDelimitedString(", ") : 
+                status.Append(m_powerDataSample.Count > ValuesToShow ?
+                    m_powerDataSample.GetRange(m_powerDataSample.Count - ValuesToShow - 1, ValuesToShow).Select(v => v.ToString("0.00MW")).ToDelimitedString(", ") :
                     "Not enough values calculated yet...");
             }
 
@@ -163,40 +160,48 @@ public class PowerStability : CalculatedMeasurementBase
         // Energized bus threshold, in volts, recommended value is 20% of nominal line-to-neutral voltage
         EnergizedThreshold = settings.TryGetValue(nameof(EnergizedThreshold), out setting) ? double.Parse(setting) : 58000.0D;
 
-        if (InputMeasurementKeys is null || InputMeasurementKeyTypes is null)
-            throw new InvalidOperationException("No input measurements were specified for the power stability monitor.");
-
-        // Load needed phase angle and magnitude measurement keys from defined InputMeasurementKeys
-        m_voltageAngles = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.VPHA).ToArray();
-        m_voltageMagnitudes = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.VPHM).ToArray();
-        m_currentAngles = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.IPHA).ToArray();
-        m_currentMagnitudes = InputMeasurementKeys.Where((_, index) => InputMeasurementKeyTypes[index] == SignalType.IPHM).ToArray();
-
-        if (m_voltageAngles.Length < 1)
-            throw new InvalidOperationException("No voltage angle input measurement keys were not found - at least one voltage angle input measurement is required for the power stability monitor.");
-
-        if (m_voltageMagnitudes.Length < 1)
-            throw new InvalidOperationException("No voltage magnitude input measurement keys were not found - at least one voltage magnitude input measurement is required for the power stability monitor.");
-
-        if (m_currentAngles.Length < 1)
-            throw new InvalidOperationException("No current angle input measurement keys were not found - at least one current angle input measurement is required for the power stability monitor.");
-
-        if (m_currentMagnitudes.Length < 1)
-            throw new InvalidOperationException("No current magnitude input measurement keys were not found - at least one current magnitude input measurement is required for the power stability monitor.");
-
-        if (m_voltageAngles.Length != m_voltageMagnitudes.Length)
-            throw new InvalidOperationException("A different number of voltage magnitude and angle input measurement keys were supplied - the angles and magnitudes must be supplied in pairs, i.e., one voltage magnitude input measurement must be supplied for each voltage angle input measurement in a consecutive sequence (e.g., VA1;VM1;  VA2;VM2; ... VAn;VMn)");
-
-        if (m_currentAngles.Length != m_currentMagnitudes.Length)
-            throw new InvalidOperationException("A different number of current magnitude and angle input measurement keys were supplied - the angles and magnitudes must be supplied in pairs, i.e., one current magnitude input measurement must be supplied for each current angle input measurement in a consecutive sequence (e.g., IA1;IM1;  IA2;IM2; ... IAn;IMn)");
-
-        // Make sure only these phasor measurements are used as input
-        InputMeasurementKeys = m_voltageAngles.Concat(m_voltageMagnitudes).Concat(m_currentAngles).Concat(m_currentMagnitudes).ToArray();
+        if (m_VISets.Length < 1)
+            throw new InvalidOperationException("At least one VI phasor pair is required for the power stability adapter.");
 
         // Validate output measurements
-        if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
-            throw new InvalidOperationException("Not enough output measurements were specified for the power stability monitor, expecting measurements for the \"Calculated Power\", and the \"Standard Deviation of Power\" - in this order.");
+        ValidateOutputMeasurements();
     }
+
+    private void ValidateOutputMeasurements()
+    {
+        List<IMeasurement> measurementKeys = new();
+        Dictionary<string, string> settings = Settings;
+
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (settings.TryGetValue(Enum.GetNames<Output>()[i], out string setting))
+                measurementKeys.Add(AdapterBase.ParseOutputMeasurements(DataSource, true, setting).FirstOrDefault());
+            else
+                measurementKeys.Add(null);
+        }
+
+        if (!measurementKeys.Any(item => item is not null))
+        {
+            if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
+                throw new InvalidOperationException("Not enough output measurements were specified for the power stability monitor, expecting measurements for the \"Calculated Power\", and the \"Standard Deviation of Power\" - in this order.");
+
+            m_outputMap = new Dictionary<Output, IMeasurement>();
+
+            foreach (Output o in Enum.GetValues<Output>())
+            {
+                m_outputMap.Add(o, OutputMeasurements[(int)o]);
+            }
+            return;
+        }
+
+        m_outputMap = new Dictionary<Output, IMeasurement>();
+        for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
+        {
+            if (measurementKeys[i] is not null)
+                m_outputMap.Add((Output)i, measurementKeys[i]);
+        }
+    }
+
 
     /// <summary>
     /// Publishes the <see cref="IFrame"/> of time-aligned collection of <see cref="IMeasurement"/> values that arrived within the
@@ -210,10 +215,15 @@ public class PowerStability : CalculatedMeasurementBase
         IMeasurement? magnitude, angle;
         double voltageMagnitude = double.NaN, voltageAngle = double.NaN, power = 0.0D;
 
+        MeasurementKey[] voltageMagnitudes = m_VISets.SelectMany(s => s.VoltageMagnitude).ToArray();
+        MeasurementKey[] voltageAngles = m_VISets.SelectMany(s => s.VoltageAngle).ToArray();
+        MeasurementKey[] currentMagnitudes = m_VISets.Select(s => s.CurrentMagnitude).ToArray();
+        MeasurementKey[] currentAngles = m_VISets.Select(s => s.CurrentAngle).ToArray();
+
         // Get first voltage magnitude and angle value pair that is above the energized threshold
-        for (int i = 0; i < m_voltageMagnitudes!.Length; i++)
+        for (int i = 0; i < voltageMagnitudes!.Length; i++)
         {
-            if (!measurements.TryGetValue(m_voltageMagnitudes[i], out magnitude) || !measurements.TryGetValue(m_voltageAngles![i], out angle))
+            if (!measurements.TryGetValue(voltageMagnitudes[i], out magnitude) || !measurements.TryGetValue(voltageAngles![i], out angle))
                 continue;
 
             if (!(magnitude.AdjustedValue > EnergizedThreshold))
@@ -229,10 +239,10 @@ public class PowerStability : CalculatedMeasurementBase
             return;
 
         // Calculate the sum of the current phasors
-        for (int i = 0; i < m_currentMagnitudes!.Length; i++)
+        for (int i = 0; i < currentMagnitudes!.Length; i++)
         {
             // Retrieve current magnitude and angle measurements as consecutive pairs
-            if (measurements.TryGetValue(m_currentMagnitudes[i], out magnitude) && measurements.TryGetValue(m_currentAngles![i], out angle))
+            if (measurements.TryGetValue(currentMagnitudes[i], out magnitude) && measurements.TryGetValue(currentAngles![i], out angle))
                 power += magnitude.AdjustedValue * Math.Cos(Angle.FromDegrees(angle.AdjustedValue - voltageAngle));
             else
                 return; // Exit if current measurements were not available for calculation
@@ -251,29 +261,38 @@ public class PowerStability : CalculatedMeasurementBase
                 m_powerDataSample.RemoveAt(0);
         }
 
-        IMeasurement[] outputMeasurements = OutputMeasurements!;
-        Measurement powerMeasurement = Measurement.Clone(outputMeasurements[(int)Output.Power], power, frame.Timestamp);
+        List<IMeasurement> outputMeasurements = new();
 
         // Check to see if the needed number of samples are available to begin producing the standard deviation output measurement
         // ReSharper disable once InconsistentlySynchronizedField
         if (m_powerDataSample.Count >= m_minimumSamples)
         {
-            Measurement stdevMeasurement = Measurement.Clone(outputMeasurements[(int)Output.StDev], frame.Timestamp);
+            if (m_outputMap.TryGetValue(Output.Power, out var powerMeas))
+                outputMeasurements.Add(Measurement.Clone(powerMeas, power, frame.Timestamp));
 
-            lock (m_powerDataSample)
-                stdevMeasurement.Value = m_powerDataSample.StandardDeviation();
+            // Update and emit standard deviation
+            if (m_outputMap.TryGetValue(Output.StDev, out var stdevMeasurement))
+            {
 
-            // Provide calculated measurements for external consumption
-            OnNewMeasurements([powerMeasurement, stdevMeasurement]);
+                lock (m_powerDataSample)
+                    stdevMeasurement.Value = m_powerDataSample.StandardDeviation();
 
-            // Track last standard deviation...
-            m_lastStdev = stdevMeasurement.AdjustedValue;
+                outputMeasurements.Add(Measurement.Clone(stdevMeasurement, frame.Timestamp));
+
+                // Track last standard deviation
+                m_lastStdev = stdevMeasurement.AdjustedValue;
+            }
         }
         else if (power > 0.0D)
         {
             // If not, we can still start publishing power calculation as soon as we have one...
-            OnNewMeasurements([powerMeasurement]);
+            if (m_outputMap.TryGetValue(Output.Power, out var powerMeas))
+                outputMeasurements.Add(Measurement.Clone(powerMeas, power, frame.Timestamp));
+
         }
+
+        // Provide measurements for external consumption
+        OnNewMeasurements(outputMeasurements.ToArray());
     }
 
     #endregion
