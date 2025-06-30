@@ -154,6 +154,26 @@ public class FrequencyExcursion : CalculatedMeasurementBase
     [Label("Minimum Alarm Interval")]
     public int MinimumAlarmInterval { get; set; } = DefaultMinimumAlarmInterval;
 
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Warning Signal.")]
+    [DefaultValue("")]
+    public IMeasurement WarningSignal { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Frequency Delta.")]
+    [DefaultValue("")]
+    public IMeasurement FrequencyDelta { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Type Of Excursion.")]
+    [DefaultValue("")]
+    public IMeasurement TypeOfExcursion { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Estimated Size.")]
+    [DefaultValue("")]
+    public IMeasurement EstimatedSize { get; set; }
+
     private int AlarmProhibitPeriod => MinimumAlarmInterval * FramesPerSecond;
 
     /// <summary>

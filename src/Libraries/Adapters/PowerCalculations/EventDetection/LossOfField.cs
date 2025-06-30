@@ -119,6 +119,26 @@ public class LossOfField : VICalculatedMeasurementBase
     [Label("Analysis Interval")]
     public int AnalysisInterval { get; set; }
 
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Warning Signal.")]
+    [DefaultValue("")]
+    public IMeasurement WarningSignal { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Real Power.")]
+    [DefaultValue("")]
+    public IMeasurement RealPower { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Reactive Power.")]
+    [DefaultValue("")]
+    public IMeasurement ReactivePower { get; set; }
+
+    [ConnectionStringParameter]
+    [Description("Defines the Output Measurement for Q Area Value.")]
+    [DefaultValue("")]
+    public IMeasurement QAreaValue { get; set; }
+
     /// <summary>
     /// Returns the detailed status of the <see cref="LossOfField"/> detector.
     /// </summary>
