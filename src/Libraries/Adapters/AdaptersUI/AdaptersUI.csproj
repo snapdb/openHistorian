@@ -17,6 +17,8 @@
     <None Remove="CSVAdapters\CSVInputAdapter\CSVAdapters.CSVInputAdapter.js" />
     <None Remove="CSVAdapters\CSVInputAdapter\main.js" />
     <None Remove="CSVAdapters\CSVInputAdapter\openHistorian.Adapters.CsvInputAdapter.js" />
+    <None Remove="DynamicCalculator\DeviceSwitch\chunk.js" />
+    <None Remove="DynamicCalculator\DeviceSwitch\main.js" />
     <None Remove="DynamicCalculator\DynamicCalculator\chunk.js" />
     <None Remove="DynamicCalculator\DynamicCalculator\DynamicCalculator.DynamicCalculator.js" />
     <None Remove="DynamicCalculator\DynamicCalculator\main.js" />
@@ -45,6 +47,8 @@
     <None Remove="PowerCalculations\PowerStability\main.js" />
     <None Remove="PowerCalculations\ReferenceAngle\chunk.js" />
     <None Remove="PowerCalculations\ReferenceAngle\main.js" />
+    <None Remove="PowerCalculations\ReferenceMagnitude\chunk.js" />
+    <None Remove="PowerCalculations\ReferenceMagnitude\main.js" />
     <None Remove="PowerCalculations\SequenceCalculator\chunk.js" />
     <None Remove="PowerCalculations\SequenceCalculator\main.js" />
     <None Remove="PowerCalculations\SequenceCalculator\PowerCalculations.SequenceCalculator.js" />
@@ -55,6 +59,8 @@
   <ItemGroup>
     <EmbeddedResource Include="CSVAdapters\CSVInputAdapter\chunk.js" />
     <EmbeddedResource Include="CSVAdapters\CSVInputAdapter\main.js" />
+    <EmbeddedResource Include="DynamicCalculator\DeviceSwitch\chunk.js" />
+    <EmbeddedResource Include="DynamicCalculator\DeviceSwitch\main.js" />
     <EmbeddedResource Include="DynamicCalculator\DynamicCalculator\chunk.js" />
     <EmbeddedResource Include="DynamicCalculator\DynamicCalculator\main.js" />
     <EmbeddedResource Include="FileAdapters\ProcessLauncher\chunk.js" />
@@ -79,6 +85,8 @@
     <EmbeddedResource Include="PowerCalculations\PowerStability\main.js" />
     <EmbeddedResource Include="PowerCalculations\ReferenceAngle\chunk.js" />
     <EmbeddedResource Include="PowerCalculations\ReferenceAngle\main.js" />
+    <EmbeddedResource Include="PowerCalculations\ReferenceMagnitude\chunk.js" />
+    <EmbeddedResource Include="PowerCalculations\ReferenceMagnitude\main.js" />
     <EmbeddedResource Include="PowerCalculations\SequenceCalculator\chunk.js" />
     <EmbeddedResource Include="PowerCalculations\SequenceCalculator\main.js" />
     <EmbeddedResource Include="PowerCalculations\VICalculatedMeasurementBase\chunk.js" />
