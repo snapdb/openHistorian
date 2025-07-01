@@ -21,29 +21,18 @@
 //
 //******************************************************************************************************
 
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using Gemstone.Expressions.Evaluator;
-using Gemstone;
-using Gemstone.Collections.CollectionExtensions;
+using Gemstone.Data;
+using Gemstone.Data.DataExtensions;
+using Gemstone.Data.Model;
 using Gemstone.Diagnostics;
-using Gemstone.StringExtensions;
-using Gemstone.Threading.SynchronizedOperations;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
-using SparseArray = System.Collections.Generic.Dictionary<int, double>;
-using ConfigSettings = Gemstone.Configuration.Settings;
-using Gemstone.Data.DataExtensions;
-using System.Security.Claims;
-using Gemstone.Data;
-using Device = Gemstone.Timeseries.Model.Device;
-using Gemstone.Data.Model;
 using GrafanaAdapters.Model.Database;
-using openHistorian.Adapters;
+using System.ComponentModel;
+using System.Data;
+using System.Text;
+using ConfigSettings = Gemstone.Configuration.Settings;
+using Device = Gemstone.Timeseries.Model.Device;
 
 namespace DynamicCalculator;
 
@@ -53,6 +42,8 @@ namespace DynamicCalculator;
 /// to generate its own calculated measurement.
 /// </summary>
 [Description("Device Switch: Copies one of the provided devices if the device state is acceptable")]
+[UIResource("AdaptersUI", $".DynamicCalculator.DeviceSwitch.main.js")]
+[UIResource("AdaptersUI", $".DynamicCalculator.DeviceSwitch.chunk.js")]
 public class DeviceSwitch: FacileActionAdapterBase 
 { 
     #region [ Members ]
@@ -113,7 +104,7 @@ public class DeviceSwitch: FacileActionAdapterBase
     /// Gets or sets primary keys of input measurements the dynamic calculator expects.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public override MeasurementKey[]? InputMeasurementKeys // Hidden from UI - inputs managed by Variables property
+    public override MeasurementKey[]? InputMeasurementKeys // Hidden from UI
     {
         get => base.InputMeasurementKeys;
         set
@@ -122,21 +113,30 @@ public class DeviceSwitch: FacileActionAdapterBase
         }
     }
 
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public override IMeasurement[]? OutputMeasurements // Hidden from UI
+    {
+        get => base.OutputMeasurements;
+        set
+        {
+            base.OutputMeasurements = value;
+        }
+    }
+
     [ConnectionStringParameter]
-    [Description("Definesthe output Device.")]
+    [Description("Defines the output device.")]
     [DefaultValue("")]
     public string OutputDevice { get; set; }
 
     [ConnectionStringParameter]
-    [Description("Defines the input Devices.")]
+    [Description("Defines the input devices(seperated by comma).")]
     [DefaultValue("")]
     public string InputDevices { get; set; }
 
     [ConnectionStringParameter]
-    [Description("Defines the acceptable state.")]
+    [Description("Defines the acceptable state of the input device.")]
     [DefaultValue(1)]
     public int AcceptableState { get; set; }
-
 
 
     public override bool SupportsTemporalProcessing => false;
