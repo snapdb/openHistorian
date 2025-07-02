@@ -53,7 +53,8 @@ public class VirtualInputAdapter : InputAdapterBase
     /// </summary>
     public override bool SupportsTemporalProcessing => false;
 
-    [ConnectionStringParameter(false)]
+    [ConnectionStringParameter]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public override IMeasurement[]? OutputMeasurements
     {
         get => base.OutputMeasurements;

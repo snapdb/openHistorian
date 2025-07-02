@@ -22,23 +22,13 @@
 //******************************************************************************************************
 // ReSharper disable InconsistentNaming
 
-using System;
-using System.ComponentModel;
-using System.Data;
-using System.Text;
-using Gemstone.Configuration;
-using Gemstone.Data.Model;
 using Gemstone.Numeric;
-using Gemstone.Numeric.EE;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using PhasorProtocolAdapters;
-using static System.Net.Mime.MediaTypeNames;
-using PhasorRecord = Gemstone.Timeseries.Model.Phasor;
-using MeasurementRecord = Gemstone.Timeseries.Model.Measurement;
+using System.ComponentModel;
+using System.Text;
 
 namespace PowerCalculations;
 

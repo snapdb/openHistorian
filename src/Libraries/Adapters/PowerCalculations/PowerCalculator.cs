@@ -23,17 +23,14 @@
 //
 //******************************************************************************************************
 
-using System.Collections.Concurrent;
-using System.ComponentModel;
-using System.Text;
 using Gemstone.Collections.CollectionExtensions;
-using Gemstone.Numeric.EE;
 using Gemstone.StringExtensions;
 using Gemstone.Timeseries;
 using Gemstone.Timeseries.Adapters;
 using Gemstone.Units;
-using PhasorProtocolAdapters;
-using static PowerCalculations.SequenceCalculator;
+using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Text;
 
 namespace PowerCalculations;
 
@@ -53,7 +50,7 @@ public class PowerCalculator : VICalculatedMeasurementBase
     // Fields
     private readonly List<double> m_powerSample = [];
     private readonly List<double> m_reactivePowerSample = [];
-    private Dictionary<Output, IMeasurement> m_OutputMap;
+    private Dictionary<Output, IMeasurement> m_outputMap = new();
 
     // Important: Make sure output definition defines points in the following order
     private enum Output
@@ -158,6 +155,7 @@ public class PowerCalculator : VICalculatedMeasurementBase
 
         // Validate output measurements
         ValidateOutputMeasurements();
+
         // Load parameters
         TrackRecentValues = !settings.TryGetValue(nameof(TrackRecentValues), out string? setting) || setting.ParseBoolean();
 
@@ -166,7 +164,7 @@ public class PowerCalculator : VICalculatedMeasurementBase
 
         // Assign a default adapter name to be used if power calculator is loaded as part of automated collection
         if (string.IsNullOrWhiteSpace(Name))
-            Name = $"PC!{m_OutputMap[Output.ActivePower].Key}";
+            Name = $"PC!{m_outputMap[Output.ActivePower].Key}";
     }
 
     private void ValidateOutputMeasurements()
@@ -187,19 +185,20 @@ public class PowerCalculator : VICalculatedMeasurementBase
             if (OutputMeasurements is null || OutputMeasurements.Length < Enum.GetValues(typeof(Output)).Length)
                 throw new InvalidOperationException("Not enough output measurements were specified for the power calculator, expecting measurements for the \"ActivePower\" and \"ReactivePower\" - in this order.");
 
-            m_OutputMap = new Dictionary<Output, IMeasurement>();
+            m_outputMap = new Dictionary<Output, IMeasurement>();
 
             foreach (Output o in Enum.GetValues<Output>())
             {
-                m_OutputMap.Add(o, OutputMeasurements[(int)o]);
+                m_outputMap.Add(o, OutputMeasurements[(int)o]);
             }
             return;
         }
-        m_OutputMap = new Dictionary<Output, IMeasurement>();
+
+        m_outputMap = new Dictionary<Output, IMeasurement>();
         for (int i = 0; i < Enum.GetValues(typeof(Output)).Length; i++)
         {
             if (measurementKeys[i] is not null)
-                m_OutputMap.Add((Output)i, measurementKeys[i]);
+                m_outputMap.Add((Output)i, measurementKeys[i]);
         }
     }
 
@@ -293,10 +292,10 @@ public class PowerCalculator : VICalculatedMeasurementBase
         {
             List<IMeasurement> outputMeasurements = new();
 
-            if (m_OutputMap.TryGetValue(Output.ActivePower, out IMeasurement output))
+            if (m_outputMap.TryGetValue(Output.ActivePower, out IMeasurement output))
                 outputMeasurements.Add(Measurement.Clone(output, power, frame.Timestamp));
 
-            if (m_OutputMap.TryGetValue(Output.ReactivePower, out output))
+            if (m_outputMap.TryGetValue(Output.ReactivePower, out output))
                 outputMeasurements.Add(Measurement.Clone(output, reactivePower, frame.Timestamp));
 
             // Provide calculated measurements for external consumption

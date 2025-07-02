@@ -27,11 +27,12 @@
 //
 //******************************************************************************************************
 
-using System.ComponentModel;
-using System.Text;
 using Gemstone.Numeric.EE;
 using Gemstone.Timeseries;
+using Gemstone.Timeseries.Adapters;
 using PhasorProtocolAdapters;
+using System.ComponentModel;
+using System.Text;
 
 namespace PowerCalculations;
 
@@ -39,6 +40,8 @@ namespace PowerCalculations;
 /// Calculates an average magnitude associated with a composed reference angle.
 /// </summary>
 [Description("Reference Magnitude: Calculates an average magnitude associated with a composed reference angle")]
+[UIResource("AdaptersUI", $".PowerCalculations.ReferenceMagnitude.main.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.ReferenceMagnitude.chunk.js")]
 public class ReferenceMagnitude : CalculatedMeasurementBase
 {
     #region [ Members ]

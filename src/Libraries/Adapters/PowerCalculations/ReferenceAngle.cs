@@ -35,12 +35,13 @@
 //
 //******************************************************************************************************
 
-using System.ComponentModel;
-using System.Text;
 using Gemstone.Collections.CollectionExtensions;
 using Gemstone.Numeric.EE;
 using Gemstone.Timeseries;
+using Gemstone.Timeseries.Adapters;
 using PhasorProtocolAdapters;
+using System.ComponentModel;
+using System.Text;
 
 namespace PowerCalculations;
 
@@ -48,6 +49,8 @@ namespace PowerCalculations;
 /// Calculates a composed reference angle.
 /// </summary>
 [Description("Reference Angle: Calculates a composed reference angle")]
+[UIResource("AdaptersUI", $".PowerCalculations.ReferenceAngle.main.js")]
+[UIResource("AdaptersUI", $".PowerCalculations.ReferenceAngle.chunk.js")]
 public class ReferenceAngle : CalculatedMeasurementBase
 {
     #region [ Members ]

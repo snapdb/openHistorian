@@ -51,16 +51,11 @@ public abstract class ReloadController<T> : ModelController<T> where T : class, 
     [HttpDelete, Route("{id}")]
     public override async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
-        if (!DeleteAuthCheck())
-            return Unauthorized();
-
-        await using AdoDataConnection connection = CreateConnection();
-        TableOperations<T> tableOperations = new(connection);
-        await tableOperations.DeleteRecordWhereAsync($"{PrimaryKeyField} = {{0}}", cancellationToken, id);
+        IActionResult result = await base.Delete(id, cancellationToken);
 
         m_serviceCommands.ReloadConfig();
 
-        return Ok(1);
+        return result;
     }
 
 }
